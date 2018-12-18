@@ -28,7 +28,7 @@ class HooksPanel(QTableWidget):
             self.add_hook()
 
     def add_hook(self):
-        input = InputDialog.input(hint='insert pointer (input evaluated)')
+        input = InputDialog.input(hint='insert pointer')
         if input[0]:
             ptr = self.app.get_script().exports.getpt(input[1])
             if int(ptr, 16) > 0:

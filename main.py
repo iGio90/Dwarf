@@ -34,10 +34,11 @@ if __name__ == '__main__':
     if args.spawn:
         device.resume(args.package)
 
-    a = App()
+    a = App(app)
     a.initialize_with_script(script)
     a.showMaximized()
 
     app.exec_()
+
     script.exports.release()
     process.detach()

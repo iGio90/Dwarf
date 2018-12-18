@@ -11,11 +11,14 @@ from PyQt5.QtWidgets import *
 
 from ui.panel_modules import ModulesPanel
 from ui.panel_ranges import RangesPanel
+from ui.panel_vars import VarsPanel
 
 
 class App(QWidget):
-    def __init__(self, flags=None, *args, **kwargs):
+    def __init__(self, qtapp, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
+
+        self.qtapp = qtapp
 
         self.script = None
         self.arch = ''
@@ -51,10 +54,7 @@ class App(QWidget):
         self.contexts_panel = ContextsPanel(self, 0, 3)
         splitter.addWidget(self.contexts_panel)
 
-        self.vars_panel = QTableWidget(0, 3)
-        self.vars_panel.setHorizontalHeaderLabels(['name', 'value'])
-        self.vars_panel.verticalHeader().hide()
-        self.vars_panel.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.vars_panel = VarsPanel(self)
         splitter.addWidget(self.vars_panel)
 
         return splitter
@@ -118,6 +118,7 @@ class App(QWidget):
     def initialize_with_script(self, script):
         self.script = script
         self.script.on('message', self.on_message)
+        self.script.on('destroyed', self.on_destroyed)
         self.showMaximized()
 
     def on_message(self, message, data):
@@ -192,3 +193,7 @@ class App(QWidget):
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()
+
+    def on_destroyed(self):
+        print('[*] script destroyed')
+        self.qtapp.exit()
