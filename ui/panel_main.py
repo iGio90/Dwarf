@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QSplitter, QTableWidget, QTableWidgetItem, QTabWidget
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QSplitter
 
 from ui.panel_memory import MemoryPanel
 from ui.panel_registers import RegistersPanel
-from ui.widget_context import ContextItem
-from ui.widget_item_not_editable import NotEditableListWidgetItem, NotEditableTableWidgetItem
+from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
 class MainPanel(QSplitter):
@@ -26,14 +25,8 @@ class MainPanel(QSplitter):
         self.memory_panel = MemoryPanel(self.app, 0, 18)
         self.addWidget(self.memory_panel)
 
-        bottom_splitter = QSplitter()
-
         self.log_panel = QListWidget()
-        bottom_splitter.addWidget(self.log_panel)
-
-        bottom_splitter.setStretchFactor(0, 1)
-        bottom_splitter.setStretchFactor(1, 3)
-        self.addWidget(bottom_splitter)
+        self.addWidget(self.log_panel)
 
         self.setStretchFactor(0, 1)
         self.setStretchFactor(1, 3)

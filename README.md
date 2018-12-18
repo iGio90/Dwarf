@@ -25,4 +25,13 @@ For discussion and suggestions, please let's have a speak on [Slack](https://joi
 
 Once spawned - Dwarf attach to the onCreate method of the android Application class and sleep the process until release button is pushed.
 A good time to begin adding hooks in the top left panel.
-When you add an hook, an input dialog will pop. This input will be evaluated with frida api - aka - using frida api inside the input is possible (Module.findExportByName etc.) 
+When you add an hook, an input dialog will pop. This input will be evaluated with frida api - aka - using frida api inside the input is possible (Module.findExportByName etc.)
+You can double click on the thread id (if multiple hooks got hit on different threads) to switch context.
+
+### Must have todo list:
+* Java hooks
+* Hooks logic
+* Conditional hooks
+* Unicorn integration
+* ASM view on memory panel
+* A way to highlight pointers and data in memory panel (i failed hard. like 10 seconds for 1024 bytes of data is far from a fuckyeah!) 

@@ -99,6 +99,7 @@ class App(QWidget):
 
         buttons.addWidget(QPushButton('tools'))
         buttons.addWidget(QPushButton('options'))
+
         bq.setLayout(buttons)
         bq.setMaximumHeight(50)
         bq.setContentsMargins(0, 0, 0, 0)
