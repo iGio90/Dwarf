@@ -1,5 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu
+from capstone import *
 from hexdump import hexdump
 
 from lib import utils
@@ -7,11 +8,18 @@ from ui.dialog_input import InputDialog
 from ui.widget_byte import ByteWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
+VIEW_NONE = -1
+VIEW_HEX = 0
+VIEW_ASM = 1
+
 
 class MemoryPanel(QTableWidget):
     def __init__(self, app, *__args):
         super().__init__(*__args)
         self.app = app
+
+        self.view = VIEW_NONE
+        self.data = None
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
@@ -34,12 +42,26 @@ class MemoryPanel(QTableWidget):
 
         if isinstance(cell, ByteWidget):
             data = menu.addAction("Show as data\t(D)")
-            follow = menu.addAction("Follow pointer\t(F)")
-
             menu.addAction(data)
+
+            follow = menu.addAction("Follow pointer\t(F)")
             menu.addAction(follow)
-            q = utils.get_qmenu_separator()
-            menu.addAction(q)
+
+            sep1 = utils.get_qmenu_separator()
+            menu.addAction(sep1)
+
+            hex_view = menu.addAction("HEX\t(H)")
+            if self.view == VIEW_HEX:
+                hex_view.setEnabled(False)
+            menu.addAction(hex_view)
+
+            asm_view = menu.addAction("ASM\t(A)")
+            if self.view == VIEW_ASM:
+                asm_view.setEnabled(False)
+            menu.addAction(asm_view)
+
+            sep2 = utils.get_qmenu_separator()
+            menu.addAction(sep2)
 
         jump_to = menu.addAction("Jump to\t(G)")
 
@@ -49,6 +71,10 @@ class MemoryPanel(QTableWidget):
         elif isinstance(cell, ByteWidget):
             if action == follow:
                 self.trigger_follow_pointer()
+            elif action == hex_view:
+                self.set_view_type(VIEW_HEX)
+            elif action == asm_view:
+                self.set_view_type(VIEW_ASM)
 
     def read_pointer(self, byte_widget):
         row = byte_widget.row()
@@ -64,18 +90,57 @@ class MemoryPanel(QTableWidget):
                 col = 1
         return int.from_bytes(bytes(data), 'little')
 
-    def set_memory_view(self, start, data, jump_to=-1):
+    def _set_data(self, start, data, jump_to=-1):
+        self.data = {
+            'start': start,
+            'data': data,
+            'jt': jump_to
+        }
+
+    def _set_asm_view(self):
+        self.view = VIEW_ASM
+        self.setRowCount(0)
+        s_row = -1
+
+        md = Cs(CS_ARCH_ARM, CS_MODE_ARM)
+        for i in md.disasm(self.data['data'], self.data['start']):
+            row = self.rowCount()
+            self.insertRow(row)
+            if i.address == self.data['start']:
+                s_row = row
+
+            w = NotEditableTableWidgetItem('0x%x' % i.address)
+            w.setForeground(Qt.red)
+            self.setItem(row, 0, w)
+
+            w = NotEditableTableWidgetItem(i.mnemonic)
+            self.setItem(row, 1, w)
+
+            w = NotEditableTableWidgetItem(i.op_str)
+            self.setItem(row, 2, w)
+        if self.horizontalHeader().isHidden():
+            self.horizontalHeader().show()
+        self.resizeColumnsToContents()
+
+        if s_row >= 0:
+            self.setCurrentCell(s_row, 0)
+            index = self.currentIndex()
+            self.scrollTo(index, QAbstractItemView.PositionAtCenter)
+            self.setCurrentCell(s_row, 0)
+
+    def _set_memory_view(self):
+        self.view = VIEW_HEX
         self.setRowCount(0)
 
         s_row = -1
         s_col = 0
 
-        for r in hexdump(data, result='return').split('\n'):
+        for r in hexdump(self.data['data'], result='return').split('\n'):
             row = self.rowCount()
             self.insertRow(row)
 
             rr = r.split(':')
-            offset = int(rr[0], 16) + start
+            offset = int(rr[0], 16) + self.data['start']
             w = NotEditableTableWidgetItem(hex(offset))
             w.setForeground(Qt.red)
             self.setItem(row, 0, w)
@@ -89,7 +154,7 @@ class MemoryPanel(QTableWidget):
                 qq.set_value(int(hex_line[i], 16))
 
                 self.setItem(row, i + 1, qq)
-                if -1 < jump_to == offset + i:
+                if -1 < self.data['jt'] == offset + i:
                     qq.setSelected(True)
                     s_row = row
                     s_col = i + 1
@@ -131,7 +196,9 @@ class MemoryPanel(QTableWidget):
         data = self.app.script.exports.memread(start, size)
         if len(data) == 0:
             return
-        self.set_memory_view(start, data, jump_to=offset)
+        self.view = VIEW_NONE
+        self._set_data(start, data, jump_to=offset)
+        self.set_view_type(VIEW_HEX)
 
     def keyPressEvent(self, event):
         super(MemoryPanel, self).keyPressEvent(event)
@@ -139,6 +206,10 @@ class MemoryPanel(QTableWidget):
             self.trigger_jump_to()
         elif event.key() == Qt.Key_F:
             self.trigger_follow_pointer()
+        elif event.key() == Qt.Key_H:
+            self.set_view_type(VIEW_HEX)
+        elif event.key() == Qt.Key_A:
+            self.set_view_type(VIEW_ASM)
 
     def trigger_jump_to(self):
         pt = InputDialog.input(hint='insert pointer', size=True)
@@ -149,3 +220,11 @@ class MemoryPanel(QTableWidget):
     def trigger_follow_pointer(self):
         if len(self.selectedItems()) > 0 and isinstance(self.selectedItems()[0], ByteWidget):
             self.read_memory(self.read_pointer(self.selectedItems()[0]))
+
+    def set_view_type(self, view_type):
+        if self.view == view_type or self.data is None:
+            return
+        if view_type == VIEW_HEX:
+            self._set_memory_view()
+        elif view_type == VIEW_ASM:
+            self._set_asm_view()
