@@ -5,6 +5,10 @@ Built on top of pyqt5 (compatible with all os's), frida and some terrible code.
 
 ![Alt text](https://i.ibb.co/tPDRgmN/Schermata-2018-12-18-alle-18-35-02.png "Dwarf") 
 
+
+### Pre requisites
+A rooted Android with frida server installed and running.
+
 ### Setup and run
 
 ```
