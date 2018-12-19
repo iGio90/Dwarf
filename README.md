@@ -33,7 +33,7 @@ When you add an hook, an input dialog will pop. This input will be evaluated wit
 You can double click on the thread id (if multiple hooks got hit on different threads) to switch context.
 
 ### Must have todo list:
-* Java hooks
+* ~~HJava hooks~~H
 * ~~Hooks logic~~
 * ~~Conditional hooks~~
 * Unicorn integration
@@ -42,4 +42,5 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * A way to highlight pointers and data in memory panel (i failed hard. like 10 seconds for 1024 bytes of data is far from a fuckyeah!)
 * 'Show as data' on memory panel
 * export / import session 
-* tools and options 
+* tools and options
+* backtrace panel

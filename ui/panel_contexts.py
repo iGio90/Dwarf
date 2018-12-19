@@ -21,12 +21,20 @@ class ContextsPanel(QTableWidget):
         q = ContextItem(data, str(data['tid']))
         q.setForeground(Qt.darkCyan)
         self.setItem(row, 0, q)
-        q = NotEditableTableWidgetItem(data['context']['pc'])
+        is_java = 'classMethod' in data['context']
+        if not is_java:
+            q = NotEditableTableWidgetItem(data['context']['pc'])
+        else:
+            parts = data['context']['classMethod'].split('.')
+            q = NotEditableTableWidgetItem(parts[len(parts) - 1])
         q.setForeground(Qt.red)
         self.setItem(row, 1, q)
         if library_onload is None:
-            q = NotEditableTableWidgetItem('%s - %s' % (
-                data['symbol']['moduleName'], data['symbol']['name']))
+            if not is_java:
+                q = NotEditableTableWidgetItem('%s - %s' % (
+                    data['symbol']['moduleName'], data['symbol']['name']))
+            else:
+                q = NotEditableTableWidgetItem('.'.join(parts[:len(parts) - 1]))
         else:
             q = NotEditableTableWidgetItem('loading %s' % library_onload)
 

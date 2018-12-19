@@ -141,16 +141,20 @@ class App(QWidget):
             data = json.loads(parts[1])
             self.contexts.append(data)
 
-            if len(data['context']) > 0:
-                self.hooks_panel.increment_hook_count(int(data['context']['pc'], 16))
-                if 'moduleName' in data['symbol']:
-                    sym = '%s - %s' % (data['symbol']['moduleName'], data['symbol']['name'])
+            if 'context' in data:
+                sym = ''
+                if 'pc' in data['context']:
+                    name = data['context']['pc']
+                    self.hooks_panel.increment_hook_count(int(data['context']['pc'], 16))
+                    if 'moduleName' in data['symbol']:
+                        sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:
-                    sym = self.hooks_panel.get_hooks()[int(data['context']['pc'], 16)]['input']
+                    name = data['context']['classMethod']
+                    self.hooks_panel.increment_hook_count(data['context']['classMethod'])
                 self.contexts_panel.add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
-                    self.main_panel.add_to_main_content_content('hook %s (%s) @thread := %d' % (
-                        data['context']['pc'], sym, data['tid']), scroll=True)
+                    self.main_panel.add_to_main_content_content('hook %s %s @thread := %d' % (
+                        name, sym, data['tid']), scroll=True)
                 if len(self.contexts) > 1:
                     return
             else:
@@ -170,6 +174,8 @@ class App(QWidget):
             self.main_panel.add_to_main_content_content('hook onload %s @thread := %s' % (
                 parts[1], parts[3]), scroll=True)
             self.hooks_panel.hit_onload(parts[1], parts[2])
+        elif parts[0] == '3':
+            self.hooks_panel.hook_java_callback(parts[1])
         else:
             print(what)
 

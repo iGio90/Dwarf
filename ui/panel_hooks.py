@@ -16,6 +16,7 @@ class HooksPanel(QTableWidget):
 
         self.hooks = {}
         self.onloads = {}
+        self.java_hooks = {}
 
         self.setHorizontalHeaderLabels(['input', 'address', 'hit'])
         self.verticalHeader().hide()
@@ -29,6 +30,7 @@ class HooksPanel(QTableWidget):
         menu = QMenu()
         add_action = menu.addAction("Hook address\t(A)")
         on_load_action = menu.addAction("Hook module load\t(O)")
+        hook_java_action = menu.addAction("Hook java\t(J)")
 
         item = self.itemAt(pos)
         if item is not None:
@@ -46,6 +48,8 @@ class HooksPanel(QTableWidget):
             self.add_hook()
         elif action == on_load_action:
             self.hook_on_load()
+        elif action == hook_java_action:
+            self.hook_java()
         if is_hook_item:
             if action == cond_action:
                 self.set_condition()
@@ -76,6 +80,7 @@ class HooksPanel(QTableWidget):
                     q.setForeground(Qt.red)
                     self.setItem(self.rowCount() - 1, 1, q)
                     q = NotEditableTableWidgetItem('0')
+                    q.setForeground(Qt.gray)
                     self.setItem(self.rowCount() - 1, 2, q)
                     self.resizeColumnsToContents()
 
@@ -107,6 +112,33 @@ class HooksPanel(QTableWidget):
             self.setItem(self.rowCount() - 1, 2, q)
 
             self.app.get_script().exports.onload(module)
+
+    def hook_java(self):
+        input = InputDialog.input(hint='com.package.class.[method or \'$new\']')
+        if input[0]:
+            self.app.get_script().exports.jmh(input[1])
+
+    def hook_java_callback(self, class_method):
+        self.insertRow(self.rowCount())
+
+        h = Hook()
+        h.set_ptr(1)
+        h.set_input(class_method)
+        h.set_widget_row(self.rowCount() - 1)
+
+        parts = class_method.split('.')
+        self.hooks[class_method] = h
+        q = HookWidget(parts[len(parts) - 1])
+        q.set_hook_data(h)
+        q.setForeground(Qt.darkYellow)
+        self.setItem(self.rowCount() - 1, 0, q)
+        q = NotEditableTableWidgetItem('.'.join(parts[:len(parts)-1]))
+        self.setItem(self.rowCount() - 1, 1, q)
+        q = NotEditableTableWidgetItem('0')
+        q.setForeground(Qt.gray)
+        self.setItem(self.rowCount() - 1, 2, q)
+
+        self.resizeColumnsToContents()
 
     def set_condition(self):
         if len(self.selectedItems()) < 1:
@@ -161,6 +193,8 @@ class HooksPanel(QTableWidget):
             self.set_logic()
         elif event.key() == Qt.Key_O:
             self.hook_on_load()
+        elif event.key() == Qt.Key_J:
+            self.hook_java()
         else:
             # dispatch those to super
             super(HooksPanel, self).keyPressEvent(event)

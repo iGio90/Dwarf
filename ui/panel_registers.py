@@ -11,21 +11,35 @@ class RegistersPanel(QTableWidget):
         self.app = app
 
         self.verticalHeader().hide()
-        self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cellDoubleClicked.connect(self.register_cell_double_clicked)
 
     def set_context(self, context):
         self.setRowCount(0)
         i = 0
+        is_java = 'classMethod' in context
+        if is_java:
+            self.setColumnCount(2)
+            self.setHorizontalHeaderLabels(['argument', 'value'])
+        else:
+            self.setColumnCount(4)
+            self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         for reg in context:
+            if reg == 'classMethod':
+                continue
+
             self.insertRow(i)
             q = NotEditableTableWidgetItem(reg)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
-            q = NotEditableTableWidgetItem(context[reg])
+            if context[reg] != None:
+                q = NotEditableTableWidgetItem(str(context[reg]))
+            else:
+                q = NotEditableTableWidgetItem('null')
             q.setForeground(Qt.red)
             self.setItem(i, 1, q)
+            if is_java:
+                continue
             q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
             q.setForeground(Qt.darkCyan)
             self.setItem(i, 2, q)

@@ -23,6 +23,9 @@ class Hook(object):
         self.widget_row = row
 
     def get_ptr(self):
+        if self.ptr == 1:
+            # for java hooks, return class and method
+            return self.input
         return self.ptr
 
     def get_input(self):
