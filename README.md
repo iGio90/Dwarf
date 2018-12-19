@@ -33,7 +33,7 @@ When you add an hook, an input dialog will pop. This input will be evaluated wit
 You can double click on the thread id (if multiple hooks got hit on different threads) to switch context.
 
 ### Must have todo list:
-* ~~HJava hooks~~H
+* ~~Java hooks~~
 * ~~Hooks logic~~
 * ~~Conditional hooks~~
 * Unicorn integration
@@ -44,3 +44,4 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * export / import session 
 * tools and options
 * backtrace panel
+* license
