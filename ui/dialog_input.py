@@ -3,13 +3,15 @@ from PyQt5.QtWidgets import *
 
 
 class InputDialog(QDialog):
-    def __init__(self, parent=None, hint=None, size=False):
+    def __init__(self, parent=None, hint=None, size=False, input_content=''):
         super(InputDialog, self).__init__(parent)
 
         layout = QVBoxLayout(self)
         if hint:
             layout.addWidget(QLabel(hint))
         self.input_widget = QLineEdit(self)
+        if len(input_content) > 0:
+            self.input_widget.setText(input_content)
         layout.addWidget(self.input_widget)
 
         self.size_widget = None
@@ -31,15 +33,15 @@ class InputDialog(QDialog):
             self.accept()
 
     @staticmethod
-    def input(hint=None, size=False):
-        dialog = InputDialog(hint=hint, size=size)
+    def input(hint=None, size=False, input_content=''):
+        dialog = InputDialog(hint=hint, size=size, input_content=input_content)
         result = dialog.exec_()
 
         if size:
             return result == QDialog.Accepted, \
                    dialog.input_widget.text(), \
                    dialog.size_widget.text(), \
-                   dialog.sub_widget.text()
+                   dialog.sub_widget.text(),
         else:
             return result == QDialog.Accepted, \
                    dialog.input_widget.text()

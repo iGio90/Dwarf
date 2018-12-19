@@ -35,7 +35,7 @@ You can double click on the thread id (if multiple hooks got hit on different th
 ### Must have todo list:
 * Java hooks
 * Hooks logic
-* Conditional hooks
+* ~~Conditional hooks~~
 * Unicorn integration
 * ~~ASM view on memory panel~~
 * ASM view options (i.e switch to thumb on arm32)
