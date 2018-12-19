@@ -1,8 +1,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu
 
+from lib import utils
 from lib.hook import Hook
 from ui.dialog_input import InputDialog
+from ui.dialog_input_multiline import InputMultilineDialog
 from ui.widget_hook import HookWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -30,7 +32,11 @@ class HooksPanel(QTableWidget):
         if item is not None:
             item = self.item(self.itemAt(pos).row(), 0)
         if item is not None:
+            sep = utils.get_qmenu_separator()
+            menu.addAction(sep)
+
             cond_action = menu.addAction("Condition\t(C)")
+            logic_action = menu.addAction("Logic\t(L)")
 
         action = menu.exec_(self.mapToGlobal(pos))
         if action == add_action:
@@ -38,6 +44,8 @@ class HooksPanel(QTableWidget):
         if item is not None:
             if action == cond_action:
                 self.set_condition()
+            elif action == logic_action:
+                self.set_logic()
 
     def add_hook(self):
         input = InputDialog.input(hint='insert pointer')
@@ -76,6 +84,15 @@ class HooksPanel(QTableWidget):
             if self.app.get_script().exports.hookcond(item.get_hook_data().get_ptr(), inp[1]):
                 item.get_hook_data().set_condition(inp[1])
 
+    def set_logic(self):
+        if len(self.selectedItems()) < 1:
+            return
+        item = self.item(self.selectedItems()[0].row(), 0)
+        inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_condition())
+        if inp[0]:
+            if self.app.get_script().exports.hooklogic(item.get_hook_data().get_ptr(), inp[1]):
+                item.get_hook_data().set_condition(inp[1])
+
     def increment_hook_count(self, ptr):
         row = self.hooks[ptr].get_widget_row()
         self.item(row, 2).setText(str(int(self.item(row, 2).text()) + 1))
@@ -99,6 +116,8 @@ class HooksPanel(QTableWidget):
             self.add_hook()
         elif event.key() == Qt.Key_C:
             self.set_condition()
+        elif event.key() == Qt.Key_L:
+            self.set_logic()
         else:
             # dispatch those to super
             super(HooksPanel, self).keyPressEvent(event)

@@ -34,7 +34,7 @@ You can double click on the thread id (if multiple hooks got hit on different th
 
 ### Must have todo list:
 * Java hooks
-* Hooks logic
+* ~~Hooks logic~~
 * ~~Conditional hooks~~
 * Unicorn integration
 * ~~ASM view on memory panel~~

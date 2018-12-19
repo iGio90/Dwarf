@@ -129,6 +129,10 @@ class App(QWidget):
 
         what = message['payload']
         parts = what.split(':::')
+        if len(parts) < 2:
+            print(what)
+            return
+
         if parts[0] == '0':
             self.main_panel.add_to_main_content_content(parts[1], scroll=True)
         elif parts[0] == '1':
@@ -186,6 +190,7 @@ class App(QWidget):
         self.script.exports.restart()
         self.release_target()
         self.hooks_panel.reset_hook_count()
+        self.contexts_panel.setRowCount(0)
 
     def _apply_context(self, context):
         self.set_modules(context['modules'])

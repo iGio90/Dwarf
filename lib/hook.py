@@ -5,6 +5,7 @@ class Hook(object):
         self.widget_row = 0
         self.input = ''
         self.condition = ''
+        self.logic = ''
 
     def set_ptr(self, ptr):
         self.ptr = ptr
@@ -14,6 +15,9 @@ class Hook(object):
 
     def set_condition(self, condition):
         self.condition = condition
+
+    def set_logic(self, logic):
+        self.logic = logic
 
     def set_widget_row(self, row):
         self.widget_row = row
@@ -26,6 +30,9 @@ class Hook(object):
 
     def get_condition(self):
         return self.condition
+
+    def get_logic(self):
+        return self.logic
 
     def get_widget_row(self):
         return self.widget_row
