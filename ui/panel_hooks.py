@@ -33,7 +33,7 @@ class HooksPanel(QTableWidget):
         item = self.itemAt(pos)
         if item is not None:
             item = self.item(self.itemAt(pos).row(), 0)
-        is_hook_item = item is not None and isinstance(item, HookWidget)
+        is_hook_item = item is not None and isinstance(item, HookWidget) and item.get_hook_data().get_ptr() > 0
         if is_hook_item:
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)

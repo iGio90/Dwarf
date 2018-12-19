@@ -20,6 +20,10 @@ class MemoryPanel(QTableWidget):
 
         self.view = VIEW_NONE
         self.data = None
+        self.cs_mode = CS_MODE_ARM
+
+        self.asm_data_start = 0
+        self.asm_parse_start = 0
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
@@ -57,6 +61,18 @@ class MemoryPanel(QTableWidget):
             sep2 = utils.get_qmenu_separator()
             menu.addAction(sep2)
 
+        mode = None
+        if self.app.get_arch() == 'arm' and self.view == VIEW_ASM:
+            if self.cs_mode == CS_MODE_ARM:
+                mode = menu.addAction("THUMB mode\t(O)")
+                menu.addAction(mode)
+            elif self.cs_mode == CS_MODE_THUMB:
+                mode = menu.addAction("ARM mode\t(O)")
+                menu.addAction(mode)
+
+            sep3 = utils.get_qmenu_separator()
+            menu.addAction(sep3)
+
         jump_to = menu.addAction("Jump to\t(G)")
 
         action = menu.exec_(self.mapToGlobal(pos))
@@ -69,6 +85,10 @@ class MemoryPanel(QTableWidget):
                 self.set_view_type(VIEW_HEX)
             elif action == asm_view:
                 self.set_view_type(VIEW_ASM)
+
+        if self.app.get_arch() == 'arm':
+            if mode is not None and action == mode:
+                self.swap_arm_mode()
 
     def read_pointer(self, byte_widget):
         row = byte_widget.row()
@@ -105,48 +125,53 @@ class MemoryPanel(QTableWidget):
         col = c_item.column()
         if col > 0:
             col -= 1
-        data_start = (c_item.row() * 16) + col
-        parse_start = self.data['start'] + data_start
+        self.asm_data_start = (c_item.row() * 16) + col
+        self.asm_parse_start = self.data['start'] + self.asm_data_start
 
-        if parse_start + 32 > self.data['end']:
-            self.read_memory(parse_start, 32, 0)
+        if self.asm_parse_start + 32 > self.data['end']:
+            self.read_memory(self.asm_parse_start, 32, 0)
         else:
             self.view = VIEW_ASM
-            self.setRowCount(0)
             self.horizontalHeader().hide()
             self.setColumnCount(3)
 
-            if self.app.get_arch() == 'arm64':
-                arch = CS_ARCH_ARM64
-            else:
-                arch = CS_ARCH_ARM
+            self._finalize_asm_view()
 
-            md = Cs(arch, CS_MODE_ARM)
-            s_row = -1
+    def _finalize_asm_view(self):
+        self.setRowCount(0)
 
-            for i in md.disasm(self.data['data'][data_start:data_start+64], parse_start):
-                row = self.rowCount()
-                self.insertRow(row)
-                if i.address == parse_start:
-                    s_row = row
+        if self.app.get_arch() == 'arm64':
+            arch = CS_ARCH_ARM64
+            self.cs_mode = CS_MODE_ARM
+        else:
+            arch = CS_ARCH_ARM
 
-                w = NotEditableTableWidgetItem('0x%x' % i.address)
-                w.setForeground(Qt.red)
-                self.setItem(row, 0, w)
+        md = Cs(arch, self.cs_mode)
+        s_row = -1
 
-                w = NotEditableTableWidgetItem(i.mnemonic)
-                self.setItem(row, 1, w)
+        for i in md.disasm(self.data['data'][self.asm_data_start:self.asm_data_start+64], self.asm_parse_start):
+            row = self.rowCount()
+            self.insertRow(row)
+            if i.address == self.asm_parse_start:
+                s_row = row
 
-                w = NotEditableTableWidgetItem(i.op_str)
-                self.setItem(row, 2, w)
+            w = NotEditableTableWidgetItem('0x%x' % i.address)
+            w.setForeground(Qt.red)
+            self.setItem(row, 0, w)
 
-            self.resizeColumnsToContents()
+            w = NotEditableTableWidgetItem(i.mnemonic)
+            self.setItem(row, 1, w)
 
-            if s_row >= 0:
-                self.setCurrentCell(s_row, 0)
-                index = self.currentIndex()
-                self.scrollTo(index, QAbstractItemView.PositionAtCenter)
-                self.setCurrentCell(s_row, 0)
+            w = NotEditableTableWidgetItem(i.op_str)
+            self.setItem(row, 2, w)
+
+        self.resizeColumnsToContents()
+
+        if s_row >= 0:
+            self.setCurrentCell(s_row, 0)
+            index = self.currentIndex()
+            self.scrollTo(index, QAbstractItemView.PositionAtCenter)
+            self.setCurrentCell(s_row, 0)
 
     def _set_memory_view(self):
         self.view = VIEW_HEX
@@ -197,6 +222,14 @@ class MemoryPanel(QTableWidget):
         self.setHorizontalHeaderLabels(h_labels)
         self.resizeColumnsToContents()
 
+    def swap_arm_mode(self):
+        if self.app.get_arch() == 'arm':
+            if self.cs_mode == CS_MODE_ARM:
+                self.cs_mode = CS_MODE_THUMB
+            elif self.cs_mode == CS_MODE_THUMB:
+                self.cs_mode = CS_ARCH_ARM
+            self._finalize_asm_view()
+
     def read_memory(self, ptr, size=1024, sub_start=512):
         try:
             range = self.app.script.exports.getrange(ptr)
@@ -236,6 +269,8 @@ class MemoryPanel(QTableWidget):
             self.set_view_type(VIEW_HEX)
         elif event.key() == Qt.Key_A:
             self.set_view_type(VIEW_ASM)
+        elif event.key() == Qt.Key_O:
+            self.swap_arm_mode()
         else:
             # dispatch those to super
             if event.key() == Qt.Key_Escape:
