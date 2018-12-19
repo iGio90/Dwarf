@@ -64,7 +64,7 @@ class HooksPanel(QTableWidget):
         return self.hooks
 
     def hooks_cell_double_clicked(self, row, c):
-        if c == 0:
+        if c == 1:
             self.app.get_memory_panel().read_memory(self.item(row, c).text())
 
     def keyPressEvent(self, event):

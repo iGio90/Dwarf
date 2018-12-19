@@ -22,7 +22,7 @@ class MainPanel(QSplitter):
         top_splitter.setStretchFactor(1, 3)
         self.addWidget(top_splitter)
 
-        self.memory_panel = MemoryPanel(self.app, 0, 18)
+        self.memory_panel = MemoryPanel(self.app)
         self.addWidget(self.memory_panel)
 
         self.log_panel = QListWidget()

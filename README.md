@@ -37,7 +37,8 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * Hooks logic
 * Conditional hooks
 * Unicorn integration
-* ASM view on memory panel
+* ~~ASM view on memory panel~~
+* ASM view options (i.e switch to thumb on arm32)
 * A way to highlight pointers and data in memory panel (i failed hard. like 10 seconds for 1024 bytes of data is far from a fuckyeah!)
 * 'Show as data' on memory panel
 * export / import session 
