@@ -15,7 +15,7 @@ class ContextsPanel(QTableWidget):
         self.itemDoubleClicked.connect(self.on_context_item_double_click)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-    def add_context(self, data):
+    def add_context(self, data, library_onload=None):
         row = self.rowCount()
         self.insertRow(row)
         q = ContextItem(data, str(data['tid']))
@@ -24,8 +24,12 @@ class ContextsPanel(QTableWidget):
         q = NotEditableTableWidgetItem(data['context']['pc'])
         q.setForeground(Qt.red)
         self.setItem(row, 1, q)
-        q = NotEditableTableWidgetItem('%s - %s' % (
-            data['symbol']['moduleName'], data['symbol']['name']))
+        if library_onload is None:
+            q = NotEditableTableWidgetItem('%s - %s' % (
+                data['symbol']['moduleName'], data['symbol']['name']))
+        else:
+            q = NotEditableTableWidgetItem('loading %s' % library_onload)
+
         q.setForeground(Qt.gray)
         self.setItem(row, 2, q)
         self.resizeColumnsToContents()

@@ -31,6 +31,8 @@ class App(QWidget):
         self.contexts_panel = None
         self.vars_panel = None
 
+        self.loading_library = False
+
         self.contexts = []
 
         box = QVBoxLayout()
@@ -145,9 +147,10 @@ class App(QWidget):
                     sym = '%s - %s' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:
                     sym = self.hooks_panel.get_hooks()[int(data['context']['pc'], 16)]['input']
-                self.contexts_panel.add_context(data)
-                self.main_panel.add_to_main_content_content('hook %s (%s) @thread := %d' % (
-                    data['context']['pc'], sym, data['tid']), scroll=True)
+                self.contexts_panel.add_context(data, library_onload=self.loading_library)
+                if self.loading_library is None:
+                    self.main_panel.add_to_main_content_content('hook %s (%s) @thread := %d' % (
+                        data['context']['pc'], sym, data['tid']), scroll=True)
                 if len(self.contexts) > 1:
                     return
             else:
@@ -159,6 +162,14 @@ class App(QWidget):
                 self.main_panel.add_to_main_content_content('injected into := ' + str(data['pid']))
 
             self.apply_context(data)
+            if self.loading_library is not None:
+               self.loading_library = None
+        elif parts[0] == '2':
+            print(parts)
+            self.loading_library = parts[1]
+            self.main_panel.add_to_main_content_content('hook onload %s @thread := %s' % (
+                parts[1], parts[3]), scroll=True)
+            self.hooks_panel.hit_onload(parts[1], parts[2])
         else:
             print(what)
 
@@ -178,8 +189,6 @@ class App(QWidget):
         if tid > 0:
             self.get_script().exports.release(tid)
         else:
-            self.ranges_panel.setRowCount(0)
-            self.modules_panel.setRowCount(0)
             self.contexts_panel.setRowCount(0)
             self.contexts.clear()
             self.main_panel.release_target()
@@ -193,9 +202,12 @@ class App(QWidget):
         self.contexts_panel.setRowCount(0)
 
     def _apply_context(self, context):
-        self.set_modules(context['modules'])
-        self.set_ranges(context['ranges'])
-        self.main_panel.set_context(context['context'])
+        if 'modules' in context:
+            self.set_modules(context['modules'])
+        if 'ranges' in context:
+            self.set_ranges(context['ranges'])
+        if 'context' in context:
+            self.main_panel.set_context(context['context'])
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()

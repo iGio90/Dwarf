@@ -15,6 +15,7 @@ class HooksPanel(QTableWidget):
         self.app = app
 
         self.hooks = {}
+        self.onloads = {}
 
         self.setHorizontalHeaderLabels(['input', 'address', 'hit'])
         self.verticalHeader().hide()
@@ -26,12 +27,14 @@ class HooksPanel(QTableWidget):
 
     def show_menu(self, pos):
         menu = QMenu()
-        add_action = menu.addAction("Add\t(A)")
+        add_action = menu.addAction("Hook address\t(A)")
+        on_load_action = menu.addAction("Hook module load\t(O)")
 
         item = self.itemAt(pos)
         if item is not None:
             item = self.item(self.itemAt(pos).row(), 0)
-        if item is not None:
+        is_hook_item = item is not None and isinstance(item, HookWidget)
+        if is_hook_item:
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)
 
@@ -41,7 +44,9 @@ class HooksPanel(QTableWidget):
         action = menu.exec_(self.mapToGlobal(pos))
         if action == add_action:
             self.add_hook()
-        if item is not None:
+        elif action == on_load_action:
+            self.hook_on_load()
+        if is_hook_item:
             if action == cond_action:
                 self.set_condition()
             elif action == logic_action:
@@ -74,6 +79,35 @@ class HooksPanel(QTableWidget):
                     self.setItem(self.rowCount() - 1, 2, q)
                     self.resizeColumnsToContents()
 
+    def hook_on_load(self):
+        input = InputDialog.input(hint='insert module name')
+        if input[0]:
+            module = input[1]
+            if not module.endswith('.so'):
+                module += '.so'
+
+            self.insertRow(self.rowCount())
+
+            h = Hook()
+            h.set_ptr(0)
+            h.set_input(module)
+            h.set_widget_row(self.rowCount() - 1)
+
+            self.onloads[module] = h
+
+            q = HookWidget(h.get_input())
+            q.set_hook_data(h)
+            q.setForeground(Qt.darkGreen)
+            self.setItem(self.rowCount() - 1, 0, q)
+            q = NotEditableTableWidgetItem(hex(0))
+            q.setForeground(Qt.gray)
+            self.setItem(self.rowCount() - 1, 1, q)
+            q = NotEditableTableWidgetItem('-')
+            q.setForeground(Qt.gray)
+            self.setItem(self.rowCount() - 1, 2, q)
+
+            self.app.get_script().exports.onload(module)
+
     def set_condition(self):
         if len(self.selectedItems()) < 1:
             return
@@ -94,15 +128,22 @@ class HooksPanel(QTableWidget):
                 item.get_hook_data().set_condition(inp[1])
 
     def increment_hook_count(self, ptr):
-        row = self.hooks[ptr].get_widget_row()
-        self.item(row, 2).setText(str(int(self.item(row, 2).text()) + 1))
-        self.resizeColumnsToContents()
+        if ptr in self.hooks:
+            row = self.hooks[ptr].get_widget_row()
+            self.item(row, 2).setText(str(int(self.item(row, 2).text()) + 1))
+            self.resizeColumnsToContents()
 
     def reset_hook_count(self):
         for ptr in self.hooks:
             row = self.hooks[ptr].get_widget_row()
             self.item(row, 2).setText('0')
         self.resizeColumnsToContents()
+
+    def hit_onload(self, module, base):
+        if module in self.onloads:
+            row = self.onloads[module].get_widget_row()
+            self.item(row, 1).setText(base)
+            self.resizeColumnsToContents()
 
     def get_hooks(self):
         return self.hooks
@@ -118,6 +159,8 @@ class HooksPanel(QTableWidget):
             self.set_condition()
         elif event.key() == Qt.Key_L:
             self.set_logic()
+        elif event.key() == Qt.Key_O:
+            self.hook_on_load()
         else:
             # dispatch those to super
             super(HooksPanel, self).keyPressEvent(event)
