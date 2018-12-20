@@ -10,7 +10,7 @@ class ContextsPanel(QTableWidget):
         super().__init__(*__args)
         self.app = app
 
-        self.setHorizontalHeaderLabels(['tid', 'pc', 'sym'])
+        self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
         self.verticalHeader().hide()
         self.itemDoubleClicked.connect(self.on_context_item_double_click)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

@@ -1,16 +1,19 @@
 import json
 import threading
 
+from ui.backtrace_panel import BacktracePanel
 from ui.layout import Layout
 from ui.panel_contexts import ContextsPanel
-from ui.panel_main import MainPanel
 from ui.panel_hooks import HooksPanel
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 
+from ui.panel_log import LogPanel
+from ui.panel_memory import MemoryPanel
 from ui.panel_modules import ModulesPanel
 from ui.panel_ranges import RangesPanel
+from ui.panel_registers import RegistersPanel
 from ui.panel_vars import VarsPanel
 
 
@@ -26,7 +29,10 @@ class App(QWidget):
 
         self.modules_panel = None
         self.ranges_panel = None
-        self.main_panel = None
+        self.registers_panel = None
+        self.memory_panel = None
+        self.log_panel = None
+        self.backtrace_panel = None
         self.hooks_panel = None
         self.contexts_panel = None
         self.vars_panel = None
@@ -40,7 +46,7 @@ class App(QWidget):
         main_splitter = Layout(self)
         main_splitter.addWidget(self.build_left_column())
         main_splitter.addWidget(self.build_central_content())
-        main_splitter.setStretchFactor(0, 2)
+        main_splitter.setStretchFactor(0, 4)
         main_splitter.setStretchFactor(1, 5)
 
         box.addWidget(main_splitter)
@@ -68,8 +74,29 @@ class App(QWidget):
 
         splitter = QSplitter()
 
-        self.main_panel = MainPanel(self)
-        splitter.addWidget(self.main_panel)
+        main_panel = QSplitter(self)
+        main_panel.setOrientation(Qt.Vertical)
+
+        self.registers_panel = RegistersPanel(self, 0, 4)
+        main_panel.addWidget(self.registers_panel)
+
+        self.memory_panel = MemoryPanel(self)
+        main_panel.addWidget(self.memory_panel)
+
+        bottom_splitter = QSplitter()
+
+        self.log_panel = LogPanel()
+        bottom_splitter.addWidget(self.log_panel)
+
+        self.backtrace_panel = BacktracePanel()
+        bottom_splitter.addWidget(self.backtrace_panel)
+
+        main_panel.addWidget(bottom_splitter)
+
+        main_panel.setStretchFactor(0, 1)
+        main_panel.setStretchFactor(1, 3)
+        main_panel.setStretchFactor(2, 1)
+        splitter.addWidget(main_panel)
 
         right_splitter = QSplitter()
         right_splitter.setOrientation(Qt.Vertical)
@@ -83,7 +110,7 @@ class App(QWidget):
         splitter.addWidget(right_splitter)
 
         splitter.setStretchFactor(0, 6)
-        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(1, 4)
 
         layout.addWidget(splitter)
 
@@ -167,7 +194,7 @@ class App(QWidget):
 
             self.apply_context(data)
             if self.loading_library is not None:
-               self.loading_library = None
+                self.loading_library = None
         elif parts[0] == '2':
             print(parts)
             self.loading_library = parts[1]
@@ -186,7 +213,7 @@ class App(QWidget):
         return self.script
 
     def get_memory_panel(self):
-        return self.main_panel.get_memory_panel()
+        return self.memory_panel
 
     def get_pointer_size(self):
         return self.pointer_size
@@ -197,7 +224,7 @@ class App(QWidget):
         else:
             self.contexts_panel.setRowCount(0)
             self.contexts.clear()
-            self.main_panel.release_target()
+            self.registers_panel.setRowCount(0)
 
             self.get_script().exports.release()
 
@@ -213,7 +240,7 @@ class App(QWidget):
         if 'ranges' in context:
             self.set_ranges(context['ranges'])
         if 'context' in context:
-            self.main_panel.set_context(context['context'])
+            self.registers_panel.set_context(context)
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()

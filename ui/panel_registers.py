@@ -10,6 +10,7 @@ class RegistersPanel(QTableWidget):
 
         self.app = app
 
+        self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cellDoubleClicked.connect(self.register_cell_double_clicked)
