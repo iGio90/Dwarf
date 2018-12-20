@@ -12,6 +12,7 @@ class InputDialog(QDialog):
         self.input_widget = QLineEdit(self)
         if len(input_content) > 0:
             self.input_widget.setText(input_content)
+        self.input_widget.setMinimumWidth(350)
         layout.addWidget(self.input_widget)
 
         self.size_widget = None

@@ -1,5 +1,8 @@
+import binascii
+import re
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu
+from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu, QAction
 from capstone import *
 from hexdump import hexdump
 
@@ -39,37 +42,41 @@ class MemoryPanel(QTableWidget):
         menu = QMenu()
 
         if cell:
-            hex_view = menu.addAction("HEX\t(H)")
+            hex_view = QAction("HEX\t(H)")
             if self.view == VIEW_HEX:
                 hex_view.setEnabled(False)
+            hex_view.triggered.connect(self.set_view_type_hex)
             menu.addAction(hex_view)
 
             asm_view = menu.addAction("ASM\t(A)")
             if self.view == VIEW_ASM:
                 asm_view.setEnabled(False)
+            asm_view.triggered.connect(self.set_view_type_asm)
             menu.addAction(asm_view)
 
             sep1 = utils.get_qmenu_separator()
             menu.addAction(sep1)
 
         if isinstance(cell, ByteWidget):
-            data = menu.addAction("Show as data\t(D)")
-            menu.addAction(data)
+            # todo
+            # data = menu.addAction("Show as data\t(D)")
+            # menu.addAction(data)
 
-            follow = menu.addAction("Follow pointer\t(F)")
+            follow = QAction("Follow pointer\t(F)")
+            follow.triggered.connect(self.trigger_follow_pointer)
             menu.addAction(follow)
 
             sep2 = utils.get_qmenu_separator()
             menu.addAction(sep2)
 
-        mode = None
         if self.app.get_arch() == 'arm' and self.view == VIEW_ASM:
             if self.cs_mode == CS_MODE_ARM:
-                mode = menu.addAction("THUMB mode\t(O)")
-                menu.addAction(mode)
-            elif self.cs_mode == CS_MODE_THUMB:
-                mode = menu.addAction("ARM mode\t(O)")
-                menu.addAction(mode)
+                mode = QAction("THUMB mode\t(O)")
+            else:
+                mode = QAction("ARM mode\t(O)")
+
+            mode.triggered.connect(self.swap_arm_mode)
+            menu.addAction(mode)
 
             sep3 = utils.get_qmenu_separator()
             menu.addAction(sep3)
@@ -81,47 +88,27 @@ class MemoryPanel(QTableWidget):
                 # menu.addAction(patch)
                 pass
             elif self.view == VIEW_HEX:
-                wb = menu.addAction("Write bytes")
+                wb = QAction("Write bytes")
+                wb.triggered.connect(self.trigger_write_bytes)
                 menu.addAction(wb)
 
                 ws = menu.addAction("Write string")
+                ws.triggered.connect(self.trigger_write_string)
                 menu.addAction(ws)
 
                 sep4 = utils.get_qmenu_separator()
                 menu.addAction(sep4)
 
-        jump_to = menu.addAction("Jump to\t(G)")
+        jump_to = QAction("Jump to\t(G)")
+        jump_to.triggered.connect(self.trigger_jump_to)
+        menu.addAction(jump_to)
 
-        action = menu.exec_(self.mapToGlobal(pos))
-        if action == jump_to:
-            self.trigger_jump_to()
-        elif isinstance(cell, ByteWidget):
-            if action == follow:
-                self.trigger_follow_pointer()
-            elif action == hex_view:
-                self.set_view_type(VIEW_HEX)
-            elif action == asm_view:
-                self.set_view_type(VIEW_ASM)
-
-        if self.app.get_arch() == 'arm':
-            if mode is not None and action == mode:
-                self.swap_arm_mode()
+        menu.exec_(self.mapToGlobal(pos))
 
     def read_pointer(self, byte_widget):
-        row = byte_widget.row()
-        col = byte_widget.column()
-        data = []
-        for i in range(0, self.app.get_pointer_size()):
-            q = self.item(row, col)
-            if isinstance(q, ByteWidget):
-                data.append(q.get_value())
-                col += 1
-            else:
-                row += 1
-                col = 1
-        return int.from_bytes(bytes(data), 'little')
+        return self.app.get_script().exports.readptr(byte_widget.get_ptr())
 
-    def _set_data(self, start, data, jump_to=-1):
+    def _set_data(self, start, data, sub, jump_to=-1):
         if start % 2 == 1:
             start -= 1
         l = len(data)
@@ -130,7 +117,8 @@ class MemoryPanel(QTableWidget):
             'end': start + l,
             'len': l,
             'data': data,
-            'jt': jump_to
+            'jt': jump_to,
+            'sub': sub
         }
 
     def _set_asm_view(self):
@@ -215,6 +203,7 @@ class MemoryPanel(QTableWidget):
             for i in range(0, len(hex_line)):
                 qq = ByteWidget(hex_line[i])
                 qq.set_value(int(hex_line[i], 16))
+                qq.set_ptr(offset + i)
 
                 self.setItem(row, i + 1, qq)
                 if -1 < self.data['jt'] == offset + i:
@@ -251,10 +240,10 @@ class MemoryPanel(QTableWidget):
         try:
             range = self.app.get_script().exports.getrange(ptr)
         except:
-            return
+            return 0
 
         if len(range) == 0:
-            return
+            return 0
 
         base = int(range['base'], 16)
         if isinstance(ptr, str):
@@ -271,11 +260,13 @@ class MemoryPanel(QTableWidget):
         if end > base + range['size']:
             size = base + range['size'] - start
         data = self.app.get_script().exports.memread(start, size)
-        if len(data) == 0:
-            return
+        l = len(data)
+        if l == 0:
+            return 0
         self.view = VIEW_NONE
-        self._set_data(start, data, jump_to=offset)
+        self._set_data(start, data, sub_start, jump_to=offset)
         self.set_view_type(VIEW_HEX)
+        return l
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:
@@ -304,6 +295,44 @@ class MemoryPanel(QTableWidget):
     def trigger_follow_pointer(self):
         if len(self.selectedItems()) > 0 and isinstance(self.selectedItems()[0], ByteWidget):
             self.read_memory(self.read_pointer(self.selectedItems()[0]))
+
+    def trigger_write_bytes(self):
+        item = self.selectedItems()[0]
+        if item.column() == 0:
+            item = self.item(item.row(), 1)
+        if isinstance(item, ByteWidget):
+            ptr = item.get_ptr()
+            if ptr + 16 > self.data['end']:
+                if self.read_memory(ptr) == 0:
+                    return
+            mem = self.app.get_script().exports.memread(ptr, 16)
+            mem = binascii.hexlify(mem).decode('utf8')
+            mem = ' '.join(re.findall('.{1,2}', mem))
+            content = InputDialog.input(
+                hint='write bytes @%s' % hex(ptr),
+                input_content=mem)
+            if content[0]:
+                if self.app.get_script().exports.writebytes(ptr, content[1].replace(' ', '')):
+                    self.read_memory(ptr, self.data['len'], self.data['sub'])
+
+    def trigger_write_string(self):
+        item = self.selectedItems()[0]
+        if item.column() == 0:
+            item = self.item(item.row(), 1)
+        if isinstance(item, ByteWidget):
+            ptr = item.get_ptr()
+
+            content = InputDialog.input(
+                hint='write utf8 string @%s' % hex(ptr))
+            if content[0]:
+                if self.app.get_script().exports.writeutf8(ptr, content[1]):
+                    self.read_memory(ptr, self.data['len'], self.data['sub'])
+
+    def set_view_type_asm(self):
+        self.set_view_type(VIEW_ASM)
+
+    def set_view_type_hex(self):
+        self.set_view_type(VIEW_HEX)
 
     def set_view_type(self, view_type):
         if self.view == view_type or self.data is None:
