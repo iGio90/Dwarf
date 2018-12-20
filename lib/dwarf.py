@@ -33,7 +33,7 @@ class Dwarf(object):
                 sym = ''
                 if 'pc' in data['context']:
                     name = data['ptr']
-                    self.app.get_hooks_panel().increment_hook_count(int(data['ptr'], 16))
+                    self.app.get_hooks_panel().increment_hook_count(data['ptr'])
                     if 'moduleName' in data['symbol']:
                         sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:

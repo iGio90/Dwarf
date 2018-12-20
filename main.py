@@ -5,7 +5,6 @@ import qdarkstyle
 
 from PyQt5.QtWidgets import QApplication
 
-from lib.dwarf import Dwarf
 from ui.app import AppWindow
 
 if __name__ == '__main__':

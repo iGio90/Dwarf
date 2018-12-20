@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu
 
+from lib.variable import Variable
 from ui.dialog_input import InputDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -28,11 +29,10 @@ class VarsPanel(QTableWidget):
             remove_action = menu.addAction("Delete")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == add_action:
-            self.trigger_insert_var()
+            self.insert_var()
         if cell:
             if action == remove_action:
-                print(cell.row())
-                self.remove_var(cell.row())
+                self.find_and_remove_row(cell.row())
 
     def remove_var(self, row):
         k = self.item(row, 0).text()
@@ -40,16 +40,16 @@ class VarsPanel(QTableWidget):
         del self.vars[k]
         self.app.get_script().exports.addvar('%s = %s' % (k, 'null'))
 
-    def append_var(self, key, var, type):
+    def append_var(self, var):
         row = self.rowCount()
         self.insertRow(row)
-        q = NotEditableTableWidgetItem(key)
+        q = NotEditableTableWidgetItem(var.get_key())
         q.setForeground(Qt.gray)
         self.setItem(row, 0, q)
-        q = NotEditableTableWidgetItem(str(var))
-        if type == 0:
+        q = NotEditableTableWidgetItem(str(var.get_value()))
+        if var.get_type() == 0:
             q.setForeground(Qt.red)
-        elif type == 1:
+        elif var.get_type() == 1:
             q.setForeground(Qt.darkGreen)
         else:
             q.setForeground(Qt.darkCyan)
@@ -58,26 +58,38 @@ class VarsPanel(QTableWidget):
         self.resizeColumnsToContents()
         return row
 
-    def trigger_insert_var(self):
-        i = InputDialog().input('create global variable')
-        if i[0]:
-            content = i[1]
-            if content.startswith('var '):
-                content = content[4:]
-            parts = content.split('=')
-            if len(parts) == 2:
-                res = self.app.get_script().exports.addvar(content)
-                k = parts[0].replace(' ', '')
-                if res[0]:
-                    if k in self.vars:
-                        self.removeRow(self.vars[k][1])
-                    row = self.append_var(k, res[0], res[1])
-                    self.vars[k] = [
-                        res[0], row
-                    ]
-                elif k in self.vars:
-                    self.remove_var(self.vars[k][1])
+    def insert_var(self, input=None):
+        if input is None:
+            i = InputDialog().input('create global variable')
+            if not i[0]:
+                return
+            input = i[1]
+        if input.startswith('var '):
+            input = input[4:]
+        parts = input.split('=')
+        if len(parts) == 2:
+            res = self.app.get_script().exports.addvar(input)
+            k = parts[0].replace(' ', '')
+            if res[0]:
+                self.find_and_remove_row(k)
+                v = Variable(k, res[0], res[1], input)
+                self.vars[k] = v
+                self.append_var(v)
+            elif k in self.vars:
+                self.find_and_remove_row(k)
+
+    def find_and_remove_row(self, var_key):
+        if var_key not in self.vars:
+            return
+
+        del self.vars[var_key]
+        items = self.findItems(var_key, Qt.MatchExactly)
+        for item in items:
+            self.removeRow(item.row())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A:
-            self.trigger_insert_var()
+            self.insert_var()
+
+    def get_vars(self):
+        return self.vars

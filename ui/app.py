@@ -1,4 +1,3 @@
-import json
 import threading
 
 from PyQt5.QtGui import QIcon
@@ -30,8 +29,6 @@ class AppWindow(QMainWindow):
 
         self.setWindowTitle("Dwarf")
         self.setWindowIcon(QIcon('ui/secret.png'))
-
-        self.statusBar()
 
         self.menu = MenuBar(self)
         self.setCentralWidget(self.app)
@@ -201,3 +198,6 @@ class App(QWidget):
 
     def get_script(self):
         return self.app_window.get_dwarf().get_script()
+
+    def get_vars_panel(self):
+        return self.vars_panel

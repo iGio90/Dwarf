@@ -2,7 +2,6 @@ class Hook(object):
 
     def __init__(self):
         self.ptr = 0
-        self.widget_row = 0
         self.input = ''
         self.condition = ''
         self.logic = ''
@@ -19,9 +18,6 @@ class Hook(object):
     def set_logic(self, logic):
         self.logic = logic
 
-    def set_widget_row(self, row):
-        self.widget_row = row
-
     def get_ptr(self):
         if self.ptr == 1:
             # for java hooks, return class and method
@@ -36,6 +32,3 @@ class Hook(object):
 
     def get_logic(self):
         return self.logic
-
-    def get_widget_row(self):
-        return self.widget_row
