@@ -44,4 +44,10 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * export / import session 
 * tools and options
 * backtrace panel
+* quick api for memory writing and patching
+* code cleanup
 * license
+
+### Moar todo
+* Single thread unsleep
+* Debug Symbols list on x ranges
