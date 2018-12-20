@@ -1,3 +1,19 @@
+"""
+Dwarf - Copyright (C) 2018 iGio90
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>
+"""
 import threading
 
 from PyQt5.QtGui import QIcon
@@ -5,7 +21,6 @@ from PyQt5.QtGui import QIcon
 from lib.dwarf import Dwarf
 from ui.menu_bar import MenuBar
 from ui.panel_backtrace import BacktracePanel
-from ui.layout import Layout
 from ui.panel_contexts import ContextsPanel
 from ui.panel_hooks import HooksPanel
 
@@ -65,7 +80,7 @@ class App(QWidget):
     def setup_ui(self):
         box = QVBoxLayout()
 
-        main_splitter = Layout(self)
+        main_splitter = QSplitter(self)
         main_splitter.addWidget(self.build_left_column())
         main_splitter.addWidget(self.build_central_content())
         main_splitter.setStretchFactor(0, 4)

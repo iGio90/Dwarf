@@ -32,23 +32,27 @@ A good time to begin adding hooks in the top left panel.
 When you add an hook, an input dialog will pop. This input will be evaluated with frida api - aka - using frida api inside the input is possible (Module.findExportByName etc.)
 You can double click on the thread id (if multiple hooks got hit on different threads) to switch context.
 
-### Must have todo list:
-* ~~Java hooks~~
-* ~~Hooks logic~~
-* ~~Conditional hooks~~
-* ~~ASM view on memory panel~~
-* ~~ASM view options (i.e switch to thumb on arm32)~~
-* A way to highlight pointers and data in memory panel (i failed hard. like 10 seconds for 1024 bytes of data is far from a fuckyeah!)
-* ~~export / import session~~
-* ~~tools and options~~
-* ~~backtrace panel~~
-* ~~quick api for memory writing and patching~~
-* code cleanup
-* license
-
-### Moar todo
-* 'Show as data' on memory panel
+### todo
+* 'Show as data' in memory panel
 * Patch instructions on asm view
 * Unicorn integration
 * Single thread unsleep
 * Debug Symbols list on x ranges
+* Internal updates
+
+```
+Dwarf - Copyright (C) 2019 iGio90
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>
+```
