@@ -8,6 +8,11 @@ class MenuBar(object):
         self.app_window = app_window
         self.menu = app_window.menuBar()
 
+        self.build_target_menu()
+        self.build_hooks_menu()
+        self.build_session_menu()
+
+    def build_target_menu(self):
         resume_action = QAction("&Resume", self.app_window)
         resume_action.setShortcut("Ctrl+T")
         resume_action.setStatusTip('Resume application')
@@ -22,6 +27,26 @@ class MenuBar(object):
         target_menu.addAction(resume_action)
         target_menu.addAction(restart_action)
 
+    def build_hooks_menu(self):
+        hook_native_action = QAction("&Native", self.app_window)
+        hook_native_action.setShortcut("Ctrl+N")
+        hook_native_action.setStatusTip('Hook arbitrary instruction')
+        hook_native_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
+
+        hook_java_action = QAction("&Java", self.app_window)
+        hook_java_action.setShortcut("Ctrl+J")
+        hook_java_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
+
+        hook_onload_action = QAction("&Module load", self.app_window)
+        hook_onload_action.setShortcut("Ctrl+M")
+        hook_onload_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
+
+        hooks_menu = self.menu.addMenu('&Hooks')
+        hooks_menu.addAction(hook_native_action)
+        hooks_menu.addAction(hook_java_action)
+        hooks_menu.addAction(hook_onload_action)
+
+    def build_session_menu(self):
         session_load_action = QAction("&Load", self.app_window)
         session_load_action.setShortcut("Ctrl+O")
         session_load_action.setStatusTip('Load a session from file')

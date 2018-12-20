@@ -38,16 +38,7 @@ class MemoryPanel(QTableWidget):
         cell = self.itemAt(pos)
         menu = QMenu()
 
-        if isinstance(cell, ByteWidget):
-            data = menu.addAction("Show as data\t(D)")
-            menu.addAction(data)
-
-            follow = menu.addAction("Follow pointer\t(F)")
-            menu.addAction(follow)
-
-            sep1 = utils.get_qmenu_separator()
-            menu.addAction(sep1)
-
+        if cell:
             hex_view = menu.addAction("HEX\t(H)")
             if self.view == VIEW_HEX:
                 hex_view.setEnabled(False)
@@ -57,6 +48,16 @@ class MemoryPanel(QTableWidget):
             if self.view == VIEW_ASM:
                 asm_view.setEnabled(False)
             menu.addAction(asm_view)
+
+            sep1 = utils.get_qmenu_separator()
+            menu.addAction(sep1)
+
+        if isinstance(cell, ByteWidget):
+            data = menu.addAction("Show as data\t(D)")
+            menu.addAction(data)
+
+            follow = menu.addAction("Follow pointer\t(F)")
+            menu.addAction(follow)
 
             sep2 = utils.get_qmenu_separator()
             menu.addAction(sep2)
@@ -72,6 +73,22 @@ class MemoryPanel(QTableWidget):
 
             sep3 = utils.get_qmenu_separator()
             menu.addAction(sep3)
+
+        if cell:
+            if self.view == VIEW_ASM:
+                # todo
+                # patch = menu.addAction("Patch instruction")
+                # menu.addAction(patch)
+                pass
+            elif self.view == VIEW_HEX:
+                wb = menu.addAction("Write bytes")
+                menu.addAction(wb)
+
+                ws = menu.addAction("Write string")
+                menu.addAction(ws)
+
+                sep4 = utils.get_qmenu_separator()
+                menu.addAction(sep4)
 
         jump_to = menu.addAction("Jump to\t(G)")
 
@@ -149,7 +166,7 @@ class MemoryPanel(QTableWidget):
         md = Cs(arch, self.cs_mode)
         s_row = -1
 
-        for i in md.disasm(self.data['data'][self.asm_data_start:self.asm_data_start+64], self.asm_parse_start):
+        for i in md.disasm(self.data['data'][self.asm_data_start:self.asm_data_start + 64], self.asm_parse_start):
             row = self.rowCount()
             self.insertRow(row)
             if i.address == self.asm_parse_start:
@@ -232,7 +249,7 @@ class MemoryPanel(QTableWidget):
 
     def read_memory(self, ptr, size=1024, sub_start=512):
         try:
-            range = self.app.script.exports.getrange(ptr)
+            range = self.app.get_script().exports.getrange(ptr)
         except:
             return
 
@@ -253,7 +270,7 @@ class MemoryPanel(QTableWidget):
             start = base
         if end > base + range['size']:
             size = base + range['size'] - start
-        data = self.app.script.exports.memread(start, size)
+        data = self.app.get_script().exports.memread(start, size)
         if len(data) == 0:
             return
         self.view = VIEW_NONE

@@ -30,9 +30,10 @@ class AppWindow(QMainWindow):
         self.setWindowTitle("Dwarf")
         self.setWindowIcon(QIcon('ui/secret.png'))
 
-        self.menu = MenuBar(self)
         self.setCentralWidget(self.app)
         self.app.setup_ui()
+
+        self.menu = MenuBar(self)
 
     def get_app_instance(self):
         return self.app

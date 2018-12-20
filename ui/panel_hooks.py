@@ -28,9 +28,9 @@ class HooksPanel(QTableWidget):
 
     def show_menu(self, pos):
         menu = QMenu()
-        add_action = menu.addAction("Hook address\t(A)")
-        on_load_action = menu.addAction("Hook module load\t(O)")
-        hook_java_action = menu.addAction("Hook java\t(J)")
+        add_action = menu.addAction("Native\t(N)")
+        hook_java_action = menu.addAction("Java\t(J)")
+        on_load_action = menu.addAction("Module load\t(O)")
 
         item = self.itemAt(pos)
         if item is not None:
@@ -57,7 +57,7 @@ class HooksPanel(QTableWidget):
                 self.set_logic()
 
     def hook_native(self, input=None):
-        if input is None:
+        if input is None or not isinstance(input, str):
             input = InputDialog.input(hint='insert pointer')
             if not input[0]:
                 return
@@ -88,7 +88,7 @@ class HooksPanel(QTableWidget):
                 self.resizeRowToContents(1)
 
     def hook_onload(self, input=None):
-        if input is None:
+        if input is None or not isinstance(input, str):
             input = InputDialog.input(hint='insert module name')
             if not input[0]:
                 return
@@ -121,7 +121,7 @@ class HooksPanel(QTableWidget):
         self.resizeRowToContents(1)
 
     def hook_java(self, input=None):
-        if input is None:
+        if input is None or not isinstance(input, str):
             input = InputDialog.input(hint='com.package.class.[method or \'$new\']')
             if not input[1]:
                 return
@@ -189,7 +189,7 @@ class HooksPanel(QTableWidget):
             self.app.get_memory_panel().read_memory(self.item(row, c).text())
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A:
+        if event.key() == Qt.Key_N:
             self.hook_native()
         elif event.key() == Qt.Key_C:
             self.set_condition()
