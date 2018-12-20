@@ -43,7 +43,7 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * 'Show as data' on memory panel
 * export / import session 
 * tools and options
-* backtrace panel
+* ~~backtrace panel~~
 * quick api for memory writing and patching
 * code cleanup
 * license

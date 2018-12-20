@@ -35,7 +35,7 @@ class HooksPanel(QTableWidget):
         item = self.itemAt(pos)
         if item is not None:
             item = self.item(self.itemAt(pos).row(), 0)
-        is_hook_item = item is not None and isinstance(item, HookWidget) and item.get_hook_data().get_ptr() > 0
+        is_hook_item = item is not None and isinstance(item, HookWidget) and item.get_hook_data().ptr > 0
         if is_hook_item:
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)
@@ -60,7 +60,6 @@ class HooksPanel(QTableWidget):
         input = InputDialog.input(hint='insert pointer')
         if input[0]:
             ptr = int(self.app.get_script().exports.getpt(input[1]), 16)
-
             if ptr > 0:
                 hook = self.app.get_script().exports.hook(ptr)
                 if hook:
@@ -82,7 +81,8 @@ class HooksPanel(QTableWidget):
                     q = NotEditableTableWidgetItem('0')
                     q.setForeground(Qt.gray)
                     self.setItem(self.rowCount() - 1, 2, q)
-                    self.resizeColumnsToContents()
+                    self.resizeRowToContents(0)
+                    self.resizeRowToContents(1)
 
     def hook_on_load(self):
         input = InputDialog.input(hint='insert module name')
@@ -112,6 +112,8 @@ class HooksPanel(QTableWidget):
             self.setItem(self.rowCount() - 1, 2, q)
 
             self.app.get_script().exports.onload(module)
+            self.resizeRowToContents(0)
+            self.resizeRowToContents(1)
 
     def hook_java(self):
         input = InputDialog.input(hint='com.package.class.[method or \'$new\']')
@@ -138,7 +140,8 @@ class HooksPanel(QTableWidget):
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 2, q)
 
-        self.resizeColumnsToContents()
+        self.resizeRowToContents(0)
+        self.resizeRowToContents(1)
 
     def set_condition(self):
         if len(self.selectedItems()) < 1:
@@ -161,21 +164,19 @@ class HooksPanel(QTableWidget):
 
     def increment_hook_count(self, ptr):
         if ptr in self.hooks:
+            print(self.hooks)
             row = self.hooks[ptr].get_widget_row()
             self.item(row, 2).setText(str(int(self.item(row, 2).text()) + 1))
-            self.resizeColumnsToContents()
 
     def reset_hook_count(self):
         for ptr in self.hooks:
             row = self.hooks[ptr].get_widget_row()
             self.item(row, 2).setText('0')
-        self.resizeColumnsToContents()
 
     def hit_onload(self, module, base):
         if module in self.onloads:
             row = self.onloads[module].get_widget_row()
             self.item(row, 1).setText(base)
-            self.resizeColumnsToContents()
 
     def get_hooks(self):
         return self.hooks

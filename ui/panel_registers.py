@@ -33,7 +33,7 @@ class RegistersPanel(QTableWidget):
             q = NotEditableTableWidgetItem(reg)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
-            if context[reg] != None:
+            if context[reg] is not None:
                 q = NotEditableTableWidgetItem(str(context[reg]))
             else:
                 q = NotEditableTableWidgetItem('null')

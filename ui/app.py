@@ -1,7 +1,7 @@
 import json
 import threading
 
-from ui.backtrace_panel import BacktracePanel
+from ui.panel_backtrace import BacktracePanel
 from ui.layout import Layout
 from ui.panel_contexts import ContextsPanel
 from ui.panel_hooks import HooksPanel
@@ -171,8 +171,8 @@ class App(QWidget):
             if 'context' in data:
                 sym = ''
                 if 'pc' in data['context']:
-                    name = data['context']['pc']
-                    self.hooks_panel.increment_hook_count(int(data['context']['pc'], 16))
+                    name = data['ptr']
+                    self.hooks_panel.increment_hook_count(int(data['ptr'], 16))
                     if 'moduleName' in data['symbol']:
                         sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:
@@ -180,7 +180,7 @@ class App(QWidget):
                     self.hooks_panel.increment_hook_count(data['context']['classMethod'])
                 self.contexts_panel.add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
-                    self.main_panel.add_to_main_content_content('hook %s %s @thread := %d' % (
+                    self.log_panel.add_to_main_content_content('hook %s %s @thread := %d' % (
                         name, sym, data['tid']), scroll=True)
                 if len(self.contexts) > 1:
                     return
@@ -190,7 +190,7 @@ class App(QWidget):
                     self.pointer_size = 4
                 else:
                     self.pointer_size = 8
-                self.main_panel.add_to_main_content_content('injected into := ' + str(data['pid']))
+                self.log_panel.add_to_main_content_content('injected into := ' + str(data['pid']))
 
             self.apply_context(data)
             if self.loading_library is not None:
@@ -240,7 +240,9 @@ class App(QWidget):
         if 'ranges' in context:
             self.set_ranges(context['ranges'])
         if 'context' in context:
-            self.registers_panel.set_context(context)
+            self.registers_panel.set_context(context['context'])
+        if 'backtrace' in context:
+            self.backtrace_panel.set_backtrace(context['backtrace'])
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()

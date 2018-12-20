@@ -30,7 +30,8 @@ class ModulesPanel(QTableWidget):
             q = NotEditableTableWidgetItem(str(module['size']))
             self.setItem(i, 2, q)
             i += 1
-        self.resizeColumnToContents(1)
+        self.resizeRowToContents(0)
+        self.resizeRowToContents(1)
 
     def modules_cell_double_clicked(self, row, c):
         if c == 1:

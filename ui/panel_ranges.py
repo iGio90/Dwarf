@@ -33,7 +33,7 @@ class RangesPanel(QTableWidget):
             else:
                 self.setItem(i, 3, NotEditableTableWidgetItem(''))
             i += 1
-        self.resizeColumnsToContents()
+        self.resizeRowToContents(1)
 
     def ranges_cell_double_clicked(self, row, c):
         if c == 0:

@@ -23,7 +23,7 @@ class ContextsPanel(QTableWidget):
         self.setItem(row, 0, q)
         is_java = 'classMethod' in data['context']
         if not is_java:
-            q = NotEditableTableWidgetItem(data['context']['pc'])
+            q = NotEditableTableWidgetItem(data['ptr'])
         else:
             parts = data['context']['classMethod'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
@@ -40,7 +40,8 @@ class ContextsPanel(QTableWidget):
 
         q.setForeground(Qt.gray)
         self.setItem(row, 2, q)
-        self.resizeColumnsToContents()
+        self.resizeRowToContents(0)
+        self.resizeRowToContents(1)
 
     def on_context_item_double_click(self, item):
         self.app.apply_context(self.item(item.row(), 0).get_context())
