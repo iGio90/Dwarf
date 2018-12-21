@@ -15,18 +15,39 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import json
+import subprocess
 
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 
 
 class MenuBar(object):
     def __init__(self, app_window):
+        self.git_available = False
+
         self.app_window = app_window
         self.menu = app_window.menuBar()
 
+        self.build_dwarf_menu()
         self.build_target_menu()
         self.build_hooks_menu()
         self.build_session_menu()
+
+    def build_dwarf_menu(self):
+        # check git availability
+        result = subprocess.run(['git', '--version'], stdout=subprocess.PIPE).stdout.decode('utf8')
+        try:
+            if result.index('git version') >= 0:
+                self.git_available = True
+        except:
+            pass
+
+        update_action = QAction("&Update dwarf", self.app_window)
+        update_action.triggered.connect(self.handler_update)
+        update_action.setEnabled(self.git_available)
+
+        dwarf_menu = self.menu.addMenu('&Dwarf')
+        dwarf_menu.addAction(update_action)
 
     def build_target_menu(self):
         resume_action = QAction("&Resume", self.app_window)
@@ -121,3 +142,22 @@ class MenuBar(object):
             }
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))
+
+    def handler_update(self):
+        if self.git_available:
+            subprocess.run(['git', 'checkout', 'master'])
+            subprocess.run(['git', 'fetch', 'origin', 'master'])
+            master_hash = subprocess.run(['git', 'log', '-1', '--pretty=format:\"%H\"'], stdout=subprocess.PIPE).stdout.decode('utf8')
+            upstream_hash = subprocess.run(['git', 'log', '-1', 'FETCH_HEAD', '--pretty=format:\"%H\"'], stdout=subprocess.PIPE).stdout.decode('utf8')
+            if master_hash != upstream_hash:
+                msg = QMessageBox()
+                msg.setText("Updated to latest commit")
+                msg.setInformativeText('Restart dwarf to apply changes')
+                msg.setWindowTitle("Dwarf")
+                msg.setDetailedText(upstream_hash)
+            else:
+                msg = QMessageBox()
+                msg.setText("Dwarf is already updated to latest commit")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+
