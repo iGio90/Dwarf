@@ -15,6 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import binascii
+import pyperclip
 import re
 
 from PyQt5.QtCore import Qt
@@ -58,6 +59,14 @@ class MemoryPanel(QTableWidget):
         menu = QMenu()
 
         if cell:
+            if isinstance(cell, ByteWidget):
+                address = QAction(hex(cell.get_ptr()))
+                address.triggered.connect(self.trigger_copy_address)
+                menu.addAction(address)
+
+                address_sep = utils.get_qmenu_separator()
+                menu.addAction(address_sep)
+
             hex_view = QAction("HEX\t(H)")
             if self.view == VIEW_HEX:
                 hex_view.setEnabled(False)
@@ -77,6 +86,10 @@ class MemoryPanel(QTableWidget):
             # todo
             # data = menu.addAction("Show as data\t(D)")
             # menu.addAction(data)
+
+            hook_address = QAction("Hook address")
+            hook_address.triggered.connect(self.trigger_hook_address)
+            menu.addAction(hook_address)
 
             follow = QAction("Follow pointer\t(F)")
             follow.triggered.connect(self.trigger_follow_pointer)
@@ -302,15 +315,29 @@ class MemoryPanel(QTableWidget):
                     self.set_view_type(VIEW_HEX)
             super(MemoryPanel, self).keyPressEvent(event)
 
+    def trigger_copy_address(self):
+        item = self.selectedItems()[0]
+        if item.column() == 0:
+            item = self.item(item.row(), 1)
+        if isinstance(item, ByteWidget):
+            pyperclip.copy(hex(item.get_ptr()))
+
+    def trigger_follow_pointer(self):
+        if len(self.selectedItems()) > 0 and isinstance(self.selectedItems()[0], ByteWidget):
+            self.read_memory(self.read_pointer(self.selectedItems()[0]))
+
+    def trigger_hook_address(self):
+        item = self.selectedItems()[0]
+        if item.column() == 0:
+            item = self.item(item.row(), 1)
+        if isinstance(item, ByteWidget):
+            self.app.get_hooks_panel().hook_native(hex(item.get_ptr()))
+
     def trigger_jump_to(self):
         pt = InputDialog.input(hint='insert pointer', size=True)
         if pt[0]:
             ptr = self.app.get_script().exports.getpt(pt[1])
             self.read_memory(ptr, int(pt[2]), sub_start=int(pt[3]))
-
-    def trigger_follow_pointer(self):
-        if len(self.selectedItems()) > 0 and isinstance(self.selectedItems()[0], ByteWidget):
-            self.read_memory(self.read_pointer(self.selectedItems()[0]))
 
     def trigger_write_bytes(self):
         item = self.selectedItems()[0]
