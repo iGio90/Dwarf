@@ -15,7 +15,7 @@ Built on top of pyqt5 (compatible with all os's), frida and some terrible code.
 * Memory and disasm view (Powered by [capstone](https://github.com/aquynh/capstone))
 * Switch between hooks on different threads
 * Inputs are evaluated. Frida js api and dwarf shortcuts are usable in almost any input field
-* Variables creation
+* Javascript console evaluating frida and dwarf api
 * Save and load back hooks and variables
 
 ---

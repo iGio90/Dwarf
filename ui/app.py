@@ -32,7 +32,6 @@ from ui.panel_memory import MemoryPanel
 from ui.panel_modules import ModulesPanel
 from ui.panel_ranges import RangesPanel
 from ui.panel_registers import RegistersPanel
-from ui.panel_vars import VarsPanel
 
 
 class AppWindow(QMainWindow):
@@ -83,8 +82,8 @@ class App(QWidget):
         main_splitter = QSplitter(self)
         main_splitter.addWidget(self.build_left_column())
         main_splitter.addWidget(self.build_central_content())
-        main_splitter.setStretchFactor(0, 4)
-        main_splitter.setStretchFactor(1, 5)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 6)
 
         box.addWidget(main_splitter)
         self.setLayout(box)
@@ -99,8 +98,8 @@ class App(QWidget):
         self.contexts_panel = ContextsPanel(self, 0, 3)
         splitter.addWidget(self.contexts_panel)
 
-        self.vars_panel = VarsPanel(self)
-        splitter.addWidget(self.vars_panel)
+        self.backtrace_panel = BacktracePanel()
+        splitter.addWidget(self.backtrace_panel)
 
         return splitter
 
@@ -120,15 +119,8 @@ class App(QWidget):
         self.memory_panel = MemoryPanel(self)
         main_panel.addWidget(self.memory_panel)
 
-        bottom_splitter = QSplitter()
-
-        self.log_panel = LogPanel()
-        bottom_splitter.addWidget(self.log_panel)
-
-        self.backtrace_panel = BacktracePanel()
-        bottom_splitter.addWidget(self.backtrace_panel)
-
-        main_panel.addWidget(bottom_splitter)
+        self.log_panel = LogPanel(self)
+        main_panel.addWidget(self.log_panel)
 
         main_panel.setStretchFactor(0, 1)
         main_panel.setStretchFactor(1, 3)
@@ -146,8 +138,8 @@ class App(QWidget):
 
         splitter.addWidget(right_splitter)
 
-        splitter.setStretchFactor(0, 6)
-        splitter.setStretchFactor(1, 4)
+        splitter.setStretchFactor(0, 5)
+        splitter.setStretchFactor(1, 2)
 
         layout.addWidget(splitter)
 

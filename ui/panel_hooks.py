@@ -34,6 +34,8 @@ class HooksPanel(QTableWidget):
         self.onloads = {}
         self.java_hooks = {}
 
+        self.temporary_input = ''
+
         self.setHorizontalHeaderLabels(['input', 'address', 'hit'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -81,27 +83,29 @@ class HooksPanel(QTableWidget):
 
         ptr = int(self.app.get_script().exports.getpt(input), 16)
         if ptr > 0:
-            hook = self.app.get_script().exports.hook(ptr)
-            if hook:
-                self.insertRow(self.rowCount())
+            self.temporary_input = input
+            self.app.get_script().exports.hook(ptr)
 
-                h = Hook()
-                h.set_ptr(ptr)
-                h.set_input(input)
+    def hook_native_callback(self, ptr):
+        self.insertRow(self.rowCount())
 
-                self.hooks[ptr] = h
-                q = HookWidget(h.get_input())
-                q.set_hook_data(h)
-                q.setForeground(Qt.gray)
-                self.setItem(self.rowCount() - 1, 0, q)
-                q = NotEditableTableWidgetItem(hex(ptr))
-                q.setForeground(Qt.red)
-                self.setItem(self.rowCount() - 1, 1, q)
-                q = NotEditableTableWidgetItem('0')
-                q.setForeground(Qt.gray)
-                self.setItem(self.rowCount() - 1, 2, q)
-                self.resizeRowToContents(0)
-                self.resizeRowToContents(1)
+        h = Hook()
+        h.set_ptr(ptr)
+        h.set_input(self.temporary_input)
+
+        self.hooks[ptr] = h
+        q = HookWidget(h.get_input())
+        q.set_hook_data(h)
+        q.setForeground(Qt.gray)
+        self.setItem(self.rowCount() - 1, 0, q)
+        q = NotEditableTableWidgetItem(hex(ptr))
+        q.setForeground(Qt.red)
+        self.setItem(self.rowCount() - 1, 1, q)
+        q = NotEditableTableWidgetItem('0')
+        q.setForeground(Qt.gray)
+        self.setItem(self.rowCount() - 1, 2, q)
+        self.resizeRowToContents(0)
+        self.resizeRowToContents(1)
 
     def hook_onload(self, input=None):
         if input is None or not isinstance(input, str):

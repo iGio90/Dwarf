@@ -4,11 +4,11 @@
 * Unicorn integration
 * Single thread unsleep
 * Debug Symbols list on x ranges
-* js evaluation in hook context
-* js api for ide->script->ide
 * jump to ptr in registers panel
 
 ### done - backlog
+* ~~js evaluation in hook context~~
+* ~~js api for ide->script->ide~~
 * ~~Internal updates~~
 * ~~Arguments manipulation~~
 * ~~Java hooks~~

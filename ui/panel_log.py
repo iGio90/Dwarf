@@ -14,24 +14,53 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit
 
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
-class LogPanel(QListWidget):
-    def __init__(self):
-        super().__init__()
+class JsInput(QLineEdit):
+    def __init__(self, log_panel, *__args):
+        super().__init__(*__args)
+        self.log_panel = log_panel
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            self.log_panel.add_to_main_content_content(
+                str(self.log_panel.app.get_script().exports.evaluate(self.text())),
+                scroll=True)
+            self.setText('')
+        else:
+            return super().keyPressEvent(event)
+
+
+class LogPanel(QWidget):
+    def __init__(self, app, *args, **kwargs):
+        super().__init__(None, *args, **kwargs)
+
+        self.app = app
+
+        box = QVBoxLayout()
+        self.list = QListWidget()
+        box.addWidget(self.list)
+
+        self.input = JsInput(self)
+        self.input.setPlaceholderText('$>')
+
+        box.addWidget(self.input)
+
+        self.setLayout(box)
 
     def add_to_main_content_content(self, what, clear=False, scroll=False):
         if clear:
-            self.clear()
+            self.list.clear()
 
         if isinstance(what, QListWidgetItem):
-            self.addItem(what)
+            self.list.addItem(what)
         else:
             item = NotEditableListWidgetItem(what)
-            self.addItem(item)
+            self.list.addItem(item)
 
         if scroll:
-            self.scrollToBottom()
+            self.list.scrollToBottom()
