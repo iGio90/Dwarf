@@ -153,11 +153,11 @@ class HooksPanel(QTableWidget):
 
         parts = class_method.split('.')
         self.java_hooks[class_method] = h
-        q = HookWidget(parts[len(parts) - 1])
+        q = HookWidget('.'.join(parts[:len(parts)-1]))
         q.set_hook_data(h)
         q.setForeground(Qt.darkYellow)
         self.setItem(self.rowCount() - 1, 0, q)
-        q = NotEditableTableWidgetItem('.'.join(parts[:len(parts)-1]))
+        q = NotEditableTableWidgetItem(parts[len(parts) - 1])
         self.setItem(self.rowCount() - 1, 1, q)
         q = NotEditableTableWidgetItem('0')
         q.setForeground(Qt.gray)
