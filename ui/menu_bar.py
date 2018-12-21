@@ -116,8 +116,6 @@ class MenuBar(object):
                     self.app_window.get_app_instance().get_hooks_panel().hook_java(hook)
                 for hook in session['onloads']:
                     self.app_window.get_app_instance().get_hooks_panel().hook_onload(hook)
-                for var in session['vars']:
-                    self.app_window.get_app_instance().get_vars_panel().insert_var(var)
 
     def handler_session_save(self):
         r = QFileDialog.getSaveFileName()
@@ -131,14 +129,10 @@ class MenuBar(object):
             onload_hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_onloads():
                 onload_hooks.append(self.app_window.get_app_instance().get_hooks_panel().get_onloads()[hook].get_input())
-            vars = []
-            for var in self.app_window.get_app_instance().get_vars_panel().get_vars():
-                vars.append(self.app_window.get_app_instance().get_vars_panel().get_vars()[var].get_input())
             session = {
                 'natives': hooks,
                 'java': java_hooks,
                 'onloads': onload_hooks,
-                'vars': vars
             }
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))

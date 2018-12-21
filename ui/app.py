@@ -72,7 +72,6 @@ class App(QWidget):
         self.backtrace_panel = None
         self.hooks_panel = None
         self.contexts_panel = None
-        self.vars_panel = None
 
         self.contexts = []
 
@@ -209,6 +208,3 @@ class App(QWidget):
 
     def get_script(self):
         return self.app_window.get_dwarf().get_script()
-
-    def get_vars_panel(self):
-        return self.vars_panel
