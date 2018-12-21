@@ -38,7 +38,23 @@ You can double click on the thread id (if multiple hooks got hit on different th
 * Unicorn integration
 * Single thread unsleep
 * Debug Symbols list on x ranges
-* Internal updates
+* js evaluation in hook context
+* js api for ide->script->ide
+* jump to ptr in registers panel
+
+### done - backlog
+* ~~Internal updates~~
+* ~~Arguments manipulation~~
+* ~~Java hooks~~
+* ~~Hooks logic~~
+* ~~Conditional hooks~~
+* ~~ASM view on memory panel~~
+* ~~ASM view options (i.e switch to thumb on arm32)~~
+* ~~export / import session~~
+* ~~tools and options~~
+* ~~backtrace panel~~
+* ~~quick api for memory writing and patching~~
+* ~~license~~
 
 ```
 Dwarf - Copyright (C) 2019 iGio90

@@ -53,8 +53,8 @@ class Dwarf(object):
                     if 'moduleName' in data['symbol']:
                         sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:
-                    name = data['context']['classMethod']
-                    self.app.get_hooks_panel().increment_hook_count(data['context']['classMethod'])
+                    name = data['ptr']
+                    self.app.get_hooks_panel().increment_hook_count(data['ptr'])
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
                     self.app.get_log_panel().add_to_main_content_content('hook %s %s @thread := %d' % (
@@ -88,3 +88,6 @@ class Dwarf(object):
 
     def get_script(self):
         return self.script
+
+    def get_loading_library(self):
+        return self.loading_library

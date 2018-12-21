@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -29,34 +29,45 @@ class RegistersPanel(QTableWidget):
         self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.cellDoubleClicked.connect(self.register_cell_double_clicked)
 
-    def set_context(self, context):
+        self.context_ptr = ''
+
+    def set_context(self, ptr, is_java, context):
         self.setRowCount(0)
         i = 0
-        is_java = 'classMethod' in context
+
+        self.context_ptr = ptr
+        if self.app.get_dwarf().get_loading_library() is not None:
+            self.context_ptr = self.app.get_dwarf().get_loading_library()
+
         if is_java:
             self.setColumnCount(2)
             self.setHorizontalHeaderLabels(['argument', 'value'])
+            self.cellChanged.connect(self.java_cell_changed)
         else:
             self.setColumnCount(4)
             self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
+            self.cellChanged.connect(self.native_cell_changed)
         for reg in context:
-            if reg == 'classMethod':
-                continue
-
             self.insertRow(i)
+
             q = NotEditableTableWidgetItem(reg)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
+
             if context[reg] is not None:
-                q = NotEditableTableWidgetItem(str(context[reg]))
+                q = QTableWidgetItem(str(context[reg]))
             else:
-                q = NotEditableTableWidgetItem('null')
-            q.setForeground(Qt.red)
+                q = QTableWidgetItem('null')
+                q.setForeground(Qt.gray)
+
             self.setItem(i, 1, q)
             if is_java:
                 continue
+
+            if self.app.get_script().exports.isvalidptr(context[reg]):
+                q.setForeground(Qt.red)
+
             q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
             q.setForeground(Qt.darkCyan)
             self.setItem(i, 2, q)
@@ -74,6 +85,48 @@ class RegistersPanel(QTableWidget):
             self.resizeColumnsToContents()
             i += 1
 
-    def register_cell_double_clicked(self, row, c):
-        if c == 1:
-            self.app.get_memory_panel().read_memory(self.item(row, c).text())
+    def native_cell_changed(self, row, col):
+        self.cellChanged.disconnect(self.native_cell_changed)
+        key = self.item(row, 0).text()
+        new_val = self.item(row, col).text()
+        val = self.app.get_script().exports.setcontextval(self.context_ptr, key, new_val)
+
+        self.item(row, col).setText(val)
+
+        if self.app.get_script().exports.isvalidptr(val):
+            self.item(row, col).setForeground(Qt.red)
+        else:
+            self.item(row, col).setForeground(Qt.white)
+
+        self.item(row, 2).setText(str(int(val, 16)))
+
+        data = self.app.get_script().exports.ts(val)
+
+        self.item(row, 3).setText(str(data[1]))
+        if data[0] == 0:
+            self.item(row, 3).setForeground(Qt.darkGreen)
+        elif data[0] == 1:
+            self.item(row, 3).setForeground(Qt.red)
+        elif data[0] == 2:
+            self.item(row, 3).setForeground(Qt.white)
+        else:
+            self.item(row, 3).setForeground(Qt.darkGray)
+
+        self.cellChanged.connect(self.native_cell_changed)
+
+    def java_cell_changed(self, row, col):
+        self.cellChanged.disconnect(self.java_cell_changed)
+        key = self.item(row, 0).text()
+        new_val = self.item(row, col).text()
+
+        val = self.app.get_script().exports.setcontextval(self.context_ptr, key, new_val)
+
+        if val is None:
+            val = 'null'
+            self.item(row, col).setForeground(Qt.gray)
+        else:
+            self.item(row, col).setForeground(Qt.white)
+
+        self.item(row, col).setText(val)
+        self.cellChanged.connect(self.java_cell_changed)
+

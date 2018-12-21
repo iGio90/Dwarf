@@ -192,13 +192,15 @@ class HooksPanel(QTableWidget):
 
     def reset_hook_count(self):
         for ptr in self.hooks:
-            row = self.hooks[ptr].get_widget_row()
-            self.item(row, 2).setText('0')
+            items = self.findItems(ptr, Qt.MatchExactly)
+            for item in items:
+                self.item(item.row(), 2).setText('0')
 
     def hit_onload(self, module, base):
         if module in self.onloads:
-            row = self.onloads[module].get_widget_row()
-            self.item(row, 1).setText(base)
+            items = self.findItems(module, Qt.MatchExactly)
+            for item in items:
+                self.item(item.row(), 1).setText(base)
 
     def hooks_cell_double_clicked(self, row, c):
         if c == 1:

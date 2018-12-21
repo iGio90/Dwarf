@@ -37,11 +37,11 @@ class ContextsPanel(QTableWidget):
         q = ContextItem(data, str(data['tid']))
         q.setForeground(Qt.darkCyan)
         self.setItem(row, 0, q)
-        is_java = 'classMethod' in data['context']
+        is_java = data['is_java']
         if not is_java:
             q = NotEditableTableWidgetItem(data['ptr'])
         else:
-            parts = data['context']['classMethod'].split('.')
+            parts = data['ptr'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
         q.setForeground(Qt.red)
         self.setItem(row, 1, q)

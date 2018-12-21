@@ -181,7 +181,7 @@ class App(QWidget):
         if 'ranges' in context:
             self.set_ranges(context['ranges'])
         if 'context' in context:
-            self.registers_panel.set_context(context['context'])
+            self.registers_panel.set_context(context['ptr'], context['is_java'], context['context'])
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
 
@@ -196,6 +196,9 @@ class App(QWidget):
 
     def get_contexts_panel(self):
         return self.contexts_panel
+
+    def get_dwarf(self):
+        return self.app_window.get_dwarf()
 
     def get_hooks_panel(self):
         return self.hooks_panel
