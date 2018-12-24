@@ -80,7 +80,7 @@ class Dwarf(object):
         elif parts[0] == '3':
             self.app.get_hooks_panel().hook_java_callback(parts[1])
         elif parts[0] == '4':
-            self.app.get_hooks_panel().hook_native_callback(parts[1])
+            self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
         else:
             print(what)
 

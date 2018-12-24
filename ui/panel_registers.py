@@ -15,9 +15,10 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QMenu
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_native_register import NativeRegisterWidget
 
 
 class RegistersPanel(QTableWidget):
@@ -30,7 +31,21 @@ class RegistersPanel(QTableWidget):
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_menu)
+
         self.context_ptr = ''
+
+    def show_menu(self, pos):
+        menu = QMenu()
+
+        item = self.itemAt(pos)
+        if item is not None and isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
+            jump_to_ptr = menu.addAction("Jump to pointer")
+
+            action = menu.exec_(self.mapToGlobal(pos))
+            if action == jump_to_ptr:
+                self.app.get_memory_panel().read_memory(item.value)
 
     def set_context(self, ptr, is_java, context):
         self.setRowCount(0)
@@ -56,7 +71,10 @@ class RegistersPanel(QTableWidget):
             self.setItem(i, 0, q)
 
             if context[reg] is not None:
-                q = QTableWidgetItem(str(context[reg]))
+                if is_java:
+                    q = QTableWidgetItem(str(context[reg]))
+                else:
+                    q = NativeRegisterWidget(self.app, reg, context[reg])
             else:
                 q = QTableWidgetItem('null')
                 q.setForeground(Qt.gray)
@@ -64,9 +82,6 @@ class RegistersPanel(QTableWidget):
             self.setItem(i, 1, q)
             if is_java:
                 continue
-
-            if self.app.get_script().exports.isvalidptr(context[reg]):
-                q.setForeground(Qt.red)
 
             q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
             q.setForeground(Qt.darkCyan)
