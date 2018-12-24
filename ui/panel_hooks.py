@@ -35,6 +35,8 @@ class HooksPanel(QTableWidget):
         self.java_hooks = {}
 
         self.temporary_input = ''
+        self.native_pending_args = None
+        self.java_pending_args = None
 
         self.setHorizontalHeaderLabels(['input', 'address', 'hit'])
         self.verticalHeader().hide()
@@ -74,7 +76,7 @@ class HooksPanel(QTableWidget):
             elif action == logic_action:
                 self.set_logic()
 
-    def hook_native(self, input=None):
+    def hook_native(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
             input = InputDialog.input(hint='insert pointer')
             if not input[0]:
@@ -84,6 +86,7 @@ class HooksPanel(QTableWidget):
         ptr = int(self.app.get_script().exports.getpt(input), 16)
         if ptr > 0:
             self.temporary_input = input
+            self.native_pending_args = pending_args
             self.app.get_script().exports.hook(ptr)
 
     def hook_native_callback(self, ptr):
@@ -92,6 +95,9 @@ class HooksPanel(QTableWidget):
         h = Hook()
         h.set_ptr(ptr)
         h.set_input(self.temporary_input)
+        if self.native_pending_args:
+            h.set_condition(self.native_pending_args['condition'])
+            h.set_logic(self.native_pending_args['logic'])
 
         self.hooks[ptr] = h
         q = HookWidget(h.get_input())
@@ -140,12 +146,13 @@ class HooksPanel(QTableWidget):
         self.resizeRowToContents(0)
         self.resizeRowToContents(1)
 
-    def hook_java(self, input=None):
+    def hook_java(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
             input = InputDialog.input(hint='com.package.class.[method or \'$new\']')
             if not input[1]:
                 return
             input = input[1]
+        self.java_pending_args = pending_args
         self.app.get_script().exports.jmh(input)
 
     def hook_java_callback(self, class_method):
@@ -154,6 +161,9 @@ class HooksPanel(QTableWidget):
         h = Hook()
         h.set_ptr(1)
         h.set_input(class_method)
+        if self.java_pending_args:
+            h.set_condition(self.java_pending_args['condition'])
+            h.set_logic(self.java_pending_args['logic'])
 
         parts = class_method.split('.')
         self.java_hooks[class_method] = h
@@ -184,10 +194,10 @@ class HooksPanel(QTableWidget):
         if len(self.selectedItems()) < 1:
             return
         item = self.item(self.selectedItems()[0].row(), 0)
-        inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_condition())
+        inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_logic())
         if inp[0]:
             if self.app.get_script().exports.hooklogic(item.get_hook_data().get_ptr(), inp[1]):
-                item.get_hook_data().set_condition(inp[1])
+                item.get_hook_data().set_logic(inp[1])
 
     def increment_hook_count(self, ptr):
         items = self.findItems(ptr, Qt.MatchExactly)

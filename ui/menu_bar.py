@@ -17,7 +17,6 @@ Dwarf - Copyright (C) 2018 iGio90
 import json
 import subprocess
 
-from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 
 
@@ -111,9 +110,9 @@ class MenuBar(object):
                 session = json.load(f)
                 self.app_window.get_app_instance().get_hooks_panel()
                 for hook in session['natives']:
-                    self.app_window.get_app_instance().get_hooks_panel().hook_native(hook)
+                    self.app_window.get_app_instance().get_hooks_panel().hook_native(hook['input'], hook)
                 for hook in session['java']:
-                    self.app_window.get_app_instance().get_hooks_panel().hook_java(hook)
+                    self.app_window.get_app_instance().get_hooks_panel().hook_java(hook['input'], hook)
                 for hook in session['onloads']:
                     self.app_window.get_app_instance().get_hooks_panel().hook_onload(hook)
 
@@ -122,10 +121,20 @@ class MenuBar(object):
         if len(r) > 0 and len(r[0]) > 0:
             hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_hooks():
-                hooks.append(self.app_window.get_app_instance().get_hooks_panel().get_hooks()[hook].get_input())
+                h = self.app_window.get_app_instance().get_hooks_panel().get_hooks()[hook]
+                hooks.append({
+                    'input': h.get_input(),
+                    'condition': h.get_condition(),
+                    'logic': h.get_logic()
+                })
             java_hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_java_hooks():
-                java_hooks.append(self.app_window.get_app_instance().get_hooks_panel().get_java_hooks()[hook].get_input())
+                h = self.app_window.get_app_instance().get_hooks_panel().get_java_hooks()[hook]
+                java_hooks.append({
+                    'input': h.get_input(),
+                    'condition': h.get_condition(),
+                    'logic': h.get_logic()
+                })
             onload_hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_onloads():
                 onload_hooks.append(self.app_window.get_app_instance().get_hooks_panel().get_onloads()[hook].get_input())
