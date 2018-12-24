@@ -39,9 +39,9 @@ class Dwarf(object):
             print(what)
             return
 
-        if parts[0] == '0':
+        if parts[0] == 'log':
             self.app.get_log_panel().add_to_main_content_content(parts[1], scroll=True)
-        elif parts[0] == '1':
+        elif parts[0] == 'set_context':
             data = json.loads(parts[1])
             self.app.get_contexts().append(data)
 
@@ -72,14 +72,14 @@ class Dwarf(object):
             self.app.apply_context(data)
             if self.loading_library is not None:
                 self.loading_library = None
-        elif parts[0] == '2':
+        elif parts[0] == 'onload_callback':
             self.loading_library = parts[1]
             self.app.get_log_panel().add_to_main_content_content('hook onload %s @thread := %s' % (
                 parts[1], parts[3]), scroll=True)
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
-        elif parts[0] == '3':
+        elif parts[0] == 'hook_java_callback':
             self.app.get_hooks_panel().hook_java_callback(parts[1])
-        elif parts[0] == '4':
+        elif parts[0] == 'hook_native_callback':
             self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
         else:
             print(what)
