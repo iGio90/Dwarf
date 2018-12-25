@@ -123,6 +123,9 @@ class HooksPanel(QTableWidget):
         if not input.endswith('.so'):
             input += '.so'
 
+        if input in self.onloads:
+            return
+
         self.insertRow(self.rowCount())
 
         h = Hook()
