@@ -81,6 +81,8 @@ class Dwarf(object):
             self.app.get_hooks_panel().hook_java_callback(parts[1])
         elif parts[0] == 'hook_native_callback':
             self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
+        elif parts[0] == 'update_modules':
+            self.app.apply_context({'modules': json.loads(parts[1])})
         else:
             print(what)
 

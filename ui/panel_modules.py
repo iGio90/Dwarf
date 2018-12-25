@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QTableWidget, QMenu
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -31,6 +31,17 @@ class ModulesPanel(QTableWidget):
         self.setHorizontalHeaderLabels(['name', 'base', 'size'])
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cellDoubleClicked.connect(self.modules_cell_double_clicked)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_menu)
+
+    def show_menu(self, pos):
+        menu = QMenu()
+
+        action_refresh = menu.addAction("Refresh\t(R)")
+
+        action = menu.exec_(self.mapToGlobal(pos))
+        if action == action_refresh:
+            self.app.get_script().exports.updtmdl()
 
     def set_modules(self, modules):
         self.setRowCount(0)
@@ -52,3 +63,10 @@ class ModulesPanel(QTableWidget):
     def modules_cell_double_clicked(self, row, c):
         if c == 1:
             self.app.get_memory_panel().read_memory(self.item(row, c).text())
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_R:
+            self.app.get_script().exports.updtmdl()
+        else:
+            # dispatch those to super
+            super(ModulesPanel, self).keyPressEvent(event)
