@@ -14,17 +14,14 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import subprocess
-
-from PyQt5.QtWidgets import QAction
+from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
-def get_qmenu_separator():
-    separator = QAction("--------------------")
-    separator.setEnabled(False)
-    return separator
+class AndroidPackageWidget(NotEditableListWidgetItem):
+    def __init__(self, android_package):
+        super().__init__(android_package.package)
 
+        self.android_package = android_package
 
-def do_shell_command(cmd):
-    result = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE)
-    return result.stdout.decode('utf8')
+    def get_android_package(self):
+        return self.android_package

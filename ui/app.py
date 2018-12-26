@@ -18,6 +18,7 @@ import threading
 
 from PyQt5.QtGui import QIcon
 
+from lib.adb import Adb
 from lib.dwarf import Dwarf
 from ui.menu_bar import MenuBar
 from ui.panel_backtrace import BacktracePanel
@@ -40,6 +41,7 @@ class AppWindow(QMainWindow):
 
         self.app = App(self)
         self.dwarf = Dwarf(self, script)
+        self.adb = Adb(self.app)
 
         self.setWindowTitle("Dwarf")
         self.setWindowIcon(QIcon('ui/secret.png'))
@@ -48,6 +50,9 @@ class AppWindow(QMainWindow):
         self.app.setup_ui()
 
         self.menu = MenuBar(self)
+
+    def get_adb(self):
+        return self.adb
 
     def get_app_instance(self):
         return self.app

@@ -19,10 +19,12 @@ import subprocess
 from pprint import pprint
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QMenu
 
 from ui.dialog_input import InputDialog
+from ui.dialog_list import ListDialog
 from ui.dialog_table import TableDialog
+from ui.widget_android_package import AndroidPackageWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -34,6 +36,7 @@ class MenuBar(object):
         self.menu = app_window.menuBar()
 
         self.build_dwarf_menu()
+        self.build_device_menu()
         self.build_target_menu()
         self.build_hooks_menu()
         self.build_find_menu()
@@ -54,6 +57,13 @@ class MenuBar(object):
 
         dwarf_menu = self.menu.addMenu('&Dwarf')
         dwarf_menu.addAction(update_action)
+
+    def build_device_menu(self):
+        packages_action = QAction("&Save APK", self.app_window)
+        packages_action.triggered.connect(self.handler_packages)
+
+        device_menu = self.menu.addMenu('&Device')
+        device_menu.addAction(packages_action)
 
     def build_target_menu(self):
         resume_action = QAction("&Resume", self.app_window)
@@ -124,6 +134,17 @@ class MenuBar(object):
                     data.append(sym)
                 TableDialog().build_and_show(self.build_symbol_table, data)
 
+    def handler_packages(self):
+        packages = self.app_window.get_adb().list_packages()
+        accept, items = ListDialog.build_and_show(
+            self.build_packages_list, packages, double_click_to_accept=True)
+        if accept:
+            if len(items) > 0:
+                path = items[0].get_android_package().path
+                r = QFileDialog.getSaveFileName()
+                if len(r) > 0 and len(r[0]) > 0:
+                    self.app_window.get_adb().pull(path, r[0])
+
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
 
@@ -166,7 +187,8 @@ class MenuBar(object):
                 })
             onload_hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_onloads():
-                onload_hooks.append(self.app_window.get_app_instance().get_hooks_panel().get_onloads()[hook].get_input())
+                onload_hooks.append(
+                    self.app_window.get_app_instance().get_hooks_panel().get_onloads()[hook].get_input())
             session = {
                 'natives': hooks,
                 'java': java_hooks,
@@ -179,8 +201,10 @@ class MenuBar(object):
         if self.git_available:
             subprocess.run(['git', 'checkout', 'master'])
             subprocess.run(['git', 'fetch', 'origin', 'master'])
-            master_hash = subprocess.run(['git', 'log', '-1', '--pretty=format:\"%H\"'], stdout=subprocess.PIPE).stdout.decode('utf8')
-            upstream_hash = subprocess.run(['git', 'log', '-1', 'FETCH_HEAD', '--pretty=format:\"%H\"'], stdout=subprocess.PIPE).stdout.decode('utf8')
+            master_hash = subprocess.run(['git', 'log', '-1', '--pretty=format:\"%H\"'],
+                                         stdout=subprocess.PIPE).stdout.decode('utf8')
+            upstream_hash = subprocess.run(['git', 'log', '-1', 'FETCH_HEAD', '--pretty=format:\"%H\"'],
+                                           stdout=subprocess.PIPE).stdout.decode('utf8')
             if master_hash != upstream_hash:
                 msg = QMessageBox()
                 msg.setText("Updated to latest commit")
@@ -192,6 +216,17 @@ class MenuBar(object):
                 msg.setText("Dwarf is already updated to latest commit")
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
+
+    #
+    #
+    # Just a separator
+    #
+    #
+
+    def build_packages_list(self, list, data):
+        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
+        for ap in sorted(data, key=lambda x: x.package):
+            list.addItem(AndroidPackageWidget(ap))
 
     def build_symbol_table(self, table, data):
         table.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))

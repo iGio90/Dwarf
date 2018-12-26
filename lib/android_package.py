@@ -14,17 +14,9 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import subprocess
-
-from PyQt5.QtWidgets import QAction
 
 
-def get_qmenu_separator():
-    separator = QAction("--------------------")
-    separator.setEnabled(False)
-    return separator
-
-
-def do_shell_command(cmd):
-    result = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE)
-    return result.stdout.decode('utf8')
+class AndroidPackage(object):
+    def __init__(self):
+        self.path = ''
+        self.package = ''
