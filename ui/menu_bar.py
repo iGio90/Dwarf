@@ -122,6 +122,8 @@ class MenuBar(object):
             hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_hooks():
                 h = self.app_window.get_app_instance().get_hooks_panel().get_hooks()[hook]
+                if h.get_input is None or len(h.get_input) == 0:
+                    continue
                 hooks.append({
                     'input': h.get_input(),
                     'condition': h.get_condition(),

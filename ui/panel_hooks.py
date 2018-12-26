@@ -190,7 +190,10 @@ class HooksPanel(QTableWidget):
 
         inp = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
         if inp[0]:
-            if self.app.dwarf_api('setHookCondition', [item.get_hook_data().get_ptr(), inp[1]]):
+            what = item.get_hook_data().get_ptr()
+            if what == 0:
+                what = item.get_hook_data().get_input()
+            if self.app.dwarf_api('setHookCondition', [what, inp[1]]):
                 item.get_hook_data().set_condition(inp[1])
 
     def set_logic(self):
@@ -198,9 +201,12 @@ class HooksPanel(QTableWidget):
             return
         item = self.item(self.selectedItems()[0].row(), 0)
         inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_logic())
-        if inp[0]:
-            if self.app.dwarf_api('setHookLogic', [item.get_hook_data().get_ptr(), inp[1]]):
-                item.get_hook_data().set_logic(inp[1])
+
+        what = item.get_hook_data().get_ptr()
+        if what == 0:
+            what = item.get_hook_data().get_input()
+        if self.app.dwarf_api('setHookLogic', [what, inp[1]]):
+            item.get_hook_data().set_logic(inp[1])
 
     def increment_hook_count(self, ptr):
         items = self.findItems(ptr, Qt.MatchExactly)
