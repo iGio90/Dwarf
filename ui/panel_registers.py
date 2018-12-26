@@ -86,7 +86,7 @@ class RegistersPanel(QTableWidget):
             q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
             q.setForeground(Qt.darkCyan)
             self.setItem(i, 2, q)
-            data = self.app.get_script().exports.ts(context[reg])
+            data = self.app.dwarf_api('getAddressTs', context[reg])
             q = NotEditableTableWidgetItem(str(data[1]))
             if data[0] == 0:
                 q.setForeground(Qt.darkGreen)
@@ -104,18 +104,18 @@ class RegistersPanel(QTableWidget):
         self.cellChanged.disconnect(self.native_cell_changed)
         key = self.item(row, 0).text()
         new_val = self.item(row, col).text()
-        val = self.app.get_script().exports.setcontextval(self.context_ptr, key, new_val)
+        val = self.app.dwarf_api('setContextValue', [self.context_ptr, key, new_val])
 
         self.item(row, col).setText(val)
 
-        if self.app.get_script().exports.isvalidptr(val):
+        if self.app.dwarf_api('isValidPointer', val):
             self.item(row, col).setForeground(Qt.red)
         else:
             self.item(row, col).setForeground(Qt.white)
 
         self.item(row, 2).setText(str(int(val, 16)))
 
-        data = self.app.get_script().exports.ts(val)
+        data = self.app.dwarf_api('getAddressTs', val)
 
         self.item(row, 3).setText(str(data[1]))
         if data[0] == 0:
@@ -134,7 +134,7 @@ class RegistersPanel(QTableWidget):
         key = self.item(row, 0).text()
         new_val = self.item(row, col).text()
 
-        val = self.app.get_script().exports.setcontextval(self.context_ptr, key, new_val)
+        val = self.app.dwarf_api('setContextValue', [self.context_ptr, key, new_val])
 
         if val is None:
             val = 'null'

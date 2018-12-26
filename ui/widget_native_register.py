@@ -25,7 +25,7 @@ class NativeRegisterWidget(NotEditableTableWidgetItem):
 
         self.register = register
         self.value = value
-        self.valid_ptr = app.get_script().exports.isvalidptr(self.value)
+        self.valid_ptr = app.dwarf_api('isValidPointer', self.value)
         if self.valid_ptr:
             self.setForeground(Qt.red)
         self.setText(value)

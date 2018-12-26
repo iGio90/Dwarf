@@ -135,7 +135,7 @@ class MemoryPanel(QTableWidget):
         menu.exec_(self.mapToGlobal(pos))
 
     def read_pointer(self, byte_widget):
-        return self.app.get_script().exports.readptr(byte_widget.get_ptr())
+        return self.app.dwarf_api('readPointer', byte_widget.get_ptr())
 
     def _set_data(self, start, data, sub, jump_to=-1):
         if start % 2 == 1:
@@ -267,7 +267,7 @@ class MemoryPanel(QTableWidget):
 
     def read_memory(self, ptr, size=1024, sub_start=512):
         try:
-            range = self.app.get_script().exports.getrange(ptr)
+            range = self.app.dwarf_api('getRange', ptr)
         except:
             return 0
 
@@ -288,7 +288,7 @@ class MemoryPanel(QTableWidget):
             start = base
         if end > base + range['size']:
             size = base + range['size'] - start
-        data = self.app.get_script().exports.memread(start, size)
+        data = self.app.dwarf_api('readBytes', [start, size])
         l = len(data)
         if l == 0:
             return 0
@@ -336,7 +336,7 @@ class MemoryPanel(QTableWidget):
     def trigger_jump_to(self):
         pt = InputDialog.input(hint='insert pointer', size=True)
         if pt[0]:
-            ptr = self.app.get_script().exports.getpt(pt[1])
+            ptr = int(self.app.dwarf_api('evaluatePtr', pt[1]), 16)
             self.read_memory(ptr, int(pt[2]), sub_start=int(pt[3]))
 
     def trigger_write_bytes(self):
@@ -348,14 +348,14 @@ class MemoryPanel(QTableWidget):
             if ptr + 16 > self.data['end']:
                 if self.read_memory(ptr) == 0:
                     return
-            mem = self.app.get_script().exports.memread(ptr, 16)
+            mem = self.app.dwarf_api('readBytes', ptr, 16)
             mem = binascii.hexlify(mem).decode('utf8')
             mem = ' '.join(re.findall('.{1,2}', mem))
             content = InputDialog.input(
                 hint='write bytes @%s' % hex(ptr),
                 input_content=mem)
             if content[0]:
-                if self.app.get_script().exports.writebytes(ptr, content[1].replace(' ', '')):
+                if self.app.dwarf_api('writeBytes', [ptr, content[1].replace(' ', '')]):
                     self.read_memory(ptr, self.data['len'], self.data['sub'])
 
     def trigger_write_string(self):
@@ -368,7 +368,7 @@ class MemoryPanel(QTableWidget):
             content = InputDialog.input(
                 hint='write utf8 string @%s' % hex(ptr))
             if content[0]:
-                if self.app.get_script().exports.writeutf8(ptr, content[1]):
+                if self.app.dwarf_api('writeUtf8', [ptr, content[1]]):
                     self.read_memory(ptr, self.data['len'], self.data['sub'])
 
     def set_view_type_asm(self):

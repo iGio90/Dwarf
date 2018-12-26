@@ -41,7 +41,7 @@ class ModulesPanel(QTableWidget):
 
         action = menu.exec_(self.mapToGlobal(pos))
         if action == action_refresh:
-            self.app.get_script().exports.updtmdl()
+            self.app.dwarf_api('updateModules')
 
     def set_modules(self, modules):
         self.setRowCount(0)
@@ -66,7 +66,7 @@ class ModulesPanel(QTableWidget):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_R:
-            self.app.get_script().exports.updtmdl()
+            self.app.dwarf_api('updateModules')
         else:
             # dispatch those to super
             super(ModulesPanel, self).keyPressEvent(event)

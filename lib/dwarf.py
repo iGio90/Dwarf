@@ -82,7 +82,7 @@ class Dwarf(object):
         elif parts[0] == 'hook_native_callback':
             self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
         elif parts[0] == 'update_modules':
-            self.app.apply_context({'modules': json.loads(parts[1])})
+            self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
         else:
             print(what)
 
@@ -90,8 +90,12 @@ class Dwarf(object):
         print('[*] script destroyed')
         self.app_window.close()
 
-    def get_script(self):
-        return self.script
+    def dwarf_api(self, api, args=None, tid=0):
+        if tid == 0:
+            tid = self.app.get_context_tid()
+        if args is not None and not isinstance(args, list):
+            args = [args]
+        return self.script.exports.api(tid, api, args)
 
     def get_loading_library(self):
         return self.loading_library

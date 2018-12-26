@@ -28,7 +28,7 @@ class JsInput(QLineEdit):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.log_panel.add_to_main_content_content(
-                str(self.log_panel.app.get_script().exports.evaluate(self.text())),
+                str(self.log_panel.app.dwarf_api('evaluate', self.text())),
                 scroll=True)
             self.setText('')
         else:

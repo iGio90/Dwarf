@@ -83,11 +83,11 @@ class HooksPanel(QTableWidget):
                 return
             input = input[1]
 
-        ptr = int(self.app.get_script().exports.getpt(input), 16)
+        ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
         if ptr > 0:
             self.temporary_input = input
             self.native_pending_args = pending_args
-            self.app.get_script().exports.hook(ptr)
+            self.app.dwarf_api('hookNative', ptr)
 
     def hook_native_callback(self, ptr):
         self.insertRow(self.rowCount())
@@ -145,7 +145,7 @@ class HooksPanel(QTableWidget):
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 2, q)
 
-        self.app.get_script().exports.onload(input)
+        self.app.dwarf_api('hookOnLoad', input)
         self.resizeRowToContents(0)
         self.resizeRowToContents(1)
 
@@ -156,7 +156,7 @@ class HooksPanel(QTableWidget):
                 return
             input = input[1]
         self.java_pending_args = pending_args
-        self.app.get_script().exports.jmh(input)
+        self.app.dwarf_api('hookJavaMethod', input)
 
     def hook_java_callback(self, class_method):
         self.insertRow(self.rowCount())
@@ -190,7 +190,7 @@ class HooksPanel(QTableWidget):
 
         inp = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
         if inp[0]:
-            if self.app.get_script().exports.hookcond(item.get_hook_data().get_ptr(), inp[1]):
+            if self.app.dwarf_api('setHookCondition', [item.get_hook_data().get_ptr(), inp[1]]):
                 item.get_hook_data().set_condition(inp[1])
 
     def set_logic(self):
@@ -199,7 +199,7 @@ class HooksPanel(QTableWidget):
         item = self.item(self.selectedItems()[0].row(), 0)
         inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_logic())
         if inp[0]:
-            if self.app.get_script().exports.hooklogic(item.get_hook_data().get_ptr(), inp[1]):
+            if self.app.dwarf_api('setHookLogic', [item.get_hook_data().get_ptr(), inp[1]]):
                 item.get_hook_data().set_logic(inp[1])
 
     def increment_hook_count(self, ptr):

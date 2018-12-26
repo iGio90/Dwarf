@@ -54,5 +54,5 @@ if __name__ == '__main__':
 
     app.exec_()
 
-    script.exports.release()
+    app_window.app.dwarf_api('release')
     process.detach()

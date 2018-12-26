@@ -74,6 +74,7 @@ class App(QWidget):
         self.contexts_panel = None
 
         self.contexts = []
+        self.context_tid = 0
 
     def setup_ui(self):
         box = QVBoxLayout()
@@ -148,7 +149,7 @@ class App(QWidget):
         return q
 
     def restart(self):
-        self.get_script().exports.restart()
+        self.dwarf_api('restart')
         self.resume()
         self.get_hooks_panel().reset_hook_count()
         self.get_contexts_panel().setRowCount(0)
@@ -158,7 +159,7 @@ class App(QWidget):
         self.contexts.clear()
         self.registers_panel.setRowCount(0)
         self.backtrace_panel.setRowCount(0)
-        self.get_script().exports.release()
+        self.dwarf_api('release')
 
     def set_modules(self, modules):
         self.modules_panel.set_modules(modules)
@@ -167,6 +168,7 @@ class App(QWidget):
         self.ranges_panel.set_ranges(ranges)
 
     def _apply_context(self, context):
+        self.context_tid = context['tid']
         if 'modules' in context:
             self.set_modules(context['modules'])
         if 'ranges' in context:
@@ -179,8 +181,14 @@ class App(QWidget):
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()
 
+    def dwarf_api(self, api, args=None):
+        return self.get_dwarf().dwarf_api(api, args)
+
     def get_arch(self):
         return self.arch
+
+    def get_context_tid(self):
+        return self.context_tid
 
     def get_contexts(self):
         return self.contexts
@@ -205,6 +213,3 @@ class App(QWidget):
 
     def get_registers_panel(self):
         return self.registers_panel
-
-    def get_script(self):
-        return self.app_window.get_dwarf().get_script()
