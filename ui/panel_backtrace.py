@@ -26,6 +26,7 @@ class BacktracePanel(QTableWidget):
 
         self.verticalHeader().hide()
         self.setHorizontalHeaderLabels(['symbol', 'address'])
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def set_backtrace(self, bt):
         self.setRowCount(0)

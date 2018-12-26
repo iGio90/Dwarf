@@ -3,9 +3,9 @@
 * Patch instructions on asm view
 * Unicorn integration
 * Single thread unsleep
-* Debug Symbols list on x ranges
 
 ### done - backlog
+* ~~Debug Symbols list on x ranges~~
 * ~~jump to ptr in registers panel~~
 * ~~js evaluation in hook context~~
 * ~~js api for ide->script->ide~~

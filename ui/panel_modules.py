@@ -14,9 +14,14 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import json
+from pprint import pprint
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu
 
+from lib import utils
+from ui.dialog_table import TableDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -36,12 +41,78 @@ class ModulesPanel(QTableWidget):
 
     def show_menu(self, pos):
         menu = QMenu()
+        item = self.itemAt(pos)
 
-        action_refresh = menu.addAction("Refresh\t(R)")
+        action_refresh = menu.addAction("Refresh")
+        if item is not None:
+            sep1 = utils.get_qmenu_separator()
+            menu.addAction(sep1)
+
+            action_exports = menu.addAction('Exports')
+            action_imports = menu.addAction('Imports')
+            action_symbols = menu.addAction('Symbols')
 
         action = menu.exec_(self.mapToGlobal(pos))
+
         if action == action_refresh:
             self.app.dwarf_api('updateModules')
+        if item is not None:
+            if action == action_exports:
+                exports = json.loads(self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text()))
+                TableDialog().build_and_show(self.build_exports_table, exports)
+            elif action == action_imports:
+                imports = json.loads(self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text()))
+                TableDialog().build_and_show(self.build_imports_table, imports)
+            elif action == action_symbols:
+                symbols = json.loads(self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text()))
+                TableDialog().build_and_show(self.build_exports_table, symbols)
+
+    def build_exports_table(self, table, exports):
+        if len(exports) > 0:
+            table.setMinimumWidth(int(self.app.width() / 3))
+            table.setColumnCount(3)
+            table.setHorizontalHeaderLabels(['name', 'address', 'type'])
+            for export in exports:
+                row = table.rowCount()
+                table.insertRow(row)
+
+                q = NotEditableTableWidgetItem(export['name'])
+                q.setForeground(Qt.gray)
+                table.setItem(row, 0, q)
+
+                q = NotEditableTableWidgetItem(export['address'])
+                q.setForeground(Qt.red)
+                table.setItem(row, 1, q)
+
+                q = NotEditableTableWidgetItem(export['type'])
+                table.setItem(row, 2, q)
+            table.resizeColumnToContents(1)
+            table.resizeColumnToContents(2)
+
+    def build_imports_table(self, table, imports):
+        if len(imports) > 0:
+            table.setMinimumWidth(int(self.app.width() / 3))
+            table.setColumnCount(4)
+            table.setHorizontalHeaderLabels(['name', 'address', 'module', 'type'])
+            for imp in imports:
+                row = table.rowCount()
+                table.insertRow(row)
+
+                q = NotEditableTableWidgetItem(imp['name'])
+                q.setForeground(Qt.gray)
+                table.setItem(row, 0, q)
+
+                q = NotEditableTableWidgetItem(imp['address'])
+                q.setForeground(Qt.red)
+                table.setItem(row, 1, q)
+
+                q = NotEditableTableWidgetItem(imp['module'])
+                table.setItem(row, 2, q)
+
+                q = NotEditableTableWidgetItem(imp['type'])
+                table.setItem(row, 3, q)
+            table.resizeColumnToContents(1)
+            table.resizeColumnToContents(3)
 
     def set_modules(self, modules):
         self.setRowCount(0)
@@ -63,10 +134,3 @@ class ModulesPanel(QTableWidget):
     def modules_cell_double_clicked(self, row, c):
         if c == 1:
             self.app.get_memory_panel().read_memory(self.item(row, c).text())
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_R:
-            self.app.dwarf_api('updateModules')
-        else:
-            # dispatch those to super
-            super(ModulesPanel, self).keyPressEvent(event)

@@ -16,6 +16,7 @@ Built on top of pyqt5 (compatible with all os's), frida and some terrible code.
 * Switch between hooks on different threads
 * Inputs are evaluated. Frida js api and dwarf shortcuts are usable in almost any input field
 * Javascript console evaluating frida and dwarf api
+* List and quick references of symbols, exports and imports for each loaded module
 * Save and load back hooks and variables
 
 ---
