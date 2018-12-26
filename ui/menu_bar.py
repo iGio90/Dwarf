@@ -16,8 +16,14 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 import json
 import subprocess
+from pprint import pprint
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+
+from ui.dialog_input import InputDialog
+from ui.dialog_table import TableDialog
+from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
 class MenuBar(object):
@@ -30,6 +36,7 @@ class MenuBar(object):
         self.build_dwarf_menu()
         self.build_target_menu()
         self.build_hooks_menu()
+        self.build_find_menu()
         self.build_session_menu()
 
     def build_dwarf_menu(self):
@@ -82,6 +89,13 @@ class MenuBar(object):
         hooks_menu.addAction(hook_java_action)
         hooks_menu.addAction(hook_onload_action)
 
+    def build_find_menu(self):
+        symbol_action = QAction("&Symbol", self.app_window)
+        symbol_action.triggered.connect(self.handler_find_symbol)
+
+        find_menu = self.menu.addMenu('&Find')
+        find_menu.addAction(symbol_action)
+
     def build_session_menu(self):
         session_load_action = QAction("&Load", self.app_window)
         session_load_action.setShortcut("Ctrl+O")
@@ -96,6 +110,19 @@ class MenuBar(object):
         session_menu = self.menu.addMenu('&Session')
         session_menu.addAction(session_load_action)
         session_menu.addAction(session_save_action)
+
+    def handler_find_symbol(self):
+        input = InputDialog().input('find symbol by pattern (*_open*)')
+        if input[0]:
+            matches = self.app_window.get_app_instance().dwarf_api('findSymbol', input[1])
+            if len(matches) > 0:
+                data = []
+                for ptr in matches:
+                    sym = self.app_window.get_app_instance().dwarf_api('getSymbolByAddress', ptr)
+                    if sym['name'] is None or sym['name'] == '':
+                        sym['name'] = sym['address']
+                    data.append(sym)
+                TableDialog().build_and_show(self.build_symbol_table, data)
 
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
@@ -166,3 +193,23 @@ class MenuBar(object):
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
 
+    def build_symbol_table(self, table, data):
+        table.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(['name', 'address', 'module'])
+
+        for sym in sorted(data, key=lambda x: x['name']):
+            row = table.rowCount()
+            table.insertRow(row)
+
+            q = NotEditableTableWidgetItem(sym['name'])
+            q.setForeground(Qt.gray)
+            table.setItem(row, 0, q)
+
+            q = NotEditableTableWidgetItem(sym['address'])
+            q.setForeground(Qt.red)
+            table.setItem(row, 1, q)
+
+            q = NotEditableTableWidgetItem(sym['moduleName'])
+            table.setItem(row, 2, q)
+        table.resizeColumnToContents(1)
