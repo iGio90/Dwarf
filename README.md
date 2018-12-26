@@ -3,8 +3,8 @@
 Aka my wip gui for android reverse engineers and crackers.
 Built on top of pyqt5 (compatible with all os's), frida and some terrible code. 
 
-![Alt text](https://i.ibb.co/52ggzvz/Schermata-2018-12-21-alle-11-51-23.png "Dwarf") 
-
+### How to start
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Bl7Aoe3UxgM/0.jpg)](https://www.youtube.com/watch?v=Bl7Aoe3UxgM)
 
 ### Features
 
