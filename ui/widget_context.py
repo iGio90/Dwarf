@@ -15,10 +15,10 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidgetItem
+from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
-class ContextItem(QTableWidgetItem):
+class ContextItem(NotEditableTableWidgetItem):
     def __init__(self, context, *__args):
         super().__init__(*__args)
 
