@@ -19,8 +19,8 @@ import frida
 import os
 import qdarkstyle
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
-
 from ui.app import AppWindow
 
 if __name__ == '__main__':
@@ -40,6 +40,7 @@ if __name__ == '__main__':
 
     app = QApplication([])
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    app.setWindowIcon(QIcon('ui/secret.png'))
 
     with open('lib/script.js', 'r') as f:
         s = f.read()

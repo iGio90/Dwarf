@@ -39,12 +39,12 @@ class AppWindow(QMainWindow):
     def __init__(self, script, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
+        self.setWindowIcon(QIcon('ui/secret.png'))
         self.app = App(self)
         self.dwarf = Dwarf(self, script)
         self.adb = Adb(self.app)
 
         self.setWindowTitle("Dwarf")
-        self.setWindowIcon(QIcon('ui/secret.png'))
 
         self.setCentralWidget(self.app)
         self.app.setup_ui()
