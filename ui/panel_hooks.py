@@ -119,6 +119,8 @@ class HooksPanel(QTableWidget):
             if not input[0]:
                 return
             input = input[1]
+            if len(input) == 0:
+                return
 
         if not input.endswith('.so'):
             input += '.so'
@@ -151,12 +153,12 @@ class HooksPanel(QTableWidget):
 
     def hook_java(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
-            input = InputDialog.input(hint='com.package.class.[method or \'$new\']')
+            input = InputDialog.input(hint='com.package.class or com.package.class.method')
             if not input[1]:
                 return
             input = input[1]
         self.java_pending_args = pending_args
-        self.app.dwarf_api('hookJavaMethod', input)
+        self.app.dwarf_api('hookJava', input)
 
     def hook_java_callback(self, class_method):
         self.insertRow(self.rowCount())
