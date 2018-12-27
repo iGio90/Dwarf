@@ -1,6 +1,7 @@
 # DWARF
 
 Aka a gui for android reverse engineers and crackers.
+Or damn, what a reversed fluffy or yet, duck warrios are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code. 
 
 ![Dwarf](https://github.com/iGio90/Dwarf/blob/master/ui/dwarf.png?raw=true)
