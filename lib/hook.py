@@ -17,8 +17,12 @@ Dwarf - Copyright (C) 2018 iGio90
 
 
 class Hook(object):
+    HOOK_NATIVE = 0
+    HOOK_JAVA = 1
+    HOOK_ONLOAD = 2
 
-    def __init__(self):
+    def __init__(self, hook_type):
+        self.hook_type = hook_type
         self.ptr = 0
         self.input = ''
         self.condition = ''

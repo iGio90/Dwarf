@@ -63,6 +63,11 @@ class HooksPanel(QTableWidget):
             cond_action = menu.addAction("Condition\t(C)")
             logic_action = menu.addAction("Logic\t(L)")
 
+            sep2 = utils.get_qmenu_separator()
+            menu.addAction(sep2)
+
+            delete_action = menu.addAction("Delete")
+
         action = menu.exec_(self.mapToGlobal(pos))
         if action == add_action:
             self.hook_native()
@@ -75,6 +80,8 @@ class HooksPanel(QTableWidget):
                 self.set_condition()
             elif action == logic_action:
                 self.set_logic()
+            elif action == delete_action:
+                self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
 
     def hook_native(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
@@ -92,7 +99,7 @@ class HooksPanel(QTableWidget):
     def hook_native_callback(self, ptr):
         self.insertRow(self.rowCount())
 
-        h = Hook()
+        h = Hook(Hook.HOOK_NATIVE)
         h.set_ptr(ptr)
         h.set_input(self.temporary_input)
         if self.native_pending_args:
@@ -130,7 +137,7 @@ class HooksPanel(QTableWidget):
 
         self.insertRow(self.rowCount())
 
-        h = Hook()
+        h = Hook(Hook.HOOK_ONLOAD)
         h.set_ptr(0)
         h.set_input(input)
 
@@ -163,7 +170,7 @@ class HooksPanel(QTableWidget):
     def hook_java_callback(self, class_method):
         self.insertRow(self.rowCount())
 
-        h = Hook()
+        h = Hook(Hook.HOOK_JAVA)
         h.set_ptr(1)
         h.set_input(class_method)
         if self.java_pending_args:
@@ -217,6 +224,8 @@ class HooksPanel(QTableWidget):
 
     def reset_hook_count(self):
         for ptr in self.hooks:
+            if isinstance(ptr, int):
+                ptr = hex(ptr)
             items = self.findItems(ptr, Qt.MatchExactly)
             for item in items:
                 self.item(item.row(), 2).setText('0')
@@ -230,6 +239,15 @@ class HooksPanel(QTableWidget):
     def hooks_cell_double_clicked(self, row, c):
         if c == 1:
             self.app.get_memory_panel().read_memory(self.item(row, c).text())
+
+    def delete_hook(self, item, hook):
+        self.removeRow(item.row())
+        if hook.hook_type == Hook.HOOK_NATIVE:
+            self.app.dwarf_api('deleteHook', hook.get_ptr())
+        elif hook.hook_type == Hook.HOOK_JAVA:
+            self.app.dwarf_api('deleteHook', hook.get_input())
+        elif hook.hook_type == Hook.HOOK_ONLOAD:
+            self.app.dwarf_api('deleteHook', hook.get_input())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
