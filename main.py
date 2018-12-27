@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     app = QApplication([])
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    app.setWindowIcon(QIcon('ui/secret.png'))
+    app.setWindowIcon(QIcon('ui/dwarf.png'))
 
     with open('lib/script.js', 'r') as f:
         s = f.read()

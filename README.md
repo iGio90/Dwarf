@@ -1,7 +1,9 @@
 # DWARF
 
-Aka my wip gui for android reverse engineers and crackers.
-Built on top of pyqt5 (compatible with all os's), frida and some terrible code. 
+Aka a gui for android reverse engineers and crackers.
+Built on top of pyqt5, frida and some terrible code. 
+
+![Dwarf](https://github.com/iGio90/Dwarf/blob/master/ui/dwarf.png?raw=true)
 
 ### How to start
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Bl7Aoe3UxgM/0.jpg)](https://www.youtube.com/watch?v=Bl7Aoe3UxgM)
