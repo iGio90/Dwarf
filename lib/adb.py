@@ -30,7 +30,7 @@ class Adb(object):
 
     def list_packages(self):
         if not self.adb_available:
-            self.app.get_log_panel().add_to_main_content_content('adb not found')
+            self.app.get_log_panel().log('adb not found')
             return None
         packages = utils.do_shell_command('adb shell pm list packages -f').split('\n')
         ret = []
@@ -47,6 +47,6 @@ class Adb(object):
 
     def pull(self, path, dest):
         if not self.adb_available:
-            self.app.get_log_panel().add_to_main_content_content('adb not found')
+            self.app.get_log_panel().log('adb not found')
             return None
         return utils.do_shell_command('adb pull %s %s' % (path, dest))

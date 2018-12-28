@@ -27,7 +27,7 @@ class JsInput(QLineEdit):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-            self.log_panel.add_to_main_content_content(
+            self.log_panel.log(
                 str(self.log_panel.app.dwarf_api('evaluate', self.text())),
                 scroll=True)
             self.setText('')
@@ -52,7 +52,7 @@ class LogPanel(QWidget):
 
         self.setLayout(box)
 
-    def add_to_main_content_content(self, what, clear=False, scroll=False):
+    def log(self, what, clear=False, scroll=False):
         if clear:
             self.list.clear()
 

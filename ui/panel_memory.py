@@ -25,6 +25,8 @@ from hexdump import hexdump
 
 from lib import utils
 from ui.dialog_input import InputDialog
+from ui.dialog_write_instruction import WriteInstructionDialog
+from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_byte import ByteWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -44,6 +46,9 @@ class MemoryPanel(QTableWidget):
 
         self.asm_data_start = 0
         self.asm_parse_start = 0
+
+        self.ks_arch = ''
+        self.ks_mode = ''
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
@@ -103,7 +108,6 @@ class MemoryPanel(QTableWidget):
                 mode = QAction("THUMB mode\t(O)")
             else:
                 mode = QAction("ARM mode\t(O)")
-
             mode.triggered.connect(self.swap_arm_mode)
             menu.addAction(mode)
 
@@ -112,10 +116,8 @@ class MemoryPanel(QTableWidget):
 
         if cell:
             if self.view == VIEW_ASM:
-                # todo
-                # patch = menu.addAction("Patch instruction")
-                # menu.addAction(patch)
-                pass
+                write_instr_action = menu.addAction("Patch instruction")
+                write_instr_action.triggered.connect(self.trigger_write_instruction)
             elif self.view == VIEW_HEX:
                 wb = QAction("Write bytes")
                 wb.triggered.connect(self.trigger_write_bytes)
@@ -123,10 +125,9 @@ class MemoryPanel(QTableWidget):
 
                 ws = menu.addAction("Write string")
                 ws.triggered.connect(self.trigger_write_string)
-                menu.addAction(ws)
 
-                sep4 = utils.get_qmenu_separator()
-                menu.addAction(sep4)
+            sep4 = utils.get_qmenu_separator()
+            menu.addAction(sep4)
 
         jump_to = QAction("Jump to\t(G)")
         jump_to.triggered.connect(self.trigger_jump_to)
@@ -159,19 +160,15 @@ class MemoryPanel(QTableWidget):
         col = c_item.column()
         if col > 0:
             col -= 1
-        self.asm_data_start = (c_item.row() * 16) + col
+        self.asm_data_start = ((c_item.row() * 16) + col)
         self.asm_parse_start = self.data['start'] + self.asm_data_start
-
-        if self.asm_parse_start + 32 > self.data['end']:
-            self.read_memory(self.asm_parse_start, 32, 0)
-        else:
-            self.view = VIEW_ASM
-            self.horizontalHeader().hide()
-            self.setColumnCount(3)
-
-            self._finalize_asm_view()
+        self.data['jt'] = self.item(c_item.row(), 0).get_address()
+        self._finalize_asm_view()
 
     def _finalize_asm_view(self):
+        self.view = VIEW_ASM
+        self.horizontalHeader().hide()
+        self.setColumnCount(3)
         self.setRowCount(0)
 
         if self.app.get_arch() == 'arm64':
@@ -183,14 +180,18 @@ class MemoryPanel(QTableWidget):
         md = Cs(arch, self.cs_mode)
         s_row = -1
 
+        relative_offset = 0
         for i in md.disasm(self.data['data'][self.asm_data_start:self.asm_data_start + 64], self.asm_parse_start):
             row = self.rowCount()
             self.insertRow(row)
             if i.address == self.asm_parse_start:
                 s_row = row
 
-            w = NotEditableTableWidgetItem('0x%x' % i.address)
+            w = MemoryAddressWidget('0x%x' % i.address)
             w.setForeground(Qt.red)
+            w.set_address(i.address)
+            w.set_relative_offset(relative_offset)
+            relative_offset += i.size
             self.setItem(row, 0, w)
 
             w = NotEditableTableWidgetItem(i.mnemonic)
@@ -221,7 +222,8 @@ class MemoryPanel(QTableWidget):
 
             rr = r.split(':')
             offset = int(rr[0], 16) + self.data['start']
-            w = NotEditableTableWidgetItem(hex(offset))
+            w = MemoryAddressWidget(hex(offset))
+            w.set_address(offset)
             w.setForeground(Qt.red)
             self.setItem(row, 0, w)
 
@@ -265,7 +267,7 @@ class MemoryPanel(QTableWidget):
                 self.cs_mode = CS_ARCH_ARM
             self._finalize_asm_view()
 
-    def read_memory(self, ptr, size=1024, sub_start=512):
+    def read_memory(self, ptr, size=1024, sub_start=512, view=VIEW_HEX):
         try:
             range = self.app.dwarf_api('getRange', ptr)
         except:
@@ -294,7 +296,7 @@ class MemoryPanel(QTableWidget):
             return 0
         self.view = VIEW_NONE
         self._set_data(start, data, sub_start, jump_to=offset)
-        self.set_view_type(VIEW_HEX)
+        self.set_view_type(view)
         return l
 
     def keyPressEvent(self, event):
@@ -357,6 +359,41 @@ class MemoryPanel(QTableWidget):
             if content[0]:
                 if self.app.dwarf_api('writeBytes', [ptr, content[1].replace(' ', '')]):
                     self.read_memory(ptr, self.data['len'], self.data['sub'])
+
+    def trigger_write_instruction(self):
+        if len(self.selectedItems()) == 0:
+            return
+        item = self.selectedItems()[0]
+
+        accept, inst, arch, mode = WriteInstructionDialog().show_dialog(
+            input_content='%s %s' % (self.item(item.row(), 1).text(), self.item(item.row(), 2).text()),
+            arch=self.ks_arch,
+            mode=self.ks_mode
+        )
+
+        self.ks_arch = 'KS_ARCH_' + arch.upper()
+        self.ks_mode = 'KS_MODE_' + mode.upper()
+
+        if accept and len(inst) > 0:
+            import keystone
+            try:
+                ks = keystone.Ks(getattr(keystone.keystone_const, self.ks_arch),
+                                 getattr(keystone.keystone_const, self.ks_mode))
+                encoding, count = ks.asm(inst)
+                asm_widget = self.item(item.row(), 0)
+                relative_offset = asm_widget.get_relative_offset()
+                if self.app.dwarf_api('writeBytes', [asm_widget.get_address(), encoding]):
+                    new_data = bytearray(self.data['data'])
+                    for i in range(0, len(encoding)):
+                        try:
+                            new_data[self.asm_data_start + relative_offset + i] = encoding[i]
+                        except Exception as e:
+                            if isinstance(e, IndexError):
+                                break
+                    self.data['data'] = bytes(new_data)
+                    self._finalize_asm_view()
+            except Exception as e:
+                self.app.get_log_panel().log(str(e))
 
     def trigger_write_string(self):
         item = self.selectedItems()[0]

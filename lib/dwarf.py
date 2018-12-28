@@ -40,7 +40,7 @@ class Dwarf(object):
             return
 
         if parts[0] == 'log':
-            self.app.get_log_panel().add_to_main_content_content(parts[1], scroll=True)
+            self.app.get_log_panel().log(parts[1], scroll=True)
         elif parts[0] == 'set_context':
             data = json.loads(parts[1])
             self.app.get_contexts().append(data)
@@ -57,7 +57,7 @@ class Dwarf(object):
                     self.app.get_hooks_panel().increment_hook_count(data['ptr'])
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
-                    self.app.get_log_panel().add_to_main_content_content('hook %s %s @thread := %d' % (
+                    self.app.get_log_panel().log('hook %s %s @thread := %d' % (
                         name, sym, data['tid']), scroll=True)
                 if len(self.app.get_contexts()) > 1:
                     return
@@ -67,14 +67,14 @@ class Dwarf(object):
                     self.app.pointer_size = 4
                 else:
                     self.app.pointer_size = 8
-                self.app.get_log_panel().add_to_main_content_content('injected into := ' + str(data['pid']))
+                self.app.get_log_panel().log('injected into := ' + str(data['pid']))
 
             self.app.apply_context(data)
             if self.loading_library is not None:
                 self.loading_library = None
         elif parts[0] == 'onload_callback':
             self.loading_library = parts[1]
-            self.app.get_log_panel().add_to_main_content_content('hook onload %s @thread := %s' % (
+            self.app.get_log_panel().log('hook onload %s @thread := %s' % (
                 parts[1], parts[3]), scroll=True)
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
         elif parts[0] == 'hook_java_callback':
