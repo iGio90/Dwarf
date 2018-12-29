@@ -16,17 +16,65 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 import json
 
+import frida
+
+from lib import utils
+
 
 class Dwarf(object):
-    def __init__(self, app_window, script):
+    def __init__(self, app_window):
         self.app_window = app_window
         self.app = app_window.get_app_instance()
 
         self.loading_library = False
 
-        self.script = script
+        self.pid = 0
+        self.process = None
+        self.script = None
+
+    def attach(self, pid_or_package):
+        if self.process is not None:
+            self.detach()
+
+        device = frida.get_usb_device()
+        try:
+            self.process = device.attach(pid_or_package)
+        except Exception as e:
+            utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
+            return
+        self.load_script()
+
+    def detach(self):
+        self.app.resume()
+        if self.script is not None:
+            self.script.unload()
+        if self.process is not None:
+            self.process.detach()
+
+    def load_script(self):
+        with open('lib/script.js', 'r') as f:
+            s = f.read()
+        self.script = self.process.create_script(s)
         self.script.on('message', self.on_message)
         self.script.on('destroyed', self.on_destroyed)
+        self.script.load()
+
+        self.app_window.on_script_loaded()
+
+    def spawn(self, package):
+        if self.process is not None:
+            self.detach()
+
+        device = frida.get_usb_device()
+        self.app_window.get_adb().kill_package(package)
+        try:
+            pid = device.spawn([package])
+        except Exception as e:
+            utils.show_message_box('Failed to spawn to %s' % package, str(e))
+            return
+        self.process = device.attach(pid)
+        self.load_script()
+        device.resume(package)
 
     def on_message(self, message, data):
         if 'payload' not in message:
@@ -67,7 +115,8 @@ class Dwarf(object):
                     self.app.pointer_size = 4
                 else:
                     self.app.pointer_size = 8
-                self.app.get_log_panel().log('injected into := ' + str(data['pid']))
+                self.pid = data['pid']
+                self.app.get_log_panel().log('injected into := ' + str(self.pid))
 
             self.app.apply_context(data)
             if self.loading_library is not None:
@@ -87,14 +136,20 @@ class Dwarf(object):
             print(what)
 
     def on_destroyed(self):
-        print('[*] script destroyed')
-        self.app_window.close()
+        self.app.get_log_panel().log('detached from %d. script destroyed' % self.pid)
+        self.app_window.on_script_destroyed()
+
+        self.pid = 0
+        self.process = None
+        self.script = None
 
     def dwarf_api(self, api, args=None, tid=0):
         if tid == 0:
             tid = self.app.get_context_tid()
         if args is not None and not isinstance(args, list):
             args = [args]
+        if self.script is None:
+            return None
         return self.script.exports.api(tid, api, args)
 
     def get_loading_library(self):

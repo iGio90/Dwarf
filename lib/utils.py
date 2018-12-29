@@ -16,7 +16,30 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 import subprocess
 
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QAction, QMessageBox
+
+
+app_icon = None
+
+
+def get_app_icon():
+    global app_icon
+    if app_icon is None:
+        app_icon = QPixmap("ui/dwarf.png").scaledToHeight(75, Qt.SmoothTransformation)
+    return app_icon
+
+
+def show_message_box(text, details=None):
+    msg = QMessageBox()
+    msg.setIconPixmap(get_app_icon())
+
+    msg.setText(text)
+    if details:
+        msg.setDetailedText(details)
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.exec_()
 
 
 def get_qmenu_separator():
@@ -25,6 +48,9 @@ def get_qmenu_separator():
     return separator
 
 
-def do_shell_command(cmd):
-    result = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE)
-    return result.stdout.decode('utf8')
+def do_shell_command(cmd, stdout=subprocess.PIPE):
+    result = subprocess.run(cmd.split(' '), stdout=stdout)
+    if stdout == subprocess.PIPE:
+        return result.stdout.decode('utf8')
+    else:
+        return ''

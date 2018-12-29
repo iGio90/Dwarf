@@ -54,7 +54,7 @@ class LogPanel(QWidget):
 
     def log(self, what, clear=False, scroll=False):
         if clear:
-            self.list.clear()
+            self.clear()
 
         if isinstance(what, QListWidgetItem):
             self.list.addItem(what)
@@ -64,3 +64,6 @@ class LogPanel(QWidget):
 
         if scroll:
             self.list.scrollToBottom()
+
+    def clear(self):
+        self.list.clear()

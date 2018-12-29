@@ -15,8 +15,6 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import argparse
-import frida
-import os
 import qdarkstyle
 
 from PyQt5.QtGui import QIcon
@@ -26,34 +24,16 @@ from ui.app import AppWindow
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--spawn", action='store_true', help="spawn the process instead of attach")
-    parser.add_argument("package", help="package name or pid")
+    parser.add_argument("-p", "--package", help="package name or pid")
     args = parser.parse_args()
-
-    device = frida.get_usb_device()
-
-    if args.spawn:
-        os.system("adb shell am force-stop " + args.package)
-        pid = device.spawn([args.package])
-        process = device.attach(pid)
-    else:
-        process = device.attach(args.package)
 
     app = QApplication([])
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     app.setWindowIcon(QIcon('ui/dwarf.png'))
 
-    with open('lib/script.js', 'r') as f:
-        s = f.read()
-    script = process.create_script(s)
-    script.load()
-
-    app_window = AppWindow(script)
+    app_window = AppWindow(args)
     app_window.showMaximized()
-
-    if args.spawn:
-        device.resume(args.package)
 
     app.exec_()
 
-    app_window.app.dwarf_api('release')
-    process.detach()
+    app_window.get_app_instance().get_dwarf().detach()

@@ -21,28 +21,23 @@ from PyQt5.QtGui import QIcon
 from lib.adb import Adb
 from lib.dwarf import Dwarf
 from ui.menu_bar import MenuBar
-from ui.panel_backtrace import BacktracePanel
-from ui.panel_contexts import ContextsPanel
-from ui.panel_hooks import HooksPanel
 
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 
-from ui.panel_log import LogPanel
-from ui.panel_memory import MemoryPanel
-from ui.panel_modules import ModulesPanel
-from ui.panel_ranges import RangesPanel
-from ui.panel_registers import RegistersPanel
+from ui.ui_session import SessionUi
+from ui.ui_welcome import WelcomeUi
 
 
 class AppWindow(QMainWindow):
-    def __init__(self, script, flags=None, *args, **kwargs):
+    def __init__(self, dwarf_args, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
         self.setWindowIcon(QIcon('ui/secret.png'))
+
         self.app = App(self)
-        self.dwarf = Dwarf(self, script)
         self.adb = Adb(self.app)
+
+        self.dwarf = Dwarf(self)
 
         self.setWindowTitle("Dwarf")
 
@@ -50,6 +45,13 @@ class AppWindow(QMainWindow):
         self.app.setup_ui()
 
         self.menu = MenuBar(self)
+
+        if dwarf_args.package is not None:
+            spawn = dwarf_args.spawn
+            if spawn:
+                self.dwarf.spawn(dwarf_args.package)
+            else:
+                self.dwarf.attach(dwarf_args.package)
 
     def get_adb(self):
         return self.adb
@@ -60,6 +62,17 @@ class AppWindow(QMainWindow):
     def get_dwarf(self):
         return self.dwarf
 
+    def get_menu(self):
+        return self.menu
+
+    def on_script_destroyed(self):
+        self.menu.on_script_destroyed()
+        self.app.on_script_destroyed()
+
+    def on_script_loaded(self):
+        self.menu.on_script_loaded()
+        self.app.on_script_loaded()
+
 
 class App(QWidget):
     def __init__(self, app_window, flags=None, *args, **kwargs):
@@ -69,14 +82,8 @@ class App(QWidget):
         self.arch = ''
         self.pointer_size = 0
 
-        self.modules_panel = None
-        self.ranges_panel = None
-        self.registers_panel = None
-        self.memory_panel = None
-        self.log_panel = None
-        self.backtrace_panel = None
-        self.hooks_panel = None
-        self.contexts_panel = None
+        self.welcome_ui = None
+        self.session_ui = None
 
         self.contexts = []
         self.context_tid = 0
@@ -84,74 +91,15 @@ class App(QWidget):
     def setup_ui(self):
         box = QVBoxLayout()
 
-        main_splitter = QSplitter(self)
-        main_splitter.addWidget(self.build_left_column())
-        main_splitter.addWidget(self.build_central_content())
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 6)
+        self.session_ui = SessionUi(self)
+        self.session_ui.setVisible(False)
 
-        box.addWidget(main_splitter)
+        self.welcome_ui = WelcomeUi(self)
+
+        box.addWidget(self.session_ui)
+        box.addWidget(self.welcome_ui)
+
         self.setLayout(box)
-
-    def build_left_column(self):
-        splitter = QSplitter()
-        splitter.setOrientation(Qt.Vertical)
-
-        self.hooks_panel = HooksPanel(self)
-        splitter.addWidget(self.hooks_panel)
-
-        self.contexts_panel = ContextsPanel(self, 0, 3)
-        splitter.addWidget(self.contexts_panel)
-
-        self.backtrace_panel = BacktracePanel()
-        splitter.addWidget(self.backtrace_panel)
-
-        return splitter
-
-    def build_central_content(self):
-        q = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        splitter = QSplitter()
-
-        main_panel = QSplitter(self)
-        main_panel.setOrientation(Qt.Vertical)
-
-        self.registers_panel = RegistersPanel(self, 0, 4)
-        main_panel.addWidget(self.registers_panel)
-
-        self.memory_panel = MemoryPanel(self)
-        main_panel.addWidget(self.memory_panel)
-
-        self.log_panel = LogPanel(self)
-        main_panel.addWidget(self.log_panel)
-
-        main_panel.setStretchFactor(0, 1)
-        main_panel.setStretchFactor(1, 3)
-        main_panel.setStretchFactor(2, 1)
-        splitter.addWidget(main_panel)
-
-        right_splitter = QSplitter()
-        right_splitter.setOrientation(Qt.Vertical)
-
-        self.modules_panel = ModulesPanel(self, 0, 3)
-        right_splitter.addWidget(self.modules_panel)
-
-        self.ranges_panel = RangesPanel(self, 0, 4)
-        right_splitter.addWidget(self.ranges_panel)
-
-        splitter.addWidget(right_splitter)
-
-        splitter.setStretchFactor(0, 5)
-        splitter.setStretchFactor(1, 2)
-
-        layout.addWidget(splitter)
-
-        q.setLayout(layout)
-        q.setContentsMargins(0, 0, 0, 0)
-
-        return q
 
     def restart(self):
         self.dwarf_api('restart')
@@ -160,17 +108,22 @@ class App(QWidget):
         self.get_contexts_panel().setRowCount(0)
 
     def resume(self):
-        self.contexts_panel.setRowCount(0)
+        self.get_contexts_panel().setRowCount(0)
         self.contexts.clear()
-        self.registers_panel.setRowCount(0)
-        self.backtrace_panel.setRowCount(0)
+        self.get_registers_panel().setRowCount(0)
+        self.get_backtrace_panel().setRowCount(0)
         self.dwarf_api('release')
 
+    def clear(self):
+        self.modules_panel.setRowCount(0)
+        self.ranges_panel.setRowCount(0)
+        self.session_ui.get_log_panel().clear()
+
     def set_modules(self, modules):
-        self.modules_panel.set_modules(modules)
+        self.session_ui.modules_panel.set_modules(modules)
 
     def set_ranges(self, ranges):
-        self.ranges_panel.set_ranges(ranges)
+        self.session_ui.ranges_panel.set_ranges(ranges)
 
     def _apply_context(self, context):
         self.context_tid = context['tid']
@@ -192,6 +145,9 @@ class App(QWidget):
     def get_arch(self):
         return self.arch
 
+    def get_backtrace_panel(self):
+        return self.session_ui.backtrace_panel
+
     def get_context_tid(self):
         return self.context_tid
 
@@ -199,22 +155,35 @@ class App(QWidget):
         return self.contexts
 
     def get_contexts_panel(self):
-        return self.contexts_panel
+        return self.session_ui.contexts_panel
 
     def get_dwarf(self):
         return self.app_window.get_dwarf()
 
     def get_hooks_panel(self):
-        return self.hooks_panel
+        return self.session_ui.hooks_panel
 
     def get_log_panel(self):
-        return self.log_panel
+        return self.session_ui.log_panel
 
     def get_memory_panel(self):
-        return self.memory_panel
+        return self.session_ui.memory_panel
 
     def get_pointer_size(self):
         return self.pointer_size
 
     def get_registers_panel(self):
-        return self.registers_panel
+        return self.session_ui.registers_panel
+
+    def on_script_destroyed(self):
+        self.session_ui.setVisible(False)
+        self.welcome_ui.setVisible(True)
+
+        self.welcome_ui.update_device_ui()
+
+    def on_script_loaded(self):
+        self.session_ui.setVisible(True)
+        self.welcome_ui.setVisible(False)
+
+        # trigger this to clear lists
+        self.welcome_ui.on_device_changed()

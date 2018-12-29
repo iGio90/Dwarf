@@ -14,28 +14,23 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from ui.widget_item_not_editable import NotEditableListWidgetItem
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QListWidget
 
 
-class AndroidAppWidget(NotEditableListWidgetItem):
-    def __init__(self, application):
-        super().__init__(application.name)
+class PickList(QListWidget):
+    def __init__(self, callback, *__args):
+        super().__init__(*__args)
 
-        self.package_name = application.identifier
+        self.callback = callback
+        self.itemDoubleClicked.connect(self._callback)
 
-    def get_package_name(self):
-        return self.package_name
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self._callback()
+        else:
+            super(PickList, self).keyPressEvent(event)
 
-
-class AndroidPackageWidget(NotEditableListWidgetItem):
-    def __init__(self, label, package_name, pid):
-        super().__init__(label)
-
-        self.package_name = package_name
-        self.pid = pid
-
-    def get_package_name(self):
-        return self.package_name
-
-    def get_pid(self):
-        return self.pid
+    def _callback(self):
+        if len(self.selectedItems()) > 0:
+            self.callback(self.selectedItems()[0])

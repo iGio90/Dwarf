@@ -15,16 +15,14 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import json
-import subprocess
-from pprint import pprint
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QMenu
+from PyQt5.QtWidgets import QAction, QFileDialog
 
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
 from ui.dialog_table import TableDialog
-from ui.widget_android_package import AndroidPackageWidget
+from ui.widget_android_package import AndroidPackageWidget, AndroidAppWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -35,91 +33,92 @@ class MenuBar(object):
         self.app_window = app_window
         self.menu = app_window.menuBar()
 
-        self.build_dwarf_menu()
+        # actions
+        self.menu_actions = []
+
         self.build_device_menu()
-        self.build_target_menu()
+        self.build_process_menu()
         self.build_hooks_menu()
         self.build_find_menu()
         self.build_session_menu()
 
-    def build_dwarf_menu(self):
-        # check git availability
-        result = subprocess.run(['git', '--version'], stdout=subprocess.PIPE).stdout.decode('utf8')
-        try:
-            if result.index('git version') >= 0:
-                self.git_available = True
-        except:
-            pass
-
-        update_action = QAction("&Update dwarf", self.app_window)
-        update_action.triggered.connect(self.handler_update)
-        update_action.setEnabled(self.git_available)
-
-        dwarf_menu = self.menu.addMenu('&Dwarf')
-        dwarf_menu.addAction(update_action)
+    def add_menu_action(self, menu, action, require_script):
+        self.menu_actions.append({
+            'action': action,
+            'require_script': require_script
+        })
+        action.setEnabled(not require_script)
+        menu.addAction(action)
 
     def build_device_menu(self):
-        packages_action = QAction("&Save APK", self.app_window)
-        packages_action.triggered.connect(self.handler_packages)
+        save_apk = QAction("&Save APK", self.app_window)
+        save_apk.triggered.connect(self.handler_save_apk)
 
         device_menu = self.menu.addMenu('&Device')
-        device_menu.addAction(packages_action)
+        self.add_menu_action(device_menu, save_apk, False)
 
-    def build_target_menu(self):
-        resume_action = QAction("&Resume", self.app_window)
-        resume_action.setShortcut("Ctrl+T")
-        resume_action.setStatusTip('Resume application')
-        resume_action.triggered.connect(self.handler_resume)
+    def build_process_menu(self):
+        resume = QAction("&Resume", self.app_window)
+        resume.setShortcut("Ctrl+T")
+        resume.setStatusTip('Resume process')
+        resume.triggered.connect(self.handler_resume)
 
-        restart_action = QAction("&Restart", self.app_window)
-        restart_action.setShortcut("Ctrl+R")
-        restart_action.setStatusTip('Restart application')
-        restart_action.triggered.connect(self.handler_restart)
+        restart = QAction("&Restart", self.app_window)
+        restart.setShortcut("Ctrl+R")
+        restart.setStatusTip('Restart process')
+        restart.triggered.connect(self.handler_restart)
 
-        target_menu = self.menu.addMenu('&Target')
-        target_menu.addAction(resume_action)
-        target_menu.addAction(restart_action)
+        detach = QAction("&Detach", self.app_window)
+        detach.setStatusTip('Deatch process')
+        detach.triggered.connect(self.handler_detach)
+
+        process_menu = self.menu.addMenu('&Process')
+        self.add_menu_action(process_menu, resume, True)
+        self.add_menu_action(process_menu, restart, True)
+        self.add_menu_action(process_menu, detach, True)
 
     def build_hooks_menu(self):
-        hook_native_action = QAction("&Native", self.app_window)
-        hook_native_action.setShortcut("Ctrl+N")
-        hook_native_action.setStatusTip('Hook arbitrary instruction')
-        hook_native_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
+        hook_native = QAction("&Native", self.app_window)
+        hook_native.setShortcut("Ctrl+N")
+        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
 
-        hook_java_action = QAction("&Java", self.app_window)
-        hook_java_action.setShortcut("Ctrl+J")
-        hook_java_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
+        hook_java = QAction("&Java", self.app_window)
+        hook_java.setShortcut("Ctrl+J")
+        hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
 
-        hook_onload_action = QAction("&Module load", self.app_window)
-        hook_onload_action.setShortcut("Ctrl+M")
-        hook_onload_action.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
+        hook_onload = QAction("&Module load", self.app_window)
+        hook_onload.setShortcut("Ctrl+M")
+        hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
 
         hooks_menu = self.menu.addMenu('&Hooks')
-        hooks_menu.addAction(hook_native_action)
-        hooks_menu.addAction(hook_java_action)
-        hooks_menu.addAction(hook_onload_action)
+        self.add_menu_action(hooks_menu, hook_native, True)
+        self.add_menu_action(hooks_menu, hook_java, True)
+        self.add_menu_action(hooks_menu, hook_onload, True)
 
     def build_find_menu(self):
-        symbol_action = QAction("&Symbol", self.app_window)
-        symbol_action.triggered.connect(self.handler_find_symbol)
+        symbol = QAction("&Symbol", self.app_window)
+        symbol.triggered.connect(self.handler_find_symbol)
 
         find_menu = self.menu.addMenu('&Find')
-        find_menu.addAction(symbol_action)
+        self.add_menu_action(find_menu, symbol, True)
 
     def build_session_menu(self):
-        session_load_action = QAction("&Load", self.app_window)
-        session_load_action.setShortcut("Ctrl+O")
-        session_load_action.setStatusTip('Load a session from file')
-        session_load_action.triggered.connect(self.handler_session_load)
+        session_load = QAction("&Load", self.app_window)
+        session_load.setShortcut("Ctrl+O")
+        session_load.setStatusTip('Load a session from file')
+        session_load.triggered.connect(self.handler_session_load)
 
-        session_save_action = QAction("&Save", self.app_window)
-        session_save_action.setShortcut("Ctrl+S")
-        session_save_action.setStatusTip('Load a session from file')
-        session_save_action.triggered.connect(self.handler_session_save)
+        session_save = QAction("&Save", self.app_window)
+        session_save.setShortcut("Ctrl+P")
+        session_save.setStatusTip('Load a session from file')
+        session_save.triggered.connect(self.handler_session_save)
 
         session_menu = self.menu.addMenu('&Session')
-        session_menu.addAction(session_load_action)
-        session_menu.addAction(session_save_action)
+        self.add_menu_action(session_menu, session_load, False)
+        self.add_menu_action(session_menu, session_save, False)
+
+    def handler_detach(self):
+        self.app_window.get_dwarf().detach()
 
     def handler_find_symbol(self):
         input = InputDialog().input('find symbol by pattern (*_open*)')
@@ -134,22 +133,22 @@ class MenuBar(object):
                     data.append(sym)
                 TableDialog().build_and_show(self.build_symbol_table, data)
 
-    def handler_packages(self):
-        packages = self.app_window.get_adb().list_packages()
-        accept, items = ListDialog.build_and_show(
-            self.build_packages_list, packages, double_click_to_accept=True)
-        if accept:
-            if len(items) > 0:
-                path = items[0].get_android_package().path
-                r = QFileDialog.getSaveFileName()
-                if len(r) > 0 and len(r[0]) > 0:
-                    self.app_window.get_adb().pull(path, r[0])
-
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
 
     def handler_resume(self):
         self.app_window.get_app_instance().resume()
+
+    def handler_save_apk(self):
+        packages = self.app_window.get_adb().list_packages()
+        accept, items = ListDialog.build_and_show(
+            self.build_packages_list, packages, double_click_to_accept=True)
+        if accept:
+            if len(items) > 0:
+                path = items[0].get_package_name().path
+                r = QFileDialog.getSaveFileName()
+                if len(r) > 0 and len(r[0]) > 0:
+                    self.app_window.get_adb().pull(path, r[0])
 
     def handler_session_load(self):
         r = QFileDialog.getOpenFileName()
@@ -197,36 +196,26 @@ class MenuBar(object):
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))
 
-    def handler_update(self):
-        if self.git_available:
-            subprocess.run(['git', 'checkout', 'master'])
-            subprocess.run(['git', 'fetch', 'origin', 'master'])
-            master_hash = subprocess.run(['git', 'log', '-1', '--pretty=format:\"%H\"'],
-                                         stdout=subprocess.PIPE).stdout.decode('utf8')
-            upstream_hash = subprocess.run(['git', 'log', '-1', 'FETCH_HEAD', '--pretty=format:\"%H\"'],
-                                           stdout=subprocess.PIPE).stdout.decode('utf8')
-            if master_hash != upstream_hash:
-                msg = QMessageBox()
-                msg.setText("Updated to latest commit")
-                msg.setInformativeText('Restart dwarf to apply changes')
-                msg.setWindowTitle("Dwarf")
-                msg.setDetailedText(upstream_hash)
-            else:
-                msg = QMessageBox()
-                msg.setText("Dwarf is already updated to latest commit")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
-
     #
     #
     # Just a separator
     #
     #
 
+    def build_app_list(self, list, data):
+        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
+        for ap in sorted(data, key=lambda x: x.name):
+            list.addItem(AndroidAppWidget(ap))
+
     def build_packages_list(self, list, data):
-        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
+        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
         for ap in sorted(data, key=lambda x: x.package):
             list.addItem(AndroidPackageWidget(ap))
+
+    def build_proc_list(self, list, data):
+        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
+        for ap in sorted(data, key=lambda x: x.name):
+            list.addItem(AndroidProcWidget(ap))
 
     def build_symbol_table(self, table, data):
         table.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
@@ -248,3 +237,11 @@ class MenuBar(object):
             q = NotEditableTableWidgetItem(sym['moduleName'])
             table.setItem(row, 2, q)
         table.resizeColumnToContents(1)
+
+    def on_script_destroyed(self):
+        for action in self.menu_actions:
+            action['action'].setEnabled(not action['require_script'])
+
+    def on_script_loaded(self):
+        for action in self.menu_actions:
+            action['action'].setEnabled(True)

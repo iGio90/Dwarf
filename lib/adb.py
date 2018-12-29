@@ -28,6 +28,12 @@ class Adb(object):
         except:
             self.adb_available = False
 
+    def kill_package(self, package):
+        if not self.adb_available:
+            self.app.get_log_panel().log('adb not found')
+            return None
+        utils.do_shell_command("adb shell am force-stop " + package)
+
     def list_packages(self):
         if not self.adb_available:
             self.app.get_log_panel().log('adb not found')
