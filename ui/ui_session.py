@@ -28,9 +28,10 @@ from ui.panel_registers import RegistersPanel
 
 
 class SessionUi(QSplitter):
-    def __init__(self, *__args):
+    def __init__(self, app, *__args):
         super().__init__(*__args)
 
+        self.app = app
         self.modules_panel = None
         self.ranges_panel = None
         self.registers_panel = None
@@ -49,10 +50,10 @@ class SessionUi(QSplitter):
         splitter = QSplitter()
         splitter.setOrientation(Qt.Vertical)
 
-        self.hooks_panel = HooksPanel(self)
+        self.hooks_panel = HooksPanel(self.app)
         splitter.addWidget(self.hooks_panel)
 
-        self.contexts_panel = ContextsPanel(self, 0, 3)
+        self.contexts_panel = ContextsPanel(self.app, 0, 3)
         splitter.addWidget(self.contexts_panel)
 
         self.backtrace_panel = BacktracePanel()
@@ -70,13 +71,13 @@ class SessionUi(QSplitter):
         main_panel = QSplitter(self)
         main_panel.setOrientation(Qt.Vertical)
 
-        self.registers_panel = RegistersPanel(self, 0, 4)
+        self.registers_panel = RegistersPanel(self.app, 0, 4)
         main_panel.addWidget(self.registers_panel)
 
-        self.memory_panel = MemoryPanel(self)
+        self.memory_panel = MemoryPanel(self.app)
         main_panel.addWidget(self.memory_panel)
 
-        self.log_panel = LogPanel(self)
+        self.log_panel = LogPanel(self.app)
         main_panel.addWidget(self.log_panel)
 
         main_panel.setStretchFactor(0, 1)
@@ -87,10 +88,10 @@ class SessionUi(QSplitter):
         right_splitter = QSplitter()
         right_splitter.setOrientation(Qt.Vertical)
 
-        self.modules_panel = ModulesPanel(self, 0, 3)
+        self.modules_panel = ModulesPanel(self.app, 0, 3)
         right_splitter.addWidget(self.modules_panel)
 
-        self.ranges_panel = RangesPanel(self, 0, 4)
+        self.ranges_panel = RangesPanel(self.app, 0, 4)
         right_splitter.addWidget(self.ranges_panel)
 
         splitter.addWidget(right_splitter)

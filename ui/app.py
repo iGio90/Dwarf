@@ -132,9 +132,9 @@ class App(QWidget):
         if 'ranges' in context:
             self.set_ranges(context['ranges'])
         if 'context' in context:
-            self.registers_panel.set_context(context['ptr'], context['is_java'], context['context'])
+            self.session_ui.get_registers_panel().set_context(context['ptr'], context['is_java'], context['context'])
         if 'backtrace' in context:
-            self.backtrace_panel.set_backtrace(context['backtrace'])
+            self.session_ui.get_backtrace_panel().set_backtrace(context['backtrace'])
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()
