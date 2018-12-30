@@ -258,8 +258,6 @@ class WelcomeUi(QSplitter):
         self.frida_update_label.setText('local frida version: %s\nupdated frida version: %s'
                                         % (local_version, self.updated_frida_version))
 
-        print(self.updated_frida_version)
-        print(local_version)
         self.frida_update_button.setVisible(self.updated_frida_version != local_version)
 
     def update_frida(self):
