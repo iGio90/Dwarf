@@ -28,13 +28,14 @@ class ContextsPanel(QTableWidget):
 
         self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
         self.verticalHeader().hide()
-        self.itemDoubleClicked.connect(self.on_context_item_double_click)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.itemDoubleClicked.connect(self.on_context_item_double_click)
 
     def add_context(self, data, library_onload=None):
         row = self.rowCount()
         self.insertRow(row)
         q = ContextItem(data, str(data['tid']))
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.darkCyan)
         self.setItem(row, 0, q)
         is_java = data['is_java']
@@ -43,6 +44,7 @@ class ContextsPanel(QTableWidget):
         else:
             parts = data['ptr'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
+            q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.red)
         self.setItem(row, 1, q)
         if library_onload is None:
@@ -54,6 +56,7 @@ class ContextsPanel(QTableWidget):
         else:
             q = NotEditableTableWidgetItem('loading %s' % library_onload)
 
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(row, 2, q)
         self.resizeRowToContents(0)

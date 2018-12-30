@@ -40,10 +40,15 @@ class RangesPanel(QTableWidget):
             q = NotEditableTableWidgetItem(range['base'])
             q.setForeground(Qt.red)
             self.setItem(i, 0, q)
-            self.setItem(i, 1, NotEditableTableWidgetItem(str(range['size'])))
-            self.setItem(i, 2, NotEditableTableWidgetItem(range['protection']))
+            q = NotEditableTableWidgetItem(str(range['size']))
+            q.setFlags(Qt.NoItemFlags)
+            self.setItem(i, 1, q)
+            q = NotEditableTableWidgetItem(range['protection'])
+            q.setFlags(Qt.NoItemFlags)
+            self.setItem(i, 2, q)
             if 'file' in range:
                 q = NotEditableTableWidgetItem(range['file']['path'])
+                q.setFlags(Qt.NoItemFlags)
                 q.setForeground(Qt.gray)
                 self.setItem(i, 3, q)
             else:

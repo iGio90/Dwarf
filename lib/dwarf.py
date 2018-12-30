@@ -97,12 +97,10 @@ class Dwarf(object):
                 sym = ''
                 if 'pc' in data['context']:
                     name = data['ptr']
-                    self.app.get_hooks_panel().increment_hook_count(data['ptr'])
                     if 'moduleName' in data['symbol']:
                         sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
                 else:
                     name = data['ptr']
-                    self.app.get_hooks_panel().increment_hook_count(data['ptr'])
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
                     self.app.get_log_panel().log('hook %s %s @thread := %d' % (
@@ -150,7 +148,11 @@ class Dwarf(object):
             args = [args]
         if self.script is None:
             return None
-        return self.script.exports.api(tid, api, args)
+        try:
+            return self.script.exports.api(tid, api, args)
+        except Exception as e:
+            self.app.get_log_panel().log(str(e))
+            return None
 
     def get_loading_library(self):
         return self.loading_library

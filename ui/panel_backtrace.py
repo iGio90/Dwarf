@@ -21,18 +21,23 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
 class BacktracePanel(QTableWidget):
-    def __init__(self, *__args):
+    def __init__(self, app, *__args):
         super().__init__(0, 2)
+        self.app = app
+
+        self.is_java_bt = False
 
         self.verticalHeader().hide()
         self.setHorizontalHeaderLabels(['symbol', 'address'])
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.itemDoubleClicked.connect(self.on_backtrace_item_double_click)
 
     def set_backtrace(self, bt):
         self.setRowCount(0)
         self.setHorizontalHeaderLabels(['symbol', 'address'])
         if type(bt) is list:
-            # native hook
+            # native backtrace
+            self.is_java_bt = False
             for a in bt:
                 row = self.rowCount()
                 self.insertRow(row)
@@ -40,10 +45,12 @@ class BacktracePanel(QTableWidget):
                 name = a['name']
                 if name is None:
                     q = NotEditableTableWidgetItem('-')
+                    q.setFlags(Qt.NoItemFlags)
                     q.setForeground(Qt.gray)
                     self.setItem(row, 0, q)
                 else:
                     q = NotEditableTableWidgetItem(name)
+                    q.setFlags(Qt.NoItemFlags)
                     q.setForeground(Qt.darkGreen)
                     self.setItem(row, 0, q)
                 q = NotEditableTableWidgetItem(a['address'])
@@ -51,6 +58,8 @@ class BacktracePanel(QTableWidget):
                 self.setItem(row, 1, q)
             self.resizeRowToContents(1)
         elif type(bt) is str:
+            # Java backtrace
+            self.is_java_bt = True
             self.setHorizontalHeaderLabels(['method', 'source'])
             parts = bt.split('\n')
             for i in range(0, len(parts)):
@@ -65,10 +74,17 @@ class BacktracePanel(QTableWidget):
                 self.insertRow(row)
 
                 q = NotEditableTableWidgetItem(p[0])
+                q.setFlags(Qt.NoItemFlags)
                 q.setForeground(Qt.darkYellow)
                 self.setItem(row, 0, q)
 
                 q = NotEditableTableWidgetItem(p[1].replace(')', ''))
+                q.setFlags(Qt.NoItemFlags)
                 q.setForeground(Qt.gray)
                 self.setItem(row, 1, q)
             self.resizeRowToContents(1)
+
+    def on_backtrace_item_double_click(self, item):
+        if self.is_java_bt:
+            return
+        self.app.get_memory_panel().read_memory(item.text())

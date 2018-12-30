@@ -56,92 +56,55 @@ class RegistersPanel(QTableWidget):
             self.context_ptr = self.app.get_dwarf().get_loading_library()
 
         if is_java:
-            self.setColumnCount(2)
-            self.setHorizontalHeaderLabels(['argument', 'value'])
-            self.cellChanged.connect(self.java_cell_changed)
+            self.setColumnCount(3)
+            self.setHorizontalHeaderLabels(['argument', 'class', 'value'])
         else:
             self.setColumnCount(4)
             self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
-            self.cellChanged.connect(self.native_cell_changed)
         for reg in context:
             self.insertRow(i)
 
             q = NotEditableTableWidgetItem(reg)
+            q.setFlags(Qt.NoItemFlags)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
 
+            if is_java:
+                q = NotEditableTableWidgetItem(context[reg]['className'])
+                q.setFlags(Qt.NoItemFlags)
+                q.setForeground(Qt.white)
+                self.setItem(i, 1, q)
+
             if context[reg] is not None:
                 if is_java:
-                    q = QTableWidgetItem(str(context[reg]))
+                    if context[reg]['arg'] is None:
+                        q = QTableWidgetItem('null')
+                        q.setForeground(Qt.gray)
+                    else:
+                        q = QTableWidgetItem(str(context[reg]['arg']))
                 else:
                     q = NativeRegisterWidget(self.app, reg, context[reg])
-            else:
-                q = QTableWidgetItem('null')
-                q.setForeground(Qt.gray)
+                q.setFlags(Qt.NoItemFlags)
+                if is_java:
+                    self.setItem(i, 2, q)
+                else:
+                    self.setItem(i, 1, q)
 
-            self.setItem(i, 1, q)
-            if is_java:
-                continue
-
-            q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
-            q.setForeground(Qt.darkCyan)
-            self.setItem(i, 2, q)
-            data = self.app.dwarf_api('getAddressTs', context[reg])
-            q = NotEditableTableWidgetItem(str(data[1]))
-            if data[0] == 0:
-                q.setForeground(Qt.darkGreen)
-            elif data[0] == 1:
-                q.setForeground(Qt.red)
-            elif data[0] == 2:
-                q.setForeground(Qt.white)
-            else:
-                q.setForeground(Qt.darkGray)
-            self.setItem(i, 3, q)
-            self.resizeColumnsToContents()
+                    q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
+                    q.setForeground(Qt.darkCyan)
+                    self.setItem(i, 2, q)
+                    data = self.app.dwarf_api('getAddressTs', context[reg])
+                    if data is not None:
+                        q = NotEditableTableWidgetItem(str(data[1]))
+                        q.setFlags(Qt.NoItemFlags)
+                        if data[0] == 0:
+                            q.setForeground(Qt.darkGreen)
+                        elif data[0] == 1:
+                            q.setForeground(Qt.red)
+                        elif data[0] == 2:
+                            q.setForeground(Qt.white)
+                        else:
+                            q.setForeground(Qt.darkGray)
+                        self.setItem(i, 3, q)
+                    self.resizeColumnsToContents()
             i += 1
-
-    def native_cell_changed(self, row, col):
-        self.cellChanged.disconnect(self.native_cell_changed)
-        key = self.item(row, 0).text()
-        new_val = self.item(row, col).text()
-        val = self.app.dwarf_api('setContextValue', [self.context_ptr, key, new_val])
-
-        self.item(row, col).setText(val)
-
-        if self.app.dwarf_api('isValidPointer', val):
-            self.item(row, col).setForeground(Qt.red)
-        else:
-            self.item(row, col).setForeground(Qt.white)
-
-        self.item(row, 2).setText(str(int(val, 16)))
-
-        data = self.app.dwarf_api('getAddressTs', val)
-
-        self.item(row, 3).setText(str(data[1]))
-        if data[0] == 0:
-            self.item(row, 3).setForeground(Qt.darkGreen)
-        elif data[0] == 1:
-            self.item(row, 3).setForeground(Qt.red)
-        elif data[0] == 2:
-            self.item(row, 3).setForeground(Qt.white)
-        else:
-            self.item(row, 3).setForeground(Qt.darkGray)
-
-        self.cellChanged.connect(self.native_cell_changed)
-
-    def java_cell_changed(self, row, col):
-        self.cellChanged.disconnect(self.java_cell_changed)
-        key = self.item(row, 0).text()
-        new_val = self.item(row, col).text()
-
-        val = self.app.dwarf_api('setContextValue', [self.context_ptr, key, new_val])
-
-        if val is None:
-            val = 'null'
-            self.item(row, col).setForeground(Qt.gray)
-        else:
-            self.item(row, col).setForeground(Qt.white)
-
-        self.item(row, col).setText(val)
-        self.cellChanged.connect(self.java_cell_changed)
-

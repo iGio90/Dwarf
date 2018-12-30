@@ -120,12 +120,14 @@ class ModulesPanel(QTableWidget):
         for module in sorted(modules, key=lambda x: x['name']):
             self.insertRow(i)
             q = NotEditableTableWidgetItem(module['name'])
+            q.setFlags(Qt.NoItemFlags)
             q.setForeground(Qt.gray)
-            self.setItem(i, 0, NotEditableTableWidgetItem(q))
+            self.setItem(i, 0, q)
             q = NotEditableTableWidgetItem(module['base'])
             q.setForeground(Qt.red)
             self.setItem(i, 1, q)
             q = NotEditableTableWidgetItem(str(module['size']))
+            q.setFlags(Qt.NoItemFlags)
             self.setItem(i, 2, q)
             i += 1
         self.resizeRowToContents(0)

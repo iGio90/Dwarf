@@ -56,7 +56,7 @@ class SessionUi(QSplitter):
         self.contexts_panel = ContextsPanel(self.app, 0, 3)
         splitter.addWidget(self.contexts_panel)
 
-        self.backtrace_panel = BacktracePanel()
+        self.backtrace_panel = BacktracePanel(self.app)
         splitter.addWidget(self.backtrace_panel)
 
         return splitter

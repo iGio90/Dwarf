@@ -255,7 +255,7 @@ class WelcomeUi(QSplitter):
         if local_version == '':
             return
 
-        self.frida_update_label.setText('local frida version: %s\nupdated frida version: %s'
+        self.frida_update_label.setText('device frida version: %s\nupdated frida version: %s'
                                         % (local_version, self.updated_frida_version))
 
         self.frida_update_button.setVisible(self.updated_frida_version != local_version)

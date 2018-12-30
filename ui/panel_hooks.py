@@ -27,7 +27,7 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 class HooksPanel(QTableWidget):
     def __init__(self, app):
-        super().__init__(0, 3)
+        super().__init__(0, 2)
         self.app = app
 
         self.hooks = {}
@@ -38,7 +38,7 @@ class HooksPanel(QTableWidget):
         self.native_pending_args = None
         self.java_pending_args = None
 
-        self.setHorizontalHeaderLabels(['input', 'address', 'hit'])
+        self.setHorizontalHeaderLabels(['input', 'address'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -109,14 +109,12 @@ class HooksPanel(QTableWidget):
         self.hooks[ptr] = h
         q = HookWidget(h.get_input())
         q.set_hook_data(h)
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 0, q)
         q = NotEditableTableWidgetItem(hex(ptr))
         q.setForeground(Qt.red)
         self.setItem(self.rowCount() - 1, 1, q)
-        q = NotEditableTableWidgetItem('0')
-        q.setForeground(Qt.gray)
-        self.setItem(self.rowCount() - 1, 2, q)
         self.resizeRowToContents(0)
         self.resizeRowToContents(1)
 
@@ -145,14 +143,13 @@ class HooksPanel(QTableWidget):
 
         q = HookWidget(h.get_input())
         q.set_hook_data(h)
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.darkGreen)
         self.setItem(self.rowCount() - 1, 0, q)
         q = NotEditableTableWidgetItem(hex(0))
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 1, q)
-        q = NotEditableTableWidgetItem('-')
-        q.setForeground(Qt.gray)
-        self.setItem(self.rowCount() - 1, 2, q)
 
         self.app.dwarf_api('hookOnLoad', input)
         self.resizeRowToContents(0)
@@ -181,13 +178,13 @@ class HooksPanel(QTableWidget):
         self.java_hooks[class_method] = h
         q = HookWidget('.'.join(parts[:len(parts)-1]))
         q.set_hook_data(h)
+        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.darkYellow)
         self.setItem(self.rowCount() - 1, 0, q)
         q = NotEditableTableWidgetItem(parts[len(parts) - 1])
+        q.setFlags(Qt.NoItemFlags)
+        q.setForeground(Qt.white)
         self.setItem(self.rowCount() - 1, 1, q)
-        q = NotEditableTableWidgetItem('0')
-        q.setForeground(Qt.gray)
-        self.setItem(self.rowCount() - 1, 2, q)
 
         self.resizeRowToContents(0)
         self.resizeRowToContents(1)
@@ -216,11 +213,6 @@ class HooksPanel(QTableWidget):
             what = item.get_hook_data().get_input()
         if self.app.dwarf_api('setHookLogic', [what, inp[1]]):
             item.get_hook_data().set_logic(inp[1])
-
-    def increment_hook_count(self, ptr):
-        items = self.findItems(ptr, Qt.MatchExactly)
-        for item in items:
-            self.item(item.row(), 2).setText(str(int(self.item(item.row(), 2).text()) + 1))
 
     def reset_hook_count(self):
         for ptr in self.hooks:
