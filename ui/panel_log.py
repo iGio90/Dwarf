@@ -74,6 +74,7 @@ class LogPanel(QWidget):
 
         box = QVBoxLayout()
         self.list = QListWidget()
+        self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         box.addWidget(self.list)
 
         self.input = JsInput(self)
@@ -95,7 +96,7 @@ class LogPanel(QWidget):
             self.list.addItem(item)
 
         if scroll:
-            self.list.scrollToItem(item)
+            self.list.scrollToBottom()
 
     def clear(self):
         self.list.clear()
