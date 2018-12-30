@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit, QStackedLayout, QLabel
 
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
@@ -73,6 +73,7 @@ class LogPanel(QWidget):
         self.app = app
 
         box = QVBoxLayout()
+
         self.list = QListWidget()
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         box.addWidget(self.list)
@@ -89,7 +90,6 @@ class LogPanel(QWidget):
             self.clear()
 
         if isinstance(what, QListWidgetItem):
-            item = what
             self.list.addItem(what)
         else:
             item = NotEditableListWidgetItem(what)

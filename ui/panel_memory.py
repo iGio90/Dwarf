@@ -55,9 +55,12 @@ class MemoryPanel(QTableWidget):
 
         self.resizeColumnsToContents()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_menu)
+        self.setStyleSheet("background-image: url('ui/dwarf_alpha.png'); background-repeat: no-repeat; "
+                           "background-attachment: fixed; background-position: center;")
 
     def show_menu(self, pos):
         cell = self.itemAt(pos)
