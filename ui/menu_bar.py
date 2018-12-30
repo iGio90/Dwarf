@@ -15,6 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import json
+import webbrowser
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QFileDialog
@@ -41,6 +42,7 @@ class MenuBar(object):
         self.build_hooks_menu()
         self.build_find_menu()
         self.build_session_menu()
+        self.build_about_menu()
 
     def add_menu_action(self, menu, action, require_script):
         self.menu_actions.append({
@@ -116,6 +118,19 @@ class MenuBar(object):
         session_menu = self.menu.addMenu('&Session')
         self.add_menu_action(session_menu, session_load, False)
         self.add_menu_action(session_menu, session_save, False)
+
+    def build_about_menu(self):
+        slack = QAction('&Slack', self.app_window)
+        slack.triggered.connect(self.handler_slack)
+        author = QAction('&Author', self.app_window)
+        author.triggered.connect(self.handler_author)
+
+        about_menu = self.menu.addMenu('&About')
+        self.add_menu_action(about_menu, slack, False)
+        self.add_menu_action(about_menu, author, False)
+
+    def handler_author(self):
+        webbrowser.open_new_tab('http://www.giovanni-rocca.com')
 
     def handler_detach(self):
         self.app_window.get_dwarf().detach()
@@ -195,6 +210,12 @@ class MenuBar(object):
             }
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))
+
+    def handler_slack(self):
+        webbrowser.open_new_tab('https://join.slack.com/t/resecret/shared_invite'
+                                '/enQtMzc1NTg4MzE3NjA1LTlkNzYxNTIwYTc2ZTYyOWY1MT'
+                                'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
+                                'WJlNDVjZDcwNGE')
 
     #
     #
