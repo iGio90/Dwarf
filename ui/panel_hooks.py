@@ -60,8 +60,8 @@ class HooksPanel(QTableWidget):
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)
 
-            cond_action = menu.addAction("Condition\t(C)")
-            logic_action = menu.addAction("Logic\t(L)")
+            cond_action = menu.addAction("Condition)")
+            logic_action = menu.addAction("Logic")
 
             sep2 = utils.get_qmenu_separator()
             menu.addAction(sep2)
@@ -77,9 +77,9 @@ class HooksPanel(QTableWidget):
             self.hook_java()
         if is_hook_item:
             if action == cond_action:
-                self.set_condition()
+                self.set_condition(item)
             elif action == logic_action:
-                self.set_logic()
+                self.set_logic(item)
             elif action == delete_action:
                 self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
 
@@ -189,11 +189,7 @@ class HooksPanel(QTableWidget):
         self.resizeRowToContents(0)
         self.resizeRowToContents(1)
 
-    def set_condition(self):
-        if len(self.selectedItems()) < 1:
-            return
-        item = self.item(self.selectedItems()[0].row(), 0)
-
+    def set_condition(self, item):
         inp = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
         if inp[0]:
             what = item.get_hook_data().get_ptr()
@@ -202,7 +198,7 @@ class HooksPanel(QTableWidget):
             if self.app.dwarf_api('setHookCondition', [what, inp[1]]):
                 item.get_hook_data().set_condition(inp[1])
 
-    def set_logic(self):
+    def set_logic(self, item):
         if len(self.selectedItems()) < 1:
             return
         item = self.item(self.selectedItems()[0].row(), 0)
@@ -244,10 +240,6 @@ class HooksPanel(QTableWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
             self.hook_native()
-        elif event.key() == Qt.Key_C:
-            self.set_condition()
-        elif event.key() == Qt.Key_L:
-            self.set_logic()
         elif event.key() == Qt.Key_O:
             self.hook_onload()
         elif event.key() == Qt.Key_J:
