@@ -14,6 +14,7 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import os
 import sys
 
 import frida
@@ -21,8 +22,8 @@ import requests
 import subprocess
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QSplitter, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QListWidget
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import *
 
 from lib import utils
 from threading import Thread
@@ -39,7 +40,7 @@ class WelcomeUi(QSplitter):
         self.app = app
 
         box_container = QWidget()
-        box = QVBoxLayout()
+        left_box = QVBoxLayout()
         header = QHBoxLayout()
 
         icon = QLabel()
@@ -53,13 +54,29 @@ class WelcomeUi(QSplitter):
 
         self.commit_list = QListWidget()
 
-        box.addLayout(header)
-        box.addWidget(self.commit_list)
+        frida_update_box = QHBoxLayout()
+        self.frida_update_label = QLabel('local frida version: -\nupdated frida version: -')
 
-        box_container.setLayout(box)
+        self.frida_update_button = QPushButton('update frida')
+        self.frida_update_button.setVisible(False)
+        self.frida_update_button.clicked.connect(self.update_frida)
 
-        left_box_container = QWidget()
-        left_box = QHBoxLayout()
+        self.dwarf_update_button = QPushButton('update dwarf')
+        self.dwarf_update_button.setVisible(False)
+        self.dwarf_update_button.clicked.connect(self.update_dwarf)
+
+        frida_update_box.addWidget(self.frida_update_label)
+        frida_update_box.addWidget(self.frida_update_button)
+        frida_update_box.addWidget(self.dwarf_update_button)
+
+        left_box.addLayout(header)
+        left_box.addWidget(self.commit_list)
+        left_box.addLayout(frida_update_box)
+
+        box_container.setLayout(left_box)
+
+        right_box_container = QWidget()
+        right_box = QHBoxLayout()
 
         spawns_container = QVBoxLayout()
         spawns_label = QLabel('SPAWN')
@@ -77,19 +94,22 @@ class WelcomeUi(QSplitter):
         procs_container.addWidget(self.proc_list)
         procs_container.addWidget(procs_label)
 
-        left_box.addLayout(spawns_container)
-        left_box.addLayout(procs_container)
+        right_box.addLayout(spawns_container)
+        right_box.addLayout(procs_container)
 
-        left_box_container.setLayout(left_box)
+        right_box_container.setLayout(right_box)
 
         self.addWidget(box_container)
-        self.addWidget(left_box_container)
+        self.addWidget(right_box_container)
 
         frida.get_device_manager().on('added', self.on_device_changed)
         frida.get_device_manager().on('removed', self.on_device_changed)
 
         self.setStretchFactor(0, 4)
         self.setStretchFactor(1, 2)
+
+        self.updated_frida_version = ''
+        self.updated_frida_assets_url = {}
 
         Thread(target=self.update_ui_sync).start()
 
@@ -103,6 +123,7 @@ class WelcomeUi(QSplitter):
     def update_ui_sync(self):
         self.update_commits()
         self.update_device_ui()
+        self.update_frida_version()
 
     def update_commits(self):
         r = None
@@ -123,10 +144,7 @@ class WelcomeUi(QSplitter):
             if most_recent_remote_commit == '':
                 most_recent_remote_commit = commit['sha']
                 if most_recent_remote_commit != most_recent_local_commit:
-                    q = NotEditableListWidgetItem('Update dwarf')
-                    q.setForeground(Qt.green)
-                    self.commit_list.itemClicked.connect(self.update_dwarf)
-                    self.commit_list.addItem(q)
+                    self.dwarf_update_button.setVisible(True)
 
                     q = NotEditableListWidgetItem('')
                     q.setFlags(Qt.NoItemFlags)
@@ -209,6 +227,80 @@ class WelcomeUi(QSplitter):
         for proc in procs:
             q = AndroidPackageWidget('%s\t%s' % (proc.pid, proc.name), '', proc.pid)
             self.proc_list.addItem(q)
+
+    def update_frida_version(self):
+        if self.updated_frida_version == '':
+            r = None
+            try:
+                r = requests.get('https://api.github.com/repos/frida/frida/releases')
+            except:
+                pass
+            if r is None or r.status_code != 200:
+                return
+
+            obj = r.json()[0]
+            self.updated_frida_version = obj['tag_name']
+            for asset in obj['assets']:
+                try:
+                    name = asset['name']
+
+                    tag_start = name.index('android-')
+                    if name.index('server') >= 0:
+                        tag = name[tag_start + 8:-3]
+                        self.updated_frida_assets_url[tag] = asset['browser_download_url']
+                except:
+                    pass
+
+        local_version = self.app.get_adb().get_frida_version().replace('\n', '')
+        if local_version == '':
+            return
+
+        self.frida_update_label.setText('local frida version: %s\nupdated frida version: %s'
+                                        % (local_version, self.updated_frida_version))
+
+        print(self.updated_frida_version)
+        print(local_version)
+        self.frida_update_button.setVisible(self.updated_frida_version != local_version)
+
+    def update_frida(self):
+        def _update():
+            r = None
+            arch = self.app.get_adb().get_device_arch().replace('\n', '')
+            if arch == 'arm64' or arch == 'arm64-v8a':
+                r = requests.get(self.updated_frida_assets_url['arm64'], stream=True)
+            else:
+                if arch in self.updated_frida_assets_url:
+                    r = requests.get(self.updated_frida_assets_url[arch], stream=True)
+            if r is not None:
+                with open('frida.xz', 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                res = utils.do_shell_command('unxz frida.xz')
+                if len(res) == 0:
+                    self.frida_update_label.setText('pushing to device... please wait...')
+                    res = self.app.get_adb().mount_system()
+                    if len(res) == 0:
+                        self.app.get_adb().push('frida', '/sdcard/')
+                        self.app.get_adb().su('killall -9 frida', stdout=subprocess.DEVNULL)
+                        self.app.get_adb().su('mv /sdcard/frida /system/xbin/frida', stdout=subprocess.DEVNULL)
+                        self.app.get_adb().su('chmod 755 /system/xbin/frida', stdout=subprocess.DEVNULL)
+                        self.update_frida_version()
+                        self.app.get_adb().su('frida -D', stdout=subprocess.DEVNULL)
+                        return
+                    else:
+                        utils.show_message_box(res)
+                        self.frida_update_button.setVisible(True)
+                    os.remove('frida')
+                else:
+                    utils.show_message_box(res)
+                    self.frida_update_button.setVisible(True)
+                    os.remove('frida.xz')
+            self.update_frida_version()
+
+        self.frida_update_button.setVisible(False)
+        self.frida_update_label.setText('downloading latest frida server... please wait...')
+        Thread(target=_update).start()
 
     def on_proc_picked(self, widget_android_package):
         self.app.get_dwarf().attach(widget_android_package.get_pid())

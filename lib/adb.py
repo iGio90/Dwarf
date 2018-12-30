@@ -14,6 +14,8 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import subprocess
+
 from lib import utils
 from lib.android_package import AndroidPackage
 
@@ -28,15 +30,27 @@ class Adb(object):
         except:
             self.adb_available = False
 
+    def get_device_arch(self):
+        if not self.adb_available:
+            utils.show_message_box('adb not found')
+            return None
+        return utils.do_shell_command('adb shell getprop ro.product.cpu.abi')
+
+    def get_frida_version(self):
+        if not self.adb_available:
+            utils.show_message_box('adb not found')
+            return None
+        return utils.do_shell_command('adb shell frida --version')
+
     def kill_package(self, package):
         if not self.adb_available:
-            self.app.get_log_panel().log('adb not found')
+            utils.show_message_box('adb not found')
             return None
         utils.do_shell_command("adb shell am force-stop " + package)
 
     def list_packages(self):
         if not self.adb_available:
-            self.app.get_log_panel().log('adb not found')
+            utils.show_message_box('adb not found')
             return None
         packages = utils.do_shell_command('adb shell pm list packages -f').split('\n')
         ret = []
@@ -51,8 +65,26 @@ class Adb(object):
             ret.append(p)
         return ret
 
+    def mount_system(self):
+        if not self.adb_available:
+            utils.show_message_box('adb not found')
+            return None
+        return utils.do_shell_command('adb shell su -c mount -o rw,remount /system')
+
     def pull(self, path, dest):
         if not self.adb_available:
-            self.app.get_log_panel().log('adb not found')
+            utils.show_message_box('adb not found')
             return None
         return utils.do_shell_command('adb pull %s %s' % (path, dest))
+
+    def push(self, path, dest):
+        if not self.adb_available:
+            utils.show_message_box('adb not found')
+            return None
+        return utils.do_shell_command('adb push %s %s' % (path, dest))
+
+    def su(self, cmd, stdout=subprocess.PIPE):
+        if not self.adb_available:
+            utils.show_message_box('adb not found')
+            return None
+        return utils.do_shell_command('adb shell su -c ' + cmd, stdout=stdout)

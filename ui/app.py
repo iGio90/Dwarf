@@ -142,6 +142,9 @@ class App(QWidget):
     def dwarf_api(self, api, args=None):
         return self.get_dwarf().dwarf_api(api, args)
 
+    def get_adb(self):
+        return self.app_window.get_adb()
+
     def get_arch(self):
         return self.arch
 
