@@ -6,8 +6,6 @@ Built on top of pyqt5, frida and some terrible code.
 
 ![Dwarf](https://github.com/iGio90/Dwarf/blob/master/ui/dwarf.png?raw=true)
 
-![Dwarf](https://i.ibb.co/pJbJkQt/Schermata-2018-12-30-alle-01-01-30.png)
-
 ### Play with dwarf
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Bl7Aoe3UxgM/0.jpg)](https://www.youtube.com/watch?v=Bl7Aoe3UxgM)
 
@@ -24,12 +22,7 @@ git clone https://github.com/iGio90/Dwarf
 
 pip3 install -r requirements.txt
 
-python3 main.py com.target.package -s
-
------------------------------------------
-
-to update the app, you can use dwarf menu
-which wrap git commands to update to master
+python3 main.py
 ```
 
 ### Knowledge base
