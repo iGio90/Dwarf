@@ -18,8 +18,6 @@ A rooted Android with frida server installed and running.
 ### Setup and run
 
 ```
-Download a standalone executable from release or run from sources with:
-
 git clone https://github.com/iGio90/Dwarf
 
 pip3 install -r requirements.txt
