@@ -179,6 +179,9 @@ class App(QWidget):
         return self.session_ui.registers_panel
 
     def on_script_destroyed(self):
+        self.get_log_panel().clear()
+        self.get_hooks_panel().setRowCount(0)
+
         self.session_ui.setVisible(False)
         self.welcome_ui.setVisible(True)
 
