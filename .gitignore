@@ -1,3 +1,6 @@
 .idea
 __pycache__
 frida
+build
+dist
+dwarf.spec
