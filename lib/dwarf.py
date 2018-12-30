@@ -46,6 +46,8 @@ class Dwarf(object):
 
     def detach(self):
         self.app.resume()
+        self.app.get_log_panel().clear()
+
         if self.script is not None:
             self.script.unload()
         if self.process is not None:

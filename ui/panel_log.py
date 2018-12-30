@@ -47,20 +47,23 @@ class JsInput(QLineEdit):
             l = len(self.cmds)
             try:
                 self.setText(self.cmds[l - 1 - self.cmd_index])
-                if self.cmd_index < l:
+                if self.cmd_index < l - 1:
                     self.cmd_index += 1
             except:
                 pass
         elif event.key() == Qt.Key_Down:
             try:
-                self.setText(self.cmds[len(self.cmds) - 1 + self.cmd_index])
-                if self.cmd_index > 0:
+                if self.cmd_index >= 0:
                     self.cmd_index -= 1
+                self.setText(self.cmds[len(self.cmds) - 1 - self.cmd_index])
             except:
                 self.setText('')
                 self.cmd_index = 0
         else:
             return super().keyPressEvent(event)
+
+    def clear_history(self):
+        self.cmds.clear()
 
 
 class LogPanel(QWidget):
