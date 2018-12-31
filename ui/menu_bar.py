@@ -143,7 +143,7 @@ class MenuBar(object):
                 data = []
                 for ptr in matches:
                     sym = self.app_window.get_app_instance().dwarf_api('getSymbolByAddress', ptr)
-                    if sym['name'] is None or sym['name'] == '':
+                    if sym['name'] == '' or sym['name'] is None:
                         sym['name'] = sym['address']
                     data.append(sym)
                 TableDialog().build_and_show(self.build_symbol_table, data)

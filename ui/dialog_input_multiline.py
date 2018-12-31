@@ -19,13 +19,17 @@ from PyQt5.QtWidgets import *
 
 
 class InputMultilineDialog(QDialog):
-    def __init__(self, parent=None, hint=None, input_content=''):
+    def __init__(self, parent=None, hint=None, input_content='', min_width=0):
         super(InputMultilineDialog, self).__init__(parent)
 
         layout = QVBoxLayout(self)
+
         if hint:
             layout.addWidget(QLabel(hint))
         self.input_widget = QTextEdit(self)
+        if min_width > 0:
+            self.input_widget.setMinimumWidth(min_width)
+
         if len(input_content) > 0:
             self.input_widget.setText(input_content)
         layout.addWidget(self.input_widget)
@@ -36,8 +40,8 @@ class InputMultilineDialog(QDialog):
             self.accept()
 
     @staticmethod
-    def input(hint=None, input_content=''):
-        dialog = InputMultilineDialog(hint=hint, input_content=input_content)
+    def input(hint=None, input_content='', min_width=0):
+        dialog = InputMultilineDialog(hint=hint, input_content=input_content, min_width=min_width)
         result = dialog.exec_()
 
         return result == QDialog.Accepted, \

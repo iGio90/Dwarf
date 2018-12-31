@@ -60,7 +60,7 @@ class HooksPanel(QTableWidget):
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)
 
-            cond_action = menu.addAction("Condition)")
+            cond_action = menu.addAction("Condition")
             logic_action = menu.addAction("Logic")
 
             sep2 = utils.get_qmenu_separator()
@@ -90,7 +90,11 @@ class HooksPanel(QTableWidget):
                 return
             input = input[1]
 
-        ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
+        ptr = 0
+        try:
+            ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
+        except:
+            pass
         if ptr > 0:
             self.temporary_input = input
             self.native_pending_args = pending_args
@@ -102,9 +106,12 @@ class HooksPanel(QTableWidget):
         h = Hook(Hook.HOOK_NATIVE)
         h.set_ptr(ptr)
         h.set_input(self.temporary_input)
+        self.temporary_input = ''
         if self.native_pending_args:
             h.set_condition(self.native_pending_args['condition'])
             h.set_logic(self.native_pending_args['logic'])
+
+            self.native_pending_args = {}
 
         self.hooks[ptr] = h
         q = HookWidget(h.get_input())

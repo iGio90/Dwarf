@@ -55,7 +55,7 @@ class WelcomeUi(QSplitter):
         self.commit_list = QListWidget()
 
         frida_update_box = QHBoxLayout()
-        self.frida_update_label = QLabel('local frida version: -\nupdated frida version: -')
+        self.frida_update_label = QLabel('device frida version: -\nupdated frida version: -')
 
         self.frida_update_button = QPushButton('update frida')
         self.frida_update_button.setVisible(False)

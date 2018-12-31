@@ -90,7 +90,7 @@ class Dwarf(object):
             return
 
         if parts[0] == 'log':
-            self.app.get_log_panel().log(parts[1], scroll=True)
+            self.app.get_log_panel().log(parts[1])
         elif parts[0] == 'set_context':
             data = json.loads(parts[1])
             self.app.get_contexts().append(data)

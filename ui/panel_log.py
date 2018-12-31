@@ -14,9 +14,11 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit, QStackedLayout, QLabel
+from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit, QStackedLayout, QLabel, \
+    QHBoxLayout, QPushButton
 
+from ui.dialog_input_multiline import InputMultilineDialog
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
@@ -76,27 +78,40 @@ class LogPanel(QWidget):
 
         self.list = QListWidget()
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.list.model().rowsInserted.connect(self.on_row_inserted)
         box.addWidget(self.list)
+
+        js_box = QHBoxLayout()
 
         self.input = JsInput(self)
         self.input.setPlaceholderText('$>')
+        js_box.addWidget(self.input)
 
-        box.addWidget(self.input)
+        function_btn = QPushButton('ƒ')
+        function_btn.setMinimumWidth(25)
+        function_btn.clicked.connect(self.js_function_box)
+        js_box.addWidget(function_btn)
+
+        box.addLayout(js_box)
 
         self.setLayout(box)
 
-    def log(self, what, clear=False, scroll=True):
+    def on_row_inserted(self, qindex, a, b):
+        self.list.scrollToBottom()
+
+    def log(self, what, clear=False):
         if clear:
             self.clear()
 
         if isinstance(what, QListWidgetItem):
             self.list.addItem(what)
         else:
-            item = NotEditableListWidgetItem(what)
-            self.list.addItem(item)
-
-        if scroll:
-            self.list.scrollToBottom()
+            self.list.addItem(NotEditableListWidgetItem(what))
 
     def clear(self):
         self.list.clear()
+
+    def js_function_box(self):
+        accepted, inp = InputMultilineDialog().input(min_width=500)
+        if len(inp) > 0:
+            self.app.dwarf_api('evaluateFunction', inp)
