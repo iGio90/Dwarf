@@ -4,6 +4,5 @@ frida
 .DS_Store
 dist
 build
-dwarf.spec
 .vagrant/
 Vagrantfile
