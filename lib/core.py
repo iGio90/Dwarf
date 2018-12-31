@@ -106,7 +106,7 @@ class Dwarf(object):
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
                 if self.loading_library is None:
                     self.app.get_log_panel().log('hook %s %s @thread := %d' % (
-                        name, sym, data['tid']), scroll=True)
+                        name, sym, data['tid']))
                 if len(self.app.get_contexts()) > 1:
                     return
             else:
@@ -124,7 +124,7 @@ class Dwarf(object):
         elif parts[0] == 'onload_callback':
             self.loading_library = parts[1]
             self.app.get_log_panel().log('hook onload %s @thread := %s' % (
-                parts[1], parts[3]), scroll=True)
+                parts[1], parts[3]))
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
         elif parts[0] == 'hook_java_callback':
             self.app.get_hooks_panel().hook_java_callback(parts[1])
