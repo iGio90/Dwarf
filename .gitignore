@@ -4,5 +4,4 @@ frida
 .DS_Store
 dist
 build
-.vagrant/
-Vagrantfile
+Dwarf.iml
