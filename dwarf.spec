@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['dwarf.py'],
-             pathex=['/home/vagrant/Dwarf'],
+             pathex=['/tmp/Dwarf'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -18,8 +18,8 @@ a = Analysis(['dwarf.py'],
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
-a.datas += [('ui/dwarf.png', '/home/vagrant/Dwarf/ui/dwarf.png','DATA')]
-a.datas += [('ui/dwarf_alpha.png', '/home/vagrant/Dwarf/ui/dwarf_alpha.png','DATA')]
+a.datas += [('ui/dwarf.png', '/tmp/Dwarf/ui/dwarf.png','DATA')]
+a.datas += [('ui/dwarf_alpha.png', '/tmp/Dwarf/ui/dwarf_alpha.png','DATA')]
 
 
 exe = EXE(pyz,
