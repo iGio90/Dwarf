@@ -19,7 +19,7 @@ import threading
 from PyQt5.QtGui import QIcon
 
 from lib.adb import Adb
-from lib.dwarf import Dwarf
+from lib.core import Dwarf
 from ui.menu_bar import MenuBar
 
 from PyQt5.QtWidgets import *
@@ -31,8 +31,6 @@ from ui.ui_welcome import WelcomeUi
 class AppWindow(QMainWindow):
     def __init__(self, dwarf_args, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
-
-        self.setWindowIcon(QIcon('ui/secret.png'))
 
         self.app = App(self)
         self.adb = Adb(self.app)

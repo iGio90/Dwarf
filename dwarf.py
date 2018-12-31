@@ -15,10 +15,13 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import argparse
+
 import qdarkstyle
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
+
+from lib import utils
 from ui.app import AppWindow
 
 if __name__ == '__main__':
@@ -29,7 +32,7 @@ if __name__ == '__main__':
 
     app = QApplication([])
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    app.setWindowIcon(QIcon('ui/dwarf.png'))
+    app.setWindowIcon(QIcon(utils.resource_path('ui/dwarf.png')))
 
     app_window = AppWindow(args)
     app_window.showMaximized()

@@ -59,8 +59,10 @@ class MemoryPanel(QTableWidget):
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_menu)
-        self.setStyleSheet("background-image: url('ui/dwarf_alpha.png'); background-repeat: no-repeat; "
-                           "background-attachment: fixed; background-position: center;")
+
+        self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
+                           "background-attachment: fixed; background-position: center;" %
+                           utils.resource_path('ui/dwarf_alpha.png'))
 
     def show_menu(self, pos):
         cell = self.itemAt(pos)

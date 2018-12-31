@@ -14,21 +14,45 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import os
 import subprocess
+import sys
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QAction, QMessageBox
 
-
 app_icon = None
+
+
+def do_shell_command(cmd, stdout=subprocess.PIPE):
+    result = subprocess.run(cmd.split(' '), stdout=stdout)
+    if stdout == subprocess.PIPE:
+        return result.stdout.decode('utf8')
+    else:
+        return ''
 
 
 def get_app_icon():
     global app_icon
     if app_icon is None:
-        app_icon = QPixmap("ui/dwarf.png").scaledToHeight(75, Qt.SmoothTransformation)
+        app_icon = QPixmap(resource_path('ui/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
     return app_icon
+
+
+def get_qmenu_separator():
+    separator = QAction("--------------------")
+    separator.setEnabled(False)
+    return separator
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 def show_message_box(text, details=None):
@@ -40,17 +64,3 @@ def show_message_box(text, details=None):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
-
-
-def get_qmenu_separator():
-    separator = QAction("--------------------")
-    separator.setEnabled(False)
-    return separator
-
-
-def do_shell_command(cmd, stdout=subprocess.PIPE):
-    result = subprocess.run(cmd.split(' '), stdout=stdout)
-    if stdout == subprocess.PIPE:
-        return result.stdout.decode('utf8')
-    else:
-        return ''
