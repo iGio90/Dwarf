@@ -136,9 +136,9 @@ class MenuBar(object):
         self.app_window.get_dwarf().detach()
 
     def handler_find_symbol(self):
-        input = InputDialog().input('find symbol by pattern (*_open*)')
-        if input[0]:
-            matches = self.app_window.get_app_instance().dwarf_api('findSymbol', input[1])
+        accept, input = InputDialog().input('find symbol by pattern', placeholder='*_open*')
+        if accept:
+            matches = self.app_window.get_app_instance().dwarf_api('findSymbol', input)
             if len(matches) > 0:
                 data = []
                 for ptr in matches:
@@ -177,6 +177,7 @@ class MenuBar(object):
                     self.app_window.get_app_instance().get_hooks_panel().hook_java(hook['input'], hook)
                 for hook in session['onloads']:
                     self.app_window.get_app_instance().get_hooks_panel().hook_onload(hook)
+                self.app_window.get_app_instance().get_log_panel().set_js_script_text(session['script'])
 
     def handler_session_save(self):
         r = QFileDialog.getSaveFileName()
@@ -189,7 +190,7 @@ class MenuBar(object):
                 hooks.append({
                     'input': h.get_input(),
                     'condition': h.get_condition(),
-                    'logic': h.get_logic()
+                    'logic': h.get_logic(),
                 })
             java_hooks = []
             for hook in self.app_window.get_app_instance().get_hooks_panel().get_java_hooks():
@@ -207,6 +208,7 @@ class MenuBar(object):
                 'natives': hooks,
                 'java': java_hooks,
                 'onloads': onload_hooks,
+                'script': self.app_window.get_app_instance().get_log_panel().get_js_script_text()
             }
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))
@@ -223,20 +225,10 @@ class MenuBar(object):
     #
     #
 
-    def build_app_list(self, list, data):
-        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
-        for ap in sorted(data, key=lambda x: x.name):
-            list.addItem(AndroidAppWidget(ap))
-
     def build_packages_list(self, list, data):
         list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
         for ap in sorted(data, key=lambda x: x.package):
             list.addItem(AndroidPackageWidget(ap))
-
-    def build_proc_list(self, list, data):
-        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
-        for ap in sorted(data, key=lambda x: x.name):
-            list.addItem(AndroidProcWidget(ap))
 
     def build_symbol_table(self, table, data):
         table.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))

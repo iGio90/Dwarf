@@ -19,13 +19,14 @@ from PyQt5.QtWidgets import *
 
 
 class InputDialog(QDialog):
-    def __init__(self, parent=None, hint=None, size=False, input_content=''):
+    def __init__(self, parent=None, hint=None, size=False, input_content='', placeholder=''):
         super(InputDialog, self).__init__(parent)
 
         layout = QVBoxLayout(self)
         if hint:
             layout.addWidget(QLabel(hint))
         self.input_widget = QLineEdit(self)
+        self.input_widget.setPlaceholderText(placeholder)
         if len(input_content) > 0:
             self.input_widget.setText(input_content)
         self.input_widget.setMinimumWidth(350)
@@ -50,8 +51,8 @@ class InputDialog(QDialog):
             self.accept()
 
     @staticmethod
-    def input(hint=None, size=False, input_content=''):
-        dialog = InputDialog(hint=hint, size=size, input_content=input_content)
+    def input(hint=None, size=False, input_content='', placeholder=''):
+        dialog = InputDialog(hint=hint, size=size, input_content=input_content, placeholder=placeholder)
         result = dialog.exec_()
 
         if size:

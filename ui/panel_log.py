@@ -185,3 +185,9 @@ class LogPanel(QWidget):
 
     def js_function_box(self):
         self.js_script.show()
+
+    def get_js_script_text(self):
+        return self.js_script.input_widget.toPlainText()
+
+    def set_js_script_text(self, script):
+        self.js_script.input_widget.setText(script)
