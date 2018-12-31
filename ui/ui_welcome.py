@@ -266,7 +266,7 @@ class WelcomeUi(QSplitter):
     def update_frida(self):
         def _update():
             r = None
-            arch = self.app.get_adb().get_device_arch().replace('\n', '')
+            arch = self.app.get_adb().get_device_arch().replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
             if arch == 'arm64' or arch == 'arm64-v8a':
                 r = requests.get(self.updated_frida_assets_url['arm64'], stream=True)
             elif arch == 'armeabi-v7a':
