@@ -6,6 +6,8 @@ Built on top of pyqt5, frida and some terrible code.
 
 ![Dwarf](https://i.ibb.co/NYHB0g7/Schermata-2018-12-30-alle-08-59-06.png)
 
+![Dwarf](https://i.ibb.co/zfNNGHH/Schermata-2018-12-31-alle-15-19-18.png)
+
 ### Play with dwarf
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/on5PLAYNS7s/0.jpg)](https://www.youtube.com/watch?v=on5PLAYNS7s)
 
