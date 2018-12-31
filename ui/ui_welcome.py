@@ -252,8 +252,11 @@ class WelcomeUi(QSplitter):
                     pass
 
         local_version = self.app.get_adb().get_frida_version().replace('\n', '')
-        if local_version == '':
-            return
+        try:
+            if local_version.index('frida') >= 0:
+                local_version = ''
+        except:
+            pass
 
         self.frida_update_label.setText('device frida version: %s\nupdated frida version: %s'
                                         % (local_version, self.updated_frida_version))
