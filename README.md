@@ -7,7 +7,7 @@ Built on top of pyqt5, frida and some terrible code.
 ![Dwarf](https://i.ibb.co/NYHB0g7/Schermata-2018-12-30-alle-08-59-06.png)
 
 ### Play with dwarf
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Bl7Aoe3UxgM/0.jpg)](https://www.youtube.com/watch?v=Bl7Aoe3UxgM)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/on5PLAYNS7s/0.jpg)](https://www.youtube.com/watch?v=on5PLAYNS7s)
 
 ---
 For discussion and suggestions, please let's have a speak on [Slack](https://join.slack.com/t/resecret/shared_invite/enQtMzc1NTg4MzE3NjA1LTlkNzYxNTIwYTc2ZTYyOWY1MTQ1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwNWJlNDVjZDcwNGE)!
