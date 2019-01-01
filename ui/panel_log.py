@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QMargins
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, \
     QDialog, QSplitter
@@ -139,21 +139,24 @@ class JsInput(QLineEdit):
         self.cmds.clear()
 
 
-class LogPanel(QWidget):
+class LogPanel(QSplitter):
     def __init__(self, app, *args, **kwargs):
         super().__init__(None, *args, **kwargs)
 
         self.app = app
         self.js_script = JsScript(app)
 
-        box = QVBoxLayout()
+        self.setOrientation(Qt.Vertical)
+        self.setContentsMargins(QMargins(0, 0, 0, 0))
+        self.setHandleWidth(2)
 
         self.list = QListWidget()
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.list.model().rowsInserted.connect(self.on_row_inserted)
-        box.addWidget(self.list)
+        self.addWidget(self.list)
 
         js_box = QHBoxLayout()
+        js_box.setContentsMargins(QMargins(3, 3, 3, 3))
 
         self.input = JsInput(self)
         self.input.setPlaceholderText('$>')
@@ -161,12 +164,11 @@ class LogPanel(QWidget):
 
         function_btn = QPushButton('ƒ')
         function_btn.setMinimumWidth(25)
-        function_btn.clicked.connect(self.js_function_box)
         js_box.addWidget(function_btn)
 
-        box.addLayout(js_box)
-
-        self.setLayout(box)
+        js_box_widget = QWidget()
+        js_box_widget.setLayout(js_box)
+        self.addWidget(js_box_widget)
 
     def on_row_inserted(self, qindex, a, b):
         self.list.scrollToBottom()

@@ -39,6 +39,8 @@ class WelcomeUi(QSplitter):
 
         self.app = app
 
+        self.setHandleWidth(2)
+
         box_container = QWidget()
         left_box = QVBoxLayout()
         header = QHBoxLayout()

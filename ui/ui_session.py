@@ -43,11 +43,15 @@ class SessionUi(QSplitter):
 
         self.addWidget(self.build_left_column())
         self.addWidget(self.build_central_content())
+
+        self.setHandleWidth(2)
+
         self.setStretchFactor(0, 3)
         self.setStretchFactor(1, 6)
 
     def build_left_column(self):
         splitter = QSplitter()
+        splitter.setHandleWidth(2)
         splitter.setOrientation(Qt.Vertical)
 
         self.hooks_panel = HooksPanel(self.app)
@@ -67,8 +71,10 @@ class SessionUi(QSplitter):
         layout.setContentsMargins(0, 0, 0, 0)
 
         splitter = QSplitter()
+        splitter.setHandleWidth(2)
 
         main_panel = QSplitter(self)
+        main_panel.setHandleWidth(2)
         main_panel.setOrientation(Qt.Vertical)
 
         self.registers_panel = RegistersPanel(self.app, 0, 4)
@@ -86,6 +92,7 @@ class SessionUi(QSplitter):
         splitter.addWidget(main_panel)
 
         right_splitter = QSplitter()
+        right_splitter.setHandleWidth(2)
         right_splitter.setOrientation(Qt.Vertical)
 
         self.modules_panel = ModulesPanel(self.app, 0, 3)
