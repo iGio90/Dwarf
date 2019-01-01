@@ -268,6 +268,9 @@ class WelcomeUi(QSplitter):
 
     def update_frida(self):
         def _update():
+            if os.path.exists('frida'):
+                os.remove('frida')
+
             r = None
             arch = self.app.get_adb().get_device_arch().replace('\n', '').replace('\t', '')\
                 .replace(' ', '').replace('\r', '')
@@ -285,7 +288,6 @@ class WelcomeUi(QSplitter):
                             f.write(chunk)
                 res = utils.do_shell_command('unxz frida.xz')
                 if len(res) == 0:
-                    self.frida_update_label.setText('pushing to device... please wait...')
                     res = self.app.get_adb().mount_system()
                     if len(res) == 0:
                         self.app.get_adb().push('frida', '/sdcard/')
@@ -294,14 +296,8 @@ class WelcomeUi(QSplitter):
                         self.app.get_adb().su('chmod 755 /system/xbin/frida', stdout=subprocess.DEVNULL)
                         self.update_frida_version()
                         self.app.get_adb().su('frida -D', stdout=subprocess.DEVNULL)
-                        return
-                    else:
-                        utils.show_message_box(res)
-                        self.frida_update_button.setVisible(True)
                     os.remove('frida')
                 else:
-                    utils.show_message_box(res)
-                    self.frida_update_button.setVisible(True)
                     os.remove('frida.xz')
             self.update_frida_version()
 

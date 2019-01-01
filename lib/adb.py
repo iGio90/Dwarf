@@ -69,7 +69,7 @@ class Adb(object):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell su -c mount -o rw,remount /system')
+        return utils.do_shell_command('adb shell su -c "mount -o rw,remount /system"')
 
     def pull(self, path, dest):
         if not self.adb_available:
@@ -87,4 +87,4 @@ class Adb(object):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell su -c ' + cmd, stdout=stdout)
+        return utils.do_shell_command('adb shell su -c "' + cmd + '"', stdout=stdout)
