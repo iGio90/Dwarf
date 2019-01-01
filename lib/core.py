@@ -32,7 +32,7 @@ class Dwarf(object):
         self.process = None
         self.script = None
 
-    def attach(self, pid_or_package):
+    def attach(self, pid_or_package, script=None):
         if self.process is not None:
             self.detach()
 
@@ -42,7 +42,7 @@ class Dwarf(object):
         except Exception as e:
             utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
             return
-        self.load_script()
+        self.load_script(script)
 
     def detach(self):
         self.app.resume()
@@ -53,7 +53,7 @@ class Dwarf(object):
         if self.process is not None:
             self.process.detach()
 
-    def load_script(self):
+    def load_script(self, script=None):
         with open('lib/script.js', 'r') as f:
             s = f.read()
         self.script = self.process.create_script(s)
@@ -61,9 +61,12 @@ class Dwarf(object):
         self.script.on('destroyed', self.on_destroyed)
         self.script.load()
 
+        if script is not None:
+            self.dwarf_api('evaluateFunction', script)
+
         self.app_window.on_script_loaded()
 
-    def spawn(self, package):
+    def spawn(self, package, script=None):
         if self.process is not None:
             self.detach()
 
@@ -75,8 +78,8 @@ class Dwarf(object):
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
             return
         self.process = device.attach(pid)
-        self.load_script()
-        device.resume(package)
+        self.load_script(script)
+        device.resume(pid)
 
     def on_message(self, message, data):
         if 'payload' not in message:

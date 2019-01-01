@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import *
 from lib import utils
 from threading import Thread
 
+from ui.dialog_js_editor import JsEditorDialog
 from ui.list_pick import PickList
 from ui.widget_android_package import AndroidPackageWidget
 from ui.widget_item_not_editable import NotEditableListWidgetItem
@@ -38,6 +39,8 @@ class WelcomeUi(QSplitter):
         super().__init__(*__args)
 
         self.app = app
+
+        self.startup_script = ''
 
         self.setHandleWidth(2)
 
@@ -306,7 +309,17 @@ class WelcomeUi(QSplitter):
         Thread(target=_update).start()
 
     def on_proc_picked(self, widget_android_package):
-        self.app.get_dwarf().attach(widget_android_package.get_pid())
+        editor = JsEditorDialog(self.app, def_text=self.startup_script,
+                                placeholder_text='// Javascript with frida and dwarf api to run at injection')
+        accept, what = editor.show()
+        if accept:
+            self.startup_script = what
+            self.app.get_dwarf().attach(widget_android_package.get_pid(), script=what)
 
     def on_spawn_picked(self, widget_android_package):
-        self.app.get_dwarf().spawn(widget_android_package.get_package_name())
+        editor = JsEditorDialog(self.app, def_text=self.startup_script,
+                                placeholder_text='// Javascript with frida and dwarf api to run at injection')
+        accept, what = editor.show()
+        if accept:
+            self.startup_script = what
+            self.app.get_dwarf().spawn(widget_android_package.get_package_name(), script=what)

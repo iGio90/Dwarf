@@ -15,82 +15,11 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt, QMargins
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton, \
-    QDialog, QSplitter
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QLineEdit, QHBoxLayout, QPushButton, \
+    QSplitter
 
-from ui.dialog_input_multiline import QTextEdit
+from ui.dialog_js_editor import JsEditorDialog
 from ui.widget_item_not_editable import NotEditableListWidgetItem
-
-
-class JsScript(QDialog):
-    def __init__(self, app, flags=None, *args, **kwargs):
-        super().__init__(flags, *args, **kwargs)
-
-        self.app = app
-
-        splitter = QSplitter()
-
-        self.input_widget = QTextEdit()
-        self.input_widget.setText('// js script with both frida and dwarf api.\n'
-                                  '// note that it\'s evaluated. Which means, if you define a variable\n'
-                                  '// or attach an Interceptor, it won\'t be removed by '
-                                  'just deleting the script content')
-
-        self.api_list = QListWidget()
-        self.apis = []
-
-        splitter.addWidget(self.input_widget)
-        splitter.addWidget(self.api_list)
-
-        splitter.setStretchFactor(0, 6)
-        splitter.setStretchFactor(1, 2)
-
-        layout = QHBoxLayout()
-        layout.addWidget(splitter)
-
-        self.setMinimumWidth(app.width())
-        self.setMinimumHeight(app.height())
-
-        self.setLayout(layout)
-
-    def show(self):
-        if len(self.apis) == 0:
-            self.apis = self.app.get_dwarf().script.exports.apilist()
-            for api_name in self.apis:
-                apis = self.apis[api_name]
-                if len(apis) == 0:
-                    continue
-
-                q = NotEditableListWidgetItem(api_name)
-                q.setFlags(Qt.NoItemFlags)
-                q.setFont(QFont('arial', 19, QFont.Bold))
-                q.setForeground(Qt.white)
-                self.api_list.addItem(q)
-
-                name = api_name
-                if name == 'Dwarf':
-                    name = 'api'
-
-                for api in sorted(apis):
-                    q = NotEditableListWidgetItem('%s.%s' % (name, api))
-                    q.setFlags(Qt.NoItemFlags)
-                    q.setForeground(Qt.lightGray)
-                    self.api_list.addItem(q)
-                q = NotEditableListWidgetItem()
-                q.setFlags(Qt.NoItemFlags)
-                self.api_list.addItem(q)
-
-        self.showMaximized()
-        self.exec_()
-        t = self.input_widget.toPlainText()
-        if len(t) > 0:
-            self.app.dwarf_api('evaluateFunction', t)
-
-    def keyPressEvent(self, event):
-        super(JsScript, self).keyPressEvent(event)
-        if event.key() == Qt.Key_Escape:
-            self.accept()
 
 
 class JsInput(QLineEdit):
@@ -144,7 +73,7 @@ class LogPanel(QSplitter):
         super().__init__(None, *args, **kwargs)
 
         self.app = app
-        self.js_script = JsScript(app)
+        self.js_script = ''
 
         self.setOrientation(Qt.Vertical)
         self.setContentsMargins(QMargins(0, 0, 0, 0))
@@ -164,6 +93,7 @@ class LogPanel(QSplitter):
 
         function_btn = QPushButton('ƒ')
         function_btn.setMinimumWidth(25)
+        function_btn.clicked.connect(self.js_function_box)
         js_box.addWidget(function_btn)
 
         js_box_widget = QWidget()
@@ -186,10 +116,19 @@ class LogPanel(QSplitter):
         self.list.clear()
 
     def js_function_box(self):
-        self.js_script.show()
+        accept, what = JsEditorDialog(
+            self.app, def_text=self.js_script,
+            placeholder_text='// js script with both frida and dwarf api.\n'
+                             '// note that it\'s evaluated. Which means, if you define a variable\n'
+                             '// or attach an Interceptor, it won\'t be removed by '
+                             'just deleting the script content').show()
+        if accept:
+            self.js_script = what
+            if len(what) > 0:
+                self.app.dwarf_api('evaluateFunction', what)
 
     def get_js_script_text(self):
-        return self.js_script.input_widget.toPlainText()
+        return self.js_script
 
     def set_js_script_text(self, script):
-        self.js_script.input_widget.setText(script)
+        self.js_script = script

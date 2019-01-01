@@ -26,7 +26,8 @@ from ui.app import AppWindow
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--spawn", action='store_true', help="spawn the process instead of attach")
+    parser.add_argument("-s", "--script", action='store_true', help="an additional script to load with "
+                                                                    "dwarf and frida js api")
     parser.add_argument("-p", "--package", help="package name or pid")
     args = parser.parse_args()
 

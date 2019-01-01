@@ -45,11 +45,7 @@ class AppWindow(QMainWindow):
         self.menu = MenuBar(self)
 
         if dwarf_args.package is not None:
-            spawn = dwarf_args.spawn
-            if spawn:
-                self.dwarf.spawn(dwarf_args.package)
-            else:
-                self.dwarf.attach(dwarf_args.package)
+            self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
     def get_adb(self):
         return self.adb
