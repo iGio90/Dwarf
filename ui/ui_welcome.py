@@ -253,7 +253,8 @@ class WelcomeUi(QSplitter):
                 except:
                     pass
 
-        local_version = self.app.get_adb().get_frida_version().replace('\n', '')
+        local_version = self.app.get_adb().get_frida_version().replace('\n', '')\
+            .replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
         try:
             if local_version.index('frida') >= 0:
                 local_version = ''
@@ -268,7 +269,8 @@ class WelcomeUi(QSplitter):
     def update_frida(self):
         def _update():
             r = None
-            arch = self.app.get_adb().get_device_arch().replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
+            arch = self.app.get_adb().get_device_arch().replace('\n', '').replace('\t', '')\
+                .replace(' ', '').replace('\r', '')
             if arch == 'arm64' or arch == 'arm64-v8a':
                 r = requests.get(self.updated_frida_assets_url['arm64'], stream=True)
             elif arch == 'armeabi-v7a':
