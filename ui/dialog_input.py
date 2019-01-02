@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import *
 
 
 class InputDialog(QDialog):
-    def __init__(self, parent=None, hint=None, size=False, input_content='', placeholder=''):
+    def __init__(self, parent=None, hint=None, input_content='', placeholder=''):
         super(InputDialog, self).__init__(parent)
 
         layout = QVBoxLayout(self)
@@ -34,16 +34,6 @@ class InputDialog(QDialog):
 
         self.size_widget = None
         self.sub_widget = None
-        if size:
-            layout.addWidget(QLabel('size'))
-            self.size_widget = QLineEdit(self)
-            self.size_widget.setText('1024')
-            layout.addWidget(self.size_widget)
-
-            layout.addWidget(QLabel('substract'))
-            self.sub_widget = QLineEdit(self)
-            self.sub_widget.setText('512')
-            layout.addWidget(self.sub_widget)
 
     def keyPressEvent(self, event):
         super(InputDialog, self).keyPressEvent(event)
@@ -51,15 +41,9 @@ class InputDialog(QDialog):
             self.accept()
 
     @staticmethod
-    def input(hint=None, size=False, input_content='', placeholder=''):
-        dialog = InputDialog(hint=hint, size=size, input_content=input_content, placeholder=placeholder)
+    def input(hint=None, input_content='', placeholder=''):
+        dialog = InputDialog(hint=hint, input_content=input_content, placeholder=placeholder)
         result = dialog.exec_()
 
-        if size:
-            return result == QDialog.Accepted, \
-                   dialog.input_widget.text(), \
-                   dialog.size_widget.text(), \
-                   dialog.sub_widget.text(),
-        else:
-            return result == QDialog.Accepted, \
-                   dialog.input_widget.text()
+        return result == QDialog.Accepted, \
+               dialog.input_widget.text()

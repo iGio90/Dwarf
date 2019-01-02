@@ -22,8 +22,15 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 class ByteWidget(NotEditableTableWidgetItem):
     def __init__(self, *__args):
         super().__init__(*__args)
+
+        self.setTextAlignment(Qt.AlignCenter)
+
         self.value = 0
         self.ptr = 0
+        self.offset = 0
+
+    def get_offset(self):
+        return self.offset
 
     def get_ptr(self):
         return self.ptr
@@ -31,11 +38,18 @@ class ByteWidget(NotEditableTableWidgetItem):
     def get_value(self):
         return self.value
 
+    def set_offset(self, offset):
+        self.offset = offset
+
     def set_ptr(self, ptr):
         self.ptr = ptr
 
     def set_value(self, value):
         self.value = value
+        t = '%x' % self.value
+        if len(t) < 2:
+            t = '0' + t
+        self.setText(t)
 
         if self.value == 0:
             self.setForeground(Qt.gray)

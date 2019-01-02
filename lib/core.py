@@ -73,7 +73,7 @@ class Dwarf(object):
         device = frida.get_usb_device()
         self.app_window.get_adb().kill_package(package)
         try:
-            pid = device.spawn([package])
+            pid = device.spawn(package)
             self.process = device.attach(pid)
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))

@@ -14,7 +14,6 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import keystone
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
@@ -33,6 +32,7 @@ class WriteInstructionDialog(QDialog):
         layout.addWidget(self.input_widget)
 
         arch_mode_layout = QHBoxLayout()
+        import keystone
         ks_objs = dir(keystone.keystone_const)
 
         self.arch = QComboBox(self)

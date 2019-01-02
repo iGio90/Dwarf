@@ -21,17 +21,17 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
     def __init__(self, *__args):
         super().__init__(*__args)
 
-        self.relative_offset = 0
+        self.offset = 0
         self.address = 0
 
     def set_address(self, address):
         self.address = address
 
-    def set_relative_offset(self, offset):
-        self.relative_offset = offset
+    def set_offset(self, offset):
+        self.offset = offset
 
     def get_address(self):
         return self.address
 
-    def get_relative_offset(self):
-        return self.relative_offset
+    def get_offset(self):
+        return self.offset

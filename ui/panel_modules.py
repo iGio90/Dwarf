@@ -58,14 +58,20 @@ class ModulesPanel(QTableWidget):
             self.app.dwarf_api('updateModules')
         if item is not None:
             if action == action_exports:
-                exports = json.loads(self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text()))
-                TableDialog().build_and_show(self.build_exports_table, exports)
+                exports = self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text())
+                if exports:
+                    exports = json.loads(exports)
+                    TableDialog().build_and_show(self.build_exports_table, exports)
             elif action == action_imports:
-                imports = json.loads(self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text()))
-                TableDialog().build_and_show(self.build_imports_table, imports)
+                imports = self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text())
+                if imports:
+                    imports = json.loads(imports)
+                    TableDialog().build_and_show(self.build_exports_table, imports)
             elif action == action_symbols:
-                symbols = json.loads(self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text()))
-                TableDialog().build_and_show(self.build_exports_table, symbols)
+                symbols = self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text())
+                if symbols:
+                    symbols = json.loads(symbols)
+                    TableDialog().build_and_show(self.build_exports_table, symbols)
 
     def build_exports_table(self, table, exports):
         if len(exports) > 0:
@@ -130,7 +136,6 @@ class ModulesPanel(QTableWidget):
             q.setFlags(Qt.NoItemFlags)
             self.setItem(i, 2, q)
             i += 1
-        self.resizeRowToContents(0)
         self.resizeRowToContents(1)
 
     def modules_cell_double_clicked(self, row, c):
