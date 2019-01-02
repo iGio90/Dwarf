@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QTableWidget, QScrollBar
 
 from ui.widget_context import ContextItem
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
@@ -28,7 +28,10 @@ class ContextsPanel(QTableWidget):
 
         self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
         self.verticalHeader().hide()
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scrollbar = QScrollBar()
+        scrollbar.setFixedWidth(0)
+        scrollbar.setFixedHeight(0)
+        self.setHorizontalScrollBar(scrollbar)
         self.itemDoubleClicked.connect(self.on_context_item_double_click)
 
     def add_context(self, data, library_onload=None):
