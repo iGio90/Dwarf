@@ -108,3 +108,6 @@ class RegistersPanel(QTableWidget):
                         self.setItem(i, 3, q)
                     self.resizeColumnsToContents()
             i += 1
+
+    def have_context(self):
+        return self.rowCount() > 0

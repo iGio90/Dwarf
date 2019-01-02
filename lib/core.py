@@ -74,10 +74,10 @@ class Dwarf(object):
         self.app_window.get_adb().kill_package(package)
         try:
             pid = device.spawn([package])
+            self.process = device.attach(pid)
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
             return
-        self.process = device.attach(pid)
         self.load_script(script)
         device.resume(pid)
 
@@ -110,7 +110,7 @@ class Dwarf(object):
                 if self.loading_library is None:
                     self.app.get_log_panel().log('hook %s %s @thread := %d' % (
                         name, sym, data['tid']))
-                if len(self.app.get_contexts()) > 1:
+                if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
                     return
             else:
                 self.app.arch = data['arch']

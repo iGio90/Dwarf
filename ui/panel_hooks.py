@@ -55,16 +55,18 @@ class HooksPanel(QTableWidget):
         item = self.itemAt(pos)
         if item is not None:
             item = self.item(self.itemAt(pos).row(), 0)
-        is_hook_item = item is not None and isinstance(item, HookWidget) and item.get_hook_data().ptr > 0
+        is_hook_item = item is not None and isinstance(item, HookWidget)
         if is_hook_item:
             sep = utils.get_qmenu_separator()
             menu.addAction(sep)
 
-            cond_action = menu.addAction("Condition")
-            logic_action = menu.addAction("Logic")
+            if item.get_hook_data().ptr > 0:
+                # is either a native or java hook
+                cond_action = menu.addAction("Condition")
+                logic_action = menu.addAction("Logic")
 
-            sep2 = utils.get_qmenu_separator()
-            menu.addAction(sep2)
+                sep2 = utils.get_qmenu_separator()
+                menu.addAction(sep2)
 
             delete_action = menu.addAction("Delete")
 
@@ -76,12 +78,12 @@ class HooksPanel(QTableWidget):
         elif action == hook_java_action:
             self.hook_java()
         if is_hook_item:
-            if action == cond_action:
+            if action == delete_action:
+                self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
+            elif action == cond_action:
                 self.set_condition(item)
             elif action == logic_action:
                 self.set_logic(item)
-            elif action == delete_action:
-                self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
 
     def hook_native(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
