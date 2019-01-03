@@ -17,6 +17,8 @@ Dwarf - Copyright (C) 2018 iGio90
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout
 
+from lib import prefs
+from ui.floating_panel_data import DataPanel
 from ui.panel_backtrace import BacktracePanel
 from ui.panel_contexts import ContextsPanel
 from ui.panel_hooks import HooksPanel
@@ -41,6 +43,8 @@ class SessionUi(QSplitter):
         self.hooks_panel = None
         self.contexts_panel = None
 
+        self.data_panel = DataPanel(self.app)
+
         self.addWidget(self.build_left_column())
         self.addWidget(self.build_central_content())
 
@@ -61,6 +65,7 @@ class SessionUi(QSplitter):
         splitter.addWidget(self.contexts_panel)
 
         self.backtrace_panel = BacktracePanel(self.app)
+        self.backtrace_panel.setVisible(self.app.get_dwarf().get_prefs().get(prefs.VIEW_BACKTRACE, True))
         splitter.addWidget(self.backtrace_panel)
 
         return splitter
@@ -96,9 +101,11 @@ class SessionUi(QSplitter):
         right_splitter.setOrientation(Qt.Vertical)
 
         self.modules_panel = ModulesPanel(self.app, 0, 3)
+        self.modules_panel.setVisible(self.app.get_dwarf().get_prefs().get(prefs.VIEW_MODULES, True))
         right_splitter.addWidget(self.modules_panel)
 
         self.ranges_panel = RangesPanel(self.app, 0, 4)
+        self.ranges_panel.setVisible(self.app.get_dwarf().get_prefs().get(prefs.VIEW_RANGES, True))
         right_splitter.addWidget(self.ranges_panel)
 
         splitter.addWidget(right_splitter)
@@ -112,3 +119,11 @@ class SessionUi(QSplitter):
         q.setContentsMargins(0, 0, 0, 0)
 
         return q
+
+    def on_script_destroyed(self):
+        self.log_panel.clear()
+        self.hooks_panel.clear()
+        self.ranges_panel.clear()
+        self.modules_panel.clear()
+        self.contexts_panel.clear()
+        self.data_panel.clear()

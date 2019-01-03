@@ -20,6 +20,7 @@ import webbrowser
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QFileDialog
 
+from lib import prefs, utils
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
 from ui.dialog_table import TableDialog
@@ -42,6 +43,7 @@ class MenuBar(object):
         self.build_hooks_menu()
         self.build_find_menu()
         self.build_session_menu()
+        self.build_view_menu()
         self.build_about_menu()
 
     def add_menu_action(self, menu, action, require_script):
@@ -118,6 +120,26 @@ class MenuBar(object):
         session_menu = self.menu.addMenu('&Session')
         self.add_menu_action(session_menu, session_load, False)
         self.add_menu_action(session_menu, session_save, False)
+
+    def build_view_menu(self):
+        data = QAction("&Data", self.app_window)
+        data.triggered.connect(self.handler_view_data)
+
+        ranges = QAction("&Ranges", self.app_window)
+        ranges.triggered.connect(self.handler_view_ranges)
+
+        modules = QAction("&Modules", self.app_window)
+        modules.triggered.connect(self.handler_view_modules)
+
+        backtrace = QAction("&Backtrace", self.app_window)
+        backtrace.triggered.connect(self.handler_view_backtrace)
+
+        view_menu = self.menu.addMenu('&UI')
+        self.add_menu_action(view_menu, data, True)
+        view_menu.addSeparator()
+        self.add_menu_action(view_menu, ranges, True)
+        self.add_menu_action(view_menu, modules, True)
+        self.add_menu_action(view_menu, backtrace, True)
 
     def build_about_menu(self):
         slack = QAction('&Slack', self.app_window)
@@ -218,6 +240,24 @@ class MenuBar(object):
                                 '/enQtMzc1NTg4MzE3NjA1LTlkNzYxNTIwYTc2ZTYyOWY1MT'
                                 'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
                                 'WJlNDVjZDcwNGE')
+
+    def handler_view_backtrace(self):
+        visible = self.app_window.get_app_instance().get_backtrace_panel().isVisible()
+        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_BACKTRACE, not visible)
+        self.app_window.get_app_instance().get_backtrace_panel().setVisible(not visible)
+
+    def handler_view_data(self):
+        self.app_window.get_app_instance().get_data_panel().showMaximized()
+
+    def handler_view_modules(self):
+        visible = self.app_window.get_app_instance().get_modules_panel().isVisible()
+        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_MODULES, not visible)
+        self.app_window.get_app_instance().get_modules_panel().setVisible(not visible)
+
+    def handler_view_ranges(self):
+        visible = self.app_window.get_app_instance().get_ranges_panel().isVisible()
+        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_RANGES, not visible)
+        self.app_window.get_app_instance().get_ranges_panel().setVisible(not visible)
 
     #
     #

@@ -17,8 +17,10 @@ Dwarf - Copyright (C) 2018 iGio90
 import json
 
 import frida
+from hexdump import hexdump
 
 from lib import utils
+from lib.prefs import Prefs
 
 
 class Dwarf(object):
@@ -31,6 +33,8 @@ class Dwarf(object):
         self.pid = 0
         self.process = None
         self.script = None
+
+        self.prefs = Prefs()
 
     def attach(self, pid_or_package, script=None):
         if self.process is not None:
@@ -133,6 +137,12 @@ class Dwarf(object):
             self.app.get_hooks_panel().hook_java_callback(parts[1])
         elif parts[0] == 'hook_native_callback':
             self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
+        elif parts[0] == 'set_data':
+            key = parts[1]
+            if data:
+                self.app.get_data_panel().append_data(key, hexdump(data, result='return'))
+            else:
+                self.app.get_data_panel().append_data(key, str(parts[2]))
         elif parts[0] == 'update_modules':
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
         else:
@@ -161,3 +171,6 @@ class Dwarf(object):
 
     def get_loading_library(self):
         return self.loading_library
+
+    def get_prefs(self):
+        return self.prefs

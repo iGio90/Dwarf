@@ -154,6 +154,9 @@ class App(QWidget):
     def get_contexts_panel(self):
         return self.session_ui.contexts_panel
 
+    def get_data_panel(self):
+        return self.session_ui.data_panel
+
     def get_dwarf(self):
         return self.app_window.get_dwarf()
 
@@ -166,17 +169,22 @@ class App(QWidget):
     def get_memory_panel(self):
         return self.session_ui.memory_panel
 
+    def get_modules_panel(self):
+        return self.session_ui.modules_panel
+
     def get_pointer_size(self):
         return self.pointer_size
+
+    def get_ranges_panel(self):
+        return self.session_ui.ranges_panel
 
     def get_registers_panel(self):
         return self.session_ui.registers_panel
 
     def on_script_destroyed(self):
-        self.get_log_panel().clear()
-        self.get_hooks_panel().setRowCount(0)
-
         self.session_ui.setVisible(False)
+        self.session_ui.on_script_destroyed()
+
         self.welcome_ui.setVisible(True)
 
         self.welcome_ui.update_device_ui()

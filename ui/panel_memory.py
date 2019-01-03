@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu, QAction
 
 from lib import utils
 from lib.range import Range
-from ui.dialog_asm import AsmDialog
+from ui.floating_panel_asm import AsmPanel
 from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_byte import ByteWidget
@@ -235,7 +235,7 @@ class MemoryPanel(QTableWidget):
 
         item = self.selectedItems()[0]
         if isinstance(item, ByteWidget):
-            AsmDialog(self.app, self.range, item.get_offset())
+            AsmPanel(self.app, self.range, item.get_offset())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:

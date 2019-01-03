@@ -25,9 +25,9 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
 
 
-class AsmDialog(QDialog):
+class AsmPanel(QDialog):
     def __init__(self, app, range, offset):
-        super(AsmDialog, self).__init__(None)
+        super(AsmPanel, self).__init__(app)
 
         self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
                            "background-attachment: fixed; background-position: center;" %
@@ -62,7 +62,7 @@ class AsmDialog(QDialog):
         self.setMinimumWidth(app.width() / 1.5)
 
         self.disasm()
-        self.exec_()
+        self.show()
 
     def show_menu(self, pos):
         menu = QMenu()
