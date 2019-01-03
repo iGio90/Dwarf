@@ -117,7 +117,7 @@ class Dwarf(object):
                 if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
                     return
             else:
-                self.app.arch = data['arch']
+                self.app.set_arch(data['arch'])
                 if self.app.get_arch() == 'arm':
                     self.app.pointer_size = 4
                 else:

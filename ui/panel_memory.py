@@ -125,6 +125,7 @@ class MemoryPanel(QTableWidget):
 
         self.controller = PanelController(self)
         self.range = Range(app)
+        self.asm_panel = AsmPanel(self.app)
 
         self.asm_data_start = 0
         self.asm_parse_start = 0
@@ -235,7 +236,7 @@ class MemoryPanel(QTableWidget):
 
         item = self.selectedItems()[0]
         if isinstance(item, ByteWidget):
-            AsmPanel(self.app, self.range, item.get_offset())
+            self.asm_panel.disasm(self.range, item.get_offset())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:
@@ -308,3 +309,6 @@ class MemoryPanel(QTableWidget):
                 if self.app.dwarf_api('writeUtf8', [ptr, content]):
                     self.range.invalidate()
                     self.read_memory(ptr)
+
+    def get_asm_panel(self):
+        return self.asm_panel

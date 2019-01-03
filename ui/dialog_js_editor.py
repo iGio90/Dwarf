@@ -57,9 +57,7 @@ class JsEditorDialog(QDialog):
 
     def show(self):
         result = self.exec_()
-
-        return result == QDialog.Accepted, \
-               self.input_widget.toPlainText()
+        return result == QDialog.Accepted, self.input_widget.toPlainText()
 
     def keyPressEvent(self, event):
         super(JsEditorDialog, self).keyPressEvent(event)

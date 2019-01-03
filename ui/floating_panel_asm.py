@@ -14,7 +14,11 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import binascii
+
+from PyQt5.QtGui import QFont
 from capstone import *
+from keystone import *
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QMenu, QAction
@@ -26,7 +30,7 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class AsmPanel(QDialog):
-    def __init__(self, app, range, offset):
+    def __init__(self, app):
         super(AsmPanel, self).__init__(app)
 
         self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
@@ -34,35 +38,28 @@ class AsmPanel(QDialog):
                            utils.resource_path('ui/dwarf_alpha.png'))
 
         self.app = app
-        self.range = range
-        self.offset = offset
+        self.range = None
+        self.offset = 0
 
-        if self.app.get_arch() == 'arm64':
-            self.cs_arch = CS_ARCH_ARM64
-            self.cs_mode = CS_MODE_LITTLE_ENDIAN
-        else:
-            self.cs_arch = CS_ARCH_ARM
-            self.cs_mode = CS_MODE_ARM
+        self.cs_arch = 0
+        self.cs_mode = 0
+        self.ks_arch = 0
+        self.ks_mode = 0
 
-        self.ks_arch = ''
-        self.ks_mode = ''
+        self.on_arch_changed()
 
         layout = QVBoxLayout(self)
 
         self.table = QTableWidget()
         self.table.horizontalHeader().hide()
         self.table.verticalHeader().hide()
-        self.table.setColumnCount(3)
+        self.table.setColumnCount(4)
+        self.table.setShowGrid(False)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_menu)
 
         layout.addWidget(self.table)
-        self.setMinimumHeight(app.height() / 1.5)
-        self.setMinimumWidth(app.width() / 1.5)
-
-        self.disasm()
-        self.show()
 
     def show_menu(self, pos):
         menu = QMenu()
@@ -82,10 +79,14 @@ class AsmPanel(QDialog):
         write_instr_action.triggered.connect(self.trigger_write_instruction)
         menu.exec_(self.mapToGlobal(pos))
 
-    def disasm(self):
-        self.table.clear()
+    def disasm(self, range, offset):
+        self.table.setRowCount(0)
+
+        self.range = range
+        self.offset = offset
 
         md = Cs(self.cs_arch, self.cs_mode)
+
         insts = 0
         for i in md.disasm(self.range.data[self.offset:], self.range.base + self.offset):
             if insts > 1024:
@@ -99,14 +100,24 @@ class AsmPanel(QDialog):
             w.set_offset(self.range.base - i.address)
             self.table.setItem(row, 0, w)
 
-            w = NotEditableTableWidgetItem(i.mnemonic)
-            w.setTextAlignment(Qt.AlignCenter)
+            w = NotEditableTableWidgetItem(binascii.hexlify(i.bytes).decode('utf8'))
+            w.setForeground(Qt.darkYellow)
             self.table.setItem(row, 1, w)
 
             w = NotEditableTableWidgetItem(i.op_str)
+            w.setForeground(Qt.lightGray)
+            self.table.setItem(row, 3, w)
+
+            w = NotEditableTableWidgetItem(i.mnemonic.upper())
+            w.setTextAlignment(Qt.AlignCenter)
+            w.setFont(QFont(None, 11, QFont.Bold))
             self.table.setItem(row, 2, w)
+
             insts += 1
+
         self.table.resizeColumnsToContents()
+        if not self.isVisible():
+            self.showMaximized()
 
     def swap_arm_mode(self):
         if self.app.get_arch() == 'arm':
@@ -150,3 +161,15 @@ class AsmPanel(QDialog):
                     self.disa()
             except Exception as e:
                 self.app.get_log_panel().log(str(e))
+
+    def on_arch_changed(self):
+        if self.app.get_arch() == 'arm64':
+            self.cs_arch = CS_ARCH_ARM64
+            self.cs_mode = CS_MODE_LITTLE_ENDIAN
+            self.ks_arch = KS_ARCH_ARM64
+            self.ks_mode = KS_MODE_LITTLE_ENDIAN
+        else:
+            self.cs_arch = CS_ARCH_ARM
+            self.cs_mode = CS_MODE_ARM
+            self.ks_arch = KS_ARCH_ARM
+            self.ks_mode = KS_MODE_ARM

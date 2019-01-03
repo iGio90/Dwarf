@@ -122,8 +122,8 @@ class SessionUi(QSplitter):
 
     def on_script_destroyed(self):
         self.log_panel.clear()
-        self.hooks_panel.clear()
-        self.ranges_panel.clear()
-        self.modules_panel.clear()
-        self.contexts_panel.clear()
+        self.hooks_panel.setRowCount(0)
+        self.ranges_panel.setRowCount(0)
+        self.modules_panel.setRowCount(0)
+        self.contexts_panel.setRowCount(0)
         self.data_panel.clear()

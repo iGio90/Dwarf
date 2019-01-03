@@ -195,3 +195,7 @@ class App(QWidget):
 
         # trigger this to clear lists
         self.welcome_ui.on_device_changed()
+
+    def set_arch(self, arch):
+        self.arch = arch
+        self.get_memory_panel().get_asm_panel().on_arch_changed()
