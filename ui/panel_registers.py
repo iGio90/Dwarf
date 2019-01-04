@@ -37,7 +37,6 @@ class RegistersPanel(QTableWidget):
         self.context_ptr = ''
 
     def on_register_double_click(self, item):
-        print(item)
         if item is not None and isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
             self.app.get_memory_panel().read_memory(item.value)
 

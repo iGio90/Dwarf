@@ -181,14 +181,15 @@ class MenuBar(object):
 
     def handler_save_apk(self):
         packages = self.app_window.get_adb().list_packages()
-        accept, items = ListDialog.build_and_show(
-            self.build_packages_list, packages, double_click_to_accept=True)
-        if accept:
-            if len(items) > 0:
-                path = items[0].get_package_name().path
-                r = QFileDialog.getSaveFileName()
-                if len(r) > 0 and len(r[0]) > 0:
-                    self.app_window.get_adb().pull(path, r[0])
+        if packages:
+            accept, items = ListDialog.build_and_show(
+                self.build_packages_list, packages, double_click_to_accept=True)
+            if accept:
+                if len(items) > 0:
+                    path = items[0].get_package_name().path
+                    r = QFileDialog.getSaveFileName()
+                    if len(r) > 0 and len(r[0]) > 0:
+                        self.app_window.get_adb().pull(path, r[0])
 
     def handler_session_load(self):
         r = QFileDialog.getOpenFileName()

@@ -95,20 +95,25 @@ class AsmPanel(QDialog):
             self.table.insertRow(row)
 
             w = MemoryAddressWidget('0x%x' % i.address)
+            w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.red)
             w.set_address(i.address)
             w.set_offset(self.range.base - i.address)
             self.table.setItem(row, 0, w)
 
             w = NotEditableTableWidgetItem(binascii.hexlify(i.bytes).decode('utf8'))
+            w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.darkYellow)
             self.table.setItem(row, 1, w)
 
             w = NotEditableTableWidgetItem(i.op_str)
+            w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.lightGray)
             self.table.setItem(row, 3, w)
 
             w = NotEditableTableWidgetItem(i.mnemonic.upper())
+            w.setFlags(Qt.NoItemFlags)
+            w.setForeground(Qt.white)
             w.setTextAlignment(Qt.AlignCenter)
             w.setFont(QFont(None, 11, QFont.Bold))
             self.table.setItem(row, 2, w)

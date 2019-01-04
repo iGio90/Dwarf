@@ -24,6 +24,7 @@ import re
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu, QAction
+from hexdump import PY3K
 
 from lib import utils
 from lib.range import Range
@@ -81,12 +82,12 @@ class PanelController(object):
             if tail > self.memory_panel.range.tail:
                 tail = self.memory_panel.range.tail
             t = ''
-            for b in self.memory_panel.range.data[offset:tail]:
-                try:
-                    t += bytes([b]).decode('utf8')
-                    if t == ' ':
-                        t = '.'
-                except:
+            for byte in self.memory_panel.range.data[offset:tail]:
+                if not PY3K:
+                    byte = ord(byte)
+                if 0x20 <= byte <= 0x7E:
+                    t += chr(byte)
+                else:
                     t += '.'
             q = NotEditableTableWidgetItem(t)
             q.setFlags(Qt.NoItemFlags)
