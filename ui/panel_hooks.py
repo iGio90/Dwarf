@@ -49,8 +49,10 @@ class HooksPanel(QTableWidget):
     def show_menu(self, pos):
         menu = QMenu()
         add_action = menu.addAction("Native\t(N)")
-        hook_java_action = menu.addAction("Java\t(J)")
-        on_load_action = menu.addAction("Module load\t(O)")
+
+        if self.app.get_dwarf().java_available:
+            hook_java_action = menu.addAction("Java\t(J)")
+            on_load_action = menu.addAction("Module load\t(O)")
 
         item = self.itemAt(pos)
         if item is not None:
@@ -73,10 +75,12 @@ class HooksPanel(QTableWidget):
         action = menu.exec_(self.mapToGlobal(pos))
         if action == add_action:
             self.hook_native()
-        elif action == on_load_action:
-            self.hook_onload()
-        elif action == hook_java_action:
-            self.hook_java()
+
+        if self.app.get_dwarf().java_available:
+            if action == on_load_action:
+                self.hook_onload()
+            elif action == hook_java_action:
+                self.hook_java()
         if is_hook_item:
             if action == delete_action:
                 self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
@@ -249,13 +253,12 @@ class HooksPanel(QTableWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
             self.hook_native()
-        elif event.key() == Qt.Key_O:
-            self.hook_onload()
-        elif event.key() == Qt.Key_J:
-            self.hook_java()
-        else:
-            # dispatch those to super
-            super(HooksPanel, self).keyPressEvent(event)
+        if self.app.get_dwarf().java_available:
+            if event.key() == Qt.Key_O:
+                self.hook_onload()
+            elif event.key() == Qt.Key_J:
+                self.hook_java()
+        super(HooksPanel, self).keyPressEvent(event)
 
     def get_hooks(self):
         return self.hooks

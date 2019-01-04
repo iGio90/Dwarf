@@ -16,8 +16,6 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 import threading
 
-from PyQt5.QtGui import QIcon
-
 from lib.adb import Adb
 from lib.core import Dwarf
 from ui.menu_bar import MenuBar
@@ -52,6 +50,9 @@ class AppWindow(QMainWindow):
 
     def get_app_instance(self):
         return self.app
+
+    def on_context_info(self):
+        self.get_menu().on_context_info()
 
     def get_dwarf(self):
         return self.dwarf

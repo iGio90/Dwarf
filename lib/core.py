@@ -28,6 +28,7 @@ class Dwarf(object):
         self.app_window = app_window
         self.app = app_window.get_app_instance()
 
+        self.java_available = False
         self.loading_library = False
 
         self.pid = 0
@@ -123,7 +124,9 @@ class Dwarf(object):
                 else:
                     self.app.pointer_size = 8
                 self.pid = data['pid']
+                self.java_available = data['java']
                 self.app.get_log_panel().log('injected into := ' + str(self.pid))
+                self.app_window.on_context_info()
 
             self.app.apply_context(data)
             if self.loading_library is not None:

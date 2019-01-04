@@ -18,7 +18,7 @@ import json
 import webbrowser
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt5.QtWidgets import QAction, QFileDialog, QMenuBar, QMenu
 
 from lib import prefs, utils
 from ui.dialog_input import InputDialog
@@ -34,6 +34,8 @@ class MenuBar(object):
 
         self.app_window = app_window
         self.menu = app_window.menuBar()
+
+        self.hooks_menu = None
 
         # actions
         self.menu_actions = []
@@ -82,22 +84,7 @@ class MenuBar(object):
         self.add_menu_action(process_menu, detach, True)
 
     def build_hooks_menu(self):
-        hook_native = QAction("&Native", self.app_window)
-        hook_native.setShortcut("Ctrl+N")
-        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
-
-        hook_java = QAction("&Java", self.app_window)
-        hook_java.setShortcut("Ctrl+J")
-        hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
-
-        hook_onload = QAction("&Module load", self.app_window)
-        hook_onload.setShortcut("Ctrl+M")
-        hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
-
-        hooks_menu = self.menu.addMenu('&Hooks')
-        self.add_menu_action(hooks_menu, hook_native, True)
-        self.add_menu_action(hooks_menu, hook_java, True)
-        self.add_menu_action(hooks_menu, hook_onload, True)
+        self.hooks_menu = self.menu.addMenu('&Hooks')
 
     def build_find_menu(self):
         symbol = QAction("&Symbol", self.app_window)
@@ -290,6 +277,25 @@ class MenuBar(object):
             q = NotEditableTableWidgetItem(sym['moduleName'])
             table.setItem(row, 2, q)
         table.resizeColumnToContents(1)
+
+    def on_context_info(self):
+        self.hooks_menu.clear()
+
+        hook_native = QAction("&Native", self.app_window)
+        hook_native.setShortcut("Ctrl+N")
+        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
+        self.add_menu_action(self.hooks_menu, hook_native, True)
+
+        if self.app_window.get_dwarf().java_available:
+            hook_java = QAction("&Java", self.app_window)
+            hook_java.setShortcut("Ctrl+J")
+            hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
+            self.add_menu_action(self.hooks_menu, hook_java, True)
+
+            hook_onload = QAction("&Module load", self.app_window)
+            hook_onload.setShortcut("Ctrl+M")
+            hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
+            self.add_menu_action(self.hooks_menu, hook_onload, True)
 
     def on_script_destroyed(self):
         for action in self.menu_actions:
