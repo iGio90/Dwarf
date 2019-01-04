@@ -30,10 +30,6 @@ class ModulesPanel(QTableWidget):
         super().__init__(0, 4)
         self.app = app
 
-        self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
-                           "background-attachment: fixed; background-position: center;" %
-                           utils.resource_path('ui/dwarf_alpha.png'))
-
         self.verticalHeader().hide()
         self.horizontalScrollBar().hide()
         self.setShowGrid(False)

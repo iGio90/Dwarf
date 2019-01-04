@@ -33,10 +33,6 @@ class AsmPanel(QTableWidget):
     def __init__(self, app):
         super(AsmPanel, self).__init__(app)
 
-        self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
-                           "background-attachment: fixed; background-position: center;" %
-                           utils.resource_path('ui/dwarf_alpha.png'))
-
         self.app = app
         self.range = None
         self.offset = 0
@@ -81,6 +77,7 @@ class AsmPanel(QTableWidget):
         self.offset = offset
 
         md = Cs(self.cs_arch, self.cs_mode)
+        md.detail = True
 
         insts = 0
         for i in md.disasm(self.range.data[self.offset:], self.range.base + self.offset):
@@ -101,7 +98,25 @@ class AsmPanel(QTableWidget):
             w.setForeground(Qt.darkYellow)
             self.setItem(row, 1, w)
 
-            w = NotEditableTableWidgetItem(i.op_str)
+            op_str = i.op_str
+
+            is_jmp = False
+            if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
+                is_jmp = False
+
+            if len(i.operands) > 0:
+                for op in i.operands:
+                    if op.type == CS_OP_IMM:
+                        if len(i.operands) == 1:
+                            is_jmp = True
+                        if is_jmp:
+                            sym = self.app.dwarf_api('getSymbolByAddress', op.value.imm)
+                            module = ''
+                            if 'moduleName' in sym:
+                                module = '- %s' % sym['moduleName']
+                            op_str += ' ( %s %s )' % (sym['name'], module)
+
+            w = NotEditableTableWidgetItem(op_str)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.lightGray)
             self.setItem(row, 3, w)
