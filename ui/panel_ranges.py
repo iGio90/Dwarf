@@ -17,6 +17,7 @@ Dwarf - Copyright (C) 2018 iGio90
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QHeaderView
 
+from lib import utils
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -24,6 +25,10 @@ class RangesPanel(QTableWidget):
     def __init__(self, app, *__args):
         super().__init__(0, 4)
         self.app = app
+
+        self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
+                           "background-attachment: fixed; background-position: center;" %
+                           utils.resource_path('ui/dwarf_alpha.png'))
 
         self.verticalHeader().hide()
         self.horizontalScrollBar().hide()

@@ -28,7 +28,6 @@ from hexdump import PY3K
 
 from lib import utils
 from lib.range import Range
-from ui.floating_panel_asm import AsmPanel
 from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_byte import ByteWidget
@@ -126,10 +125,6 @@ class MemoryPanel(QTableWidget):
 
         self.controller = PanelController(self)
         self.range = Range(app)
-        self.asm_panel = AsmPanel(self.app)
-
-        self.asm_data_start = 0
-        self.asm_parse_start = 0
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
@@ -236,7 +231,7 @@ class MemoryPanel(QTableWidget):
 
         item = self.selectedItems()[0]
         if isinstance(item, ByteWidget):
-            self.asm_panel.disasm(self.range, item.get_offset())
+            self.app.get_session_ui().disasm(self.range, item.get_offset())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:
@@ -315,6 +310,3 @@ class MemoryPanel(QTableWidget):
         self.setRowCount(0)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-
-    def get_asm_panel(self):
-        return self.asm_panel

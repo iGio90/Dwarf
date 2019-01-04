@@ -21,7 +21,7 @@ from capstone import *
 from keystone import *
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QMenu, QAction
+from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
 
 from lib import utils
 from ui.dialog_write_instruction import WriteInstructionDialog
@@ -29,7 +29,7 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
 
 
-class AsmPanel(QDialog):
+class AsmPanel(QTableWidget):
     def __init__(self, app):
         super(AsmPanel, self).__init__(app)
 
@@ -48,18 +48,13 @@ class AsmPanel(QDialog):
 
         self.on_arch_changed()
 
-        layout = QVBoxLayout(self)
-
-        self.table = QTableWidget()
-        self.table.horizontalHeader().hide()
-        self.table.verticalHeader().hide()
-        self.table.setColumnCount(4)
-        self.table.setShowGrid(False)
-        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.table.customContextMenuRequested.connect(self.show_menu)
-
-        layout.addWidget(self.table)
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+        self.setColumnCount(4)
+        self.setShowGrid(False)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_menu)
 
     def show_menu(self, pos):
         menu = QMenu()
@@ -80,7 +75,7 @@ class AsmPanel(QDialog):
         menu.exec_(self.mapToGlobal(pos))
 
     def disasm(self, range, offset):
-        self.table.setRowCount(0)
+        self.setRowCount(0)
 
         self.range = range
         self.offset = offset
@@ -91,36 +86,36 @@ class AsmPanel(QDialog):
         for i in md.disasm(self.range.data[self.offset:], self.range.base + self.offset):
             if insts > 1024:
                 break
-            row = self.table.rowCount()
-            self.table.insertRow(row)
+            row = self.rowCount()
+            self.insertRow(row)
 
             w = MemoryAddressWidget('0x%x' % i.address)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.red)
             w.set_address(i.address)
             w.set_offset(self.range.base - i.address)
-            self.table.setItem(row, 0, w)
+            self.setItem(row, 0, w)
 
             w = NotEditableTableWidgetItem(binascii.hexlify(i.bytes).decode('utf8'))
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.darkYellow)
-            self.table.setItem(row, 1, w)
+            self.setItem(row, 1, w)
 
             w = NotEditableTableWidgetItem(i.op_str)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.lightGray)
-            self.table.setItem(row, 3, w)
+            self.setItem(row, 3, w)
 
             w = NotEditableTableWidgetItem(i.mnemonic.upper())
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.white)
             w.setTextAlignment(Qt.AlignCenter)
             w.setFont(QFont(None, 11, QFont.Bold))
-            self.table.setItem(row, 2, w)
+            self.setItem(row, 2, w)
 
             insts += 1
 
-        self.table.resizeColumnsToContents()
+        self.resizeColumnsToContents()
         if not self.isVisible():
             self.showMaximized()
 
@@ -133,12 +128,12 @@ class AsmPanel(QDialog):
             self.disasm()
 
     def trigger_write_instruction(self):
-        if len(self.table.selectedItems()) == 0:
+        if len(self.selectedItems()) == 0:
             return
-        item = self.table.selectedItems()[0]
+        item = self.selectedItems()[0]
 
         accept, inst, arch, mode = WriteInstructionDialog().show_dialog(
-            input_content='%s %s' % (self.table.item(item.row(), 1).text(), self.table.item(item.row(), 2).text()),
+            input_content='%s %s' % (self.item(item.row(), 1).text(), self.item(item.row(), 2).text()),
             arch=self.ks_arch,
             mode=self.ks_mode
         )
@@ -152,7 +147,7 @@ class AsmPanel(QDialog):
                 ks = keystone.Ks(getattr(keystone.keystone_const, self.ks_arch),
                                  getattr(keystone.keystone_const, self.ks_mode))
                 encoding, count = ks.asm(inst)
-                asm_widget = self.table.item(item.row(), 0)
+                asm_widget = self.item(item.row(), 0)
                 offset = asm_widget.get_offset()
                 if self.app.dwarf_api('writeBytes', [asm_widget.get_address(), encoding]):
                     new_data = bytearray(self.range.data)

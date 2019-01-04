@@ -17,7 +17,8 @@ Dwarf - Copyright (C) 2018 iGio90
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSplitter, QTabWidget, QTabBar
 
-from ui.floating_panel_data import DataPanel
+from ui.panel_asm import AsmPanel
+from ui.panel_data import DataPanel
 from ui.panel_backtrace import BacktracePanel
 from ui.panel_contexts import ContextsPanel
 from ui.panel_hooks import HooksPanel
@@ -32,6 +33,7 @@ class SessionUi(QTabWidget):
     TAB_MODULES = 0
     TAB_RANGES = 1
     TAB_DATA = 2
+    TAB_ASM = 3
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -83,6 +85,7 @@ class SessionUi(QTabWidget):
         self.contexts_panel = None
 
         self.data_panel = DataPanel(self.app)
+        self.asm_panel = AsmPanel(self.app)
 
         self.session_panel.addWidget(self.build_left_column())
         self.session_panel.addWidget(self.build_central_content())
@@ -184,6 +187,14 @@ class SessionUi(QTabWidget):
             self.addTab(self.ranges_panel, 'ranges')
             if request_focus:
                 self.setCurrentWidget(self.ranges_panel)
+        elif tab_id == SessionUi.TAB_ASM:
+            self.addTab(self.asm_panel, 'asm')
+            if request_focus:
+                self.setCurrentWidget(self.asm_panel)
+
+    def disasm(self, range, offset):
+        self.add_dwarf_tab(SessionUi.TAB_ASM, True)
+        self.asm_panel.disasm(range, offset)
 
     def request_session_ui_focus(self):
         self.setCurrentWidget(self.session_panel)
