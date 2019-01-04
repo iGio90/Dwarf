@@ -138,10 +138,7 @@ class MemoryPanel(QTableWidget):
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_menu)
-
-        self.setStyleSheet("background-image: url('%s'); background-repeat: no-repeat; "
-                           "background-attachment: fixed; background-position: center;" %
-                           utils.resource_path('ui/dwarf_alpha.png'))
+        self.setShowGrid(False)
 
     def show_menu(self, pos):
         cell = self.itemAt(pos)
@@ -222,8 +219,10 @@ class MemoryPanel(QTableWidget):
         self.scrollTo(index, QAbstractItemView.PositionAtCenter)
         self.setCurrentCell(start_row, 1)
         self.resizeColumnsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def read_memory(self, ptr):
+        self.app.get_session_ui().request_session_ui_focus()
         init = self.range.init_with_address(ptr)
         if init > 0:
             return 1
@@ -309,6 +308,12 @@ class MemoryPanel(QTableWidget):
                 if self.app.dwarf_api('writeUtf8', [ptr, content]):
                     self.range.invalidate()
                     self.read_memory(ptr)
+
+    def on_script_destroyed(self):
+        self.controller.work = False
+        self.setRowCount(0)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def get_asm_panel(self):
         return self.asm_panel

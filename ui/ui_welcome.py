@@ -42,7 +42,7 @@ class WelcomeUi(QSplitter):
 
         self.startup_script = ''
 
-        self.setHandleWidth(2)
+        self.setHandleWidth(1)
 
         box_container = QWidget()
         left_box = QVBoxLayout()

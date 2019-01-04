@@ -4,9 +4,9 @@ A gui for mobile reverse engineers and crackers.
 Or damn, what a reversed fluffy or yet, duck warriors are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code. 
 
-![Dwarf](https://i.ibb.co/NYHB0g7/Schermata-2018-12-30-alle-08-59-06.png)
+![Dwarf](https://i.ibb.co/WBK0jq7/Schermata-2019-01-04-alle-18-31-39.png)
 
-![Dwarf](https://i.ibb.co/zfNNGHH/Schermata-2018-12-31-alle-15-19-18.png)
+![Dwarf](https://i.ibb.co/F3YNWWT/Schermata-2019-01-04-alle-18-19-48.png)
 
 ### Play with dwarf
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/on5PLAYNS7s/0.jpg)](https://www.youtube.com/watch?v=on5PLAYNS7s)

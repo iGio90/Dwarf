@@ -30,22 +30,16 @@ class RegistersPanel(QTableWidget):
         self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_menu)
+        self.itemDoubleClicked.connect(self.on_register_double_click)
+        self.setShowGrid(False)
+        self.horizontalHeader().setStretchLastSection(True)
 
         self.context_ptr = ''
 
-    def show_menu(self, pos):
-        menu = QMenu()
-
-        item = self.itemAt(pos)
+    def on_register_double_click(self, item):
+        print(item)
         if item is not None and isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
-            jump_to_ptr = menu.addAction("Jump to pointer")
-
-            action = menu.exec_(self.mapToGlobal(pos))
-            if action == jump_to_ptr:
-                self.app.get_memory_panel().read_memory(item.value)
+            self.app.get_memory_panel().read_memory(item.value)
 
     def set_context(self, ptr, is_java, context):
         self.setRowCount(0)
@@ -84,14 +78,15 @@ class RegistersPanel(QTableWidget):
                         q = QTableWidgetItem(str(context[reg]['arg']))
                 else:
                     q = NativeRegisterWidget(self.app, reg, context[reg])
-                q.setFlags(Qt.NoItemFlags)
                 if is_java:
+                    q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
                 else:
                     self.setItem(i, 1, q)
 
                     q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
                     q.setForeground(Qt.darkCyan)
+                    q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
                     data = self.app.dwarf_api('getAddressTs', context[reg])
                     if data is not None:
@@ -106,8 +101,9 @@ class RegistersPanel(QTableWidget):
                         else:
                             q.setForeground(Qt.darkGray)
                         self.setItem(i, 3, q)
-                    self.resizeColumnsToContents()
             i += 1
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def have_context(self):
         return self.rowCount() > 0

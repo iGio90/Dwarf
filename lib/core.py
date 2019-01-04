@@ -115,6 +115,7 @@ class Dwarf(object):
                 if self.loading_library is None:
                     self.app.get_log_panel().log('hook %s %s @thread := %d' % (
                         name, sym, data['tid']))
+                self.app.get_session_ui().request_session_ui_focus()
                 if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
                     return
             else:

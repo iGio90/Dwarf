@@ -41,10 +41,14 @@ class HooksPanel(QTableWidget):
         self.setHorizontalHeaderLabels(['input', 'address'])
         self.verticalHeader().hide()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setShowGrid(False)
 
         self.cellDoubleClicked.connect(self.hooks_cell_double_clicked)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_menu)
+
+        self.resizeColumnsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def show_menu(self, pos):
         menu = QMenu()
@@ -91,10 +95,9 @@ class HooksPanel(QTableWidget):
 
     def hook_native(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
-            input = InputDialog.input(hint='insert pointer')
-            if not input[0]:
+            accept, input = InputDialog.input(hint='insert pointer')
+            if not accept:
                 return
-            input = input[1]
 
         ptr = 0
         try:
@@ -128,8 +131,8 @@ class HooksPanel(QTableWidget):
         q = NotEditableTableWidgetItem(hex(ptr))
         q.setForeground(Qt.red)
         self.setItem(self.rowCount() - 1, 1, q)
-        self.resizeRowToContents(0)
-        self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def hook_onload(self, input=None):
         if input is None or not isinstance(input, str):
@@ -165,8 +168,8 @@ class HooksPanel(QTableWidget):
         self.setItem(self.rowCount() - 1, 1, q)
 
         self.app.dwarf_api('hookOnLoad', input)
-        self.resizeRowToContents(0)
-        self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def hook_java(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
@@ -199,8 +202,8 @@ class HooksPanel(QTableWidget):
         q.setForeground(Qt.white)
         self.setItem(self.rowCount() - 1, 1, q)
 
-        self.resizeRowToContents(0)
-        self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def set_condition(self, item):
         inp = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())

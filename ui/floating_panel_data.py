@@ -21,36 +21,25 @@ from PyQt5.QtWidgets import *
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
-class DataPanel(QDialog):
+class DataPanel(QSplitter):
     def __init__(self, app):
         super(DataPanel, self).__init__(app)
 
         self.app = app
         self.data = {}
 
-        layout = QVBoxLayout(self)
-        splitter = QSplitter()
-        splitter.setOrientation(Qt.Horizontal)
-        splitter.setHandleWidth(2)
+        self.setOrientation(Qt.Horizontal)
+        self.setHandleWidth(1)
 
         self.key_lists = QListWidget()
         self.key_lists.itemDoubleClicked.connect(self.list_item_double_clicked)
-        splitter.addWidget(self.key_lists)
+        self.addWidget(self.key_lists)
 
         self.editor = QPlainTextEdit()
-        splitter.addWidget(self.editor)
+        self.addWidget(self.editor)
 
-        splitter.setStretchFactor(0, 2)
-        splitter.setStretchFactor(1, 4)
-
-        layout.addWidget(splitter)
-
-        self.setWindowModality(Qt.NonModal)
-
-    def keyPressEvent(self, event):
-        super(DataPanel, self).keyPressEvent(event)
-        if event.key() == QtCore.Qt.Key_Return:
-            self.accept()
+        self.setStretchFactor(0, 2)
+        self.setStretchFactor(1, 4)
 
     def clear(self):
         self.key_lists.clear()

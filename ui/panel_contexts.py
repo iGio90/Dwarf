@@ -23,7 +23,7 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 class ContextsPanel(QTableWidget):
     def __init__(self, app, *__args):
-        super().__init__(*__args)
+        super().__init__(0, 3)
         self.app = app
 
         self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
@@ -33,12 +33,13 @@ class ContextsPanel(QTableWidget):
         scrollbar.setFixedHeight(0)
         self.setHorizontalScrollBar(scrollbar)
         self.itemDoubleClicked.connect(self.on_context_item_double_click)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.setShowGrid(False)
 
     def add_context(self, data, library_onload=None):
         row = self.rowCount()
         self.insertRow(row)
         q = ContextItem(data, str(data['tid']))
-        q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.darkCyan)
         self.setItem(row, 0, q)
         is_java = data['is_java']
@@ -62,8 +63,8 @@ class ContextsPanel(QTableWidget):
         q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(row, 2, q)
-        self.resizeRowToContents(0)
-        self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def on_context_item_double_click(self, item):
         self.app.apply_context(self.item(item.row(), 0).get_context())

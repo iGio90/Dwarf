@@ -33,6 +33,8 @@ if __name__ == '__main__':
 
     app = QApplication([])
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    with open('ui/style.qss', 'r') as f:
+        app.setStyleSheet(app.styleSheet() + '\n' + f.read())
     app.setWindowIcon(QIcon(utils.resource_path('ui/dwarf.png')))
 
     app_window = AppWindow(args)

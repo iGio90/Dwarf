@@ -27,13 +27,13 @@ from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 class ModulesPanel(QTableWidget):
     def __init__(self, app, *__args):
-        super().__init__(*__args)
+        super().__init__(0, 4)
         self.app = app
 
         self.verticalHeader().hide()
         self.horizontalScrollBar().hide()
         self.setShowGrid(False)
-        self.setHorizontalHeaderLabels(['name', 'base', 'size'])
+        self.setHorizontalHeaderLabels(['name', 'base', 'size', 'path'])
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cellDoubleClicked.connect(self.modules_cell_double_clicked)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -92,8 +92,8 @@ class ModulesPanel(QTableWidget):
 
                 q = NotEditableTableWidgetItem(export['type'])
                 table.setItem(row, 2, q)
-            table.resizeColumnToContents(1)
-            table.resizeColumnToContents(2)
+            table.resizeColumnsToContents()
+            table.horizontalHeader().setStretchLastSection(True)
 
     def build_imports_table(self, table, imports):
         if len(imports) > 0:
@@ -117,8 +117,8 @@ class ModulesPanel(QTableWidget):
 
                 q = NotEditableTableWidgetItem(imp['type'])
                 table.setItem(row, 3, q)
-            table.resizeColumnToContents(1)
-            table.resizeColumnToContents(3)
+            table.resizeColumnsToContents()
+            table.horizontalHeader().setStretchLastSection(True)
 
     def set_modules(self, modules):
         self.setRowCount(0)
@@ -135,8 +135,13 @@ class ModulesPanel(QTableWidget):
             q = NotEditableTableWidgetItem(str(module['size']))
             q.setFlags(Qt.NoItemFlags)
             self.setItem(i, 2, q)
+            q = NotEditableTableWidgetItem(module['path'])
+            q.setFlags(Qt.NoItemFlags)
+            q.setForeground(Qt.lightGray)
+            self.setItem(i, 3, q)
             i += 1
-        self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def modules_cell_double_clicked(self, row, c):
         if c == 1:

@@ -24,6 +24,7 @@ from lib import prefs, utils
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
 from ui.dialog_table import TableDialog
+from ui.ui_session import SessionUi
 from ui.widget_android_package import AndroidPackageWidget, AndroidAppWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
@@ -34,8 +35,6 @@ class MenuBar(object):
 
         self.app_window = app_window
         self.menu = app_window.menuBar()
-
-        self.hooks_menu = None
 
         # actions
         self.menu_actions = []
@@ -48,12 +47,14 @@ class MenuBar(object):
         self.build_view_menu()
         self.build_about_menu()
 
-    def add_menu_action(self, menu, action, require_script):
+    def add_menu_action(self, menu, action, require_script=False, require_java=False):
         self.menu_actions.append({
             'action': action,
-            'require_script': require_script
+            'require_script': require_script,
+            'require_java':  require_java
         })
-        action.setEnabled(not require_script)
+        if self.app_window.get_dwarf().script is None:
+            action.setEnabled(not require_script)
         menu.addAction(action)
 
     def build_device_menu(self):
@@ -84,7 +85,22 @@ class MenuBar(object):
         self.add_menu_action(process_menu, detach, True)
 
     def build_hooks_menu(self):
-        self.hooks_menu = self.menu.addMenu('&Hooks')
+        hook_native = QAction("&Native", self.app_window)
+        hook_native.setShortcut("Ctrl+N")
+        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
+
+        hook_java = QAction("&Java", self.app_window)
+        hook_java.setShortcut("Ctrl+J")
+        hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
+
+        hook_onload = QAction("&Module load", self.app_window)
+        hook_onload.setShortcut("Ctrl+M")
+        hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
+
+        hooks_menu = self.menu.addMenu('&Hooks')
+        self.add_menu_action(hooks_menu, hook_native, True)
+        self.add_menu_action(hooks_menu, hook_java, True, True)
+        self.add_menu_action(hooks_menu, hook_onload, True, True)
 
     def build_find_menu(self):
         symbol = QAction("&Symbol", self.app_window)
@@ -112,21 +128,21 @@ class MenuBar(object):
         data = QAction("&Data", self.app_window)
         data.triggered.connect(self.handler_view_data)
 
+        backtrace = QAction("&Backtrace", self.app_window)
+        backtrace.triggered.connect(self.handler_view_backtrace)
+
         ranges = QAction("&Ranges", self.app_window)
         ranges.triggered.connect(self.handler_view_ranges)
 
         modules = QAction("&Modules", self.app_window)
         modules.triggered.connect(self.handler_view_modules)
 
-        backtrace = QAction("&Backtrace", self.app_window)
-        backtrace.triggered.connect(self.handler_view_backtrace)
-
-        view_menu = self.menu.addMenu('&UI')
+        view_menu = self.menu.addMenu('&View')
         self.add_menu_action(view_menu, data, True)
         view_menu.addSeparator()
+        self.add_menu_action(view_menu, backtrace, True)
         self.add_menu_action(view_menu, ranges, True)
         self.add_menu_action(view_menu, modules, True)
-        self.add_menu_action(view_menu, backtrace, True)
 
     def build_about_menu(self):
         slack = QAction('&Slack', self.app_window)
@@ -228,23 +244,19 @@ class MenuBar(object):
                                 'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
                                 'WJlNDVjZDcwNGE')
 
+    def handler_view_data(self):
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, True)
+
     def handler_view_backtrace(self):
         visible = self.app_window.get_app_instance().get_backtrace_panel().isVisible()
         self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_BACKTRACE, not visible)
         self.app_window.get_app_instance().get_backtrace_panel().setVisible(not visible)
 
-    def handler_view_data(self):
-        self.app_window.get_app_instance().get_data_panel().showMaximized()
-
     def handler_view_modules(self):
-        visible = self.app_window.get_app_instance().get_modules_panel().isVisible()
-        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_MODULES, not visible)
-        self.app_window.get_app_instance().get_modules_panel().setVisible(not visible)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_MODULES, True)
 
     def handler_view_ranges(self):
-        visible = self.app_window.get_app_instance().get_ranges_panel().isVisible()
-        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_RANGES, not visible)
-        self.app_window.get_app_instance().get_ranges_panel().setVisible(not visible)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_RANGES, True)
 
     #
     #
@@ -279,23 +291,9 @@ class MenuBar(object):
         table.resizeColumnToContents(1)
 
     def on_context_info(self):
-        self.hooks_menu.clear()
-
-        hook_native = QAction("&Native", self.app_window)
-        hook_native.setShortcut("Ctrl+N")
-        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
-        self.add_menu_action(self.hooks_menu, hook_native, True)
-
-        if self.app_window.get_dwarf().java_available:
-            hook_java = QAction("&Java", self.app_window)
-            hook_java.setShortcut("Ctrl+J")
-            hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
-            self.add_menu_action(self.hooks_menu, hook_java, True)
-
-            hook_onload = QAction("&Module load", self.app_window)
-            hook_onload.setShortcut("Ctrl+M")
-            hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
-            self.add_menu_action(self.hooks_menu, hook_onload, True)
+        for action in self.menu_actions:
+            if action['require_java'] and not self.app_window.get_dwarf().java_available:
+                action['action'].setEnabled(False)
 
     def on_script_destroyed(self):
         for action in self.menu_actions:
@@ -303,4 +301,7 @@ class MenuBar(object):
 
     def on_script_loaded(self):
         for action in self.menu_actions:
+            if action['require_java'] and not self.app_window.get_dwarf().java_available:
+                action['action'].setEnabled(False)
+                continue
             action['action'].setEnabled(True)

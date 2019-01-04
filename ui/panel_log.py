@@ -16,7 +16,7 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 from PyQt5.QtCore import Qt, QMargins
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QLineEdit, QHBoxLayout, QPushButton, \
-    QSplitter
+    QSplitter, QVBoxLayout
 
 from ui.dialog_js_editor import JsEditorDialog
 from ui.widget_item_not_editable import NotEditableListWidgetItem
@@ -68,21 +68,34 @@ class JsInput(QLineEdit):
         self.cmds.clear()
 
 
-class LogPanel(QSplitter):
-    def __init__(self, app, *args, **kwargs):
-        super().__init__(None, *args, **kwargs)
+class LogPanel(QWidget):
+    def __init__(self, app, flags=None, *args, **kwargs):
+        super().__init__(flags, *args, **kwargs)
+
+        layout = QVBoxLayout()
 
         self.app = app
         self.js_script = ''
 
-        self.setOrientation(Qt.Vertical)
         self.setContentsMargins(QMargins(0, 0, 0, 0))
-        self.setHandleWidth(2)
+        layout.setContentsMargins(QMargins(0, 0, 0, 0))
 
         self.list = QListWidget()
+        self.list.setStyleSheet('''
+            QListWidget::item:hover { 
+                color: white; 
+                background-color: 
+                transparent; 
+            }
+            QListWidget::item:selected { 
+                color: white; 
+                background-color: 
+                transparent; 
+            }
+        ''')
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.list.model().rowsInserted.connect(self.on_row_inserted)
-        self.addWidget(self.list)
+        layout.addWidget(self.list)
 
         js_box = QHBoxLayout()
         js_box.setContentsMargins(QMargins(3, 3, 3, 3))
@@ -98,7 +111,9 @@ class LogPanel(QSplitter):
 
         js_box_widget = QWidget()
         js_box_widget.setLayout(js_box)
-        self.addWidget(js_box_widget)
+        layout.addWidget(js_box_widget)
+
+        self.setLayout(layout)
 
     def on_row_inserted(self, qindex, a, b):
         self.list.scrollToBottom()

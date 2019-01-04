@@ -85,6 +85,7 @@ class App(QWidget):
 
     def setup_ui(self):
         box = QVBoxLayout()
+        box.setContentsMargins(0, 0, 0, 0)
 
         self.session_ui = SessionUi(self)
         self.session_ui.setVisible(False)
@@ -181,6 +182,9 @@ class App(QWidget):
 
     def get_registers_panel(self):
         return self.session_ui.registers_panel
+
+    def get_session_ui(self):
+        return self.session_ui
 
     def on_script_destroyed(self):
         self.session_ui.setVisible(False)

@@ -15,14 +15,14 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QTableWidget, QHeaderView
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
 class RangesPanel(QTableWidget):
     def __init__(self, app, *__args):
-        super().__init__(*__args)
+        super().__init__(0, 4)
         self.app = app
 
         self.verticalHeader().hide()
@@ -45,6 +45,7 @@ class RangesPanel(QTableWidget):
             self.setItem(i, 1, q)
             q = NotEditableTableWidgetItem(range['protection'])
             q.setFlags(Qt.NoItemFlags)
+            q.setTextAlignment(Qt.AlignCenter)
             self.setItem(i, 2, q)
             if 'file' in range:
                 q = NotEditableTableWidgetItem(range['file']['path'])
@@ -54,8 +55,8 @@ class RangesPanel(QTableWidget):
             else:
                 self.setItem(i, 3, NotEditableTableWidgetItem(''))
             i += 1
-        self.resizeRowToContents(1)
-        self.resizeRowToContents(2)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def ranges_cell_double_clicked(self, row, c):
         if c == 0:

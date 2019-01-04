@@ -23,6 +23,7 @@ class PickList(QListWidget):
         super().__init__(*__args)
 
         self.callback = callback
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.itemDoubleClicked.connect(self._callback)
 
     def keyPressEvent(self, event):

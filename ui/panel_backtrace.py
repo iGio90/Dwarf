@@ -31,13 +31,15 @@ class BacktracePanel(QTableWidget):
         self.setHorizontalHeaderLabels(['symbol', 'address'])
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.itemDoubleClicked.connect(self.on_backtrace_item_double_click)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.setShowGrid(False)
 
     def set_backtrace(self, bt):
         self.setRowCount(0)
-        self.setHorizontalHeaderLabels(['symbol', 'address'])
         if type(bt) is list:
             # native backtrace
             self.is_java_bt = False
+            self.setHorizontalHeaderLabels(['symbol', 'address'])
             for a in bt:
                 row = self.rowCount()
                 self.insertRow(row)
@@ -56,7 +58,6 @@ class BacktracePanel(QTableWidget):
                 q = NotEditableTableWidgetItem(a['address'])
                 q.setForeground(Qt.red)
                 self.setItem(row, 1, q)
-            self.resizeRowToContents(1)
         elif type(bt) is str:
             # Java backtrace
             self.is_java_bt = True
@@ -82,7 +83,8 @@ class BacktracePanel(QTableWidget):
                 q.setFlags(Qt.NoItemFlags)
                 q.setForeground(Qt.gray)
                 self.setItem(row, 1, q)
-            self.resizeRowToContents(1)
+        self.resizeRowsToContents()
+        self.horizontalHeader().setStretchLastSection(True)
 
     def on_backtrace_item_double_click(self, item):
         if self.is_java_bt:

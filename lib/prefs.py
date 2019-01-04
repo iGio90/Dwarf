@@ -19,8 +19,6 @@ import os
 
 
 VIEW_BACKTRACE = 'view_backtrace'
-VIEW_MODULES = 'view_modules'
-VIEW_RANGES = 'view_ranges'
 
 
 class Prefs(object):
