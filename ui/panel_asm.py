@@ -23,7 +23,7 @@ from keystone import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
 
-from lib import utils
+from ui.dialog_input import InputDialog
 from ui.dialog_write_instruction import WriteInstructionDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
@@ -46,11 +46,12 @@ class AsmPanel(QTableWidget):
 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
-        self.setColumnCount(4)
+        self.setColumnCount(5)
         self.setShowGrid(False)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_menu)
+        self.itemDoubleClicked.connect(self.item_double_clicked)
 
     def show_menu(self, pos):
         menu = QMenu()
@@ -63,12 +64,41 @@ class AsmPanel(QTableWidget):
             mode.triggered.connect(self.swap_arm_mode)
             menu.addAction(mode)
 
-            sep3 = utils.get_qmenu_separator()
-            menu.addAction(sep3)
+            menu.addSeparator()
 
-        write_instr_action = menu.addAction("Patch instruction")
-        write_instr_action.triggered.connect(self.trigger_write_instruction)
+        write_instr = menu.addAction("Patch instruction")
+        write_instr.triggered.connect(self.trigger_write_instruction)
+
+        menu.addSeparator()
+
+        jump_to = menu.addAction("Jump to\t(G)")
+        jump_to.triggered.connect(self.trigger_jump_to)
+
         menu.exec_(self.mapToGlobal(pos))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_G:
+            self.trigger_jump_to()
+        else:
+            # dispatch those to super
+            super(AsmPanel, self).keyPressEvent(event)
+
+    def trigger_jump_to(self):
+        accept, ptr = InputDialog.input(hint='insert pointer')
+        if accept:
+            ptr = int(self.app.dwarf_api('evaluatePtr', ptr), 16)
+            self.read_memory(ptr)
+
+    def item_double_clicked(self, item):
+        if isinstance(item, MemoryAddressWidget):
+            self.read_memory(item.get_address())
+
+    def read_memory(self, ptr):
+        init = self.range.init_with_address(ptr)
+        if init > 0:
+            return 1
+        self.disasm(self.range, ptr - self.range.base)
+        return 0
 
     def disasm(self, range, offset):
         self.setRowCount(0)
@@ -81,10 +111,22 @@ class AsmPanel(QTableWidget):
 
         insts = 0
         for i in md.disasm(self.range.data[self.offset:], self.range.base + self.offset):
-            if insts > 1024:
+            if insts > 128:
                 break
+
             row = self.rowCount()
             self.insertRow(row)
+
+            if insts == 0:
+                sym = self.app.dwarf_api('getSymbolByAddress', i.address)
+                if sym:
+                    module = ''
+                    if 'moduleName' in sym:
+                        module = '- %s' % sym['moduleName']
+                    w = NotEditableTableWidgetItem('%s %s' % (sym['name'], module))
+                    w.setFlags(Qt.NoItemFlags)
+                    w.setForeground(Qt.lightGray)
+                    self.setItem(row, 4, w)
 
             w = MemoryAddressWidget('0x%x' % i.address)
             w.setFlags(Qt.NoItemFlags)
@@ -98,9 +140,8 @@ class AsmPanel(QTableWidget):
             w.setForeground(Qt.darkYellow)
             self.setItem(row, 1, w)
 
-            op_str = i.op_str
-
             is_jmp = False
+            op_imm_value = 0
             if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
                 is_jmp = False
 
@@ -110,15 +151,24 @@ class AsmPanel(QTableWidget):
                         if len(i.operands) == 1:
                             is_jmp = True
                         if is_jmp:
-                            sym = self.app.dwarf_api('getSymbolByAddress', op.value.imm)
+                            op_imm_value = op.value.imm
+                            sym = self.app.dwarf_api('getSymbolByAddress', op_imm_value)
                             module = ''
                             if 'moduleName' in sym:
                                 module = '- %s' % sym['moduleName']
-                            op_str += ' ( %s %s )' % (sym['name'], module)
+                            w = NotEditableTableWidgetItem('%s %s' % (sym['name'], module))
+                            w.setFlags(Qt.NoItemFlags)
+                            w.setForeground(Qt.lightGray)
+                            self.setItem(row, 4, w)
 
-            w = NotEditableTableWidgetItem(op_str)
-            w.setFlags(Qt.NoItemFlags)
-            w.setForeground(Qt.lightGray)
+            if is_jmp:
+                w = MemoryAddressWidget(i.op_str)
+                w.set_address(op_imm_value)
+                w.setForeground(Qt.red)
+            else:
+                w = NotEditableTableWidgetItem(i.op_str)
+                w.setFlags(Qt.NoItemFlags)
+                w.setForeground(Qt.lightGray)
             self.setItem(row, 3, w)
 
             w = NotEditableTableWidgetItem(i.mnemonic.upper())
@@ -131,8 +181,7 @@ class AsmPanel(QTableWidget):
             insts += 1
 
         self.resizeColumnsToContents()
-        if not self.isVisible():
-            self.showMaximized()
+        self.scrollToTop()
 
     def swap_arm_mode(self):
         if self.app.get_arch() == 'arm':

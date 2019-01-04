@@ -153,8 +153,7 @@ class MemoryPanel(QTableWidget):
             asm_view.triggered.connect(self.show_asm_view)
             menu.addAction(asm_view)
 
-            sep1 = utils.get_qmenu_separator()
-            menu.addAction(sep1)
+            menu.addSeparator()
 
         if isinstance(cell, ByteWidget):
             # todo
@@ -169,8 +168,7 @@ class MemoryPanel(QTableWidget):
             follow.triggered.connect(self.trigger_follow_pointer)
             menu.addAction(follow)
 
-            sep2 = utils.get_qmenu_separator()
-            menu.addAction(sep2)
+            menu.addSeparator()
 
         if cell:
             wb = QAction("Write bytes")
@@ -180,8 +178,7 @@ class MemoryPanel(QTableWidget):
             ws = menu.addAction("Write string")
             ws.triggered.connect(self.trigger_write_string)
 
-            sep3 = utils.get_qmenu_separator()
-            menu.addAction(sep3)
+            menu.addSeparator()
 
         jump_to = QAction("Jump to\t(G)")
         jump_to.triggered.connect(self.trigger_jump_to)

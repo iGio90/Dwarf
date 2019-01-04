@@ -53,10 +53,10 @@ class Dwarf(object):
         self.app.resume()
         self.app.get_log_panel().clear()
 
-        if self.script is not None:
-            self.script.unload()
         if self.process is not None:
             self.process.detach()
+        if self.script is not None:
+            self.script.unload()
 
     def load_script(self, script=None):
         with open('lib/script.js', 'r') as f:
