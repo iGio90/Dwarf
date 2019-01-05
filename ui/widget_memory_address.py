@@ -14,6 +14,8 @@ Dwarf - Copyright (C) 2018 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+from PyQt5.QtCore import Qt
+
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -23,6 +25,9 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
 
         self.offset = 0
         self.address = 0
+
+        self.setForeground(Qt.red)
+        self.set_address(self.text())
 
     def set_address(self, address):
         if isinstance(address, str):

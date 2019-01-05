@@ -134,7 +134,6 @@ class AsmPanel(QTableWidget):
             w = MemoryAddressWidget('0x%x' % i.address)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.red)
-            w.set_address(i.address)
             w.set_offset(self.range.base - i.address)
             self.setItem(row, 0, w)
 
@@ -166,8 +165,6 @@ class AsmPanel(QTableWidget):
 
             if is_jmp:
                 w = MemoryAddressWidget(i.op_str)
-                w.set_address(op_imm_value)
-                w.setForeground(Qt.red)
             else:
                 w = NotEditableTableWidgetItem(i.op_str)
                 w.setFlags(Qt.NoItemFlags)

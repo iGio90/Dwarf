@@ -15,63 +15,55 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import json
-from pprint import pprint
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu
 
-from lib import utils
 from ui.dialog_table import TableDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class ModulesPanel(QTableWidget):
+class ModulesPanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(0, 4)
-        self.app = app
+        super().__init__(app, 0, 4)
 
-        self.verticalHeader().hide()
-        self.horizontalScrollBar().hide()
-        self.setShowGrid(False)
         self.setHorizontalHeaderLabels(['name', 'base', 'size', 'path'])
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.cellDoubleClicked.connect(self.modules_cell_double_clicked)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_menu)
 
-    def show_menu(self, pos):
-        menu = QMenu()
-        item = self.itemAt(pos)
-
+    def set_menu_actions(self, item, menu):
         action_refresh = menu.addAction("Refresh")
+        action_refresh.setData('refresh')
         if item is not None:
-            sep1 = utils.get_qmenu_separator()
-            menu.addAction(sep1)
-
+            menu.addSeparator()
             action_exports = menu.addAction('Exports')
+            action_exports.setData('exports')
             action_imports = menu.addAction('Imports')
+            action_imports.setData('imports')
             action_symbols = menu.addAction('Symbols')
+            action_symbols.setData('symbols')
 
-        action = menu.exec_(self.mapToGlobal(pos))
-
-        if action == action_refresh:
+    def on_menu_action(self, action_data, item):
+        if action_data == 'refresh':
             self.app.dwarf_api('updateModules')
-        if item is not None:
-            if action == action_exports:
-                exports = self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text())
-                if exports:
-                    exports = json.loads(exports)
-                    TableDialog().build_and_show(self.build_exports_table, exports)
-            elif action == action_imports:
-                imports = self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text())
-                if imports:
-                    imports = json.loads(imports)
-                    TableDialog().build_and_show(self.build_exports_table, imports)
-            elif action == action_symbols:
-                symbols = self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text())
-                if symbols:
-                    symbols = json.loads(symbols)
-                    TableDialog().build_and_show(self.build_exports_table, symbols)
+            return False
+        elif action_data == 'exports':
+            exports = self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text())
+            if exports:
+                exports = json.loads(exports)
+                TableDialog().build_and_show(self.build_exports_table, exports)
+            return False
+        elif action_data == 'imports':
+            imports = self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text())
+            if imports:
+                imports = json.loads(imports)
+                TableDialog().build_and_show(self.build_exports_table, imports)
+            return False
+        elif action_data == 'symbols':
+            symbols = self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text())
+            if symbols:
+                symbols = json.loads(symbols)
+                TableDialog().build_and_show(self.build_exports_table, symbols)
+        return True
 
     def build_exports_table(self, table, exports):
         if len(exports) > 0:
@@ -129,8 +121,7 @@ class ModulesPanel(QTableWidget):
             q.setFlags(Qt.NoItemFlags)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
-            q = NotEditableTableWidgetItem(module['base'])
-            q.setForeground(Qt.red)
+            q = MemoryAddressWidget(module['base'])
             self.setItem(i, 1, q)
             q = NotEditableTableWidgetItem(str(module['size']))
             q.setFlags(Qt.NoItemFlags)
@@ -142,7 +133,3 @@ class ModulesPanel(QTableWidget):
             i += 1
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-
-    def modules_cell_double_clicked(self, row, c):
-        if c == 1:
-            self.app.get_memory_panel().read_memory(self.item(row, c).text())

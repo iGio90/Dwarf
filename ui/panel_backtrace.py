@@ -15,24 +15,19 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class BacktracePanel(QTableWidget):
+class BacktracePanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(0, 2)
-        self.app = app
+        super().__init__(app, 0, 2)
 
         self.is_java_bt = False
-
-        self.verticalHeader().hide()
         self.setHorizontalHeaderLabels(['symbol', 'address'])
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.itemDoubleClicked.connect(self.on_backtrace_item_double_click)
         self.horizontalHeader().setStretchLastSection(True)
-        self.setShowGrid(False)
 
     def set_backtrace(self, bt):
         self.setRowCount(0)
@@ -55,8 +50,7 @@ class BacktracePanel(QTableWidget):
                     q.setFlags(Qt.NoItemFlags)
                     q.setForeground(Qt.darkGreen)
                     self.setItem(row, 0, q)
-                q = NotEditableTableWidgetItem(a['address'])
-                q.setForeground(Qt.red)
+                q = MemoryAddressWidget(a['address'])
                 self.setItem(row, 1, q)
         elif type(bt) is str:
             # Java backtrace
@@ -85,8 +79,3 @@ class BacktracePanel(QTableWidget):
                 self.setItem(row, 1, q)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-
-    def on_backtrace_item_double_click(self, item):
-        if self.is_java_bt:
-            return
-        self.app.get_memory_panel().read_memory(item.text())

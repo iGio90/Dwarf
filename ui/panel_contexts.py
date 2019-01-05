@@ -15,27 +15,19 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QScrollBar
 
 from ui.widget_context import ContextItem
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class ContextsPanel(QTableWidget):
+class ContextsPanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(0, 3)
-        self.app = app
+        super().__init__(app, 0, 3)
 
         self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
-        self.verticalHeader().hide()
-        scrollbar = QScrollBar()
-        scrollbar.setFixedWidth(0)
-        scrollbar.setFixedHeight(0)
-        self.setHorizontalScrollBar(scrollbar)
-        self.itemDoubleClicked.connect(self.on_context_item_double_click)
         self.horizontalHeader().setStretchLastSection(True)
-        self.setShowGrid(False)
 
     def add_context(self, data, library_onload=None):
         row = self.rowCount()
@@ -46,12 +38,11 @@ class ContextsPanel(QTableWidget):
         is_java = data['is_java']
         if not is_java:
             q = MemoryAddressWidget(data['ptr'])
-            q.set_address(int(data['ptr'], 16))
         else:
             parts = data['ptr'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
+            q.setForeground(Qt.red)
             q.setFlags(Qt.NoItemFlags)
-        q.setForeground(Qt.red)
         self.setItem(row, 1, q)
         if library_onload is None:
             if not is_java:
@@ -68,8 +59,7 @@ class ContextsPanel(QTableWidget):
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
-    def on_context_item_double_click(self, item):
+    def item_double_clicked(self, item):
         if isinstance(item, ContextItem):
             self.app.apply_context(item.get_context())
-        elif isinstance(item, MemoryAddressWidget):
-            self.app.get_memory_panel().read_memory(item.get_address())
+            return False

@@ -23,12 +23,13 @@ from ui.dialog_input import InputDialog
 from ui.dialog_input_multiline import InputMultilineDialog
 from ui.widget_hook import HookWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class HooksPanel(QTableWidget):
+class HooksPanel(TableBaseWidget):
     def __init__(self, app):
-        super().__init__(0, 2)
-        self.app = app
+        super().__init__(app, 0, 2)
 
         self.hooks = {}
         self.onloads = {}
@@ -39,59 +40,58 @@ class HooksPanel(QTableWidget):
         self.java_pending_args = None
 
         self.setHorizontalHeaderLabels(['input', 'address'])
-        self.verticalHeader().hide()
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setShowGrid(False)
-
-        self.cellDoubleClicked.connect(self.hooks_cell_double_clicked)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_menu)
 
         self.resizeColumnsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
-    def show_menu(self, pos):
-        menu = QMenu()
-        add_action = menu.addAction("Native\t(N)")
+    def set_menu_actions(self, item, menu):
+        native = menu.addAction("Native\t(N)")
+        native.setData('native')
 
         if self.app.get_dwarf().java_available:
-            hook_java_action = menu.addAction("Java\t(J)")
-            on_load_action = menu.addAction("Module load\t(O)")
+            java = menu.addAction("Java\t(J)")
+            java.setData('java')
+            on_load = menu.addAction("Module load\t(O)")
+            on_load.setData('onload')
 
-        item = self.itemAt(pos)
         if item is not None:
-            item = self.item(self.itemAt(pos).row(), 0)
+            item = self.item(item.row(), 0)
         is_hook_item = item is not None and isinstance(item, HookWidget)
         if is_hook_item:
-            sep = utils.get_qmenu_separator()
-            menu.addAction(sep)
+            menu.addSeparator()
 
             if item.get_hook_data().ptr > 0:
                 # is either a native or java hook
-                cond_action = menu.addAction("Condition")
-                logic_action = menu.addAction("Logic")
+                cond = menu.addAction("Condition")
+                cond.setData('condition')
+                logic = menu.addAction("Logic")
+                logic.setData('logic')
 
-                sep2 = utils.get_qmenu_separator()
-                menu.addAction(sep2)
+                menu.addSeparator()
 
-            delete_action = menu.addAction("Delete")
+            delete = menu.addAction("Delete")
+            delete.setData('delete')
 
-        action = menu.exec_(self.mapToGlobal(pos))
-        if action == add_action:
+    def on_menu_action(self, action_data, item):
+        if action_data == 'native':
             self.hook_native()
-
-        if self.app.get_dwarf().java_available:
-            if action == on_load_action:
-                self.hook_onload()
-            elif action == hook_java_action:
-                self.hook_java()
-        if is_hook_item:
-            if action == delete_action:
-                self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
-            elif action == cond_action:
-                self.set_condition(item)
-            elif action == logic_action:
-                self.set_logic(item)
+            return False
+        elif action_data == 'java':
+            self.hook_java()
+            return False
+        elif action_data == 'onload':
+            self.hook_onload()
+            return False
+        elif action_data == 'delete':
+            self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
+            return False
+        elif action_data == 'logic':
+            self.set_logic(item)
+            return False
+        elif action_data == 'condition':
+            self.set_condition(item)
+            return False
+        return True
 
     def hook_native(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
@@ -128,8 +128,7 @@ class HooksPanel(QTableWidget):
         q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 0, q)
-        q = NotEditableTableWidgetItem(hex(ptr))
-        q.setForeground(Qt.red)
+        q = MemoryAddressWidget(hex(ptr))
         self.setItem(self.rowCount() - 1, 1, q)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
@@ -206,18 +205,19 @@ class HooksPanel(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
     def set_condition(self, item):
-        inp = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
-        if inp[0]:
+        accept, input = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
+        if accept:
+            item = self.item(item.row(), 0)
             what = item.get_hook_data().get_ptr()
             if what == 0:
                 what = item.get_hook_data().get_input()
-            if self.app.dwarf_api('setHookCondition', [what, inp[1]]):
-                item.get_hook_data().set_condition(inp[1])
+            if self.app.dwarf_api('setHookCondition', [what, input]):
+                item.get_hook_data().set_condition(input)
 
     def set_logic(self, item):
         if len(self.selectedItems()) < 1:
             return
-        item = self.item(self.selectedItems()[0].row(), 0)
+        item = self.item(item.row(), 0)
         inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_logic())
 
         what = item.get_hook_data().get_ptr()
@@ -239,10 +239,6 @@ class HooksPanel(QTableWidget):
             items = self.findItems(module, Qt.MatchExactly)
             for item in items:
                 self.item(item.row(), 1).setText(base)
-
-    def hooks_cell_double_clicked(self, row, c):
-        if c == 1:
-            self.app.get_memory_panel().read_memory(self.item(row, c).text())
 
     def delete_hook(self, item, hook):
         self.removeRow(item.row())

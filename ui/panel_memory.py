@@ -57,7 +57,6 @@ class PanelController(object):
         if not isinstance(self.memory_panel.item(row, 0), MemoryAddressWidget):
             address = self.memory_panel.range.base + (row * 16)
             q = MemoryAddressWidget(hex(address))
-            q.set_address(address)
             q.setFlags(Qt.NoItemFlags)
             q.setForeground(Qt.red)
             self.memory_panel.setItem(row, 0, q)

@@ -17,29 +17,16 @@ Dwarf - Copyright (C) 2018 iGio90
 from threading import Thread
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class SearchPanel(QTableWidget):
+class SearchPanel(TableBaseWidget):
     def __init__(self, app, headers):
-        self.app = app
-        self.headers = headers
-
-        super().__init__(0, len(headers))
-
-        self.verticalHeader().hide()
-        self.horizontalScrollBar().hide()
-        self.setShowGrid(False)
+        super().__init__(app, 0, len(headers))
         self.setHorizontalHeaderLabels(headers)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.itemDoubleClicked.connect(self.item_double_clicked)
-
-    def item_double_clicked(self, item):
-        if isinstance(item, MemoryAddressWidget):
-            self.app.get_memory_panel().read_memory(item.get_address())
 
     @staticmethod
     def debug_symbol_search_panel(app, input):
@@ -53,6 +40,8 @@ class SearchPanel(QTableWidget):
                 panel.setHorizontalHeaderLabels(['name', 'address', 'module'])
                 for ptr in matches:
                     sym = app.dwarf_api('getSymbolByAddress', ptr)
+                    if sym is None:
+                        continue
                     if sym['name'] == '' or sym['name'] is None:
                         sym['name'] = sym['address']
 
@@ -65,8 +54,6 @@ class SearchPanel(QTableWidget):
                     panel.setItem(row, 0, q)
 
                     q = MemoryAddressWidget(sym['address'])
-                    q.set_address(sym['address'])
-                    q.setForeground(Qt.red)
                     panel.setItem(row, 1, q)
 
                     q = NotEditableTableWidgetItem(sym['moduleName'])
