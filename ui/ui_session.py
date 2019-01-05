@@ -210,11 +210,6 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.asm_panel)
 
-    def add_search_tab(self, search_panel_widget, search_label):
-        if len(search_label) > 7:
-            search_label = search_label[:6] + '...'
-        self.add_tab(search_panel_widget, 'search - %s' % search_label)
-
     def add_tab(self, tab_widget, tab_label):
         self.addTab(tab_widget, tab_label)
         self.setCurrentWidget(tab_widget)

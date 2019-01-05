@@ -36,6 +36,7 @@ class MenuBar(object):
 
         # actions
         self.menu_actions = []
+        self.action_find_bytes = None
 
         self.build_device_menu()
         self.build_process_menu()
@@ -49,7 +50,7 @@ class MenuBar(object):
         self.menu_actions.append({
             'action': action,
             'require_script': require_script,
-            'require_java':  require_java
+            'require_java': require_java
         })
         if self.app_window.get_dwarf().script is None:
             action.setEnabled(not require_script)
@@ -101,10 +102,14 @@ class MenuBar(object):
         self.add_menu_action(hooks_menu, hook_onload, True, True)
 
     def build_find_menu(self):
+        self.action_find_bytes = QAction("&Bytes", self.app_window)
+        self.action_find_bytes.triggered.connect(self.handler_find_bytes)
+
         symbol = QAction("&Symbol", self.app_window)
         symbol.triggered.connect(self.handler_find_symbol)
 
         find_menu = self.menu.addMenu('&Find')
+        self.add_menu_action(find_menu, self.action_find_bytes, True)
         self.add_menu_action(find_menu, symbol, True)
 
     def build_session_menu(self):
@@ -154,6 +159,12 @@ class MenuBar(object):
 
     def handler_author(self):
         webbrowser.open_new_tab('http://www.giovanni-rocca.com')
+
+    def handler_find_bytes(self):
+        accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
+        if accept:
+            self.action_find_bytes.setEnabled(False)
+            self.app_window.get_dwarf().search_bytes(input)
 
     def handler_detach(self):
         self.app_window.get_dwarf().detach()
@@ -275,3 +286,7 @@ class MenuBar(object):
                 action['action'].setEnabled(False)
                 continue
             action['action'].setEnabled(True)
+
+    def on_bytes_search_finished(self):
+        if self.app_window.get_dwarf().script is not None:
+            self.action_find_bytes.setEnabled(True)

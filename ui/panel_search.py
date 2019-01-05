@@ -28,10 +28,33 @@ class SearchPanel(TableBaseWidget):
         super().__init__(app, 0, len(headers))
         self.setHorizontalHeaderLabels(headers)
 
+    def add_bytes_match_item(self, address, symbol):
+        r = self.rowCount()
+        self.insertRow(r)
+        self.setItem(r, 0, MemoryAddressWidget(address))
+        if symbol['moduleName'] is not None:
+            sym = symbol['moduleName']
+            if symbol['name'] is not None:
+                sym = '%s (%s)' % (symbol['name'], sym)
+            q = NotEditableTableWidgetItem(sym)
+            q.setFlags(Qt.NoItemFlags)
+            q.setForeground(Qt.lightGray)
+        else:
+            q = NotEditableTableWidgetItem('-')
+            q.setFlags(Qt.NoItemFlags)
+            q.setForeground(Qt.gray)
+        self.setItem(r, 1, q)
+        if r == 0:
+            self.resizeColumnsToContents()
+            self.horizontalHeader().setStretchLastSection(True)
+
     @staticmethod
     def debug_symbol_search_panel(app, input):
         panel = SearchPanel(app, [])
-        app.get_session_ui().add_search_tab(panel, input)
+        search_label = input
+        if len(search_label) > 7:
+            search_label = search_label[:6] + '...'
+        app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
 
         def _work():
             matches = app.dwarf_api('findSymbol', input)
@@ -65,3 +88,13 @@ class SearchPanel(TableBaseWidget):
                         panel.resizeColumnsToContents()
                         panel.horizontalHeader().setStretchLastSection(True)
         Thread(target=_work).start()
+
+    @staticmethod
+    def bytes_search_panel(app, input):
+        panel = SearchPanel(app, [])
+        search_label = input
+        if len(search_label) > 7:
+            search_label = search_label[:6] + '...'
+        app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
+        app.dwarf_api('memoryScan', input)
+        return panel

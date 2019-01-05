@@ -22,6 +22,7 @@ from hexdump import hexdump
 from lib import utils
 from lib.hook import Hook
 from lib.prefs import Prefs
+from ui.panel_search import SearchPanel
 
 
 class Dwarf(object):
@@ -31,15 +32,17 @@ class Dwarf(object):
 
         self.java_available = False
         self.loading_library = False
+        self.bytes_search_panel = None
 
+        # process
         self.pid = 0
         self.process = None
         self.script = None
 
+        # hooks
         self.hooks = {}
         self.onloads = {}
         self.java_hooks = {}
-
         self.temporary_input = ''
         self.native_pending_args = None
         self.java_pending_args = None
@@ -165,6 +168,13 @@ class Dwarf(object):
                 self.native_pending_args = None
             self.hooks[h.get_ptr()] = h
             self.app.get_hooks_panel().hook_native_callback(h)
+        elif parts[0] == 'memory_scan_finished':
+            self.app_window.get_menu().on_bytes_search_finished()
+            self.bytes_search_panel = None
+        elif parts[0] == 'memory_scan_match':
+            self.bytes_search_panel.setColumnCount(2)
+            self.bytes_search_panel.setHorizontalHeaderLabels(['address', 'symbol'])
+            self.bytes_search_panel.add_bytes_match_item(parts[1], json.loads(parts[2]))
         elif parts[0] == 'set_data':
             key = parts[1]
             if data:
@@ -214,6 +224,9 @@ class Dwarf(object):
 
         self.onloads[input] = h
         return h
+
+    def search_bytes(self, input):
+        self.bytes_search_panel = SearchPanel.bytes_search_panel(self.app, input)
 
     def get_loading_library(self):
         return self.loading_library
