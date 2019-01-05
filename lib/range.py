@@ -28,6 +28,7 @@ class Range(object):
         self.data = bytes()
 
         self.start_address = 0
+        self.start_offset = 0
 
     def invalidate(self):
         self.base = 0
@@ -36,6 +37,7 @@ class Range(object):
         self.data = bytes()
 
         self.start_address = 0
+        self.start_offset = 0
 
     def init_with_address(self, address):
         if isinstance(address, str):
@@ -61,6 +63,7 @@ class Range(object):
         self.base = int(range['base'], 16)
         self.size = range['size']
         self.tail = self.base + self.size
+        self.start_offset = self.start_address - self.base
         self.data = self.app.dwarf_api('readBytes', [self.base, self.size])
         if self.data is None:
             self.data = bytes()
@@ -68,3 +71,7 @@ class Range(object):
         if len(self.data) == 0:
             return 1
         return 0
+
+    def set_start_offset(self, offset):
+        self.start_offset = offset
+        self.start_address = self.base + offset

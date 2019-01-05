@@ -196,9 +196,12 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.asm_panel)
 
-    def disasm(self, range, offset):
+    def disasm(self, ptr=0, _range=None):
         self.add_dwarf_tab(SessionUi.TAB_ASM, True)
-        self.asm_panel.disasm(range, offset)
+        if _range:
+            self.asm_panel.disasm(_range=_range)
+        else:
+            self.asm_panel.read_memory(ptr)
 
     def request_session_ui_focus(self):
         self.setCurrentWidget(self.session_panel)

@@ -141,6 +141,9 @@ class App(QWidget):
     def get_adb(self):
         return self.app_window.get_adb()
 
+    def get_asm_panel(self):
+        return self.session_ui.asm_panel
+
     def get_arch(self):
         return self.arch
 

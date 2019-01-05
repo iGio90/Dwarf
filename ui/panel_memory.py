@@ -228,7 +228,11 @@ class MemoryPanel(QTableWidget):
 
         item = self.selectedItems()[0]
         if isinstance(item, ByteWidget):
-            self.app.get_session_ui().disasm(self.range, item.get_offset())
+            if self.range.base < item.get_ptr() < self.range.tail:
+                self.range.set_start_offset(item.get_offset())
+                self.app.get_session_ui().disasm(_range=self.range)
+            else:
+                self.app.get_session_ui().disasm(ptr=item.get_ptr())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:

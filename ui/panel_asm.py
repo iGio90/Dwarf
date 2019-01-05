@@ -24,6 +24,7 @@ from keystone.keystone_const import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
 
+from lib.range import Range
 from ui.dialog_input import InputDialog
 from ui.dialog_write_instruction import WriteInstructionDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
@@ -36,7 +37,6 @@ class AsmPanel(QTableWidget):
 
         self.app = app
         self.range = None
-        self.offset = 0
 
         self.cs_arch = 0
         self.cs_mode = 0
@@ -95,23 +95,25 @@ class AsmPanel(QTableWidget):
             self.read_memory(item.get_address())
 
     def read_memory(self, ptr):
+        if self.range is None:
+            self.range = Range(self.app)
         init = self.range.init_with_address(ptr)
         if init > 0:
             return 1
-        self.disasm(self.range, ptr - self.range.base)
+        self.disasm()
         return 0
 
-    def disasm(self, range, offset):
+    def disasm(self, _range=None):
         self.setRowCount(0)
 
-        self.range = range
-        self.offset = offset
+        if _range:
+            self.range = _range
 
         md = Cs(self.cs_arch, self.cs_mode)
         md.detail = True
 
         insts = 0
-        for i in md.disasm(self.range.data[self.offset:], self.range.base + self.offset):
+        for i in md.disasm(self.range.data[self.range.start_offset:], self.range.start_address):
             if insts > 128:
                 break
 
