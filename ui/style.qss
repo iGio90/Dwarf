@@ -1,9 +1,9 @@
 QWidget {
-    background-color: black;
+    background-color: #090909;
 }
 
 QWidget:hover {
-    background-color: black;
+    background-color: #090909;
     border-color: #32414B;
     text-decoration: none;
 }
@@ -24,7 +24,7 @@ QListWidget::item:hover:!active {
     background-color: rgba(255, 255, 255, 0.1);
     border-color: #32414B;
     text-decoration: none;
-    color: red;
+    color: #BA0000;
 }
 
 QListView::item:!selected:hover,
@@ -32,7 +32,7 @@ QTreeView::item:!selected:hover,
 QTableView::item:!selected:hover,
 QColumnView::item:!selected:hover {
     outline: 0;
-    color: red;
+    color: #BA0000;
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -40,7 +40,7 @@ QListView::item:selected:hover,
 QTreeView::item:selected:hover,
 QTableView::item:selected:hover,
 QColumnView::item:selected:hover {
-    color: red;
+    color: #BA0000;
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -102,7 +102,7 @@ QTabWidget::tab-bar:right {
 }
 
 QPushButton:hover {
-    border: 1px solid red;
+    border: 1px solid #BA0000;
 }
 
 /* QTabBar::tab - selected ----------------------------------------------- */
@@ -168,13 +168,12 @@ QTabBar::tab:top {
     background-color: transparent;
     color: #F0F0F0;
     margin-left: 2px;
-    padding-left: 4px;
-    padding-right: 4px;
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 4px;
+    padding-bottom: 4px;
     min-width: 5px;
     border-bottom: 1px solid #32414B;
-    border-left: 1px solid #32414B;
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
 }
@@ -182,15 +181,14 @@ QTabBar::tab:top {
 QTabBar::tab:top:selected {
     background-color: transparent;
     color: #F0F0F0;
-    border-bottom: 2px solid #32414B;
-    border-left: 2px solid #32414B;
+    border-bottom: 1px solid #BA0000;
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
 }
 
 QTabBar::tab:top:!selected:hover {
-    border-left: 1px solid #32414B;
     border-bottom: 2px solid #32414B;
+    border-left: 0px solid #32414B;
     border-top: 0px solid transparent;
     border-right: 0px solid transparent;
 }
@@ -211,8 +209,8 @@ QTableWidget::item:hover:!active,
 QTableWidget::item:focus:active,
 QTableWidget::item:pressed,
 QTableWidget::item:selected:active {
-    background-color: black;
-    background: black;
+    background-color: #090909;
+    background: #090909;
     text-decoration: none;
 }
 
@@ -224,7 +222,51 @@ QTableWidget::item:selected,
 QTableWidget::item:selected:hover,
 QTableWidget::item:selected:focus,
 QTableWidget::item:hover:active {
-    color: red;
-    background-color: black;
-    background: black;
+    color: #BA0000;
+    background-color: #090909;
+    background: #090909;
+}
+
+QMenu {
+    border: 0px solid #32414B;
+    color: #F0F0F0;
+    margin: 0px;
+    background-color: #090909;
+    background: #090909;
+}
+
+QMenu::separator {
+    height: 2px;
+    background-color: #BA0000;
+    color: #F0F0F0;
+    padding-left: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+QMenu::icon {
+    margin: 0px;
+    padding-left:4px;
+}
+
+QMenu::item {
+    padding: 4px 24px 4px 24px;
+    border: 1px transparent #32414B;  /* reserve space for selection border */
+    background-color: #090909;
+}
+
+QMenu::item:focus,
+QMenu::item:selected,
+QMenu::item:hover {
+    color: #090909;
+    background-color: #BA0000;
+    background: #BA0000;
+}
+
+QToolTip {
+    background-color: #1a1a1a;
+    border: 1px solid #19232D;
+    color: #BA0000;
+    padding: 0;   /*remove padding, for fix combo box tooltip*/
+    opacity: 230; /*#BA0000ucing transparency to read better*/
 }
