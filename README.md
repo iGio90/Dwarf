@@ -1,6 +1,6 @@
 # DWARF
 
-A gui for mobile reverse engineers and crackers.
+A debugger for mobile reverse engineers and crackers.
 Or damn, what a reversed fluffy or yet, duck warriors are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code. 
 
