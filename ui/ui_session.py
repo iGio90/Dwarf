@@ -96,7 +96,11 @@ class SessionUi(QTabWidget):
         self.session_panel.setContentsMargins(0, 0, 0, 0)
 
         self.addTab(self.session_panel, 'session')
-        self.tabBar().tabButton(0, QTabBar.LeftSide).resize(0, 0)
+        bt = self.tabBar().tabButton(0, QTabBar.LeftSide)
+        if not bt:
+            bt = self.tabBar().tabButton(0, QTabBar.RightSide)
+        if bt:
+            bt.resize(0, 0)
 
         self.modules_panel = ModulesPanel(self.app)
         self.ranges_panel = RangesPanel(self.app)
