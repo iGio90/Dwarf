@@ -23,7 +23,7 @@ class ContextItem(NotEditableTableWidgetItem):
         super().__init__(*__args)
 
         self.context = context
-        self.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
+        self.setFlags(Qt.ItemIsEnabled)
 
     def get_context(self):
         return self.context

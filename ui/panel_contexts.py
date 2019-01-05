@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QTableWidget, QScrollBar
 
 from ui.widget_context import ContextItem
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
 
 
 class ContextsPanel(QTableWidget):
@@ -44,7 +45,8 @@ class ContextsPanel(QTableWidget):
         self.setItem(row, 0, q)
         is_java = data['is_java']
         if not is_java:
-            q = NotEditableTableWidgetItem(data['ptr'])
+            q = MemoryAddressWidget(data['ptr'])
+            q.set_address(int(data['ptr'], 16))
         else:
             parts = data['ptr'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
@@ -67,4 +69,7 @@ class ContextsPanel(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
     def on_context_item_double_click(self, item):
-        self.app.apply_context(self.item(item.row(), 0).get_context())
+        if isinstance(item, ContextItem):
+            self.app.apply_context(item.get_context())
+        elif isinstance(item, MemoryAddressWidget):
+            self.app.get_memory_panel().read_memory(item.get_address())
