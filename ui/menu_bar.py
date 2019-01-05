@@ -159,7 +159,7 @@ class MenuBar(object):
         self.app_window.get_dwarf().detach()
 
     def handler_find_symbol(self):
-        accept, input = InputDialog().input(self.app_window, 'find symbol by pattern')
+        accept, input = InputDialog().input(self.app_window, 'find symbol by pattern', placeholder='*_open*')
         if accept:
             SearchPanel.debug_symbol_search_panel(self.app_window.get_app_instance(), input)
 
