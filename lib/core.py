@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ import frida
 from hexdump import hexdump
 
 from lib import utils
+from lib.hook import Hook
 from lib.prefs import Prefs
 
 
@@ -34,6 +35,14 @@ class Dwarf(object):
         self.pid = 0
         self.process = None
         self.script = None
+
+        self.hooks = {}
+        self.onloads = {}
+        self.java_hooks = {}
+
+        self.temporary_input = ''
+        self.native_pending_args = None
+        self.java_pending_args = None
 
         self.prefs = Prefs()
 
@@ -50,13 +59,11 @@ class Dwarf(object):
         self.load_script(script)
 
     def detach(self):
-        self.app.resume()
-        self.app.get_log_panel().clear()
-
-        if self.process is not None:
-            self.process.detach()
+        self.dwarf_api('_detach')
         if self.script is not None:
             self.script.unload()
+        if self.process is not None:
+            self.process.detach()
 
     def load_script(self, script=None):
         with open('lib/script.js', 'r') as f:
@@ -138,9 +145,26 @@ class Dwarf(object):
                 parts[1], parts[3]))
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
         elif parts[0] == 'hook_java_callback':
-            self.app.get_hooks_panel().hook_java_callback(parts[1])
+            h = Hook(Hook.HOOK_JAVA)
+            h.set_ptr(1)
+            h.set_input(parts[1])
+            if self.java_pending_args:
+                h.set_condition(self.java_pending_args['condition'])
+                h.set_logic(self.java_pending_args['logic'])
+                self.java_pending_args = None
+            self.java_hooks[h.get_input()] = h
+            self.app.get_hooks_panel().hook_java_callback(h)
         elif parts[0] == 'hook_native_callback':
-            self.app.get_hooks_panel().hook_native_callback(int(parts[1], 16))
+            h = Hook(Hook.HOOK_NATIVE)
+            h.set_ptr(int(parts[1], 16))
+            h.set_input(self.temporary_input)
+            self.temporary_input = ''
+            if self.native_pending_args:
+                h.set_condition(self.native_pending_args['condition'])
+                h.set_logic(self.native_pending_args['logic'])
+                self.native_pending_args = None
+            self.hooks[h.get_ptr()] = h
+            self.app.get_hooks_panel().hook_native_callback(h)
         elif parts[0] == 'set_data':
             key = parts[1]
             if data:
@@ -172,6 +196,24 @@ class Dwarf(object):
         except Exception as e:
             self.app.get_log_panel().log(str(e))
             return None
+
+    def hook_java(self, input, pending_args):
+        self.java_pending_args = pending_args
+        self.app.dwarf_api('hookJava', input)
+
+    def hook_native(self, input, pending_args, ptr):
+        self.temporary_input = input
+        self.native_pending_args = pending_args
+        self.app.dwarf_api('hookNative', ptr)
+
+    def hook_onload(self, input):
+        self.dwarf_api('hookOnLoad', input)
+        h = Hook(Hook.HOOK_ONLOAD)
+        h.set_ptr(0)
+        h.set_input(input)
+
+        self.onloads[input] = h
+        return h
 
     def get_loading_library(self):
         return self.loading_library

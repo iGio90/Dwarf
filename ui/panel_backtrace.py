@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,17 +23,14 @@ from ui.widget_table_base import TableBaseWidget
 
 class BacktracePanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(app, 0, 2)
-
-        self.is_java_bt = False
-        self.setHorizontalHeaderLabels(['symbol', 'address'])
-        self.horizontalHeader().setStretchLastSection(True)
+        super().__init__(app, 0, 0)
 
     def set_backtrace(self, bt):
         self.setRowCount(0)
+        if self.columnCount() == 0:
+            self.setColumnCount(2)
         if type(bt) is list:
             # native backtrace
-            self.is_java_bt = False
             self.setHorizontalHeaderLabels(['symbol', 'address'])
             for a in bt:
                 row = self.rowCount()
@@ -54,7 +51,6 @@ class BacktracePanel(TableBaseWidget):
                 self.setItem(row, 1, q)
         elif type(bt) is str:
             # Java backtrace
-            self.is_java_bt = True
             self.setHorizontalHeaderLabels(['method', 'source'])
             parts = bt.split('\n')
             for i in range(0, len(parts)):

@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@ class AppWindow(QMainWindow):
         self.app.setup_ui()
 
         self.menu = MenuBar(self)
-
         if dwarf_args.package is not None:
             self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
@@ -77,6 +76,9 @@ class App(QWidget):
         self.arch = ''
         self.pointer_size = 0
 
+        self.box = QVBoxLayout()
+        self.box.setContentsMargins(0, 0, 0, 0)
+
         self.welcome_ui = None
         self.session_ui = None
 
@@ -84,23 +86,19 @@ class App(QWidget):
         self.context_tid = 0
 
     def setup_ui(self):
-        box = QVBoxLayout()
-        box.setContentsMargins(0, 0, 0, 0)
-
         self.session_ui = SessionUi(self)
-        self.session_ui.setVisible(False)
-
         self.welcome_ui = WelcomeUi(self)
 
-        box.addWidget(self.session_ui)
-        box.addWidget(self.welcome_ui)
+        self.session_ui.hide()
 
-        self.setLayout(box)
+        self.box.addWidget(self.welcome_ui)
+        self.box.addWidget(self.session_ui)
+
+        self.setLayout(self.box)
 
     def restart(self):
         self.dwarf_api('restart')
         self.resume()
-        self.get_hooks_panel().reset_hook_count()
         self.get_contexts_panel().setRowCount(0)
 
     def resume(self):
@@ -190,18 +188,17 @@ class App(QWidget):
         return self.session_ui
 
     def on_script_destroyed(self):
-        self.session_ui.setVisible(False)
+        self.session_ui.hide()
         self.session_ui.on_script_destroyed()
 
-        self.welcome_ui.setVisible(True)
-
+        self.welcome_ui.show()
         self.welcome_ui.update_device_ui()
 
     def on_script_loaded(self):
         self.session_ui.on_script_loaded()
 
-        self.session_ui.setVisible(True)
-        self.welcome_ui.setVisible(False)
+        self.welcome_ui.hide()
+        self.session_ui.show()
 
         # trigger this to clear lists
         self.welcome_ui.on_device_changed()

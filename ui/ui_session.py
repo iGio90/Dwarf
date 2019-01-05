@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ class SessionUi(QTabWidget):
         main_panel.setOrientation(Qt.Vertical)
         main_panel.setContentsMargins(0, 0, 0, 0)
 
-        self.registers_panel = RegistersPanel(self.app, 0, 4)
+        self.registers_panel = RegistersPanel(self.app, 0, 0)
         main_panel.addWidget(self.registers_panel)
 
         self.memory_panel = MemoryPanel(self.app)
@@ -160,6 +160,7 @@ class SessionUi(QTabWidget):
         self.asm_panel.range = None
 
         self.hooks_panel.setRowCount(0)
+        self.hooks_panel.setColumnCount(0)
         self.hooks_panel.resizeColumnsToContents()
         self.hooks_panel.horizontalHeader().setStretchLastSection(True)
 
@@ -172,14 +173,17 @@ class SessionUi(QTabWidget):
         self.modules_panel.horizontalHeader().setStretchLastSection(True)
 
         self.contexts_panel.setRowCount(0)
+        self.hooks_panel.setColumnCount(0)
         self.contexts_panel.resizeColumnsToContents()
         self.contexts_panel.horizontalHeader().setStretchLastSection(True)
 
         self.backtrace_panel.setRowCount(0)
+        self.hooks_panel.setColumnCount(0)
         self.backtrace_panel.resizeColumnsToContents()
         self.backtrace_panel.horizontalHeader().setStretchLastSection(True)
 
         self.registers_panel.setRowCount(0)
+        self.hooks_panel.setColumnCount(0)
         self.registers_panel.resizeColumnsToContents()
         self.registers_panel.horizontalHeader().setStretchLastSection(True)
 
@@ -207,10 +211,13 @@ class SessionUi(QTabWidget):
                 self.setCurrentWidget(self.asm_panel)
 
     def add_search_tab(self, search_panel_widget, search_label):
-        if len(search_label) > 5:
-            search_label = search_label[:4] + '...'
-        self.addTab(search_panel_widget, 'search - %s' % search_label)
-        self.setCurrentWidget(search_panel_widget)
+        if len(search_label) > 7:
+            search_label = search_label[:6] + '...'
+        self.add_tab(search_panel_widget, 'search - %s' % search_label)
+
+    def add_tab(self, tab_widget, tab_label):
+        self.addTab(tab_widget, tab_label)
+        self.setCurrentWidget(tab_widget)
 
     def disasm(self, ptr=0, _range=None):
         self.add_dwarf_tab(SessionUi.TAB_ASM, True)

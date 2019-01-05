@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ class AsmPanel(QTableWidget):
             super(AsmPanel, self).keyPressEvent(event)
 
     def trigger_jump_to(self):
-        accept, ptr = InputDialog.input(hint='insert pointer')
+        accept, ptr = InputDialog.input(self.app, hint='insert pointer')
         if accept:
             ptr = int(self.app.dwarf_api('evaluatePtr', ptr), 16)
             self.read_memory(ptr)

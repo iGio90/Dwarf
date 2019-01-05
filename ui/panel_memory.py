@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class PanelController(object):
                 time.sleep(0.1)
 
         self.work = True
-        Thread(target=self._work, args=(start_row, )).start()
+        Thread(target=self._work, args=(start_row,)).start()
 
     def stop(self):
         self.work = False
@@ -145,8 +145,7 @@ class MemoryPanel(QTableWidget):
                 address.triggered.connect(self.trigger_copy_address)
                 menu.addAction(address)
 
-                address_sep = utils.get_qmenu_separator()
-                menu.addAction(address_sep)
+                menu.addSeparator()
 
             asm_view = menu.addAction("ASM\t(A)")
             asm_view.triggered.connect(self.show_asm_view)
@@ -269,7 +268,7 @@ class MemoryPanel(QTableWidget):
             self.app.get_hooks_panel().hook_native(hex(item.get_ptr()))
 
     def trigger_jump_to(self):
-        accept, ptr = InputDialog.input(hint='insert pointer')
+        accept, ptr = InputDialog.input(self.app, hint='insert pointer')
         if accept:
             ptr = int(self.app.dwarf_api('evaluatePtr', ptr), 16)
             self.read_memory(ptr)
@@ -287,6 +286,7 @@ class MemoryPanel(QTableWidget):
             mem = binascii.hexlify(mem).decode('utf8')
             mem = ' '.join(re.findall('.{1,2}', mem))
             content = InputDialog.input(
+                self.app,
                 hint='write bytes @%s' % hex(ptr),
                 input_content=mem)
             if content[0]:
@@ -302,6 +302,7 @@ class MemoryPanel(QTableWidget):
             ptr = item.get_ptr()
 
             accept, content = InputDialog.input(
+                self.app,
                 hint='write utf8 string @%s' % hex(ptr))
             if accept:
                 if self.app.dwarf_api('writeUtf8', [ptr, content]):
@@ -312,5 +313,6 @@ class MemoryPanel(QTableWidget):
         self.range = None
         self.controller.work = False
         self.setRowCount(0)
+        self.setColumnCount(0)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)

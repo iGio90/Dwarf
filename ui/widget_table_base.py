@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 import pyperclip
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu, QScrollBar
+from PyQt5.QtWidgets import QTableWidget, QMenu
 
 from ui.widget_memory_address import MemoryAddressWidget
 

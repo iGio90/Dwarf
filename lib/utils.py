@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,12 +38,6 @@ def get_app_icon():
     if app_icon is None:
         app_icon = QPixmap(resource_path('ui/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
     return app_icon
-
-
-def get_qmenu_separator():
-    separator = QAction("--------------------")
-    separator.setEnabled(False)
-    return separator
 
 
 def resource_path(relative_path):

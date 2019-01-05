@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QTextEdit, QLabel
 
-from lib import utils
 from lib.hook import Hook
 from ui.dialog_input import InputDialog
 from ui.dialog_input_multiline import InputMultilineDialog
@@ -29,20 +28,7 @@ from ui.widget_table_base import TableBaseWidget
 
 class HooksPanel(TableBaseWidget):
     def __init__(self, app):
-        super().__init__(app, 0, 2)
-
-        self.hooks = {}
-        self.onloads = {}
-        self.java_hooks = {}
-
-        self.temporary_input = ''
-        self.native_pending_args = None
-        self.java_pending_args = None
-
-        self.setHorizontalHeaderLabels(['input', 'address'])
-
-        self.resizeColumnsToContents()
-        self.horizontalHeader().setStretchLastSection(True)
+        super().__init__(app, 0, 0)
 
     def set_menu_actions(self, item, menu):
         native = menu.addAction("Native\t(N)")
@@ -93,49 +79,41 @@ class HooksPanel(TableBaseWidget):
             return False
         return True
 
-    def hook_native(self, input=None, pending_args=None):
-        if input is None or not isinstance(input, str):
-            accept, input = InputDialog.input(hint='insert pointer')
+    def hook_native(self, inp=None, pending_args=None):
+        if inp is None or not isinstance(inp, str):
+            accept, inp = InputDialog.input(
+                self.app, hint='insert pointer',
+                placeholder='Module.findExportByName(\'target\', \'export\')')
             if not accept:
                 return
-
         ptr = 0
         try:
-            ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
+            ptr = int(self.app.dwarf_api('evaluatePtr', inp), 16)
         except:
             pass
         if ptr > 0:
-            self.temporary_input = input
-            self.native_pending_args = pending_args
-            self.app.dwarf_api('hookNative', ptr)
+            self.app.get_dwarf().hook_native(inp, pending_args, ptr)
 
-    def hook_native_callback(self, ptr):
+    def hook_native_callback(self, hook):
+        if self.columnCount() == 0:
+            self.setColumnCount(2)
+            self.setHorizontalHeaderLabels(['input', 'address'])
+
         self.insertRow(self.rowCount())
 
-        h = Hook(Hook.HOOK_NATIVE)
-        h.set_ptr(ptr)
-        h.set_input(self.temporary_input)
-        self.temporary_input = ''
-        if self.native_pending_args:
-            h.set_condition(self.native_pending_args['condition'])
-            h.set_logic(self.native_pending_args['logic'])
-
-            self.native_pending_args = {}
-
-        self.hooks[ptr] = h
-        q = HookWidget(h.get_input())
-        q.set_hook_data(h)
+        q = HookWidget(hook.get_input())
+        q.set_hook_data(hook)
         q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 0, q)
-        q = MemoryAddressWidget(hex(ptr))
+        q = MemoryAddressWidget(hex(hook.get_ptr()))
         self.setItem(self.rowCount() - 1, 1, q)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
     def hook_onload(self, input=None):
         if input is None or not isinstance(input, str):
-            input = InputDialog.input(hint='insert module name')
+            input = InputDialog.input(self.app, hint='insert module name', placeholder='libtarget.so')
             if not input[0]:
                 return
             input = input[1]
@@ -148,14 +126,13 @@ class HooksPanel(TableBaseWidget):
         if input in self.onloads:
             return
 
+        if self.columnCount() == 0:
+            self.setColumnCount(2)
+            self.setHorizontalHeaderLabels(['input', 'address'])
+
+        h = self.app.get_dwarf().hook_onload(input)
+
         self.insertRow(self.rowCount())
-
-        h = Hook(Hook.HOOK_ONLOAD)
-        h.set_ptr(0)
-        h.set_input(input)
-
-        self.onloads[input] = h
-
         q = HookWidget(h.get_input())
         q.set_hook_data(h)
         q.setFlags(Qt.NoItemFlags)
@@ -166,33 +143,28 @@ class HooksPanel(TableBaseWidget):
         q.setForeground(Qt.gray)
         self.setItem(self.rowCount() - 1, 1, q)
 
-        self.app.dwarf_api('hookOnLoad', input)
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
     def hook_java(self, input=None, pending_args=None):
         if input is None or not isinstance(input, str):
-            input = InputDialog.input(hint='com.package.class or com.package.class.method')
+            input = InputDialog.input(self.app, hint='insert java class or methos',
+                                      placeholder='com.package.class or com.package.class.method')
             if not input[1]:
                 return
             input = input[1]
-        self.java_pending_args = pending_args
-        self.app.dwarf_api('hookJava', input)
+        self.app.get_dwarf().hook_java(input, pending_args)
 
-    def hook_java_callback(self, class_method):
+    def hook_java_callback(self, hook):
+        if self.columnCount() == 0:
+            self.setColumnCount(2)
+            self.setHorizontalHeaderLabels(['input', 'address'])
+
         self.insertRow(self.rowCount())
 
-        h = Hook(Hook.HOOK_JAVA)
-        h.set_ptr(1)
-        h.set_input(class_method)
-        if self.java_pending_args:
-            h.set_condition(self.java_pending_args['condition'])
-            h.set_logic(self.java_pending_args['logic'])
-
-        parts = class_method.split('.')
-        self.java_hooks[class_method] = h
+        parts = hook.get_input().split('.')
         q = HookWidget('.'.join(parts[:len(parts)-1]))
-        q.set_hook_data(h)
+        q.set_hook_data(hook)
         q.setFlags(Qt.NoItemFlags)
         q.setForeground(Qt.darkYellow)
         self.setItem(self.rowCount() - 1, 0, q)
@@ -205,9 +177,10 @@ class HooksPanel(TableBaseWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
     def set_condition(self, item):
-        accept, input = InputDialog().input('insert condition', input_content=item.get_hook_data().get_condition())
+        item = self.item(item.row(), 0)
+        accept, input = InputDialog().input(
+            self.app, 'insert condition', input_content=item.get_hook_data().get_condition())
         if accept:
-            item = self.item(item.row(), 0)
             what = item.get_hook_data().get_ptr()
             if what == 0:
                 what = item.get_hook_data().get_input()
@@ -215,24 +188,15 @@ class HooksPanel(TableBaseWidget):
                 item.get_hook_data().set_condition(input)
 
     def set_logic(self, item):
-        if len(self.selectedItems()) < 1:
-            return
         item = self.item(item.row(), 0)
-        inp = InputMultilineDialog().input('insert logic', input_content=item.get_hook_data().get_logic())
+        inp = InputMultilineDialog().input(
+            'insert logic', input_content=item.get_hook_data().get_logic())
 
         what = item.get_hook_data().get_ptr()
         if what == 0:
             what = item.get_hook_data().get_input()
         if self.app.dwarf_api('setHookLogic', [what, inp[1]]):
             item.get_hook_data().set_logic(inp[1])
-
-    def reset_hook_count(self):
-        for ptr in self.hooks:
-            if isinstance(ptr, int):
-                ptr = hex(ptr)
-            items = self.findItems(ptr, Qt.MatchExactly)
-            for item in items:
-                self.item(item.row(), 2).setText('0')
 
     def hit_onload(self, module, base):
         if module in self.onloads:

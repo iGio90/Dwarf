@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,17 +17,14 @@ Dwarf - Copyright (C) 2018 iGio90
 import json
 import webbrowser
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QFileDialog, QMenuBar, QMenu
+from PyQt5.QtWidgets import QAction, QFileDialog
 
-from lib import prefs, utils
+from lib import prefs
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
-from ui.dialog_table import TableDialog
 from ui.panel_search import SearchPanel
 from ui.ui_session import SessionUi
-from ui.widget_android_package import AndroidPackageWidget, AndroidAppWidget
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_android_package import AndroidPackageWidget
 
 
 class MenuBar(object):
@@ -162,7 +159,7 @@ class MenuBar(object):
         self.app_window.get_dwarf().detach()
 
     def handler_find_symbol(self):
-        accept, input = InputDialog().input('find symbol by pattern', placeholder='*_open*')
+        accept, input = InputDialog().input(self.app_window, 'find symbol by pattern')
         if accept:
             SearchPanel.debug_symbol_search_panel(self.app_window.get_app_instance(), input)
 
@@ -191,11 +188,11 @@ class MenuBar(object):
                 session = json.load(f)
                 self.app_window.get_app_instance().get_hooks_panel()
                 for hook in session['natives']:
-                    self.app_window.get_app_instance().get_hooks_panel().hook_native(hook['input'], hook)
+                    self.app_window.get_dwarf().hook_native(hook['input'], hook)
                 for hook in session['java']:
-                    self.app_window.get_app_instance().get_hooks_panel().hook_java(hook['input'], hook)
+                    self.app_window.get_dwarf().hook_java(hook['input'], hook)
                 for hook in session['onloads']:
-                    self.app_window.get_app_instance().get_hooks_panel().hook_onload(hook)
+                    self.app_window.get_dwarf().hook_onload(hook)
                 self.app_window.get_app_instance().get_log_panel().set_js_script_text(session['script'])
 
     def handler_session_save(self):

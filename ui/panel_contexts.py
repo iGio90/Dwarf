@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,12 +24,13 @@ from ui.widget_table_base import TableBaseWidget
 
 class ContextsPanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(app, 0, 3)
-
-        self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
-        self.horizontalHeader().setStretchLastSection(True)
+        super().__init__(app, 0, 0)
 
     def add_context(self, data, library_onload=None):
+        if self.columnCount() == 0:
+            self.setColumnCount(3)
+            self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
+
         row = self.rowCount()
         self.insertRow(row)
         q = ContextItem(data, str(data['tid']))

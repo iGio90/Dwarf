@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,10 +47,30 @@ class ModulesPanel(TableBaseWidget):
             self.app.dwarf_api('updateModules')
             return False
         elif action_data == 'exports':
-            exports = self.app.dwarf_api('enumerateExports', self.item(item.row(), 0).text())
+            module = self.item(item.row(), 0).text()
+            table = TableBaseWidget(self.app, 0, 3)
+            self.app.get_session_ui().add_tab(table, 'exports %s' % module)
+            exports = self.app.dwarf_api('enumerateExports', module)
             if exports:
                 exports = json.loads(exports)
-                TableDialog().build_and_show(self.build_exports_table, exports)
+                if len(exports) > 0:
+                    table.setHorizontalHeaderLabels(['name', 'address', 'type'])
+                    for export in exports:
+                        row = table.rowCount()
+                        table.insertRow(row)
+
+                        q = NotEditableTableWidgetItem(export['name'])
+                        q.setForeground(Qt.gray)
+                        table.setItem(row, 0, q)
+
+                        q = NotEditableTableWidgetItem(export['address'])
+                        q.setForeground(Qt.red)
+                        table.setItem(row, 1, q)
+
+                        q = NotEditableTableWidgetItem(export['type'])
+                        table.setItem(row, 2, q)
+                    table.resizeColumnsToContents()
+                    table.horizontalHeader().setStretchLastSection(True)
             return False
         elif action_data == 'imports':
             imports = self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text())
@@ -64,28 +84,6 @@ class ModulesPanel(TableBaseWidget):
                 symbols = json.loads(symbols)
                 TableDialog().build_and_show(self.build_exports_table, symbols)
         return True
-
-    def build_exports_table(self, table, exports):
-        if len(exports) > 0:
-            table.setMinimumWidth(int(self.app.width() / 3))
-            table.setColumnCount(3)
-            table.setHorizontalHeaderLabels(['name', 'address', 'type'])
-            for export in exports:
-                row = table.rowCount()
-                table.insertRow(row)
-
-                q = NotEditableTableWidgetItem(export['name'])
-                q.setForeground(Qt.gray)
-                table.setItem(row, 0, q)
-
-                q = NotEditableTableWidgetItem(export['address'])
-                q.setForeground(Qt.red)
-                table.setItem(row, 1, q)
-
-                q = NotEditableTableWidgetItem(export['type'])
-                table.setItem(row, 2, q)
-            table.resizeColumnsToContents()
-            table.horizontalHeader().setStretchLastSection(True)
 
     def build_imports_table(self, table, imports):
         if len(imports) > 0:

@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2018 iGio90
+Dwarf - Copyright (C) 2019 iGio90
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ from ui.widget_table_base import TableBaseWidget
 class RegistersPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, *__args)
-        self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         self.context_ptr = ''
 
     def item_double_clicked(self, item):
@@ -36,6 +35,7 @@ class RegistersPanel(TableBaseWidget):
 
     def set_context(self, ptr, is_java, context):
         self.setRowCount(0)
+        self.setColumnCount(0)
         i = 0
 
         self.context_ptr = ptr
