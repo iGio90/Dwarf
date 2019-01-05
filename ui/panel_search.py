@@ -20,6 +20,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
 
 
 class SearchPanel(QTableWidget):
@@ -36,8 +37,9 @@ class SearchPanel(QTableWidget):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.itemDoubleClicked.connect(self.item_double_clicked)
 
-    def item_double_clicked(self):
-        pass
+    def item_double_clicked(self, item):
+        if isinstance(item, MemoryAddressWidget):
+            self.app.get_memory_panel().read_memory(item.get_address())
 
     @staticmethod
     def debug_symbol_search_panel(app, input):
@@ -62,7 +64,8 @@ class SearchPanel(QTableWidget):
                     q.setForeground(Qt.white)
                     panel.setItem(row, 0, q)
 
-                    q = NotEditableTableWidgetItem(sym['address'])
+                    q = MemoryAddressWidget(sym['address'])
+                    q.set_address(sym['address'])
                     q.setForeground(Qt.red)
                     panel.setItem(row, 1, q)
 

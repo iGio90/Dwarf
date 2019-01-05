@@ -25,7 +25,13 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
         self.address = 0
 
     def set_address(self, address):
-        self.address = address
+        if isinstance(address, str):
+            if address.startswith('0x'):
+                self.address = int(address, 16)
+            else:
+                self.address = int(address)
+        else:
+            self.address = address
 
     def set_offset(self, offset):
         self.offset = offset
