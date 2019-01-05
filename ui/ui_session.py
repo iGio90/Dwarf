@@ -95,6 +95,9 @@ class SessionUi(QTabWidget):
         self.session_panel.setStretchFactor(1, 6)
         self.session_panel.setContentsMargins(0, 0, 0, 0)
 
+        self.modules_panel = ModulesPanel(self.app)
+        self.ranges_panel = RangesPanel(self.app)
+
         self.addTab(self.session_panel, 'session')
         bt = self.tabBar().tabButton(0, QTabBar.LeftSide)
         if not bt:
@@ -102,9 +105,7 @@ class SessionUi(QTabWidget):
         if bt:
             bt.resize(0, 0)
 
-        self.modules_panel = ModulesPanel(self.app)
-        self.ranges_panel = RangesPanel(self.app)
-
+    def add_main_tabs(self):
         self.add_dwarf_tab(SessionUi.TAB_MODULES)
         self.add_dwarf_tab(SessionUi.TAB_RANGES)
 
@@ -145,9 +146,18 @@ class SessionUi(QTabWidget):
         main_panel.setStretchFactor(2, 1)
         return main_panel
 
+    def on_script_loaded(self):
+        self.add_main_tabs()
+
     def on_script_destroyed(self):
+        for i in range(0, self.count()):
+            if i > 0:
+                self.removeTab(i)
+
         self.log_panel.clear()
         self.data_panel.clear()
+
+        self.asm_panel.range = None
 
         self.hooks_panel.setRowCount(0)
         self.hooks_panel.resizeColumnsToContents()

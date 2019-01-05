@@ -124,7 +124,7 @@ class MemoryPanel(QTableWidget):
         self.app = app
 
         self.controller = PanelController(self)
-        self.range = Range(app)
+        self.range = None
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
@@ -215,6 +215,9 @@ class MemoryPanel(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
     def read_memory(self, ptr):
+        if self.range == None:
+            self.range = Range(self.app)
+
         self.app.get_session_ui().request_session_ui_focus()
         init = self.range.init_with_address(ptr)
         if init > 0:
@@ -307,6 +310,7 @@ class MemoryPanel(QTableWidget):
                     self.read_memory(ptr)
 
     def on_script_destroyed(self):
+        self.range = None
         self.controller.work = False
         self.setRowCount(0)
         self.resizeRowsToContents()

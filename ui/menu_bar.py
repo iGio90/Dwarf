@@ -239,7 +239,7 @@ class MenuBar(object):
                                 'WJlNDVjZDcwNGE')
 
     def handler_view_data(self):
-        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, True)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, request_focus=True)
 
     def handler_view_backtrace(self):
         visible = self.app_window.get_app_instance().get_backtrace_panel().isVisible()
@@ -247,10 +247,10 @@ class MenuBar(object):
         self.app_window.get_app_instance().get_backtrace_panel().setVisible(not visible)
 
     def handler_view_modules(self):
-        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_MODULES, True)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_MODULES, request_focus=True)
 
     def handler_view_ranges(self):
-        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_RANGES, True)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_RANGES, request_focus=True)
 
     #
     #

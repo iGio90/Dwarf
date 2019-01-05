@@ -198,6 +198,8 @@ class App(QWidget):
         self.welcome_ui.update_device_ui()
 
     def on_script_loaded(self):
+        self.session_ui.on_script_loaded()
+
         self.session_ui.setVisible(True)
         self.welcome_ui.setVisible(False)
 
