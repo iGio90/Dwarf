@@ -27,7 +27,8 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
         self.address = 0
 
         self.setForeground(Qt.red)
-        self.set_address(self.text())
+        if len(self.text()) > 0:
+            self.set_address(self.text())
 
     def set_address(self, address):
         if isinstance(address, str):

@@ -15,30 +15,24 @@ Dwarf - Copyright (C) 2018 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QMenu
+from PyQt5.QtWidgets import QTableWidgetItem
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_native_register import NativeRegisterWidget
+from ui.widget_table_base import TableBaseWidget
 
 
-class RegistersPanel(QTableWidget):
+class RegistersPanel(TableBaseWidget):
     def __init__(self, app, *__args):
-        super().__init__(*__args)
-
-        self.app = app
-
+        super().__init__(app, *__args)
         self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
-        self.verticalHeader().hide()
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.itemDoubleClicked.connect(self.on_register_double_click)
-        self.setShowGrid(False)
-        self.horizontalHeader().setStretchLastSection(True)
-
         self.context_ptr = ''
 
-    def on_register_double_click(self, item):
-        if item is not None and isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
+    def item_double_clicked(self, item):
+        if isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
             self.app.get_memory_panel().read_memory(item.value)
+        # return false and manage double click here
+        return False
 
     def set_context(self, ptr, is_java, context):
         self.setRowCount(0)

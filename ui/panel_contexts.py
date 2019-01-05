@@ -63,3 +63,4 @@ class ContextsPanel(TableBaseWidget):
         if isinstance(item, ContextItem):
             self.app.apply_context(item.get_context())
             return False
+        return True

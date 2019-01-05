@@ -54,6 +54,9 @@ class TableBaseWidget(QTableWidget):
                     pyperclip.copy(hex(item.get_address()))
 
     def _item_double_clicked(self, item):
+        if not item:
+            return
+
         if not self.item_double_clicked(item):
             return
 

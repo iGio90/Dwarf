@@ -16,10 +16,10 @@ Dwarf - Copyright (C) 2018 iGio90
 """
 from PyQt5.QtCore import Qt
 
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
 
 
-class NativeRegisterWidget(NotEditableTableWidgetItem):
+class NativeRegisterWidget(MemoryAddressWidget):
     def __init__(self, app, register, value, *__args):
         super().__init__(*__args)
 
@@ -28,7 +28,10 @@ class NativeRegisterWidget(NotEditableTableWidgetItem):
         self.valid_ptr = app.dwarf_api('isValidPointer', self.value)
         if self.valid_ptr:
             self.setForeground(Qt.red)
+        else:
+            self.setForeground(Qt.lightGray)
         self.setText(value)
+        self.set_address(value)
 
     def is_valid_ptr(self):
         return self.valid_ptr
