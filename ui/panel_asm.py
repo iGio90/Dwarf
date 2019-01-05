@@ -18,7 +18,8 @@ import binascii
 
 from PyQt5.QtGui import QFont
 from capstone import *
-from keystone import *
+
+from keystone.keystone_const import *
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
