@@ -24,6 +24,7 @@ from lib import prefs, utils
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
 from ui.dialog_table import TableDialog
+from ui.panel_search import SearchPanel
 from ui.ui_session import SessionUi
 from ui.widget_android_package import AndroidPackageWidget, AndroidAppWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
@@ -163,15 +164,7 @@ class MenuBar(object):
     def handler_find_symbol(self):
         accept, input = InputDialog().input('find symbol by pattern', placeholder='*_open*')
         if accept:
-            matches = self.app_window.get_app_instance().dwarf_api('findSymbol', input)
-            if len(matches) > 0:
-                data = []
-                for ptr in matches:
-                    sym = self.app_window.get_app_instance().dwarf_api('getSymbolByAddress', ptr)
-                    if sym['name'] == '' or sym['name'] is None:
-                        sym['name'] = sym['address']
-                    data.append(sym)
-                TableDialog().build_and_show(self.build_symbol_table, data)
+            SearchPanel.debug_symbol_search_panel(self.app_window.get_app_instance(), input)
 
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
@@ -268,28 +261,7 @@ class MenuBar(object):
     def build_packages_list(self, list, data):
         list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
         for ap in sorted(data, key=lambda x: x.package):
-            list.addItem(AndroidPackageWidget(ap))
-
-    def build_symbol_table(self, table, data):
-        table.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(['name', 'address', 'module'])
-
-        for sym in sorted(data, key=lambda x: x['name']):
-            row = table.rowCount()
-            table.insertRow(row)
-
-            q = NotEditableTableWidgetItem(sym['name'])
-            q.setForeground(Qt.gray)
-            table.setItem(row, 0, q)
-
-            q = NotEditableTableWidgetItem(sym['address'])
-            q.setForeground(Qt.red)
-            table.setItem(row, 1, q)
-
-            q = NotEditableTableWidgetItem(sym['moduleName'])
-            table.setItem(row, 2, q)
-        table.resizeColumnToContents(1)
+            list.addItem(AndroidPackageWidget(ap['name'], ap['identifier'], 0))
 
     def on_context_info(self):
         for action in self.menu_actions:

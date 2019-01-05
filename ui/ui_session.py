@@ -196,6 +196,12 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.asm_panel)
 
+    def add_search_tab(self, search_panel_widget, search_label):
+        if len(search_label) > 5:
+            search_label = search_label[:4] + '...'
+        self.addTab(search_panel_widget, 'search - %s' % search_label)
+        self.setCurrentWidget(search_panel_widget)
+
     def disasm(self, ptr=0, _range=None):
         self.add_dwarf_tab(SessionUi.TAB_ASM, True)
         if _range:
