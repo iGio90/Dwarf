@@ -26,7 +26,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu, QAction
 from hexdump import PY3K
 
-from lib import utils
 from lib.range import Range
 from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
@@ -127,6 +126,8 @@ class MemoryPanel(QTableWidget):
 
         self.verticalHeader().hide()
         self.horizontalHeader().hide()
+
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.resizeColumnsToContents()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

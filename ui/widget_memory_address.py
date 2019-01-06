@@ -32,6 +32,8 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
 
     def set_address(self, address):
         if isinstance(address, str):
+            if address.startswith('#'):
+                address = address[1:]
             if address.startswith('0x'):
                 self.address = int(address, 16)
             else:

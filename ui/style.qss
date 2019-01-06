@@ -165,7 +165,7 @@ QTabBar::tab:top:!selected {
 }
 
 QTabBar::tab:top {
-    background-color: transparent;
+    background-color: #090909;
     color: #F0F0F0;
     margin-left: 2px;
     padding-left: 16px;
@@ -193,12 +193,17 @@ QTabBar::tab:top:!selected:hover {
     border-right: 0px solid transparent;
 }
 
-
 QHeaderView::section:enabled {
     background-color: transparent;
     color: white;
     border-left: 1px solid #32414B;
     border-bottom: 1px solid #32414B;
+    border-right: 0px solid transparent;
+}
+
+QHeaderView {
+    background-color: transparent;
+    border: 0;
 }
 
 QTableWidget::item,
