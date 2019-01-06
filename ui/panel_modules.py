@@ -130,4 +130,4 @@ class ModulesPanel(TableBaseWidget):
             i += 1
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-        self.sortByColumn(1, 0)
+        self.sortByColumn(0, 0)
