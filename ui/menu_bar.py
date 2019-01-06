@@ -64,6 +64,12 @@ class MenuBar(object):
         self.add_menu_action(device_menu, save_apk, False)
 
     def build_process_menu(self):
+        ranges = QAction("&Ranges", self.app_window)
+        ranges.triggered.connect(self.handler_view_ranges)
+
+        modules = QAction("&Modules", self.app_window)
+        modules.triggered.connect(self.handler_view_modules)
+
         resume = QAction("&Resume", self.app_window)
         resume.setShortcut("Ctrl+T")
         resume.setStatusTip('Resume process')
@@ -79,6 +85,9 @@ class MenuBar(object):
         detach.triggered.connect(self.handler_detach)
 
         process_menu = self.menu.addMenu('&Process')
+        self.add_menu_action(process_menu, ranges, True)
+        self.add_menu_action(process_menu, modules, True)
+        process_menu.addSeparator()
         self.add_menu_action(process_menu, resume, True)
         self.add_menu_action(process_menu, restart, True)
         self.add_menu_action(process_menu, detach, True)
@@ -134,18 +143,10 @@ class MenuBar(object):
         backtrace = QAction("&Backtrace", self.app_window)
         backtrace.triggered.connect(self.handler_view_backtrace)
 
-        ranges = QAction("&Ranges", self.app_window)
-        ranges.triggered.connect(self.handler_view_ranges)
-
-        modules = QAction("&Modules", self.app_window)
-        modules.triggered.connect(self.handler_view_modules)
-
         view_menu = self.menu.addMenu('&View')
         self.add_menu_action(view_menu, data, True)
         view_menu.addSeparator()
         self.add_menu_action(view_menu, backtrace, True)
-        self.add_menu_action(view_menu, ranges, True)
-        self.add_menu_action(view_menu, modules, True)
 
     def build_about_menu(self):
         slack = QAction('&Slack', self.app_window)

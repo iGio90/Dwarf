@@ -27,7 +27,6 @@ from ui.widget_table_base import TableBaseWidget
 class ModulesPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 4)
-
         self.setHorizontalHeaderLabels(['name', 'base', 'size', 'path'])
 
     def set_menu_actions(self, item, menu):
@@ -113,7 +112,7 @@ class ModulesPanel(TableBaseWidget):
     def set_modules(self, modules):
         self.setRowCount(0)
         i = 0
-        for module in sorted(modules, key=lambda x: x['name']):
+        for module in modules:
             self.insertRow(i)
             q = NotEditableTableWidgetItem(module['name'])
             q.setFlags(Qt.NoItemFlags)
@@ -131,3 +130,4 @@ class ModulesPanel(TableBaseWidget):
             i += 1
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
+        self.sortByColumn(1, 0)

@@ -26,10 +26,19 @@ class RangesPanel(TableBaseWidget):
         super().__init__(app, 0, 4)
         self.setHorizontalHeaderLabels(['base', 'size', 'protection', 'file'])
 
+    def set_menu_actions(self, item, menu):
+        action_refresh = menu.addAction("Refresh")
+        action_refresh.setData('refresh')
+
+    def on_menu_action(self, action_data, item):
+        if action_data == 'refresh':
+            self.app.dwarf_api('updateRanges')
+            return False
+
     def set_ranges(self, ranges):
         self.setRowCount(0)
         i = 0
-        for range in sorted(ranges, key=lambda x: x['base'], reverse=True):
+        for range in ranges:
             self.insertRow(i)
             q = MemoryAddressWidget(range['base'])
             self.setItem(i, 0, q)
@@ -50,3 +59,4 @@ class RangesPanel(TableBaseWidget):
             i += 1
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
+        self.sortByColumn(0, 0)

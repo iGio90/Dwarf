@@ -172,8 +172,6 @@ class Dwarf(object):
             self.app_window.get_menu().on_bytes_search_finished()
             self.bytes_search_panel = None
         elif parts[0] == 'memory_scan_match':
-            self.bytes_search_panel.setColumnCount(2)
-            self.bytes_search_panel.setHorizontalHeaderLabels(['address', 'symbol'])
             self.bytes_search_panel.add_bytes_match_item(parts[1], json.loads(parts[2]))
         elif parts[0] == 'set_data':
             key = parts[1]
@@ -183,6 +181,8 @@ class Dwarf(object):
                 self.app.get_data_panel().append_data(key, str(parts[2]))
         elif parts[0] == 'update_modules':
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
+        elif parts[0] == 'update_ranges':
+            self.app.apply_context({'tid': parts[1], 'ranges': json.loads(parts[2])})
         else:
             print(what)
 
@@ -227,6 +227,8 @@ class Dwarf(object):
 
     def search_bytes(self, input):
         self.bytes_search_panel = SearchPanel.bytes_search_panel(self.app, input)
+        self.bytes_search_panel.setColumnCount(2)
+        self.bytes_search_panel.setHorizontalHeaderLabels(['address', 'symbol'])
 
     def get_loading_library(self):
         return self.loading_library
