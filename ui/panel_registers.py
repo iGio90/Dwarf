@@ -18,6 +18,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
+from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_native_register import NativeRegisterWidget
 from ui.widget_table_base import TableBaseWidget
 
@@ -30,6 +31,9 @@ class RegistersPanel(TableBaseWidget):
     def item_double_clicked(self, item):
         if isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
             self.app.get_memory_panel().read_memory(item.value)
+        elif isinstance(item, MemoryAddressWidget):
+            self.app.get_memory_panel().read_memory(item.get_address())
+
         # return false and manage double click here
         return False
 
@@ -83,16 +87,19 @@ class RegistersPanel(TableBaseWidget):
                     self.setItem(i, 2, q)
                     data = self.app.dwarf_api('getAddressTs', context[reg])
                     if data is not None:
-                        q = NotEditableTableWidgetItem(str(data[1]))
-                        q.setFlags(Qt.NoItemFlags)
+                        if data[0] == 1:
+                            q = MemoryAddressWidget(str(data[1]))
+                        else:
+                            q = NotEditableTableWidgetItem(str(data[1]))
+                            q.setFlags(Qt.NoItemFlags)
+
                         if data[0] == 0:
                             q.setForeground(Qt.darkGreen)
-                        elif data[0] == 1:
-                            q.setForeground(Qt.red)
                         elif data[0] == 2:
                             q.setForeground(Qt.white)
-                        else:
+                        elif data[0] != 1:
                             q.setForeground(Qt.darkGray)
+
                         self.setItem(i, 3, q)
             i += 1
         self.resizeRowsToContents()

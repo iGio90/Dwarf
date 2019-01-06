@@ -214,7 +214,7 @@ class MemoryPanel(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
     def read_memory(self, ptr):
-        if self.range == None:
+        if self.range is None:
             self.range = Range(self.app)
 
         self.app.get_session_ui().request_session_ui_focus()
