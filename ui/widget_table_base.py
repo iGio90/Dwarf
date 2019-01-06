@@ -16,7 +16,7 @@ Dwarf - Copyright (C) 2019 iGio90
 """
 import pyperclip
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu
+from PyQt5.QtWidgets import QTableWidget, QMenu, QAbstractItemView
 
 from ui.widget_memory_address import MemoryAddressWidget
 
@@ -33,6 +33,7 @@ class TableBaseWidget(QTableWidget):
         self.itemDoubleClicked.connect(self._item_double_clicked)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_menu)
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def _show_menu(self, pos):
         item = self.itemAt(pos)
