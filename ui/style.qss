@@ -233,7 +233,7 @@ QTableWidget::item:hover:active {
 }
 
 QMenu {
-    border: 0px solid #32414B;
+    border: 1px solid #32414B;
     color: #F0F0F0;
     margin: 0px;
     background-color: #090909;
@@ -241,8 +241,8 @@ QMenu {
 }
 
 QMenu::separator {
-    height: 2px;
-    background-color: #BA0000;
+    height: 1px;
+    background-color: #32414B;
     color: #F0F0F0;
     padding-left: 4px;
     margin-left: 2px;
@@ -264,8 +264,7 @@ QMenu::item:focus,
 QMenu::item:selected,
 QMenu::item:hover {
     color: #090909;
-    background-color: #BA0000;
-    background: #BA0000;
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 QToolTip {
