@@ -30,29 +30,42 @@ class Adb(object):
         except:
             self.adb_available = False
 
+    def _do_adb_command(self, cmd, stdout=subprocess.PIPE):
+        res = utils.do_shell_command(cmd, stdout=stdout)
+        try:
+            if res.index('no device') >= 0:
+                return None
+            return res
+        except:
+            return res
+
     def get_device_arch(self):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell getprop ro.product.cpu.abi')
+        return self._do_adb_command('adb shell getprop ro.product.cpu.abi')
 
     def get_frida_version(self):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell frida --version')
+        return self._do_adb_command('adb shell frida --version')
 
     def kill_package(self, package):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        utils.do_shell_command("adb shell am force-stop " + package)
+        return self._do_adb_command("adb shell am force-stop " + package)
 
     def list_packages(self):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        packages = utils.do_shell_command('adb shell pm list packages -f').split('\n')
+        packages = self._do_adb_command('adb shell pm list packages -f')
+        if packages:
+            packages = packages.split('\n')
+        else:
+            packages = []
         ret = []
         for package in packages:
             parts = package.split(':')
@@ -69,22 +82,22 @@ class Adb(object):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell su -c "mount -o rw,remount /system"')
+        self._do_adb_command('adb shell su -c "mount -o rw,remount /system"')
 
     def pull(self, path, dest):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb pull %s %s' % (path, dest))
+        self._do_adb_command('adb pull %s %s' % (path, dest))
 
     def push(self, path, dest):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb push %s %s' % (path, dest))
+        return self._do_adb_command('adb push %s %s' % (path, dest))
 
     def su(self, cmd, stdout=subprocess.PIPE):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return utils.do_shell_command('adb shell su -c "' + cmd + '"', stdout=stdout)
+        return self._do_adb_command('adb shell su -c "' + cmd + '"', stdout=stdout)

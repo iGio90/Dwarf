@@ -256,13 +256,20 @@ class WelcomeUi(QSplitter):
                 except:
                     pass
 
-        local_version = self.app.get_adb().get_frida_version().replace('\n', '')\
-            .replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
-        try:
-            if local_version.index('frida') >= 0:
-                local_version = ''
-        except:
-            pass
+        local_version = self.app.get_adb().get_frida_version()
+        if local_version:
+            local_version = self.app.get_adb().get_frida_version().replace('\n', '')\
+                .replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
+            try:
+                if local_version.index('frida') >= 0:
+                    local_version = '-'
+            except:
+                pass
+        else:
+            # adb not found or device not found through adb
+            self.frida_update_label.setText('device frida version: %s\nupdated frida version: %s'
+                                            % ('-', self.updated_frida_version))
+            return
 
         self.frida_update_label.setText('device frida version: %s\nupdated frida version: %s'
                                         % (local_version, self.updated_frida_version))
