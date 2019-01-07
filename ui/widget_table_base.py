@@ -44,6 +44,9 @@ class TableBaseWidget(QTableWidget):
         if isinstance(item, MemoryAddressWidget):
             if len(menu.actions()) > 0:
                 menu.addSeparator()
+            jump_to_address = menu.addAction('Jump to pointer')
+            dump = menu.addAction('Dump binary')
+            menu.addSeparator()
             copy_address = menu.addAction('Copy address')
 
         action = menu.exec_(self.mapToGlobal(pos))
@@ -53,6 +56,12 @@ class TableBaseWidget(QTableWidget):
             if isinstance(item, MemoryAddressWidget):
                 if action == copy_address:
                     pyperclip.copy(hex(item.get_address()))
+                elif action == jump_to_address:
+                    self.app.get_memory_panel().read_memory(ptr=item.get_address(),
+                                                            length=item.get_size(),
+                                                            base=item.get_base_address())
+                elif action == dump:
+                    self.app.get_dwarf().dump_memory(ptr=item.get_address(), length=item.get_size())
 
     def _item_double_clicked(self, item):
         if not item:
@@ -62,7 +71,9 @@ class TableBaseWidget(QTableWidget):
             return
 
         if isinstance(item, MemoryAddressWidget):
-            self.app.get_memory_panel().read_memory(item.get_address())
+            self.app.get_memory_panel().read_memory(ptr=item.get_address(),
+                                                    length=item.get_size(),
+                                                    base=item.get_base_address())
 
     def item_double_clicked(self, item):
         return True

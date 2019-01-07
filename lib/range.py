@@ -39,7 +39,7 @@ class Range(object):
         self.start_address = 0
         self.start_offset = 0
 
-    def init_with_address(self, address):
+    def init_with_address(self, address, length=0, base=0):
         if isinstance(address, str):
             if address.startswith('0x'):
                 self.start_address = int(address, 16)
@@ -61,11 +61,16 @@ class Range(object):
             return 1
 
         self.base = int(range['base'], 16)
+        if base > 0:
+           self.base = base
         self.size = range['size']
+        if 0 < length < self.size:
+            self.size = length
         self.tail = self.base + self.size
         self.start_offset = self.start_address - self.base
 
-        self.data = self.app.get_dwarf().read_memory()
+        self.data = self.app.get_dwarf().read_memory(self.base, self.size)
+
         if self.data is None:
             self.data = bytes()
             return 1

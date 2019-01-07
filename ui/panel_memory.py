@@ -47,7 +47,8 @@ class PanelController(object):
                 time.sleep(0.1)
 
         self.work = True
-        Thread(target=self._work, args=(start_row,)).start()
+        t = Thread(target=self._work, args=(start_row,))
+        t.start()
 
     def stop(self):
         self.work = False
@@ -190,7 +191,7 @@ class MemoryPanel(QTableWidget):
 
     def _set_memory_view(self, should_clear_rows=True):
         if should_clear_rows:
-            self.clear()
+            self.setRowCount(0)
             self.setRowCount(int(math.ceil(self.range.size / 16.0)))
 
         self.setColumnCount(18)
@@ -203,6 +204,10 @@ class MemoryPanel(QTableWidget):
         h_labels.append('')
         self.setHorizontalHeaderLabels(h_labels)
 
+        self.resizeColumnsToContents()
+        self.setColumnWidth(0, 100)
+        self.horizontalHeader().setStretchLastSection(True)
+
         start_row = int(math.ceil((self.range.start_address - self.range.base) / 16.0))
         self.controller.start(start_row)
 
@@ -210,16 +215,13 @@ class MemoryPanel(QTableWidget):
         index = self.currentIndex()
         self.scrollTo(index, QAbstractItemView.PositionAtCenter)
         self.setCurrentCell(start_row, 1)
-        self.horizontalHeader().setStretchLastSection(True)
-        self.resizeRowsToContents()
-        self.resizeColumnsToContents()
 
-    def read_memory(self, ptr):
+    def read_memory(self, ptr, length=0, base=0):
         if self.range is None:
             self.range = Range(self.app)
 
         self.app.get_session_ui().request_session_ui_focus()
-        init = self.range.init_with_address(ptr)
+        init = self.range.init_with_address(ptr, length, base)
         if init > 0:
             return 1
         self._set_memory_view(init == 0)

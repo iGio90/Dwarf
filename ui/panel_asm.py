@@ -93,10 +93,10 @@ class AsmPanel(QTableWidget):
         if isinstance(item, MemoryAddressWidget):
             self.read_memory(item.get_address())
 
-    def read_memory(self, ptr):
+    def read_memory(self, ptr, length=0):
         if self.range is None:
             self.range = Range(self.app)
-        init = self.range.init_with_address(ptr)
+        init = self.range.init_with_address(ptr, length)
         if init > 0:
             return 1
         self.disasm()

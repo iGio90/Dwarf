@@ -27,6 +27,7 @@ class ModulesPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 4)
         self.setHorizontalHeaderLabels(['name', 'base', 'size', 'path'])
+        self.setColumnWidth(1, 120)
 
     def set_menu_actions(self, item, menu):
         action_refresh = menu.addAction("Refresh")
@@ -124,6 +125,8 @@ class ModulesPanel(TableBaseWidget):
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
             q = MemoryAddressWidget(module['base'])
+            q.set_size(module['size'])
+            q.set_base_address(module['base'])
             self.setItem(i, 1, q)
             q = NotEditableTableWidgetItem(str(module['size']))
             q.setFlags(Qt.NoItemFlags)

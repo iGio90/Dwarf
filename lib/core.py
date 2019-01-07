@@ -210,27 +210,28 @@ class Dwarf(object):
         self.process = None
         self.script = None
 
-    def dump_memory(self, file_path=None, ptr=0):
+    def dump_memory(self, file_path=None, ptr=0, length=0):
         if ptr == 0:
             ptr = InputDialog.input_pointer(self.app)
         if ptr > 0:
-            accept, dump_len = InputDialog.input(
-                self.app, hint='insert length', placeholder='1024')
-            if not accept:
-                return
-            try:
-                if dump_len.startswith('0x'):
-                    dump_len = int(dump_len, 16)
-                else:
-                    dump_len = int(dump_len)
-            except:
-                return
+            if length == 0:
+                accept, length = InputDialog.input(
+                    self.app, hint='insert length', placeholder='1024')
+                if not accept:
+                    return
+                try:
+                    if length.startswith('0x'):
+                        length = int(length, 16)
+                    else:
+                        length = int(length)
+                except:
+                    return
             if file_path is None:
                 r = QFileDialog.getSaveFileName(self.app, caption='Save binary dump to file')
                 if len(r) == 0 or len(r[0]) == 0:
                     return
                 file_path = r[0]
-            data = self.read_memory(ptr, dump_len)
+            data = self.read_memory(ptr, length)
             with open(file_path, 'wb') as f:
                 f.write(data)
 
@@ -271,7 +272,10 @@ class Dwarf(object):
             next_size = 1024 * 1024
             data = bytearray()
             while True:
-                data += self.dwarf_api('readBytes', [ptr + position, next_size])
+                try:
+                    data += self.dwarf_api('readBytes', [ptr + position, next_size])
+                except:
+                    return None
                 position += next_size
                 diff = len - position
                 if diff > 1024 * 1024:

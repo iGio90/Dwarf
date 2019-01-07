@@ -25,6 +25,7 @@ class RangesPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 4)
         self.setHorizontalHeaderLabels(['base', 'size', 'protection', 'file'])
+        self.setColumnWidth(0, 120)
 
     def set_menu_actions(self, item, menu):
         action_refresh = menu.addAction("Refresh")
@@ -41,6 +42,7 @@ class RangesPanel(TableBaseWidget):
         for range in ranges:
             self.insertRow(i)
             q = MemoryAddressWidget(range['base'])
+            q.set_size(range['size'])
             self.setItem(i, 0, q)
             q = NotEditableTableWidgetItem(str(range['size']))
             q.setFlags(Qt.NoItemFlags)

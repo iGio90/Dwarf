@@ -26,6 +26,11 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
         self.offset = 0
         self.address = 0
 
+        # a memory address widget could also store a base address
+        # retrieve the length from around the app could be useful
+        self.base_address = 0
+        self.length = 0
+
         self.setForeground(Qt.red)
         if len(self.text()) > 0:
             self.set_address(self.text())
@@ -41,11 +46,31 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
         else:
             self.address = address
 
+    def set_base_address(self, address):
+        if isinstance(address, str):
+            if address.startswith('#'):
+                address = address[1:]
+            if address.startswith('0x'):
+                self.base_address = int(address, 16)
+            else:
+                self.base_address = int(address)
+        else:
+            self.base_address = address
+
     def set_offset(self, offset):
         self.offset = offset
+
+    def set_size(self, size):
+        self.size = size
 
     def get_address(self):
         return self.address
 
+    def get_base_address(self):
+        return self.base_address
+
     def get_offset(self):
         return self.offset
+
+    def get_size(self):
+        return self.size
