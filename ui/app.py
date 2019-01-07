@@ -126,7 +126,10 @@ class App(QWidget):
         if 'ranges' in context:
             self.set_ranges(context['ranges'])
         if 'context' in context:
-            self.get_registers_panel().set_context(context['ptr'], context['is_java'], context['context'])
+            is_java = context['is_java']
+            self.get_registers_panel().set_context(context['ptr'], is_java, context['context'])
+            if not is_java and 'pc' in context['context']:
+                self.get_memory_panel().read_memory(context['context']['pc'])
         if 'backtrace' in context:
             self.get_backtrace_panel().set_backtrace(context['backtrace'])
 

@@ -210,8 +210,9 @@ class MemoryPanel(QTableWidget):
         index = self.currentIndex()
         self.scrollTo(index, QAbstractItemView.PositionAtCenter)
         self.setCurrentCell(start_row, 1)
-        self.resizeColumnsToContents()
         self.horizontalHeader().setStretchLastSection(True)
+        self.resizeRowsToContents()
+        self.resizeColumnsToContents()
 
     def read_memory(self, ptr):
         if self.range is None:

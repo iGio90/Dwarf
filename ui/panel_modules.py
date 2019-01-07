@@ -18,7 +18,6 @@ import json
 
 from PyQt5.QtCore import Qt
 
-from ui.dialog_table import TableDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_table_base import TableBaseWidget
