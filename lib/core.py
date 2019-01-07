@@ -42,7 +42,7 @@ class Dwarf(object):
 
         # hooks
         self.hooks = {}
-        self.onloads = {}
+        self.on_loads = {}
         self.java_hooks = {}
         self.temporary_input = ''
         self.native_pending_args = None
@@ -236,7 +236,7 @@ class Dwarf(object):
         h.set_ptr(0)
         h.set_input(input)
 
-        self.onloads[input] = h
+        self.on_loads[input] = h
         return h
 
     def get_loading_library(self):

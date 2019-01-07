@@ -123,7 +123,7 @@ class HooksPanel(TableBaseWidget):
         if not input.endswith('.so'):
             input += '.so'
 
-        if input in self.onloads:
+        if input in self.app.get_dwarf().on_loads:
             return
 
         if self.columnCount() == 0:
@@ -199,7 +199,7 @@ class HooksPanel(TableBaseWidget):
             item.get_hook_data().set_logic(inp[1])
 
     def hit_onload(self, module, base):
-        if module in self.onloads:
+        if module in self.app.get_dwarf().on_loads:
             items = self.findItems(module, Qt.MatchExactly)
             for item in items:
                 self.item(item.row(), 1).setText(base)
@@ -222,12 +222,3 @@ class HooksPanel(TableBaseWidget):
             elif event.key() == Qt.Key_J:
                 self.hook_java()
         super(HooksPanel, self).keyPressEvent(event)
-
-    def get_hooks(self):
-        return self.hooks
-
-    def get_java_hooks(self):
-        return self.java_hooks
-
-    def get_onloads(self):
-        return self.onloads

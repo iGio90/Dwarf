@@ -225,8 +225,8 @@ class MenuBar(object):
         r = QFileDialog.getSaveFileName()
         if len(r) > 0 and len(r[0]) > 0:
             hooks = []
-            for hook in self.app_window.get_app_instance().get_hooks_panel().get_hooks():
-                h = self.app_window.get_app_instance().get_hooks_panel().get_hooks()[hook]
+            for hook in self.app_window.get_dwarf().hooks:
+                h = self.app_window.get_dwarf().hooks[hook]
                 if h.get_input is None or len(h.get_input) == 0:
                     continue
                 hooks.append({
@@ -235,17 +235,17 @@ class MenuBar(object):
                     'logic': h.get_logic(),
                 })
             java_hooks = []
-            for hook in self.app_window.get_app_instance().get_hooks_panel().get_java_hooks():
-                h = self.app_window.get_app_instance().get_hooks_panel().get_java_hooks()[hook]
+            for hook in self.app_window.get_dwarf().java_hooks:
+                h = self.app_window.get_dwarf().java_hooks[hook]
                 java_hooks.append({
                     'input': h.get_input(),
                     'condition': h.get_condition(),
                     'logic': h.get_logic()
                 })
             onload_hooks = []
-            for hook in self.app_window.get_app_instance().get_hooks_panel().get_onloads():
+            for hook in self.app_window.get_dwarf().on_loads:
                 onload_hooks.append(
-                    self.app_window.get_app_instance().get_hooks_panel().get_onloads()[hook].get_input())
+                    self.app_window.get_dwarf().on_loads[hook].get_input())
             session = {
                 'natives': hooks,
                 'java': java_hooks,
