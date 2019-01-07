@@ -36,6 +36,7 @@ class MenuBar(object):
 
         # actions
         self.menu_actions = []
+        self.action_enumerate_java_classes = None
         self.action_find_bytes = None
 
         self.build_device_menu()
@@ -70,6 +71,9 @@ class MenuBar(object):
         modules = QAction("&Modules", self.app_window)
         modules.triggered.connect(self.handler_view_modules)
 
+        self.action_enumerate_java_classes = QAction("&Java classes", self.app_window)
+        self.action_enumerate_java_classes.triggered.connect(self.handler_enumerate_java_classes)
+
         resume = QAction("&Resume", self.app_window)
         resume.setShortcut("Ctrl+T")
         resume.setStatusTip('Resume process')
@@ -87,6 +91,7 @@ class MenuBar(object):
         process_menu = self.menu.addMenu('&Process')
         self.add_menu_action(process_menu, ranges, True)
         self.add_menu_action(process_menu, modules, True)
+        self.add_menu_action(process_menu, self.action_enumerate_java_classes, True, True)
         process_menu.addSeparator()
         self.add_menu_action(process_menu, resume, True)
         self.add_menu_action(process_menu, restart, True)
@@ -165,10 +170,19 @@ class MenuBar(object):
         accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
         if accept:
             self.action_find_bytes.setEnabled(False)
-            self.app_window.get_dwarf().search_bytes(input)
+            SearchPanel.bytes_search_panel(self.app_window.get_app_instance(), input)
 
     def handler_detach(self):
         self.app_window.get_dwarf().detach()
+
+    def handler_enumerate_java_classes(self, should_update_java_classes=False):
+        if not should_update_java_classes:
+            should_update_java_classes = self.app_window.get_app_instance().get_java_classes_panel() is None
+            self.action_enumerate_java_classes.setEnabled(False)
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(
+            SessionUi.TAB_JAVA_CLASSES, request_focus=True)
+        if should_update_java_classes:
+            self.app_window.get_dwarf().dwarf_api('enumerateJavaClasses')
 
     def handler_find_symbol(self):
         accept, input = InputDialog().input(self.app_window, 'find symbol by pattern', placeholder='*_open*')
@@ -272,10 +286,18 @@ class MenuBar(object):
         for ap in sorted(data, key=lambda x: x.package):
             list.addItem(AndroidPackageWidget(ap['name'], ap['identifier'], 0))
 
+    def on_bytes_search_complete(self):
+        if self.app_window.get_dwarf().script is not None:
+            self.action_find_bytes.setEnabled(True)
+
     def on_context_info(self):
         for action in self.menu_actions:
             if action['require_java'] and not self.app_window.get_dwarf().java_available:
                 action['action'].setEnabled(False)
+
+    def on_java_classes_enumeration_complete(self):
+        if self.app_window.get_dwarf().script is not None:
+            self.action_enumerate_java_classes.setEnabled(True)
 
     def on_script_destroyed(self):
         for action in self.menu_actions:
@@ -287,7 +309,3 @@ class MenuBar(object):
                 action['action'].setEnabled(False)
                 continue
             action['action'].setEnabled(True)
-
-    def on_bytes_search_finished(self):
-        if self.app_window.get_dwarf().script is not None:
-            self.action_find_bytes.setEnabled(True)

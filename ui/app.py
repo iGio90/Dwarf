@@ -121,11 +121,9 @@ class App(QWidget):
 
     def _apply_context(self, context):
         self.context_tid = context['tid']
-        print('set context')
         if 'modules' in context:
             self.set_modules(context['modules'])
         if 'ranges' in context:
-            print('set ranges')
             self.set_ranges(context['ranges'])
         if 'context' in context:
             self.get_registers_panel().set_context(context['ptr'], context['is_java'], context['context'])
@@ -167,6 +165,9 @@ class App(QWidget):
 
     def get_hooks_panel(self):
         return self.session_ui.hooks_panel
+
+    def get_java_classes_panel(self):
+        return self.session_ui.java_class_panel
 
     def get_log_panel(self):
         return self.session_ui.log_panel

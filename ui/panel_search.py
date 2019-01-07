@@ -18,6 +18,7 @@ from threading import Thread
 
 from PyQt5.QtCore import Qt
 
+from lib.core import Dwarf
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_table_base import TableBaseWidget
@@ -30,6 +31,9 @@ class SearchPanel(TableBaseWidget):
 
     def add_bytes_match_item(self, address, symbol):
         r = self.rowCount()
+        if r == 0:
+            self.setColumnCount(2)
+            self.setHorizontalHeaderLabels(['address', 'symbol'])
         self.insertRow(r)
         self.setItem(r, 0, MemoryAddressWidget(address))
         if symbol['moduleName'] is not None:
@@ -92,9 +96,10 @@ class SearchPanel(TableBaseWidget):
     @staticmethod
     def bytes_search_panel(app, input):
         panel = SearchPanel(app, [])
+        Dwarf.bus.add_event(panel.add_bytes_match_item, input)
+        Dwarf.bus.add_event(panel.sortByColumn, input + ' complete')
         search_label = input
         if len(search_label) > 7:
             search_label = search_label[:6] + '...'
         app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
         app.dwarf_api('memoryScan', input)
-        return panel

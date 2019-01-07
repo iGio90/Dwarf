@@ -22,6 +22,7 @@ from ui.panel_data import DataPanel
 from ui.panel_backtrace import BacktracePanel
 from ui.panel_contexts import ContextsPanel
 from ui.panel_hooks import HooksPanel
+from ui.panel_java_classes import JavaClassesPanel
 from ui.panel_log import LogPanel
 from ui.panel_memory import MemoryPanel
 from ui.panel_modules import ModulesPanel
@@ -34,6 +35,7 @@ class SessionUi(QTabWidget):
     TAB_RANGES = 1
     TAB_DATA = 2
     TAB_ASM = 3
+    TAB_JAVA_CLASSES = 4
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -84,9 +86,6 @@ class SessionUi(QTabWidget):
         self.hooks_panel = None
         self.contexts_panel = None
 
-        self.data_panel = DataPanel(self.app)
-        self.asm_panel = AsmPanel(self.app)
-
         self.session_panel.addWidget(self.build_left_column())
         self.session_panel.addWidget(self.build_central_content())
 
@@ -97,6 +96,9 @@ class SessionUi(QTabWidget):
 
         self.modules_panel = ModulesPanel(self.app)
         self.ranges_panel = RangesPanel(self.app)
+        self.data_panel = DataPanel(self.app)
+        self.asm_panel = AsmPanel(self.app)
+        self.java_class_panel = None
 
         self.addTab(self.session_panel, 'session')
         bt = self.tabBar().tabButton(0, QTabBar.LeftSide)
@@ -189,6 +191,8 @@ class SessionUi(QTabWidget):
 
         self.memory_panel.on_script_destroyed()
 
+        self.java_class_panel = None
+
     def close_tab(self, index):
         self.removeTab(index)
 
@@ -209,6 +213,13 @@ class SessionUi(QTabWidget):
             self.addTab(self.asm_panel, 'asm')
             if request_focus:
                 self.setCurrentWidget(self.asm_panel)
+        elif tab_id == SessionUi.TAB_JAVA_CLASSES:
+            if self.java_class_panel is None:
+                self.java_class_panel = JavaClassesPanel(self.app)
+            if self.java_class_panel.parent() is None:
+                self.addTab(self.java_class_panel, 'Java Classes')
+            if request_focus:
+                self.setCurrentWidget(self.java_class_panel)
 
     def add_tab(self, tab_widget, tab_label):
         self.addTab(tab_widget, tab_label)

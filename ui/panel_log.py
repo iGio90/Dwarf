@@ -16,7 +16,7 @@ Dwarf - Copyright (C) 2019 iGio90
 """
 from PyQt5.QtCore import Qt, QMargins
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QLineEdit, QHBoxLayout, QPushButton, \
-    QSplitter, QVBoxLayout
+    QSplitter, QVBoxLayout, QScrollBar
 
 from ui.dialog_js_editor import JsEditorDialog
 from ui.widget_item_not_editable import NotEditableListWidgetItem
@@ -93,7 +93,10 @@ class LogPanel(QWidget):
                 transparent; 
             }
         ''')
-        self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        bar = QScrollBar()
+        bar.setMaximumHeight(0)
+        bar.setMaximumWidth(0)
+        self.list.setHorizontalScrollBar(bar)
         self.list.model().rowsInserted.connect(self.on_row_inserted)
         layout.addWidget(self.list)
 

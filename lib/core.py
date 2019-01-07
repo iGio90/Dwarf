@@ -17,22 +17,23 @@ Dwarf - Copyright (C) 2019 iGio90
 import json
 
 import frida
+from event_bus import EventBus
 from hexdump import hexdump
 
 from lib import utils
 from lib.hook import Hook
 from lib.prefs import Prefs
-from ui.panel_search import SearchPanel
 
 
 class Dwarf(object):
+    bus = EventBus()
+
     def __init__(self, app_window):
         self.app_window = app_window
         self.app = app_window.get_app_instance()
 
         self.java_available = False
         self.loading_library = False
-        self.bytes_search_panel = None
 
         # process
         self.pid = 0
@@ -107,9 +108,53 @@ class Dwarf(object):
             print(what)
             return
 
-        if parts[0] == 'log':
+        cmd = parts[0]
+        if cmd == 'enumerate_java_classes_start':
+            if self.app.get_java_classes_panel() is not None:
+                self.app.get_java_classes_panel().on_enumeration_start()
+        elif cmd == 'enumerate_java_classes_match':
+            if self.app.get_java_classes_panel() is not None:
+                self.app.get_java_classes_panel().on_enumeration_match(parts[1])
+        elif cmd == 'enumerate_java_classes_complete':
+            self.app_window.get_menu().on_java_classes_enumeration_complete()
+            if self.app.get_java_classes_panel() is not None:
+                self.app.get_java_classes_panel().on_enumeration_complete()
+        elif cmd == 'enumerate_java_methods_complete':
+            Dwarf.bus.emit(parts[1], json.loads(parts[2]))
+        elif cmd == 'log':
             self.app.get_log_panel().log(parts[1])
-        elif parts[0] == 'set_context':
+        elif cmd == 'hook_java_callback':
+            h = Hook(Hook.HOOK_JAVA)
+            h.set_ptr(1)
+            h.set_input(parts[1])
+            if self.java_pending_args:
+                h.set_condition(self.java_pending_args['condition'])
+                h.set_logic(self.java_pending_args['logic'])
+                self.java_pending_args = None
+            self.java_hooks[h.get_input()] = h
+            self.app.get_hooks_panel().hook_java_callback(h)
+        elif cmd == 'hook_native_callback':
+            h = Hook(Hook.HOOK_NATIVE)
+            h.set_ptr(int(parts[1], 16))
+            h.set_input(self.temporary_input)
+            self.temporary_input = ''
+            if self.native_pending_args:
+                h.set_condition(self.native_pending_args['condition'])
+                h.set_logic(self.native_pending_args['logic'])
+                self.native_pending_args = None
+            self.hooks[h.get_ptr()] = h
+            self.app.get_hooks_panel().hook_native_callback(h)
+        elif cmd == 'memory_scan_match':
+            Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
+        elif cmd == 'memory_scan_complete':
+            self.app_window.get_menu().on_bytes_search_complete()
+            Dwarf.bus.emit(parts[1] + ' complete', 0, 0)
+        elif cmd == 'onload_callback':
+            self.loading_library = parts[1]
+            self.app.get_log_panel().log('hook onload %s @thread := %s' % (
+                parts[1], parts[3]))
+            self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
+        elif cmd == 'set_context':
             data = json.loads(parts[1])
             self.app.get_contexts().append(data)
 
@@ -142,46 +187,15 @@ class Dwarf(object):
             self.app.apply_context(data)
             if self.loading_library is not None:
                 self.loading_library = None
-        elif parts[0] == 'onload_callback':
-            self.loading_library = parts[1]
-            self.app.get_log_panel().log('hook onload %s @thread := %s' % (
-                parts[1], parts[3]))
-            self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
-        elif parts[0] == 'hook_java_callback':
-            h = Hook(Hook.HOOK_JAVA)
-            h.set_ptr(1)
-            h.set_input(parts[1])
-            if self.java_pending_args:
-                h.set_condition(self.java_pending_args['condition'])
-                h.set_logic(self.java_pending_args['logic'])
-                self.java_pending_args = None
-            self.java_hooks[h.get_input()] = h
-            self.app.get_hooks_panel().hook_java_callback(h)
-        elif parts[0] == 'hook_native_callback':
-            h = Hook(Hook.HOOK_NATIVE)
-            h.set_ptr(int(parts[1], 16))
-            h.set_input(self.temporary_input)
-            self.temporary_input = ''
-            if self.native_pending_args:
-                h.set_condition(self.native_pending_args['condition'])
-                h.set_logic(self.native_pending_args['logic'])
-                self.native_pending_args = None
-            self.hooks[h.get_ptr()] = h
-            self.app.get_hooks_panel().hook_native_callback(h)
-        elif parts[0] == 'memory_scan_finished':
-            self.app_window.get_menu().on_bytes_search_finished()
-            self.bytes_search_panel = None
-        elif parts[0] == 'memory_scan_match':
-            self.bytes_search_panel.add_bytes_match_item(parts[1], json.loads(parts[2]))
-        elif parts[0] == 'set_data':
+        elif cmd == 'set_data':
             key = parts[1]
             if data:
                 self.app.get_data_panel().append_data(key, hexdump(data, result='return'))
             else:
                 self.app.get_data_panel().append_data(key, str(parts[2]))
-        elif parts[0] == 'update_modules':
+        elif cmd == 'update_modules':
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
-        elif parts[0] == 'update_ranges':
+        elif cmd == 'update_ranges':
             self.app.apply_context({'tid': parts[1], 'ranges': json.loads(parts[2])})
         else:
             print(what)
@@ -224,11 +238,6 @@ class Dwarf(object):
 
         self.onloads[input] = h
         return h
-
-    def search_bytes(self, input):
-        self.bytes_search_panel = SearchPanel.bytes_search_panel(self.app, input)
-        self.bytes_search_panel.setColumnCount(2)
-        self.bytes_search_panel.setHorizontalHeaderLabels(['address', 'symbol'])
 
     def get_loading_library(self):
         return self.loading_library
