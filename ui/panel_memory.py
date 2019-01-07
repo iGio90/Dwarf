@@ -270,9 +270,8 @@ class MemoryPanel(QTableWidget):
             self.app.get_hooks_panel().hook_native(hex(item.get_ptr()))
 
     def trigger_jump_to(self):
-        accept, ptr = InputDialog.input(self.app, hint='insert pointer')
-        if accept:
-            ptr = int(self.app.dwarf_api('evaluatePtr', ptr), 16)
+        ptr = InputDialog.input_pointer(self.app)
+        if ptr > 0:
             self.read_memory(ptr)
 
     def trigger_write_bytes(self):

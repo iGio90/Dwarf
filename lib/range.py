@@ -65,25 +65,7 @@ class Range(object):
         self.tail = self.base + self.size
         self.start_offset = self.start_address - self.base
 
-        if self.size > 1024 * 1024:
-            position = 0
-            next_size = 1024 * 1024
-            self.data = bytes()
-            data = bytearray()
-            while True:
-                data += self.app.dwarf_api('readBytes', [self.base + position, next_size])
-                position += next_size
-                diff = self.size - position
-                if diff > 1024 * 1024:
-                    next_size = 1024 * 1024
-                elif diff > 0:
-                    next_size = diff
-                else:
-                    break
-            self.data = bytes(data)
-            del data
-        else:
-            self.data = self.app.dwarf_api('readBytes', [self.base, self.size])
+        self.data = self.app.get_dwarf().read_memory()
         if self.data is None:
             self.data = bytes()
             return 1

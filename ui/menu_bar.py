@@ -74,6 +74,9 @@ class MenuBar(object):
         self.action_enumerate_java_classes = QAction("&Java classes", self.app_window)
         self.action_enumerate_java_classes.triggered.connect(self.handler_enumerate_java_classes)
 
+        dump_memory = QAction("&Dump memory", self.app_window)
+        dump_memory.triggered.connect(self.handler_dump_memory)
+
         resume = QAction("&Resume", self.app_window)
         resume.setShortcut("Ctrl+T")
         resume.setStatusTip('Resume process')
@@ -92,6 +95,8 @@ class MenuBar(object):
         self.add_menu_action(process_menu, ranges, True)
         self.add_menu_action(process_menu, modules, True)
         self.add_menu_action(process_menu, self.action_enumerate_java_classes, True, True)
+        process_menu.addSeparator()
+        self.add_menu_action(process_menu, dump_memory, True)
         process_menu.addSeparator()
         self.add_menu_action(process_menu, resume, True)
         self.add_menu_action(process_menu, restart, True)
@@ -174,6 +179,9 @@ class MenuBar(object):
 
     def handler_detach(self):
         self.app_window.get_dwarf().detach()
+
+    def handler_dump_memory(self):
+        self.app_window.get_dwarf().dump_memory()
 
     def handler_enumerate_java_classes(self, should_update_java_classes=False):
         if not should_update_java_classes:

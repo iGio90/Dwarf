@@ -17,12 +17,14 @@ Dwarf - Copyright (C) 2019 iGio90
 import json
 
 import frida
+from PyQt5.QtWidgets import QFileDialog
 from event_bus import EventBus
 from hexdump import hexdump
 
 from lib import utils
 from lib.hook import Hook
 from lib.prefs import Prefs
+from ui.dialog_input import InputDialog
 
 
 class Dwarf(object):
@@ -208,6 +210,30 @@ class Dwarf(object):
         self.process = None
         self.script = None
 
+    def dump_memory(self, file_path=None, ptr=0):
+        if ptr == 0:
+            ptr = InputDialog.input_pointer(self.app)
+        if ptr > 0:
+            accept, dump_len = InputDialog.input(
+                self.app, hint='insert length', placeholder='1024')
+            if not accept:
+                return
+            try:
+                if dump_len.startswith('0x'):
+                    dump_len = int(dump_len, 16)
+                else:
+                    dump_len = int(dump_len)
+            except:
+                return
+            if file_path is None:
+                r = QFileDialog.getSaveFileName(self.app, caption='Save binary dump to file')
+                if len(r) == 0 or len(r[0]) == 0:
+                    return
+                file_path = r[0]
+            data = self.read_memory(ptr, dump_len)
+            with open(file_path, 'wb') as f:
+                f.write(data)
+
     def dwarf_api(self, api, args=None, tid=0):
         if tid == 0:
             tid = self.app.get_context_tid()
@@ -238,6 +264,27 @@ class Dwarf(object):
 
         self.on_loads[input] = h
         return h
+
+    def read_memory(self, ptr, len):
+        if len > 1024 * 1024:
+            position = 0
+            next_size = 1024 * 1024
+            data = bytearray()
+            while True:
+                data += self.dwarf_api('readBytes', [ptr + position, next_size])
+                position += next_size
+                diff = len - position
+                if diff > 1024 * 1024:
+                    next_size = 1024 * 1024
+                elif diff > 0:
+                    next_size = diff
+                else:
+                    break
+            ret = bytes(data)
+            del data
+            return ret
+        else:
+            return self.dwarf_api('readBytes', [ptr, len])
 
     def get_loading_library(self):
         return self.loading_library

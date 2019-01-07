@@ -85,9 +85,8 @@ class AsmPanel(QTableWidget):
             super(AsmPanel, self).keyPressEvent(event)
 
     def trigger_jump_to(self):
-        accept, ptr = InputDialog.input(self.app, hint='insert pointer')
-        if accept:
-            ptr = int(self.app.dwarf_api('evaluatePtr', ptr), 16)
+        ptr = InputDialog.input_pointer(self.app)
+        if ptr > 0:
             self.read_memory(ptr)
 
     def item_double_clicked(self, item):

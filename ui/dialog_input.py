@@ -77,3 +77,16 @@ class InputDialog(QDialog):
         result = dialog.exec_()
         text = dialog.input_widget.toPlainText()
         return result == QDialog.Accepted, text
+
+    @staticmethod
+    def input_pointer(app):
+        accept, inp = InputDialog.input(
+            app,
+            hint='insert pointer',
+            placeholder='Module.findExportByName(\'target\', \'export\')')
+        if not accept:
+            return 0
+        try:
+            return int(app.dwarf_api('evaluatePtr', inp), 16)
+        except:
+            return 0

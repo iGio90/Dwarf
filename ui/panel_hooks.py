@@ -80,17 +80,7 @@ class HooksPanel(TableBaseWidget):
         return True
 
     def hook_native(self, inp=None, pending_args=None):
-        if inp is None or not isinstance(inp, str):
-            accept, inp = InputDialog.input(
-                self.app, hint='insert pointer',
-                placeholder='Module.findExportByName(\'target\', \'export\')')
-            if not accept:
-                return
-        ptr = 0
-        try:
-            ptr = int(self.app.dwarf_api('evaluatePtr', inp), 16)
-        except:
-            pass
+        ptr = InputDialog.input_pointer(self.app)
         if ptr > 0:
             self.app.get_dwarf().hook_native(inp, pending_args, ptr)
 
