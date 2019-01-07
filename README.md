@@ -17,7 +17,7 @@ For discussion and suggestions, please let's have a speak on [Slack](https://joi
 Checkout the [wiki](https://github.com/iGio90/Dwarf/wiki) for features and api
 
 ### Pre requisites
-A rooted Android with frida server installed and running.
+A rooted Android or a jailbroken iOS with frida server installed and running.
 
 ### Setup and run
 
