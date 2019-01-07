@@ -47,67 +47,73 @@ class ModulesPanel(TableBaseWidget):
             return False
         elif action_data == 'exports':
             module = self.item(item.row(), 0).text()
-            table = TableBaseWidget(self.app, 0, 3)
-            self.app.get_session_ui().add_tab(table, 'exports %s' % module)
-            exports = self.app.dwarf_api('enumerateExports', module)
-            if exports:
-                exports = json.loads(exports)
-                if len(exports) > 0:
-                    table.setHorizontalHeaderLabels(['name', 'address', 'type'])
-                    for export in exports:
-                        row = table.rowCount()
-                        table.insertRow(row)
-
-                        q = NotEditableTableWidgetItem(export['name'])
-                        q.setForeground(Qt.gray)
-                        table.setItem(row, 0, q)
-
-                        q = NotEditableTableWidgetItem(export['address'])
-                        q.setForeground(Qt.red)
-                        table.setItem(row, 1, q)
-
-                        q = NotEditableTableWidgetItem(export['type'])
-                        table.setItem(row, 2, q)
-                    table.resizeColumnsToContents()
-                    table.horizontalHeader().setStretchLastSection(True)
+            self.add_extra_table_tab(module, 'exports %s' % module,
+                                     'enumerateExports',
+                                     ['name', 'address', 'type'],
+                                     self.build_exports_row)
             return False
         elif action_data == 'imports':
-            imports = self.app.dwarf_api('enumerateImports', self.item(item.row(), 0).text())
-            if imports:
-                imports = json.loads(imports)
-                TableDialog().build_and_show(self.build_exports_table, imports)
+            module = self.item(item.row(), 0).text()
+            self.add_extra_table_tab(module, 'imports %s' % module,
+                                     'enumerateImports',
+                                     ['name', 'address', 'module', 'type'],
+                                     self.build_imports_row)
             return False
         elif action_data == 'symbols':
-            symbols = self.app.dwarf_api('enumerateSymbols', self.item(item.row(), 0).text())
-            if symbols:
-                symbols = json.loads(symbols)
-                TableDialog().build_and_show(self.build_exports_table, symbols)
+            module = self.item(item.row(), 0).text()
+            self.add_extra_table_tab(module, 'symbols %s' % module,
+                                     'enumerateSymbols',
+                                     ['name', 'address', 'type'],
+                                     self.build_exports_row)
+            return False
         return True
 
-    def build_imports_table(self, table, imports):
-        if len(imports) > 0:
-            table.setMinimumWidth(int(self.app.width() / 3))
-            table.setColumnCount(4)
-            table.setHorizontalHeaderLabels(['name', 'address', 'module', 'type'])
-            for imp in imports:
-                row = table.rowCount()
-                table.insertRow(row)
+    @staticmethod
+    def build_exports_row(table, item):
+        row = table.rowCount()
+        table.insertRow(row)
 
-                q = NotEditableTableWidgetItem(imp['name'])
-                q.setForeground(Qt.gray)
-                table.setItem(row, 0, q)
+        q = NotEditableTableWidgetItem(item['name'])
+        q.setForeground(Qt.gray)
+        table.setItem(row, 0, q)
 
-                q = NotEditableTableWidgetItem(imp['address'])
-                q.setForeground(Qt.red)
-                table.setItem(row, 1, q)
+        q = MemoryAddressWidget(item['address'])
+        table.setItem(row, 1, q)
 
-                q = NotEditableTableWidgetItem(imp['module'])
-                table.setItem(row, 2, q)
+        q = NotEditableTableWidgetItem(item['type'])
+        table.setItem(row, 2, q)
 
-                q = NotEditableTableWidgetItem(imp['type'])
-                table.setItem(row, 3, q)
-            table.resizeColumnsToContents()
-            table.horizontalHeader().setStretchLastSection(True)
+    @staticmethod
+    def build_imports_row(table, item):
+        row = table.rowCount()
+        table.insertRow(row)
+
+        q = NotEditableTableWidgetItem(item['name'])
+        q.setForeground(Qt.gray)
+        table.setItem(row, 0, q)
+
+        q = MemoryAddressWidget(item['address'])
+        table.setItem(row, 1, q)
+
+        q = NotEditableTableWidgetItem(item['module'])
+        table.setItem(row, 2, q)
+
+        q = NotEditableTableWidgetItem(item['type'])
+        table.setItem(row, 3, q)
+
+    def add_extra_table_tab(self, module, tab_name, dwarf_api, headers, item_builder):
+        table = TableBaseWidget(self.app, 0, 3)
+        self.app.get_session_ui().add_tab(table, tab_name)
+        data = self.app.dwarf_api(dwarf_api, module)
+        if data:
+            data = json.loads(data)
+            if len(data) > 0:
+                table.setHorizontalHeaderLabels(headers)
+                for item in data:
+                    item_builder(table, item)
+
+                table.resizeColumnsToContents()
+                table.horizontalHeader().setStretchLastSection(True)
 
     def set_modules(self, modules):
         self.setRowCount(0)
