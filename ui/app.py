@@ -35,7 +35,7 @@ class AppWindow(QMainWindow):
 
         self.dwarf = Dwarf(self)
 
-        self.setWindowTitle("Dwarf")
+        self.update_title()
 
         self.setCentralWidget(self.app)
         self.app.setup_ui()
@@ -66,6 +66,9 @@ class AppWindow(QMainWindow):
     def on_script_loaded(self):
         self.menu.on_script_loaded()
         self.app.on_script_loaded()
+
+    def update_title(self, title_str="Dwarf"):
+        self.setWindowTitle(title_str)
 
 
 class App(QWidget):

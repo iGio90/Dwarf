@@ -321,7 +321,13 @@ class WelcomeUi(QSplitter):
         accept, what = editor.show()
         if accept:
             self.startup_script = what
-            self.app.get_dwarf().attach(widget_android_package.get_pid(), script=what)
+            app_name = widget_android_package.appname
+            app_pid = widget_android_package.get_pid()
+            if "\t" in app_name:
+                app_name = app_name.split("\t")[1]
+
+            self.app.get_dwarf().attach(app_pid, script=what)
+            self.app.get_dwarf().app_window.update_title("Dwarf - Attached to %s (pid %s)" % (app_name, app_pid))
 
     def on_spawn_picked(self, widget_android_package):
         editor = JsEditorDialog(self.app, def_text=self.startup_script,
@@ -329,4 +335,9 @@ class WelcomeUi(QSplitter):
         accept, what = editor.show()
         if accept:
             self.startup_script = what
-            self.app.get_dwarf().spawn(widget_android_package.get_package_name(), script=what)
+
+            app_name = widget_android_package.appname
+            package_name = widget_android_package.get_package_name()
+
+            self.app.get_dwarf().spawn(package_name, script=what)
+            self.app.get_dwarf().app_window.update_title("Dwarf - Attached to %s (%s)" % (app_name, package_name))
