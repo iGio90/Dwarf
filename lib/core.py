@@ -50,6 +50,13 @@ class Dwarf(object):
         self.native_pending_args = None
         self.java_pending_args = None
 
+        self.keystone_installed = False
+        try:
+            import keystone.keystone_const
+            self.keystone_installed = True
+        except:
+            pass
+
         self.prefs = Prefs()
 
     def attach(self, pid_or_package, script=None):

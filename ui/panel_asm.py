@@ -19,11 +19,10 @@ import binascii
 from PyQt5.QtGui import QFont
 from capstone import *
 
-from keystone.keystone_const import *
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
 
+from lib import utils
 from lib.range import Range
 from ui.dialog_input import InputDialog
 from ui.dialog_write_instruction import WriteInstructionDialog
@@ -142,7 +141,6 @@ class AsmPanel(QTableWidget):
             self.setItem(row, 1, w)
 
             is_jmp = False
-            op_imm_value = 0
             if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
                 is_jmp = False
 
@@ -191,6 +189,17 @@ class AsmPanel(QTableWidget):
             self.disasm()
 
     def trigger_write_instruction(self):
+        if self.app.get_dwarf().keystone_installed:
+            details = ''
+            try:
+                import keystone.keystone_const
+            except Exception as e:
+                details = str(e)
+            utils.show_message_box(
+                'keystone-engine not found. Install it to enable instructions patching',
+                details=details)
+            return
+
         if len(self.selectedItems()) == 0:
             return
         item = self.selectedItems()[0]
@@ -229,10 +238,14 @@ class AsmPanel(QTableWidget):
         if self.app.get_arch() == 'arm64':
             self.cs_arch = CS_ARCH_ARM64
             self.cs_mode = CS_MODE_LITTLE_ENDIAN
-            self.ks_arch = KS_ARCH_ARM64
-            self.ks_mode = KS_MODE_LITTLE_ENDIAN
         else:
             self.cs_arch = CS_ARCH_ARM
             self.cs_mode = CS_MODE_ARM
-            self.ks_arch = KS_ARCH_ARM
-            self.ks_mode = KS_MODE_ARM
+        if self.app.get_dwarf().keystone_installed:
+            import keystone.keystone_const as ks
+            if self.app.get_arch() == 'arm64':
+                self.ks_arch = ks.KS_ARCH_ARM64
+                self.ks_mode = ks.KS_MODE_LITTLE_ENDIAN
+            else:
+                self.ks_arch = ks.KS_ARCH_ARM
+                self.ks_mode = ks.KS_MODE_ARM
