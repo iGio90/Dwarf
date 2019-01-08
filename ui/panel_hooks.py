@@ -60,13 +60,13 @@ class HooksPanel(TableBaseWidget):
 
     def on_menu_action(self, action_data, item):
         if action_data == 'native':
-            self.hook_native()
+            self.app.get_dwarf().hook_native()
             return False
         elif action_data == 'java':
-            self.hook_java()
+            self.app.get_dwarf().hook_java()
             return False
         elif action_data == 'onload':
-            self.hook_onload()
+            self.app.get_dwarf().hook_onload()
             return False
         elif action_data == 'delete':
             self.delete_hook(item, self.item(item.row(), 0).get_hook_data())
@@ -177,10 +177,10 @@ class HooksPanel(TableBaseWidget):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
-            self.hook_native()
+            self.app.get_dwarf().hook_native()
         if self.app.get_dwarf().java_available:
             if event.key() == Qt.Key_O:
-                self.hook_onload()
+                self.app.get_dwarf().hook_onload()
             elif event.key() == Qt.Key_J:
-                self.hook_java()
+                self.app.get_dwarf().hook_java()
         super(HooksPanel, self).keyPressEvent(event)
