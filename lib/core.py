@@ -179,9 +179,9 @@ class Dwarf(object):
                 if self.loading_library is None:
                     self.app.get_log_panel().log('hook %s %s @thread := %d' % (
                         name, sym, data['tid']))
-                self.app.get_session_ui().request_session_ui_focus()
                 if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
                     return
+                self.app.get_session_ui().request_session_ui_focus()
             else:
                 self.app.set_arch(data['arch'])
                 if self.app.get_arch() == 'arm':
@@ -219,7 +219,7 @@ class Dwarf(object):
 
     def dump_memory(self, file_path=None, ptr=0, length=0):
         if ptr == 0:
-            ptr = InputDialog.input_pointer(self.app)
+            ptr, inp = InputDialog.input_pointer(self.app)
         if ptr > 0:
             if length == 0:
                 accept, length = InputDialog.input(
@@ -263,11 +263,12 @@ class Dwarf(object):
             if not accept:
                 return
         self.java_pending_args = pending_args
+        input = input.replace(' ', '')
         self.app.dwarf_api('hookJava', input)
 
     def hook_native(self, input=None, pending_args=None):
-        if input is None:
-            ptr = InputDialog.input_pointer(self.app)
+        if input is None or not isinstance(input, str):
+            ptr, input = InputDialog.input_pointer(self.app)
         else:
             ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
         if ptr > 0:

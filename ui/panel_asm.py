@@ -90,7 +90,7 @@ class AsmPanel(QTableWidget):
             super(AsmPanel, self).keyPressEvent(event)
 
     def trigger_jump_to(self):
-        ptr = InputDialog.input_pointer(self.app)
+        ptr, input = InputDialog.input_pointer(self.app)
         if ptr > 0:
             self.read_memory(ptr)
 
@@ -150,6 +150,7 @@ class AsmPanel(QTableWidget):
             if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
                 is_jmp = False
 
+            op_imm_value = 0
             if len(i.operands) > 0:
                 for op in i.operands:
                     if op.type == CS_OP_IMM:
@@ -168,6 +169,7 @@ class AsmPanel(QTableWidget):
 
             if is_jmp:
                 w = MemoryAddressWidget(i.op_str)
+                w.set_address(op_imm_value)
             else:
                 w = NotEditableTableWidgetItem(i.op_str)
                 w.setFlags(Qt.NoItemFlags)

@@ -24,7 +24,10 @@ class InputDialogTextEdit(QTextEdit):
         super().__init__(*__args)
         self.dialog = dialog
 
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        bar = QScrollBar()
+        bar.setFixedHeight(0)
+        bar.setFixedWidth(0)
+        self.setHorizontalScrollBar(bar)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setLineWrapMode(QTextEdit.NoWrap)
         self.setFixedHeight(34)
@@ -87,6 +90,6 @@ class InputDialog(QDialog):
         if not accept:
             return 0
         try:
-            return int(app.dwarf_api('evaluatePtr', inp), 16)
+            return int(app.dwarf_api('evaluatePtr', inp), 16), inp
         except:
             return 0

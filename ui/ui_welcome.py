@@ -299,7 +299,7 @@ class WelcomeUi(QSplitter):
                 res = utils.do_shell_command('unxz frida.xz')
                 if len(res) == 0:
                     res = self.app.get_adb().mount_system()
-                    if len(res) == 0:
+                    if res is None or len(res) == 0:
                         self.app.get_adb().push('frida', '/sdcard/')
                         self.app.get_adb().su('killall -9 frida', stdout=subprocess.DEVNULL)
                         self.app.get_adb().su('mv /sdcard/frida /system/xbin/frida', stdout=subprocess.DEVNULL)

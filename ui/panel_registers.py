@@ -27,26 +27,41 @@ class RegistersPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, *__args)
         self.context_ptr = ''
+        self.is_java_context = False
 
     def item_double_clicked(self, item):
         if isinstance(item, NativeRegisterWidget) and item.is_valid_ptr():
             self.app.get_memory_panel().read_memory(item.value)
         elif isinstance(item, MemoryAddressWidget):
             self.app.get_memory_panel().read_memory(item.get_address())
+        elif self.is_java_context:
+            self.on_menu_action('expand', item)
 
         # return false and manage double click here
         return False
 
+    def set_menu_actions(self, item, menu):
+        if self.is_java_context:
+            if item is not None:
+                action_expand = menu.addAction("Explorer")
+                action_expand.setData('expand')
+
+    def on_menu_action(self, action_data, item):
+        if action_data == 'expand':
+            self.app.get_java_explorer_panel().set_handle_arg(item.row())
+
     def set_context(self, ptr, is_java, context):
+        self.context_ptr = ptr
+        self.is_java_context = is_java
+
         self.setRowCount(0)
         self.setColumnCount(0)
         i = 0
 
-        self.context_ptr = ptr
         if self.app.get_dwarf().get_loading_library() is not None:
             self.context_ptr = self.app.get_dwarf().get_loading_library()
 
-        if is_java:
+        if self.is_java_context:
             self.setColumnCount(3)
             self.setHorizontalHeaderLabels(['argument', 'class', 'value'])
         else:
@@ -56,13 +71,15 @@ class RegistersPanel(TableBaseWidget):
             self.insertRow(i)
 
             q = NotEditableTableWidgetItem(reg)
-            q.setFlags(Qt.NoItemFlags)
+            if not self.is_java_context:
+                q.setFlags(Qt.NoItemFlags)
             q.setForeground(Qt.gray)
             self.setItem(i, 0, q)
 
-            if is_java:
+            if self.is_java_context:
                 q = NotEditableTableWidgetItem(context[reg]['className'])
-                q.setFlags(Qt.NoItemFlags)
+                if not self.is_java_context:
+                    q.setFlags(Qt.NoItemFlags)
                 q.setForeground(Qt.white)
                 self.setItem(i, 1, q)
 
@@ -75,7 +92,7 @@ class RegistersPanel(TableBaseWidget):
                         q = QTableWidgetItem(str(context[reg]['arg']))
                 else:
                     q = NativeRegisterWidget(self.app, reg, context[reg])
-                if is_java:
+                if self.is_java_context:
                     q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
                 else:

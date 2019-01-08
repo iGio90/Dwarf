@@ -190,6 +190,9 @@ class MemoryPanel(QTableWidget):
         return self.app.dwarf_api('readPointer', byte_widget.get_ptr())
 
     def _set_memory_view(self, should_clear_rows=True):
+        if not self.isVisible():
+            self.app.get_session_ui().show_memory_panel()
+
         if should_clear_rows:
             self.setRowCount(0)
             self.setRowCount(int(math.ceil(self.range.size / 16.0)))
@@ -272,7 +275,7 @@ class MemoryPanel(QTableWidget):
             self.app.get_hooks_panel().hook_native(hex(item.get_ptr()))
 
     def trigger_jump_to(self):
-        ptr = InputDialog.input_pointer(self.app)
+        ptr, input = InputDialog.input_pointer(self.app)
         if ptr > 0:
             self.read_memory(ptr)
 

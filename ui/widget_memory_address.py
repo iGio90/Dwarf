@@ -25,6 +25,7 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
 
         self.offset = 0
         self.address = 0
+        self.size = 0
 
         # a memory address widget could also store a base address
         # retrieve the length from around the app could be useful
@@ -42,7 +43,10 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
             if address.startswith('0x'):
                 self.address = int(address, 16)
             else:
-                self.address = int(address)
+                try:
+                    self.address = int(address)
+                except:
+                    pass
         else:
             self.address = address
 

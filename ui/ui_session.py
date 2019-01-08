@@ -15,19 +15,12 @@ Dwarf - Copyright (C) 2019 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSplitter, QTabWidget, QTabBar
+from PyQt5.QtWidgets import QSplitter, QTabWidget, QTabBar, QVBoxLayout, QWidget
 
 from ui.panel_asm import AsmPanel
 from ui.panel_data import DataPanel
-from ui.panel_backtrace import BacktracePanel
-from ui.panel_contexts import ContextsPanel
-from ui.panel_hooks import HooksPanel
-from ui.panel_java_classes import JavaClassesPanel
-from ui.panel_log import LogPanel
-from ui.panel_memory import MemoryPanel
 from ui.panel_modules import ModulesPanel
 from ui.panel_ranges import RangesPanel
-from ui.panel_registers import RegistersPanel
 
 
 class SessionUi(QTabWidget):
@@ -81,6 +74,7 @@ class SessionUi(QTabWidget):
         self.ranges_panel = None
         self.registers_panel = None
         self.memory_panel = None
+        self.java_explorer_panel = None
         self.log_panel = None
         self.backtrace_panel = None
         self.hooks_panel = None
@@ -98,6 +92,7 @@ class SessionUi(QTabWidget):
         self.ranges_panel = RangesPanel(self.app)
         self.data_panel = DataPanel(self.app)
         self.asm_panel = AsmPanel(self.app)
+
         self.java_class_panel = None
 
         self.addTab(self.session_panel, 'session')
@@ -117,12 +112,15 @@ class SessionUi(QTabWidget):
         splitter.setOrientation(Qt.Vertical)
         splitter.setContentsMargins(0, 0, 0, 0)
 
+        from ui.panel_hooks import HooksPanel
         self.hooks_panel = HooksPanel(self.app)
         splitter.addWidget(self.hooks_panel)
 
+        from ui.panel_contexts import ContextsPanel
         self.contexts_panel = ContextsPanel(self.app)
         splitter.addWidget(self.contexts_panel)
 
+        from ui.panel_backtrace import BacktracePanel
         self.backtrace_panel = BacktracePanel(self.app)
         splitter.addWidget(self.backtrace_panel)
 
@@ -134,12 +132,26 @@ class SessionUi(QTabWidget):
         main_panel.setOrientation(Qt.Vertical)
         main_panel.setContentsMargins(0, 0, 0, 0)
 
+        from ui.panel_registers import RegistersPanel
         self.registers_panel = RegistersPanel(self.app, 0, 0)
         main_panel.addWidget(self.registers_panel)
 
+        box = QVBoxLayout()
+        box.setContentsMargins(0, 0, 0, 0)
+        from ui.panel_memory import MemoryPanel
         self.memory_panel = MemoryPanel(self.app)
-        main_panel.addWidget(self.memory_panel)
+        box.addWidget(self.memory_panel)
 
+        from ui.panel_java_explorer import JavaExplorerPanel
+        self.java_explorer_panel = JavaExplorerPanel(self.app)
+        self.java_explorer_panel.hide()
+        box.addWidget(self.java_explorer_panel)
+
+        q = QWidget()
+        q.setLayout(box)
+        main_panel.addWidget(q)
+
+        from ui.panel_log import LogPanel
         self.log_panel = LogPanel(self.app)
         main_panel.addWidget(self.log_panel)
 
@@ -201,25 +213,31 @@ class SessionUi(QTabWidget):
             self.addTab(self.data_panel, 'data')
             if request_focus:
                 self.setCurrentWidget(self.hooks_panel)
+            return self.hooks_panel
         elif tab_id == SessionUi.TAB_MODULES:
             self.addTab(self.modules_panel, 'modules')
             if request_focus:
                 self.setCurrentWidget(self.modules_panel)
+            return self.modules_panel
         elif tab_id == SessionUi.TAB_RANGES:
             self.addTab(self.ranges_panel, 'ranges')
             if request_focus:
                 self.setCurrentWidget(self.ranges_panel)
+            return self.ranges_panel
         elif tab_id == SessionUi.TAB_ASM:
             self.addTab(self.asm_panel, 'asm')
             if request_focus:
                 self.setCurrentWidget(self.asm_panel)
+            return self.asm_panel
         elif tab_id == SessionUi.TAB_JAVA_CLASSES:
             if self.java_class_panel is None:
+                from ui.panel_java_classes import JavaClassesPanel
                 self.java_class_panel = JavaClassesPanel(self.app)
             if self.java_class_panel.parent() is None:
                 self.addTab(self.java_class_panel, 'Java Classes')
             if request_focus:
                 self.setCurrentWidget(self.java_class_panel)
+            return self.java_class_panel
 
     def add_tab(self, tab_widget, tab_label):
         self.addTab(tab_widget, tab_label)
@@ -234,3 +252,11 @@ class SessionUi(QTabWidget):
 
     def request_session_ui_focus(self):
         self.setCurrentWidget(self.session_panel)
+
+    def show_java_panel(self):
+        self.memory_panel.hide()
+        self.java_explorer_panel.show()
+
+    def show_memory_panel(self):
+        self.java_explorer_panel.hide()
+        self.memory_panel.show()

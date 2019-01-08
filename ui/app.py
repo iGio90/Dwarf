@@ -131,8 +131,9 @@ class App(QWidget):
         if 'context' in context:
             is_java = context['is_java']
             self.get_registers_panel().set_context(context['ptr'], is_java, context['context'])
-            if not is_java and 'pc' in context['context']:
-                self.get_memory_panel().read_memory(context['context']['pc'])
+            if is_java:
+                self.get_java_explorer_panel().set_handle_arg(-1)
+
         if 'backtrace' in context:
             self.get_backtrace_panel().set_backtrace(context['backtrace'])
 
@@ -174,6 +175,9 @@ class App(QWidget):
 
     def get_java_classes_panel(self):
         return self.session_ui.java_class_panel
+
+    def get_java_explorer_panel(self):
+        return self.session_ui.java_explorer_panel
 
     def get_log_panel(self):
         return self.session_ui.log_panel
