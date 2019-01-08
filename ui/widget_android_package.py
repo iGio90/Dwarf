@@ -21,6 +21,7 @@ class AndroidAppWidget(NotEditableListWidgetItem):
     def __init__(self, application):
         super().__init__(application.name)
 
+        self.appname = application.name
         self.package_name = application.identifier
 
     def get_package_name(self):
@@ -31,6 +32,7 @@ class AndroidPackageWidget(NotEditableListWidgetItem):
     def __init__(self, label, package_name, pid):
         super().__init__(label)
 
+        self.appname = label
         self.package_name = package_name
         self.pid = pid
 
