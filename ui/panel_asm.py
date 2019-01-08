@@ -189,7 +189,7 @@ class AsmPanel(QTableWidget):
             self.disasm()
 
     def trigger_write_instruction(self):
-        if self.app.get_dwarf().keystone_installed:
+        if not self.app.get_dwarf().keystone_installed:
             details = ''
             try:
                 import keystone.keystone_const
