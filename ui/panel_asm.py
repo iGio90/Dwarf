@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
 
 from lib import utils
 from lib.range import Range
+from ui.dialog_cs_configs import CsConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.dialog_write_instruction import WriteInstructionDialog
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
@@ -56,6 +57,8 @@ class AsmPanel(QTableWidget):
     def show_menu(self, pos):
         menu = QMenu()
 
+        cs_config = menu.addAction("Capstone")
+
         if self.cs_arch == CS_ARCH_ARM:
             if self.cs_mode == CS_MODE_ARM:
                 mode = QAction("THUMB mode\t(O)")
@@ -67,14 +70,17 @@ class AsmPanel(QTableWidget):
             menu.addSeparator()
 
         write_instr = menu.addAction("Patch instruction")
-        write_instr.triggered.connect(self.trigger_write_instruction)
 
         menu.addSeparator()
 
         jump_to = menu.addAction("Jump to\t(G)")
         jump_to.triggered.connect(self.trigger_jump_to)
 
-        menu.exec_(self.mapToGlobal(pos))
+        action = menu.exec_(self.mapToGlobal(pos))
+        if action == cs_config:
+            self.trigger_cs_configs()
+        elif action == write_instr:
+            self.trigger_write_instruction(self.itemAt(pos))
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:
@@ -188,7 +194,14 @@ class AsmPanel(QTableWidget):
                 self.cs_mode = CS_ARCH_ARM
             self.disasm()
 
-    def trigger_write_instruction(self):
+    def trigger_cs_configs(self):
+        accept, arch, mode = CsConfigsDialog.show_dialog(self.cs_arch, self.cs_mode)
+        if accept:
+            self.cs_arch = arch
+            self.cs_mode = mode
+            self.disasm()
+
+    def trigger_write_instruction(self, item):
         if not self.app.get_dwarf().keystone_installed:
             details = ''
             try:
@@ -199,10 +212,6 @@ class AsmPanel(QTableWidget):
                 'keystone-engine not found. Install it to enable instructions patching',
                 details=details)
             return
-
-        if len(self.selectedItems()) == 0:
-            return
-        item = self.selectedItems()[0]
 
         accept, inst, arch, mode = WriteInstructionDialog().show_dialog(
             input_content='%s %s' % (self.item(item.row(), 1).text(), self.item(item.row(), 2).text()),
