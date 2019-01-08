@@ -105,15 +105,15 @@ class MenuBar(object):
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
         hook_native.setShortcut("Ctrl+N")
-        hook_native.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_native)
+        hook_native.triggered.connect(self.app_window.get_dwarf().hook_native)
 
         hook_java = QAction("&Java", self.app_window)
         hook_java.setShortcut("Ctrl+J")
-        hook_java.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_java)
+        hook_java.triggered.connect(self.app_window.get_dwarf().hook_java)
 
         hook_onload = QAction("&Module load", self.app_window)
         hook_onload.setShortcut("Ctrl+M")
-        hook_onload.triggered.connect(self.app_window.get_app_instance().get_hooks_panel().hook_onload)
+        hook_onload.triggered.connect(self.app_window.get_dwarf().hook_onload)
 
         hooks_menu = self.menu.addMenu('&Hooks')
         self.add_menu_action(hooks_menu, hook_native, True)

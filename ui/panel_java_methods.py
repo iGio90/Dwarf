@@ -24,10 +24,24 @@ from ui.widget_table_base import TableBaseWidget
 class JavaMethodsPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 1)
+        self.java_class = ''
         self.horizontalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
 
+    def set_menu_actions(self, item, menu):
+        if item is not None:
+            menu.addSeparator()
+            action_hook = menu.addAction('Hook')
+            action_hook.setData('hook')
+
+    def on_menu_action(self, action_data, item):
+        if action_data == 'hook':
+            self.app.get_dwarf().hook_java(self.java_class + '.' + item.text())
+
+        return True
+
     def initialize_with_class(self, java_class):
+        self.java_class = java_class
         Dwarf.bus.add_event(self.on_enumeration_complete, java_class)
         self.app.dwarf_api('enumerateJavaMethods', java_class)
 

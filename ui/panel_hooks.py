@@ -79,11 +79,6 @@ class HooksPanel(TableBaseWidget):
             return False
         return True
 
-    def hook_native(self, inp=None, pending_args=None):
-        ptr = InputDialog.input_pointer(self.app)
-        if ptr > 0:
-            self.app.get_dwarf().hook_native(inp, pending_args, ptr)
-
     def hook_native_callback(self, hook):
         if self.columnCount() == 0:
             self.setColumnCount(2)
@@ -101,21 +96,7 @@ class HooksPanel(TableBaseWidget):
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
-    def hook_onload(self, input=None):
-        if input is None or not isinstance(input, str):
-            input = InputDialog.input(self.app, hint='insert module name', placeholder='libtarget.so')
-            if not input[0]:
-                return
-            input = input[1]
-            if len(input) == 0:
-                return
-
-        if not input.endswith('.so'):
-            input += '.so'
-
-        if input in self.app.get_dwarf().on_loads:
-            return
-
+    def hook_onload_callback(self, input=None):
         if self.columnCount() == 0:
             self.setColumnCount(2)
             self.setHorizontalHeaderLabels(['input', 'address'])
@@ -135,15 +116,6 @@ class HooksPanel(TableBaseWidget):
 
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-
-    def hook_java(self, input=None, pending_args=None):
-        if input is None or not isinstance(input, str):
-            input = InputDialog.input(self.app, hint='insert java class or methos',
-                                      placeholder='com.package.class or com.package.class.method')
-            if not input[1]:
-                return
-            input = input[1]
-        self.app.get_dwarf().hook_java(input, pending_args)
 
     def hook_java_callback(self, hook):
         if self.columnCount() == 0:

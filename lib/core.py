@@ -248,23 +248,48 @@ class Dwarf(object):
             self.app.get_log_panel().log(str(e))
             return None
 
-    def hook_java(self, input, pending_args):
+    def hook_java(self, input=None, pending_args=None):
+        if input is None or not isinstance(input, str):
+            accept, input = InputDialog.input(
+                self.app, hint='insert java class or methos',
+                placeholder='com.package.class or com.package.class.method')
+            if not accept:
+                return
         self.java_pending_args = pending_args
         self.app.dwarf_api('hookJava', input)
 
-    def hook_native(self, input, pending_args, ptr):
-        self.temporary_input = input
-        self.native_pending_args = pending_args
-        self.app.dwarf_api('hookNative', ptr)
+    def hook_native(self, input=None, pending_args=None):
+        if input is None:
+            ptr = InputDialog.input_pointer(self.app)
+        else:
+            ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
+        if ptr > 0:
+            self.temporary_input = input
+            self.native_pending_args = pending_args
+            self.app.dwarf_api('hookNative', ptr)
 
-    def hook_onload(self, input):
+    def hook_onload(self, input=None):
+        if input is None or not isinstance(input, str):
+            accept, input = InputDialog.input(self.app, hint='insert module name', placeholder='libtarget.so')
+            if not accept:
+                return
+            if len(input) == 0:
+                return
+
+        if not input.endswith('.so'):
+            input += '.so'
+
+        if input in self.app.get_dwarf().on_loads:
+            return
+
         self.dwarf_api('hookOnLoad', input)
         h = Hook(Hook.HOOK_ONLOAD)
         h.set_ptr(0)
         h.set_input(input)
 
         self.on_loads[input] = h
-        return h
+        if self.app.session_ui is not None and self.app.get_hooks_panel() is not None:
+            self.app.get_hooks_panel().hook_onload_callback(h)
 
     def read_memory(self, ptr, len):
         if len > 1024 * 1024:

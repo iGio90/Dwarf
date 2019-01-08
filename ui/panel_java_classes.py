@@ -28,10 +28,18 @@ class JavaClassesPanel(TableBaseWidget):
         action_refresh = menu.addAction("Refresh")
         action_refresh.setData('refresh')
 
+        if item is not None:
+            menu.addSeparator()
+            action_hook = menu.addAction('Hook')
+            action_hook.setData('hook')
+
     def on_menu_action(self, action_data, item):
         if action_data == 'refresh':
             self.app.app_window.get_menu().handler_enumerate_java_classes(should_update_java_classes=True)
             return False
+        elif action_data == 'hook':
+            self.app.get_dwarf().hook_java(item.text())
+
         return True
 
     def item_double_clicked(self, item):
