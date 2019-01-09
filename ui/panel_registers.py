@@ -81,9 +81,11 @@ class RegistersPanel(TableBaseWidget):
 
             if self.is_java_context:
                 q = NotEditableTableWidgetItem(context[reg]['className'])
-                if not self.is_java_context:
+                if isinstance(context[reg]['handle'], str):
                     q.setFlags(Qt.NoItemFlags)
-                q.setForeground(Qt.white)
+                    q.setForeground(Qt.lightGray)
+                    self.item(i, 0).setFlags(Qt.NoItemFlags)
+                    self.item(i, 0).setForeground(Qt.lightGray)
                 self.setItem(i, 1, q)
 
             if context[reg] is not None:
