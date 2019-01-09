@@ -68,6 +68,9 @@ class RegistersPanel(TableBaseWidget):
             self.setColumnCount(4)
             self.setHorizontalHeaderLabels(['reg', 'value', 'decimal', 'telescope'])
         for reg in context:
+            if reg.lower() == 'tojson':
+                continue
+
             self.insertRow(i)
 
             q = NotEditableTableWidgetItem(reg)
@@ -84,7 +87,7 @@ class RegistersPanel(TableBaseWidget):
                 self.setItem(i, 1, q)
 
             if context[reg] is not None:
-                if is_java:
+                if self.is_java_context:
                     if context[reg]['arg'] is None:
                         q = QTableWidgetItem('null')
                         q.setForeground(Qt.gray)
@@ -92,32 +95,35 @@ class RegistersPanel(TableBaseWidget):
                         q = QTableWidgetItem(str(context[reg]['arg']))
                 else:
                     q = NativeRegisterWidget(self.app, reg, context[reg])
+
                 if self.is_java_context:
                     q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
                 else:
                     self.setItem(i, 1, q)
 
-                    q = NotEditableTableWidgetItem(str(int(context[reg], 16)))
+                    q = NotEditableTableWidgetItem(str(int(context[reg]['value'], 16)))
                     q.setForeground(Qt.darkCyan)
                     q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
-                    data = self.app.dwarf_api('getAddressTs', context[reg])
-                    if data is not None:
-                        if data[0] == 1:
-                            q = MemoryAddressWidget(str(data[1]))
-                        else:
-                            q = NotEditableTableWidgetItem(str(data[1]))
-                            q.setFlags(Qt.NoItemFlags)
 
-                        if data[0] == 0:
-                            q.setForeground(Qt.darkGreen)
-                        elif data[0] == 2:
-                            q.setForeground(Qt.white)
-                        elif data[0] != 1:
-                            q.setForeground(Qt.darkGray)
+                    if context[reg]['isValidPointer']:
+                        ts = context[reg]['telescope']
+                        if ts is not None:
+                            if ts[0] == 1:
+                                q = MemoryAddressWidget(str(ts[1]))
+                            else:
+                                q = NotEditableTableWidgetItem(str(ts[1]))
+                                q.setFlags(Qt.NoItemFlags)
 
-                        self.setItem(i, 3, q)
+                            if ts[0] == 0:
+                                q.setForeground(Qt.darkGreen)
+                            elif ts[0] == 2:
+                                q.setForeground(Qt.white)
+                            elif ts[0] != 1:
+                                q.setForeground(Qt.darkGray)
+
+                            self.setItem(i, 3, q)
             i += 1
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)

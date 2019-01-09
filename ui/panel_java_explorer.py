@@ -11,6 +11,8 @@ Dwarf - Copyright (C) 2019 iGio90
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel, QHeaderView
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
@@ -32,10 +34,14 @@ class JavaFieldsWidget(TableBaseWidget):
         self.setHorizontalHeaderLabels(headers)
         self.horizontalHeader().setStretchLastSection(True)
 
-    def add(self, name, value, handle=None):
+    def add(self, name, value, handle=None, handle_class=None):
         row = self.rowCount()
         self.insertRow(row)
         if handle is not None:
+            handle = {
+                'handle': handle,
+                'handle_class': handle_class
+            }
             self.setItem(row, 0, HandleWidget(handle, name))
         else:
             self.setItem(row, 0, NotEditableTableWidgetItem(name))
@@ -74,12 +80,26 @@ class JavaMethodsWidget(TableBaseWidget):
             self.setItem(row, 2, NotEditableTableWidgetItem('(%s)' % ', '.join(args)))
 
 
-class JavaExplorerPanel(QSplitter):
+class JavaExplorerPanel(QWidget):
     def __init__(self, app, *__args):
         super().__init__(*__args)
         self.app = app
 
-        self.setHandleWidth(1)
+        self.handle_history = []
+
+        box = QVBoxLayout()
+        box.setContentsMargins(0, 0, 0, 0)
+
+        self.clazz = QLabel()
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(19)
+        self.clazz.setMaximumHeight(25)
+        self.clazz.setFont(font)
+        box.addWidget(self.clazz)
+
+        splitter = QSplitter()
+        splitter.setHandleWidth(1)
 
         left_col = QWidget()
         left_layout = QVBoxLayout()
@@ -88,7 +108,7 @@ class JavaExplorerPanel(QSplitter):
         self.methods = JavaMethodsWidget(self)
         left_layout.addWidget(self.methods)
         left_col.setLayout(left_layout)
-        self.addWidget(left_col)
+        splitter.addWidget(left_col)
 
         central_col = QWidget()
         central_layout = QVBoxLayout()
@@ -97,7 +117,7 @@ class JavaExplorerPanel(QSplitter):
         self.native_fields = JavaFieldsWidget(self, ['name', 'value'], True)
         central_layout.addWidget(self.native_fields)
         central_col.setLayout(central_layout)
-        self.addWidget(central_col)
+        splitter.addWidget(central_col)
 
         right_col = QWidget()
         right_layout = QVBoxLayout()
@@ -106,17 +126,21 @@ class JavaExplorerPanel(QSplitter):
         self.fields = JavaFieldsWidget(self, ['name', 'class'], False)
         right_layout.addWidget(self.fields)
         right_col.setLayout(right_layout)
-        self.addWidget(right_col)
+        splitter.addWidget(right_col)
 
-        self.setStretchFactor(0, 2)
-        self.setStretchFactor(1, 1)
-        self.setStretchFactor(2, 1)
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(2, 1)
+
+        box.addWidget(splitter)
+        self.setLayout(box)
 
     def _set_data(self, data):
-        if data is None:
-            return
         if not self.isVisible():
             self.app.get_session_ui().show_java_panel()
+
+        self.clazz.setText(data['class'])
+        data = data['data']
 
         self.methods.setRowCount(0)
         self.fields.setRowCount(0)
@@ -127,17 +151,46 @@ class JavaExplorerPanel(QSplitter):
                 if not key.startswith('$'):
                     self.methods.add(key, ref)
             elif ref['type'] == 'object':
-                self.fields.add(key, ref['value'], ref['handle'])
+                if not key.startswith('$'):
+                    self.fields.add(key, ref['value'], ref['handle'], ref['handle_class'])
             else:
-                self.native_fields.add(key, ref['value'])
+                if not key.startswith('$'):
+                    self.native_fields.add(key, ref['value'])
         self.methods.sortByColumn(0, 0)
         self.native_fields.sortByColumn(0, 0)
         self.fields.sortByColumn(0, 0)
 
     def set_handle(self, handle):
         data = self.app.dwarf_api('javaExplorer', handle)
+        if data is None:
+            return
+        self.handle_history.append({'handle': handle})
         self._set_data(data)
 
     def set_handle_arg(self, arg):
         data = self.app.dwarf_api('javaExplorer', arg)
+        if data is None:
+            return
+        self.handle_history.append({'handle': arg})
         self._set_data(data)
+
+    def clear_panel(self):
+        self.handle_history.clear()
+        self.methods.setRowCount(0)
+        self.fields.setRowCount(0)
+        self.native_fields.setRowCount(0)
+
+    def back(self):
+        if len(self.handle_history) < 2:
+            return
+        self.handle_history.pop()
+        data = self.handle_history.pop(len(self.handle_history) - 1)['handle']
+        if isinstance(data, int):
+            self.set_handle_arg(data)
+        else:
+            self.set_handle(data)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.back()
+        super(JavaExplorerPanel, self).keyPressEvent(event)

@@ -15,7 +15,6 @@ Dwarf - Copyright (C) 2019 iGio90
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QTextEdit, QLabel
 
 from lib.hook import Hook
 from ui.dialog_input import InputDialog
@@ -96,12 +95,13 @@ class HooksPanel(TableBaseWidget):
         self.resizeRowsToContents()
         self.horizontalHeader().setStretchLastSection(True)
 
-    def hook_onload_callback(self, input=None):
+    def hook_onload_callback(self, h):
+        if h is None:
+            return
+
         if self.columnCount() == 0:
             self.setColumnCount(2)
             self.setHorizontalHeaderLabels(['input', 'address'])
-
-        h = self.app.get_dwarf().hook_onload(input)
 
         self.insertRow(self.rowCount())
         q = HookWidget(h.get_input())

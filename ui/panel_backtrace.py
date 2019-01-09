@@ -26,11 +26,13 @@ class BacktracePanel(TableBaseWidget):
         super().__init__(app, 0, 0)
 
     def set_backtrace(self, bt):
+        if 'type' not in bt:
+            return
         self.setRowCount(0)
         if self.columnCount() == 0:
             self.setColumnCount(2)
-        if type(bt) is list:
-            # native backtrace
+        if bt['type'] == 'native':
+            bt = bt['bt']
             self.setHorizontalHeaderLabels(['symbol', 'address'])
             for a in bt:
                 row = self.rowCount()
@@ -49,7 +51,8 @@ class BacktracePanel(TableBaseWidget):
                     self.setItem(row, 0, q)
                 q = MemoryAddressWidget(a['address'])
                 self.setItem(row, 1, q)
-        elif type(bt) is str:
+        elif bt['type'] == 'java':
+            bt = bt['bt']
             # Java backtrace
             self.setHorizontalHeaderLabels(['method', 'source'])
             parts = bt.split('\n')

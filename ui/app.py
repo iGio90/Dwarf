@@ -102,14 +102,24 @@ class App(QWidget):
     def restart(self):
         self.dwarf_api('restart')
         self.resume()
-        self.get_contexts_panel().setRowCount(0)
 
-    def resume(self):
-        self.get_contexts_panel().setRowCount(0)
-        self.contexts.clear()
-        self.get_registers_panel().setRowCount(0)
-        self.get_backtrace_panel().setRowCount(0)
-        self.dwarf_api('release')
+    def resume(self, tid=0):
+        if tid == 0:
+            self.get_contexts_panel().setRowCount(0)
+            self.get_registers_panel().setRowCount(0)
+            self.get_backtrace_panel().setRowCount(0)
+            self.get_java_explorer_panel().clear_panel()
+            self.get_memory_panel().clear_panel()
+            self.contexts.clear()
+        else:
+            if self.context_tid == tid:
+                self.get_registers_panel().setRowCount(0)
+                self.get_backtrace_panel().setRowCount(0)
+                self.get_java_explorer_panel().clear_panel()
+                self.get_memory_panel().clear_panel()
+            self.get_contexts_panel().resume_tid(tid)
+
+        self.dwarf_api('release', tid)
 
     def clear(self):
         self.modules_panel.setRowCount(0)
@@ -133,9 +143,6 @@ class App(QWidget):
             self.get_registers_panel().set_context(context['ptr'], is_java, context['context'])
             if is_java:
                 self.get_java_explorer_panel().set_handle_arg(-1)
-
-        if 'backtrace' in context:
-            self.get_backtrace_panel().set_backtrace(context['backtrace'])
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()

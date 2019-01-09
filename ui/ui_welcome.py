@@ -126,8 +126,8 @@ class WelcomeUi(QSplitter):
             self.proc_list.clear()
 
     def update_ui_sync(self):
-        self.update_commits()
         self.update_device_ui()
+        self.update_commits()
         self.update_frida_version()
 
     def update_commits(self):

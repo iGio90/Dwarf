@@ -26,6 +26,21 @@ class ContextsPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 0)
 
+    def set_menu_actions(self, item, menu):
+        if item is not None:
+            resume = menu.addAction("Resume")
+            resume.setData('resume')
+
+    def on_menu_action(self, action_data, item):
+        if action_data == 'resume':
+            self.app.resume(int(self.item(item.row(), 0).text()))
+            return False
+
+    def resume_tid(self, tid):
+        items = self.findItems(str(tid), Qt.MatchExactly)
+        if len(items) > 0:
+            self.removeRow(items[0].row())
+
     def add_context(self, data, library_onload=None):
         if self.columnCount() == 0:
             self.setColumnCount(3)

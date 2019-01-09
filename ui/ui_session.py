@@ -187,17 +187,17 @@ class SessionUi(QTabWidget):
         self.modules_panel.horizontalHeader().setStretchLastSection(True)
 
         self.contexts_panel.setRowCount(0)
-        self.hooks_panel.setColumnCount(0)
+        self.contexts_panel.setColumnCount(0)
         self.contexts_panel.resizeColumnsToContents()
         self.contexts_panel.horizontalHeader().setStretchLastSection(True)
 
         self.backtrace_panel.setRowCount(0)
-        self.hooks_panel.setColumnCount(0)
+        self.backtrace_panel.setColumnCount(0)
         self.backtrace_panel.resizeColumnsToContents()
         self.backtrace_panel.horizontalHeader().setStretchLastSection(True)
 
         self.registers_panel.setRowCount(0)
-        self.hooks_panel.setColumnCount(0)
+        self.registers_panel.setColumnCount(0)
         self.registers_panel.resizeColumnsToContents()
         self.registers_panel.horizontalHeader().setStretchLastSection(True)
 

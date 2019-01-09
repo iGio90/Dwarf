@@ -318,6 +318,8 @@ class MemoryPanel(QTableWidget):
     def on_script_destroyed(self):
         self.range = None
         self.controller.work = False
+
+    def clear_panel(self):
         self.setRowCount(0)
         self.setColumnCount(0)
         self.resizeRowsToContents()

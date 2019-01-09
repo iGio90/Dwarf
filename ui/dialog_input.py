@@ -88,8 +88,8 @@ class InputDialog(QDialog):
             hint='insert pointer',
             placeholder='Module.findExportByName(\'target\', \'export\')')
         if not accept:
-            return 0
+            return 0, ''
         try:
             return int(app.dwarf_api('evaluatePtr', inp), 16), inp
         except:
-            return 0
+            return 0, ''

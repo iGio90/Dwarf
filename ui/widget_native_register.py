@@ -24,14 +24,14 @@ class NativeRegisterWidget(MemoryAddressWidget):
         super().__init__(*__args)
 
         self.register = register
-        self.value = value
-        self.valid_ptr = app.dwarf_api('isValidPointer', self.value)
+        self.value = value['value']
+        self.valid_ptr = value['isValidPointer']
         if self.valid_ptr:
             self.setForeground(Qt.red)
         else:
             self.setForeground(Qt.lightGray)
-        self.setText(value)
-        self.set_address(value)
+        self.setText(self.value)
+        self.set_address(self.value)
 
     def is_valid_ptr(self):
         return self.valid_ptr

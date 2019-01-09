@@ -118,7 +118,13 @@ class Dwarf(object):
             return
 
         cmd = parts[0]
-        if cmd == 'enumerate_java_classes_start':
+        if cmd == 'backtrace':
+            if self.app.get_session_ui() is not None and self.app.get_backtrace_panel() is not None:
+                try:
+                    self.app.get_backtrace_panel().set_backtrace(json.loads(parts[1]))
+                except:
+                    pass
+        elif cmd == 'enumerate_java_classes_start':
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_start()
         elif cmd == 'enumerate_java_classes_match':
