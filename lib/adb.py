@@ -24,8 +24,8 @@ class Adb(object):
     def __init__(self, app):
         self.app = app
 
-        adb = utils.do_shell_command('adb --version')
         try:
+            adb = utils.do_shell_command('adb --version')
             self.adb_available = adb.index('Android Debug Bridge') >= 0
         except:
             self.adb_available = False
