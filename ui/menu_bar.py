@@ -47,7 +47,9 @@ class MenuBar(object):
         self.build_view_menu()
         self.build_about_menu()
 
-    def add_menu_action(self, menu, action, require_script=False, require_java=False):
+    def add_menu_action(self, menu, action,
+                        require_script=False,
+                        require_java=False):
         self.menu_actions.append({
             'action': action,
             'require_script': require_script,

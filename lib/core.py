@@ -37,6 +37,9 @@ class Dwarf(object):
         self.java_available = False
         self.loading_library = False
 
+        # frida device
+        self.device = None
+
         # process
         self.pid = 0
         self.process = None
@@ -59,13 +62,18 @@ class Dwarf(object):
 
         self.prefs = Prefs()
 
+    def device_picked(self, device):
+        self.device = device
+
     def attach(self, pid_or_package, script=None):
+        if self.device is None:
+            return
+
         if self.process is not None:
             self.detach()
 
-        device = frida.get_usb_device()
         try:
-            self.process = device.attach(pid_or_package)
+            self.process = self.device.attach(pid_or_package)
         except Exception as e:
             utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
             return
@@ -92,19 +100,20 @@ class Dwarf(object):
         self.app_window.on_script_loaded()
 
     def spawn(self, package, script=None):
+        if self.device is None:
+            return
+
         if self.process is not None:
             self.detach()
 
-        device = frida.get_usb_device()
-        self.app_window.get_adb().kill_package(package)
         try:
-            pid = device.spawn(package)
-            self.process = device.attach(pid)
+            pid = self.device.spawn(package)
+            self.process = self.device.attach(pid)
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
             return
         self.load_script(script)
-        device.resume(pid)
+        self.device.resume(pid)
 
     def on_message(self, message, data):
         if 'payload' not in message:

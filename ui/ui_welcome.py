@@ -81,7 +81,13 @@ class WelcomeUi(QSplitter):
         box_container.setLayout(left_box)
 
         right_box_container = QWidget()
-        right_box = QHBoxLayout()
+        right_box = QVBoxLayout()
+
+        self.devices_list = QComboBox(self)
+        self.devices_list.currentIndexChanged.connect(self.device_picked)
+        right_box.addWidget(self.devices_list)
+
+        cols = QHBoxLayout()
 
         spawns_container = QVBoxLayout()
         spawns_label = QLabel('SPAWN')
@@ -99,8 +105,9 @@ class WelcomeUi(QSplitter):
         procs_container.addWidget(self.proc_list)
         procs_container.addWidget(procs_label)
 
-        right_box.addLayout(spawns_container)
-        right_box.addLayout(procs_container)
+        cols.addLayout(spawns_container)
+        cols.addLayout(procs_container)
+        right_box.addLayout(cols)
 
         right_box_container.setLayout(right_box)
 
@@ -193,13 +200,25 @@ class WelcomeUi(QSplitter):
 
     def update_device_ui(self):
         devices = frida.enumerate_devices()
+        self.devices_list.clear()
+        should_clear = True
         for device in devices:
-            if device.type == 'usb':
-                self.update_spawn_list(device)
-                self.update_proc_list(device)
-                return
-        self.spawn_list.clear()
-        self.proc_list.clear()
+            self.devices_list.addItem('%s (%s)' % (device.name, device.type))
+            self.devices_list.setItemData(self.devices_list.count() - 1, device.id)
+            if device.type == 'usb' and should_clear:
+                # set the first usb device found
+                should_clear = False
+                self.devices_list.setCurrentIndex(self.devices_list.count() - 1)
+        if should_clear:
+            self.spawn_list.clear()
+            self.proc_list.clear()
+
+    def device_picked(self, index):
+        id = self.devices_list.itemData(index)
+        device = frida.get_device(id)
+        self.app.get_dwarf().device_picked(device)
+        self.update_spawn_list(device)
+        self.update_proc_list(device)
 
     def update_spawn_list(self, device):
         self.spawn_list.clear()
