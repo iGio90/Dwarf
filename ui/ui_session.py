@@ -215,7 +215,7 @@ class SessionUi(QTabWidget):
         if tab_id == SessionUi.TAB_DATA:
             self.addTab(self.data_panel, 'data')
             if request_focus:
-                self.setCurrentWidget(self.hooks_panel)
+                self.setCurrentWidget(self.data_panel)
             return self.hooks_panel
         elif tab_id == SessionUi.TAB_MODULES:
             self.addTab(self.modules_panel, 'modules')
