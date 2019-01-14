@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,6 +38,14 @@ class TableBaseWidget(QTableWidget):
     def _show_menu(self, pos):
         item = self.itemAt(pos)
         menu = QMenu()
+        if isinstance(item, MemoryAddressWidget):
+            sym = self.app.dwarf_api('getSymbolByAddress', item.get_address())
+            if sym is not None:
+                if sym['name'] == '' or sym['name'] is None:
+                    sym['name'] = sym['address']
+                sym_action = menu.addAction('%s (%s)' % (sym['name'], sym['moduleName']))
+                sym_action.setEnabled(False)
+                menu.addSeparator()
         self.set_menu_actions(item, menu)
 
         copy_address = None
@@ -82,4 +90,4 @@ class TableBaseWidget(QTableWidget):
         return True
 
     def set_menu_actions(self, item, menu):
-        return []
+        pass

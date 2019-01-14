@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -215,7 +215,11 @@ class WelcomeUi(QSplitter):
 
     def device_picked(self, index):
         id = self.devices_list.itemData(index)
-        device = frida.get_device(id)
+        try:
+            device = frida.get_device(id)
+        except:
+            self.update_device_ui()
+            return
         self.app.get_dwarf().device_picked(device)
         self.update_spawn_list(device)
         self.update_proc_list(device)

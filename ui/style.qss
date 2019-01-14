@@ -274,3 +274,10 @@ QToolTip {
     padding: 0;   /*remove padding, for fix combo box tooltip*/
     opacity: 230; /*#BA0000ucing transparency to read better*/
 }
+
+QTreeView:branch:selected,
+QTreeView:branch:selected:focus,
+QTreeView:branch:selected:hover,
+QTreeView:branch:hover {
+    background-color: #090909;
+}

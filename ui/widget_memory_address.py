@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@ Dwarf - Copyright (C) 2019 iGio90
 """
 from PyQt5.QtCore import Qt
 
+from lib import utils
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 
 
@@ -37,29 +38,10 @@ class MemoryAddressWidget(NotEditableTableWidgetItem):
             self.set_address(self.text())
 
     def set_address(self, address):
-        if isinstance(address, str):
-            if address.startswith('#'):
-                address = address[1:]
-            if address.startswith('0x'):
-                self.address = int(address, 16)
-            else:
-                try:
-                    self.address = int(address)
-                except:
-                    pass
-        else:
-            self.address = address
+        self.address = utils.parse_ptr(address)
 
     def set_base_address(self, address):
-        if isinstance(address, str):
-            if address.startswith('#'):
-                address = address[1:]
-            if address.startswith('0x'):
-                self.base_address = int(address, 16)
-            else:
-                self.base_address = int(address)
-        else:
-            self.base_address = address
+        self.base_address = utils.parse_ptr(address)
 
     def set_offset(self, offset):
         self.offset = offset

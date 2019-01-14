@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,3 +27,6 @@ class ContextItem(NotEditableTableWidgetItem):
 
     def get_context(self):
         return self.context
+
+    def get_tid(self):
+        return self.context['tid']

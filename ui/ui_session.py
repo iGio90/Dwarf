@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,11 +24,12 @@ from ui.panel_ranges import RangesPanel
 
 
 class SessionUi(QTabWidget):
-    TAB_MODULES = 0
-    TAB_RANGES = 1
-    TAB_DATA = 2
-    TAB_ASM = 3
-    TAB_JAVA_CLASSES = 4
+    TAB_MODULES = 'modules'
+    TAB_RANGES = 'ranges'
+    TAB_DATA = 'data'
+    TAB_ASM = 'asm'
+    TAB_JAVA_CLASSES = 'java'
+    TAB_TRACE = 'trace'
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -94,6 +95,7 @@ class SessionUi(QTabWidget):
         self.asm_panel = AsmPanel(self.app)
 
         self.java_class_panel = None
+        self.trace_panel = None
 
         self.addTab(self.session_panel, 'session')
         bt = self.tabBar().tabButton(0, QTabBar.LeftSide)
@@ -170,6 +172,7 @@ class SessionUi(QTabWidget):
 
         self.log_panel.clear()
         self.data_panel.clear()
+        self.contexts_panel.clear()
 
         self.asm_panel.range = None
 
@@ -186,11 +189,6 @@ class SessionUi(QTabWidget):
         self.modules_panel.resizeColumnsToContents()
         self.modules_panel.horizontalHeader().setStretchLastSection(True)
 
-        self.contexts_panel.setRowCount(0)
-        self.contexts_panel.setColumnCount(0)
-        self.contexts_panel.resizeColumnsToContents()
-        self.contexts_panel.horizontalHeader().setStretchLastSection(True)
-
         self.backtrace_panel.setRowCount(0)
         self.backtrace_panel.setColumnCount(0)
         self.backtrace_panel.resizeColumnsToContents()
@@ -204,8 +202,13 @@ class SessionUi(QTabWidget):
         self.memory_panel.on_script_destroyed()
 
         self.java_class_panel = None
+        self.trace_panel = None
 
     def close_tab(self, index):
+        try:
+            self.widget(index).on_tab_closed()
+        except:
+            pass
         self.removeTab(index)
 
     def add_dwarf_tab(self, tab_id, request_focus=False):
@@ -238,6 +241,15 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.java_class_panel)
             return self.java_class_panel
+        elif tab_id == SessionUi.TAB_TRACE:
+            if self.trace_panel is None:
+                from ui.panel_trace import TracePanel
+                self.trace_panel = TracePanel(self.app)
+            if self.trace_panel.parent() is None:
+                self.addTab(self.trace_panel, 'Trace')
+            if request_focus:
+                self.setCurrentWidget(self.trace_panel)
+            return self.trace_panel
 
     def add_tab(self, tab_widget, tab_label):
         self.addTab(tab_widget, tab_label)

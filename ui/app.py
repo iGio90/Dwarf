@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -147,8 +147,8 @@ class App(QWidget):
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()
 
-    def dwarf_api(self, api, args=None):
-        return self.get_dwarf().dwarf_api(api, args)
+    def dwarf_api(self, api, args=None, tid=0):
+        return self.get_dwarf().dwarf_api(api, args=args, tid=tid)
 
     def get_adb(self):
         return self.app_window.get_adb()
@@ -206,6 +206,9 @@ class App(QWidget):
 
     def get_session_ui(self):
         return self.session_ui
+
+    def get_trace_panel(self):
+        return self.session_ui.trace_panel
 
     def on_script_destroyed(self):
         self.session_ui.hide()

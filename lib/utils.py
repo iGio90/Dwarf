@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -58,3 +58,19 @@ def show_message_box(text, details=None):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
+
+
+def parse_ptr(ptr):
+    if isinstance(ptr, str):
+        if ptr.startswith('#'):
+            ptr = ptr[1:]
+        if ptr.startswith('0x'):
+            ptr = int(ptr, 16)
+        else:
+            try:
+                ptr = int(ptr)
+            except:
+                ptr = 0
+    if not isinstance(ptr, int):
+        ptr = 0
+    return ptr

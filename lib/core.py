@@ -1,5 +1,5 @@
 """
-Dwarf - Copyright (C) 2019 iGio90
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@ Dwarf - Copyright (C) 2019 iGio90
 """
 import json
 
-import frida
 from PyQt5.QtWidgets import QFileDialog
 from event_bus import EventBus
 from hexdump import hexdump
@@ -25,6 +24,7 @@ from lib import utils
 from lib.hook import Hook
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
+from ui.panel_trace import TraceEvent
 
 
 class Dwarf(object):
@@ -53,14 +53,15 @@ class Dwarf(object):
         self.native_pending_args = None
         self.java_pending_args = None
 
+        # core utils
+        self.prefs = Prefs()
+
         self.keystone_installed = False
         try:
             import keystone.keystone_const
             self.keystone_installed = True
         except:
             pass
-
-        self.prefs = Prefs()
 
     def device_picked(self, device):
         self.device = device
@@ -217,6 +218,19 @@ class Dwarf(object):
                 self.app.get_data_panel().append_data(key, hexdump(data, result='return'))
             else:
                 self.app.get_data_panel().append_data(key, str(parts[2]))
+        elif cmd == 'tracer':
+            panel = self.app.get_trace_panel()
+            if panel is not None:
+                # safely checked later
+                panel.start()
+
+                trace_events_parts = parts[1].split(',')
+                while len(trace_events_parts) > 0:
+                    t = TraceEvent(trace_events_parts.pop(0),
+                                   trace_events_parts.pop(0),
+                                   trace_events_parts.pop(0),
+                                   trace_events_parts.pop(0))
+                    panel.event_queue.append(t)
         elif cmd == 'update_modules':
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
         elif cmd == 'update_ranges':
@@ -285,7 +299,7 @@ class Dwarf(object):
         if input is None or not isinstance(input, str):
             ptr, input = InputDialog.input_pointer(self.app)
         else:
-            ptr = int(self.app.dwarf_api('evaluatePtr', input), 16)
+            ptr = utils.parse_ptr(self.app.dwarf_api('evaluatePtr', input))
         if ptr > 0:
             self.temporary_input = input
             self.native_pending_args = pending_args
