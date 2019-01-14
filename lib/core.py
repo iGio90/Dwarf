@@ -21,6 +21,7 @@ from event_bus import EventBus
 from hexdump import hexdump
 
 from lib import utils
+from lib.git import Git
 from lib.hook import Hook
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
@@ -55,6 +56,7 @@ class Dwarf(object):
 
         # core utils
         self.prefs = Prefs()
+        self.git = Git()
 
         self.keystone_installed = False
         try:
@@ -351,6 +353,9 @@ class Dwarf(object):
             return ret
         else:
             return self.dwarf_api('readBytes', [ptr, len])
+
+    def get_git(self):
+        return self.git
 
     def get_loading_library(self):
         return self.loading_library

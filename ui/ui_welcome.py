@@ -138,12 +138,8 @@ class WelcomeUi(QSplitter):
         self.update_frida_version()
 
     def update_commits(self):
-        r = None
-        try:
-            r = requests.get('https://api.github.com/repos/iGio90/dwarf/commits')
-        except:
-            pass
-        if r is None or r.status_code != 200:
+        data = self.app.get_dwarf().get_git().get_dwarf_commits()
+        if data is None:
             q = NotEditableListWidgetItem('Failed to fetch commit list. Try later.')
             q.setFlags(Qt.NoItemFlags)
             self.commit_list.addItem(q)
@@ -152,7 +148,7 @@ class WelcomeUi(QSplitter):
         most_recent_remote_commit = ''
         most_recent_local_commit = utils.do_shell_command('git log -1 master --pretty=format:%H')
         most_recent_date = ''
-        for commit in r.json():
+        for commit in data:
             if most_recent_remote_commit == '':
                 most_recent_remote_commit = commit['sha']
                 if most_recent_remote_commit != most_recent_local_commit:
@@ -257,21 +253,16 @@ class WelcomeUi(QSplitter):
             self.proc_list.addItem(q)
 
     def update_frida_version(self):
-        if self.updated_frida_version == '':
-            r = None
-            try:
-                r = requests.get('https://api.github.com/repos/frida/frida/releases')
-            except:
-                pass
-            if r is None or r.status_code != 200:
-                return
-
-            obj = r.json()[0]
-            self.updated_frida_version = obj['tag_name']
-            for asset in obj['assets']:
+        data = self.app.get_dwarf().get_git().get_frida_version()
+        if data is None:
+            self.updated_frida_version = ''
+            self.updated_frida_assets_url.clear()
+        else:
+            data = data[0]
+            self.updated_frida_version = data['tag_name']
+            for asset in data['assets']:
                 try:
                     name = asset['name']
-
                     tag_start = name.index('android-')
                     if name.index('server') >= 0:
                         tag = name[tag_start + 8:-3]
