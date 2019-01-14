@@ -17,7 +17,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QFileDialog
+    QFileDialog, QComboBox
+
+from ui.dialog_scripts import ScriptsDialog
 
 
 class JsEditorDialog(QDialog):
@@ -41,6 +43,9 @@ class JsEditorDialog(QDialog):
         save = QPushButton('save')
         save.clicked.connect(self.handler_save)
         top_buttons.addWidget(save)
+        dwarf = QPushButton('dwarf')
+        dwarf.clicked.connect(self.handler_dwarf_scripts)
+        top_buttons.addWidget(dwarf)
 
         inject = QPushButton('inject')
         inject.clicked.connect(self.handler_inject)
@@ -61,6 +66,11 @@ class JsEditorDialog(QDialog):
 
     def keyPressEvent(self, event):
         super(JsEditorDialog, self).keyPressEvent(event)
+
+    def handler_dwarf_scripts(self):
+        accept, script = ScriptsDialog.pick(self.app)
+        if accept and script is not None:
+            self.input_widget.setText(script)
 
     def handler_inject(self):
         self.accept()

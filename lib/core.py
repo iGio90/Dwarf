@@ -24,6 +24,7 @@ from lib import utils
 from lib.git import Git
 from lib.hook import Hook
 from lib.prefs import Prefs
+from lib.scripts_manager import ScriptsManager
 from ui.dialog_input import InputDialog
 from ui.panel_trace import TraceEvent
 
@@ -57,6 +58,7 @@ class Dwarf(object):
         # core utils
         self.prefs = Prefs()
         self.git = Git()
+        self.script_manager = ScriptsManager(self)
 
         self.keystone_installed = False
         try:
@@ -362,3 +364,6 @@ class Dwarf(object):
 
     def get_prefs(self):
         return self.prefs
+
+    def get_scripts_manager(self):
+        return self.script_manager
