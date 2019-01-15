@@ -272,7 +272,7 @@ class WelcomeUi(QSplitter):
 
         local_version = self.app.get_adb().get_frida_version()
         if local_version:
-            local_version = self.app.get_adb().get_frida_version().replace('\n', '')\
+            local_version = local_version.replace('\n', '')\
                 .replace('\n', '').replace('\t', '').replace(' ', '').replace('\r', '')
             try:
                 if local_version.index('frida') >= 0:

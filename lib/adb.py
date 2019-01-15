@@ -49,7 +49,12 @@ class Adb(object):
         if not self.adb_available:
             utils.show_message_box('adb not found')
             return None
-        return self._do_adb_command('adb shell frida --version')
+        r = self._do_adb_command('adb shell frida --version')
+        try:
+            if len(r) == 0 or r.index('frida: not found') >= 0:
+                return '0'
+        except:
+            return r
 
     def kill_package(self, package):
         if not self.adb_available:

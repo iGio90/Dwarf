@@ -77,7 +77,9 @@ class Git(object):
             Git.FRIDA_CACHE, 'https://api.github.com/repos/frida/frida/releases')
 
     def get_script(self, url):
-        return self._open_cache(hashlib.md5(url.encode('utf8')).hexdigest(), url, _json=False)
+        return self._open_cache(
+            Git.CACHE_PATH + '/' + hashlib.md5(url.encode('utf8')).hexdigest(), url, _json=False)
 
     def get_script_info(self, url):
-        return self._open_cache(hashlib.md5(url.encode('utf8')).hexdigest(), url)
+        return self._open_cache(
+            Git.CACHE_PATH + '/' + hashlib.md5(url.encode('utf8')).hexdigest(), url)
