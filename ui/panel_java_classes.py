@@ -75,5 +75,6 @@ class JavaClassesPanel(TableBaseWidget):
     def find_modules(self, text):
         self.setRowCount(0)
         for item in self.current_classes:
-            if text in item:
+            if text.lower() in item.lower():
                 self.on_enumeration_match(item, append_to_list=False)
+        self.on_enumeration_complete()
