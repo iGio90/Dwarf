@@ -16,6 +16,7 @@ from PyQt5.QtCore import Qt
 from ui.panel_java_methods import JavaMethodsPanel
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_table_base import TableBaseWidget
+from ui.dialog_input import InputDialog
 
 
 class JavaClassesPanel(TableBaseWidget):
@@ -23,6 +24,7 @@ class JavaClassesPanel(TableBaseWidget):
         super().__init__(app, 0, 1)
         self.horizontalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
+        self.current_classes = set()
 
     def set_menu_actions(self, item, menu):
         action_refresh = menu.addAction("Refresh")
@@ -33,13 +35,20 @@ class JavaClassesPanel(TableBaseWidget):
             action_hook = menu.addAction('Hook')
             action_hook.setData('hook')
 
+            find_module = menu.addAction('Find')
+            find_module.setData('find')
+
     def on_menu_action(self, action_data, item):
         if action_data == 'refresh':
+            self.current_classes.clear()
             self.app.app_window.get_menu().handler_enumerate_java_classes(should_update_java_classes=True)
             return False
         elif action_data == 'hook':
             self.app.get_dwarf().hook_java(item.text())
-
+        elif action_data == 'find':
+            accept, input = InputDialog().input(self.app.app_window, 'find module')
+            if accept:
+                self.find_modules(input)
         return True
 
     def item_double_clicked(self, item):
@@ -51,12 +60,20 @@ class JavaClassesPanel(TableBaseWidget):
     def on_enumeration_start(self):
         self.setRowCount(0)
 
-    def on_enumeration_match(self, java_class):
+    def on_enumeration_match(self, java_class, append_to_list=True):
         row = self.rowCount()
         self.insertRow(row)
         q = NotEditableTableWidgetItem(java_class)
         q.setFlags(Qt.ItemIsEnabled)
         self.setItem(row, 0, q)
+        if append_to_list:
+            self.current_classes.add(java_class)
 
     def on_enumeration_complete(self):
         self.sortByColumn(0, 0)
+
+    def find_modules(self, text):
+        self.setRowCount(0)
+        for item in self.current_classes:
+            if text in item:
+                self.on_enumeration_match(item, append_to_list=False)
