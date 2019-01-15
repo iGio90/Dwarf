@@ -16,8 +16,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import pyperclip
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAbstractItemView
+from PyQt5.QtWidgets import QTableWidget, QMenu, QAbstractItemView, QAction
 
+from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
 
 
@@ -35,9 +36,12 @@ class TableBaseWidget(QTableWidget):
         self.customContextMenuRequested.connect(self._show_menu)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
 
+        self.current_search = ''
+
     def _show_menu(self, pos):
         item = self.itemAt(pos)
         menu = QMenu()
+        search = None
         if isinstance(item, MemoryAddressWidget):
             sym = self.app.dwarf_api('getSymbolByAddress', item.get_address())
             if sym is not None:
@@ -46,6 +50,11 @@ class TableBaseWidget(QTableWidget):
                 sym_action = menu.addAction('%s (%s)' % (sym['name'], sym['moduleName']))
                 sym_action.setEnabled(False)
                 menu.addSeparator()
+        else:
+            if self.is_search_enabled():
+                search = menu.addAction('Search')
+                menu.addSeparator()
+
         self.set_menu_actions(item, menu)
 
         copy_address = None
@@ -59,6 +68,23 @@ class TableBaseWidget(QTableWidget):
 
         action = menu.exec_(self.mapToGlobal(pos))
         if action:
+            if search is not None and action == search:
+                accept, input = InputDialog.input(self.app, hint='Search',
+                                                  input_content=self.current_search,
+                                                  placeholder='Search something...')
+                if accept:
+                    self.current_search = input
+                    for i in range(0, self.rowCount()):
+                        match = False
+                        for c in range(0, self.columnCount()):
+                            item = self.item(i, c)
+                            try:
+                                if str(item.text()).index(self.current_search) >= 0:
+                                    match = True
+                                    break
+                            except:
+                                pass
+                        self.setRowHidden(i, not match)
             if not self.on_menu_action(action.data(), item):
                return
             if isinstance(item, MemoryAddressWidget):
@@ -82,6 +108,9 @@ class TableBaseWidget(QTableWidget):
             self.app.get_memory_panel().read_memory(ptr=item.get_address(),
                                                     length=item.get_size(),
                                                     base=item.get_base_address())
+
+    def is_search_enabled(self):
+        return True
 
     def item_double_clicked(self, item):
         return True

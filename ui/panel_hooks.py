@@ -184,3 +184,6 @@ class HooksPanel(TableBaseWidget):
             elif event.key() == Qt.Key_J:
                 self.app.get_dwarf().hook_java()
         super(HooksPanel, self).keyPressEvent(event)
+
+    def is_search_enabled(self):
+        return False
