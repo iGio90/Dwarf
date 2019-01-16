@@ -67,6 +67,26 @@ class Dwarf(object):
         except:
             pass
 
+    def _reinitialize(self):
+        self.java_available = False
+        self.loading_library = False
+
+        # frida device
+        self.device = None
+
+        # process
+        self.pid = 0
+        self.process = None
+        self.script = None
+
+        # hooks
+        self.hooks = {}
+        self.on_loads = {}
+        self.java_hooks = {}
+        self.temporary_input = ''
+        self.native_pending_args = None
+        self.java_pending_args = None
+
     def device_picked(self, device):
         self.device = device
 
@@ -173,6 +193,14 @@ class Dwarf(object):
                 self.native_pending_args = None
             self.hooks[h.get_ptr()] = h
             self.app.get_hooks_panel().hook_native_callback(h)
+        elif cmd == 'hook_onload_callback':
+            h = Hook(Hook.HOOK_ONLOAD)
+            h.set_ptr(0)
+            h.set_input(parts[1])
+
+            self.on_loads[parts[1]] = h
+            if self.app.session_ui is not None and self.app.get_hooks_panel() is not None:
+                self.app.get_hooks_panel().hook_onload_callback(h)
         elif cmd == 'memory_scan_match':
             Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
         elif cmd == 'memory_scan_complete':
@@ -196,9 +224,9 @@ class Dwarf(object):
                 else:
                     name = data['ptr']
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
-                if self.loading_library is None:
-                    self.app.get_log_panel().log('hook %s %s @thread := %d' % (
-                        name, sym, data['tid']))
+                # check if data['reason'] is 0 (REASON_HOOK)
+                if self.loading_library is None and data['reason'] == 0:
+                    self.log('hook %s %s @thread := %d' % (name, sym, data['tid']))
                 if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
                     return
                 self.app.get_session_ui().request_session_ui_focus()
@@ -239,16 +267,31 @@ class Dwarf(object):
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
         elif cmd == 'update_ranges':
             self.app.apply_context({'tid': parts[1], 'ranges': json.loads(parts[2])})
+        elif cmd == 'watcher':
+            exception = json.loads(parts[1])
+            self.log('watcher hit op %s address %s @thread := %s' %
+                     (exception['memory']['operation'], exception['memory']['address'], parts[2]))
+        elif cmd == 'watcher_added':
+            if self.app.get_watchers_panel() is not None:
+                self.app.get_watchers_panel().add_watcher_callback(parts[1])
+        elif cmd == 'watcher_removed':
+            if self.app.get_watchers_panel() is not None:
+                self.app.get_watchers_panel().remove_watcher_callback(parts[1])
         else:
             print(what)
 
     def on_destroyed(self):
+        self._reinitialize()
+
         self.app.get_log_panel().log('detached from %d. script destroyed' % self.pid)
         self.app_window.on_script_destroyed()
 
-        self.pid = 0
-        self.process = None
-        self.script = None
+    def add_watcher(self, ptr=None):
+        if ptr is None:
+            ptr, input = InputDialog.input_pointer(self.app)
+            if ptr == 0:
+                return
+        return self.dwarf_api('addWatcher', ptr)
 
     def dump_memory(self, file_path=None, ptr=0, length=0):
         if ptr == 0:
@@ -324,13 +367,10 @@ class Dwarf(object):
             return
 
         self.dwarf_api('hookOnLoad', input)
-        h = Hook(Hook.HOOK_ONLOAD)
-        h.set_ptr(0)
-        h.set_input(input)
 
-        self.on_loads[input] = h
-        if self.app.session_ui is not None and self.app.get_hooks_panel() is not None:
-            self.app.get_hooks_panel().hook_onload_callback(h)
+    def log(self, what):
+        if self.app.get_log_panel() is not None:
+            self.app.get_log_panel().log(what)
 
     def read_memory(self, ptr, len):
         if len > 1024 * 1024:
@@ -355,6 +395,9 @@ class Dwarf(object):
             return ret
         else:
             return self.dwarf_api('readBytes', [ptr, len])
+
+    def remove_watcher(self, ptr):
+        return self.dwarf_api('removeWatcher', ptr)
 
     def get_git(self):
         return self.git

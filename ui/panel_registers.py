@@ -49,6 +49,8 @@ class RegistersPanel(TableBaseWidget):
     def on_menu_action(self, action_data, item):
         if action_data == 'expand':
             self.app.get_java_explorer_panel().set_handle_arg(item.row())
+            return False
+        return True
 
     def set_context(self, ptr, is_java, context):
         self.context_ptr = ptr

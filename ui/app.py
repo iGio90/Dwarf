@@ -210,6 +210,9 @@ class App(QWidget):
     def get_trace_panel(self):
         return self.session_ui.trace_panel
 
+    def get_watchers_panel(self):
+        return self.session_ui.watchers_panel
+
     def on_script_destroyed(self):
         self.session_ui.hide()
         self.session_ui.on_script_destroyed()

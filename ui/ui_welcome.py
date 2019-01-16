@@ -214,7 +214,6 @@ class WelcomeUi(QSplitter):
         try:
             device = frida.get_device(id)
         except:
-            self.update_device_ui()
             return
         self.app.get_dwarf().device_picked(device)
         self.update_spawn_list(device)

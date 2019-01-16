@@ -152,8 +152,14 @@ class MenuBar(object):
         data = QAction("&Data", self.app_window)
         data.triggered.connect(self.handler_view_data)
 
+        hooks = QAction("&Hooks", self.app_window)
+        hooks.triggered.connect(self.handler_view_hooks)
+        watchers = QAction("&Watchers", self.app_window)
+        watchers.triggered.connect(self.handler_view_watchers)
         backtrace = QAction("&Backtrace", self.app_window)
         backtrace.triggered.connect(self.handler_view_backtrace)
+        context = QAction("&Context", self.app_window)
+        context.triggered.connect(self.handler_view_context)
 
         view_menu = self.menu.addMenu('&View')
         self.add_menu_action(view_menu, data, True)
@@ -169,6 +175,14 @@ class MenuBar(object):
         about_menu = self.menu.addMenu('&About')
         self.add_menu_action(about_menu, slack, False)
         self.add_menu_action(about_menu, author, False)
+
+    def _set_panel_visibility(self, panel, pref):
+        if panel is None:
+            return
+
+        visible = panel.isVisible()
+        self.app_window.get_dwarf().get_prefs().put(pref, not visible)
+        panel.setVisible(not visible)
 
     def handler_author(self):
         webbrowser.open_new_tab('http://www.giovanni-rocca.com')
@@ -275,15 +289,22 @@ class MenuBar(object):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, request_focus=True)
 
     def handler_view_backtrace(self):
-        visible = self.app_window.get_app_instance().get_backtrace_panel().isVisible()
-        self.app_window.get_dwarf().get_prefs().put(prefs.VIEW_BACKTRACE, not visible)
-        self.app_window.get_app_instance().get_backtrace_panel().setVisible(not visible)
+        self._set_panel_visibility(self.app_window.get_app_instance().get_backtrace_panel(), prefs.VIEW_BACKTRACE)
+
+    def handler_view_context(self):
+        self._set_panel_visibility(self.app_window.get_app_instance().get_contexts_panel(), prefs.VIEW_CONTEXT)
+
+    def handler_view_hooks(self):
+        self._set_panel_visibility(self.app_window.get_app_instance().get_hooks_panel(), prefs.VIEW_HOOKS)
 
     def handler_view_modules(self):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_MODULES, request_focus=True)
 
     def handler_view_ranges(self):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_RANGES, request_focus=True)
+
+    def handler_view_watchers(self):
+        self._set_panel_visibility(self.app_window.get_app_instance().get_watchers_panel(), prefs.VIEW_WATCHERS)
 
     #
     #

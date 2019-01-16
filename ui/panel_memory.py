@@ -272,7 +272,7 @@ class MemoryPanel(QTableWidget):
         if item.column() == 0:
             item = self.item(item.row(), 1)
         if isinstance(item, ByteWidget):
-            self.app.get_hooks_panel().hook_native(hex(item.get_ptr()))
+            self.app.get_dwarf().hook_native(hex(item.get_ptr()))
 
     def trigger_jump_to(self):
         ptr, input = InputDialog.input_pointer(self.app)

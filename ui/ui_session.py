@@ -73,20 +73,23 @@ class SessionUi(QTabWidget):
 
         self.modules_panel = None
         self.ranges_panel = None
+        self.hooks_panel = None
+        self.watchers_panel = None
         self.registers_panel = None
         self.memory_panel = None
         self.java_explorer_panel = None
         self.log_panel = None
         self.backtrace_panel = None
-        self.hooks_panel = None
         self.contexts_panel = None
 
         self.session_panel.addWidget(self.build_left_column())
         self.session_panel.addWidget(self.build_central_content())
+        self.session_panel.addWidget(self.build_right_column())
 
         self.session_panel.setHandleWidth(1)
         self.session_panel.setStretchFactor(0, 2)
         self.session_panel.setStretchFactor(1, 6)
+        self.session_panel.setStretchFactor(2, 2)
         self.session_panel.setContentsMargins(0, 0, 0, 0)
 
         self.modules_panel = ModulesPanel(self.app)
@@ -118,13 +121,9 @@ class SessionUi(QTabWidget):
         self.hooks_panel = HooksPanel(self.app)
         splitter.addWidget(self.hooks_panel)
 
-        from ui.panel_contexts import ContextsPanel
-        self.contexts_panel = ContextsPanel(self.app)
-        splitter.addWidget(self.contexts_panel)
-
-        from ui.panel_backtrace import BacktracePanel
-        self.backtrace_panel = BacktracePanel(self.app)
-        splitter.addWidget(self.backtrace_panel)
+        from ui.panel_watchers import WatchersPanel
+        self.watchers_panel = WatchersPanel(self.app)
+        splitter.addWidget(self.watchers_panel)
 
         return splitter
 
@@ -162,6 +161,22 @@ class SessionUi(QTabWidget):
         main_panel.setStretchFactor(2, 1)
         return main_panel
 
+    def build_right_column(self):
+        splitter = QSplitter()
+        splitter.setHandleWidth(1)
+        splitter.setOrientation(Qt.Vertical)
+        splitter.setContentsMargins(0, 0, 0, 0)
+
+        from ui.panel_contexts import ContextsPanel
+        self.contexts_panel = ContextsPanel(self.app)
+        splitter.addWidget(self.contexts_panel)
+
+        from ui.panel_backtrace import BacktracePanel
+        self.backtrace_panel = BacktracePanel(self.app)
+        splitter.addWidget(self.backtrace_panel)
+
+        return splitter
+
     def on_script_loaded(self):
         self.add_main_tabs()
 
@@ -170,34 +185,25 @@ class SessionUi(QTabWidget):
             if i > 0:
                 self.removeTab(i)
 
-        self.log_panel.clear()
-        self.data_panel.clear()
         self.contexts_panel.clear()
+        self.data_panel.clear()
+        self.log_panel.clear()
+        self.watchers_panel.clear()
 
         self.asm_panel.range = None
 
         self.hooks_panel.setRowCount(0)
         self.hooks_panel.setColumnCount(0)
-        self.hooks_panel.resizeColumnsToContents()
-        self.hooks_panel.horizontalHeader().setStretchLastSection(True)
 
         self.ranges_panel.setRowCount(0)
-        self.ranges_panel.resizeColumnsToContents()
-        self.ranges_panel.horizontalHeader().setStretchLastSection(True)
 
         self.modules_panel.setRowCount(0)
-        self.modules_panel.resizeColumnsToContents()
-        self.modules_panel.horizontalHeader().setStretchLastSection(True)
 
         self.backtrace_panel.setRowCount(0)
         self.backtrace_panel.setColumnCount(0)
-        self.backtrace_panel.resizeColumnsToContents()
-        self.backtrace_panel.horizontalHeader().setStretchLastSection(True)
 
         self.registers_panel.setRowCount(0)
         self.registers_panel.setColumnCount(0)
-        self.registers_panel.resizeColumnsToContents()
-        self.registers_panel.horizontalHeader().setStretchLastSection(True)
 
         self.memory_panel.on_script_destroyed()
 

@@ -19,6 +19,9 @@ import os
 
 
 VIEW_BACKTRACE = 'view_backtrace'
+VIEW_CONTEXT = 'view_context'
+VIEW_HOOKS = 'view_hooks'
+VIEW_WATCHERS = 'view_watchers'
 
 
 class Prefs(object):

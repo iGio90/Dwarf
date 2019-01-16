@@ -18,6 +18,7 @@ import pyperclip
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAbstractItemView, QAction
 
+from lib import utils
 from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
 
@@ -61,6 +62,11 @@ class TableBaseWidget(QTableWidget):
         if isinstance(item, MemoryAddressWidget):
             if len(menu.actions()) > 0:
                 menu.addSeparator()
+
+            if self.app.dwarf_api('isAddressWatched', item.get_address()):
+                watcher = menu.addAction('Remove memory watcher')
+            else:
+                watcher = menu.addAction('Add memory watcher')
             jump_to_address = menu.addAction('Jump to pointer')
             dump = menu.addAction('Dump binary')
             menu.addSeparator()
@@ -73,13 +79,13 @@ class TableBaseWidget(QTableWidget):
                                                   input_content=self.current_search,
                                                   placeholder='Search something...')
                 if accept:
-                    self.current_search = input
+                    self.current_search = input.lower()
                     for i in range(0, self.rowCount()):
                         match = False
                         for c in range(0, self.columnCount()):
                             item = self.item(i, c)
                             try:
-                                if str(item.text()).index(self.current_search) >= 0:
+                                if str(item.text().lower()).index(self.current_search) >= 0:
                                     match = True
                                     break
                             except:
@@ -90,6 +96,11 @@ class TableBaseWidget(QTableWidget):
             if isinstance(item, MemoryAddressWidget):
                 if action == copy_address:
                     pyperclip.copy(hex(item.get_address()))
+                elif action == watcher:
+                    if self.app.dwarf_api('isAddressWatched', item.get_address()):
+                        self.app.get_dwarf().remove_watcher(item.get_address())
+                    else:
+                        self.app.get_dwarf().add_watcher(item.get_address())
                 elif action == jump_to_address:
                     self.app.get_memory_panel().read_memory(ptr=item.get_address(),
                                                             length=item.get_size(),
