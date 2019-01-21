@@ -41,13 +41,11 @@ class Adb(object):
 
     def get_device_arch(self):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         return self._do_adb_command('adb shell getprop ro.product.cpu.abi')
 
     def get_frida_version(self):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         r = self._do_adb_command('adb shell frida --version')
         try:
@@ -58,13 +56,11 @@ class Adb(object):
 
     def kill_package(self, package):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         return self._do_adb_command("adb shell am force-stop " + package)
 
     def list_packages(self):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         packages = self._do_adb_command('adb shell pm list packages -f')
         if packages:
@@ -85,24 +81,20 @@ class Adb(object):
 
     def mount_system(self):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
-        self._do_adb_command('adb shell su -c "mount -o rw,remount /system"')
+        self.su("mount -o rw,remount /system")
 
     def pull(self, path, dest):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         self._do_adb_command('adb pull %s %s' % (path, dest))
 
     def push(self, path, dest):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         return self._do_adb_command('adb push %s %s' % (path, dest))
 
     def su(self, cmd, stdout=subprocess.PIPE):
         if not self.adb_available:
-            utils.show_message_box('adb not found')
             return None
         return self._do_adb_command('adb shell su -c "' + cmd + '"', stdout=stdout)

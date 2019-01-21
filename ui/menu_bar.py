@@ -41,6 +41,7 @@ class MenuBar(object):
 
         self.build_device_menu()
         self.build_process_menu()
+        self.build_kernel_menu()
         self.build_hooks_menu()
         self.build_find_menu()
         self.build_session_menu()
@@ -49,11 +50,13 @@ class MenuBar(object):
 
     def add_menu_action(self, menu, action,
                         require_script=False,
-                        require_java=False):
+                        require_java=False,
+                        require_kernel=False):
         self.menu_actions.append({
             'action': action,
             'require_script': require_script,
-            'require_java': require_java
+            'require_java': require_java,
+            'require_kernel': require_kernel
         })
         if self.app_window.get_dwarf().script is None:
             action.setEnabled(not require_script)
@@ -103,6 +106,13 @@ class MenuBar(object):
         self.add_menu_action(process_menu, resume, True)
         self.add_menu_action(process_menu, restart, True)
         self.add_menu_action(process_menu, detach, True)
+
+    def build_kernel_menu(self):
+        action_lookup_symbol = QAction("&Lookup Symbol", self.app_window)
+        action_lookup_symbol.triggered.connect(self.handler_kernel_lookup_symbol)
+
+        find_menu = self.menu.addMenu('&Kernel')
+        self.add_menu_action(find_menu, action_lookup_symbol, require_script=True, require_kernel=True)
 
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
@@ -167,14 +177,14 @@ class MenuBar(object):
         self.add_menu_action(view_menu, backtrace, True)
 
     def build_about_menu(self):
+        wiki = QAction('&Wiki', self.app_window)
+        wiki.triggered.connect(self.handler_wiki)
         slack = QAction('&Slack', self.app_window)
         slack.triggered.connect(self.handler_slack)
-        author = QAction('&Author', self.app_window)
-        author.triggered.connect(self.handler_author)
 
         about_menu = self.menu.addMenu('&About')
+        self.add_menu_action(about_menu, wiki, False)
         self.add_menu_action(about_menu, slack, False)
-        self.add_menu_action(about_menu, author, False)
 
     def _set_panel_visibility(self, panel, pref):
         if panel is None:
@@ -184,8 +194,8 @@ class MenuBar(object):
         self.app_window.get_dwarf().get_prefs().put(pref, not visible)
         panel.setVisible(not visible)
 
-    def handler_author(self):
-        webbrowser.open_new_tab('http://www.giovanni-rocca.com')
+    def handler_wiki(self):
+        webbrowser.open_new_tab('https://github.com/iGio90/Dwarf/wiki')
 
     def handler_find_bytes(self):
         accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
@@ -210,8 +220,14 @@ class MenuBar(object):
 
     def handler_find_symbol(self):
         accept, input = InputDialog().input(self.app_window, 'find symbol by pattern', placeholder='*_open*')
-        if accept:
+        if accept and len(input) > 0:
             SearchPanel.debug_symbol_search_panel(self.app_window.get_app_instance(), input)
+
+    def handler_kernel_lookup_symbol(self):
+        accept, input = InputDialog().input(self.app_window, 'lookup kernel symbol by exact name',
+                                            placeholder='SyS_open')
+        if accept and len(input) > 0:
+            self.app_window.get_dwarf().get_kernel().lookup_symbol(input)
 
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
@@ -335,8 +351,13 @@ class MenuBar(object):
             action['action'].setEnabled(not action['require_script'])
 
     def on_script_loaded(self):
+        kernel_available = self.app_window.get_dwarf().get_kernel().is_available()
+
         for action in self.menu_actions:
             if action['require_java'] and not self.app_window.get_dwarf().java_available:
+                action['action'].setEnabled(False)
+                continue
+            if action['require_kernel'] and not kernel_available:
                 action['action'].setEnabled(False)
                 continue
             action['action'].setEnabled(True)

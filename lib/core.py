@@ -16,6 +16,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import json
 
+import frida
 from PyQt5.QtWidgets import QFileDialog
 from event_bus import EventBus
 from hexdump import hexdump
@@ -23,6 +24,7 @@ from hexdump import hexdump
 from lib import utils
 from lib.git import Git
 from lib.hook import Hook
+from lib.kernel import Kernel
 from lib.prefs import Prefs
 from lib.scripts_manager import ScriptsManager
 from ui.dialog_input import InputDialog
@@ -46,6 +48,9 @@ class Dwarf(object):
         self.pid = 0
         self.process = None
         self.script = None
+
+        # kernel
+        self.kernel = Kernel(self)
 
         # hooks
         self.hooks = {}
@@ -126,7 +131,11 @@ class Dwarf(object):
 
     def spawn(self, package, script=None):
         if self.device is None:
-            return
+            # fallback to usb device
+            # can come from -p in args
+            self.device = frida.get_usb_device()
+            if self.device is None:
+                return
 
         if self.process is not None:
             self.detach()
@@ -401,6 +410,9 @@ class Dwarf(object):
 
     def get_git(self):
         return self.git
+
+    def get_kernel(self):
+        return self.kernel
 
     def get_loading_library(self):
         return self.loading_library
