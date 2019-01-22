@@ -177,6 +177,9 @@ class App(QWidget):
     def get_dwarf(self):
         return self.app_window.get_dwarf()
 
+    def get_ftrace_panel(self):
+        return self.session_ui.ftrace_panel
+
     def get_hooks_panel(self):
         return self.session_ui.hooks_panel
 

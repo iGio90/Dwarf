@@ -179,6 +179,9 @@ class Dwarf(object):
                 self.app.get_java_classes_panel().on_enumeration_complete()
         elif cmd == 'enumerate_java_methods_complete':
             Dwarf.bus.emit(parts[1], json.loads(parts[2]))
+        elif cmd == 'ftrace':
+            if self.app.get_ftrace_panel() is not None:
+                self.app.get_ftrace_panel().append_data(parts[1])
         elif cmd == 'log':
             self.app.get_log_panel().log(parts[1])
         elif cmd == 'hook_java_callback':

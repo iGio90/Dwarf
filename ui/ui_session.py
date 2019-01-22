@@ -30,6 +30,7 @@ class SessionUi(QTabWidget):
     TAB_ASM = 'asm'
     TAB_JAVA_CLASSES = 'java'
     TAB_TRACE = 'trace'
+    TAB_FTRACE = 'ftrace'
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -99,6 +100,7 @@ class SessionUi(QTabWidget):
 
         self.java_class_panel = None
         self.trace_panel = None
+        self.ftrace_panel = None
 
         self.addTab(self.session_panel, 'session')
         bt = self.tabBar().tabButton(0, QTabBar.LeftSide)
@@ -209,6 +211,7 @@ class SessionUi(QTabWidget):
 
         self.java_class_panel = None
         self.trace_panel = None
+        self.ftrace_panel = None
 
     def close_tab(self, index):
         try:
@@ -255,6 +258,15 @@ class SessionUi(QTabWidget):
                 self.addTab(self.trace_panel, 'Trace')
             if request_focus:
                 self.setCurrentWidget(self.trace_panel)
+            return self.trace_panel
+        elif tab_id == SessionUi.TAB_FTRACE:
+            if self.ftrace_panel is None:
+                from ui.panel_ftrace import FTracePanel
+                self.ftrace_panel = FTracePanel(self.app)
+            if self.ftrace_panel.parent() is None:
+                self.addTab(self.ftrace_panel, 'ftrace')
+            if request_focus:
+                self.setCurrentWidget(self.ftrace_panel)
             return self.trace_panel
 
     def add_tab(self, tab_widget, tab_label):

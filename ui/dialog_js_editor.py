@@ -14,10 +14,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import os
-
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QFileDialog, QComboBox
+    QFileDialog
 
 from ui.dialog_scripts import ScriptsDialog
 

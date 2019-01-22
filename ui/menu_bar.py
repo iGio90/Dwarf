@@ -111,8 +111,13 @@ class MenuBar(object):
         action_lookup_symbol = QAction("&Lookup Symbol", self.app_window)
         action_lookup_symbol.triggered.connect(self.handler_kernel_lookup_symbol)
 
+        action_ftrace = QAction("&ftrace", self.app_window)
+        action_ftrace.triggered.connect(self.handler_kernel_ftrace)
+
         find_menu = self.menu.addMenu('&Kernel')
         self.add_menu_action(find_menu, action_lookup_symbol, require_script=True, require_kernel=True)
+        find_menu.addSeparator()
+        self.add_menu_action(find_menu, action_ftrace, require_script=True, require_kernel=True)
 
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
@@ -228,6 +233,9 @@ class MenuBar(object):
                                             placeholder='SyS_open')
         if accept and len(input) > 0:
             self.app_window.get_dwarf().get_kernel().lookup_symbol(input)
+
+    def handler_kernel_ftrace(self):
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_FTRACE, request_focus=True)
 
     def handler_restart(self):
         self.app_window.get_app_instance().restart()
