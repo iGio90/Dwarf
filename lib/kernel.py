@@ -82,7 +82,10 @@ class Kernel(object):
         self.ftrace = FTrace(dwarf)
 
     def is_available(self):
-        return self.dwarf.dwarf_api('evaluate', ['kernel.available()', True]).startswith('a')
+        ret = self.dwarf.dwarf_api('evaluate', ['kernel.available()', True])
+        if ret is not None:
+            return self.dwarf.dwarf_api('evaluate', ['kernel.available()', True]).startswith('a')
+        return False
 
     def lookup_symbol(self, symbol):
         return self.dwarf.dwarf_api('evaluate', ['kernel.lookupSymbol(\'%s\')' % symbol, True])
