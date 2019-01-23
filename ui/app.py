@@ -234,4 +234,5 @@ class App(QWidget):
 
     def set_arch(self, arch):
         self.arch = arch
-        self.get_session_ui().asm_panel.on_arch_changed()
+        if self.get_asm_panel() is not None:
+            self.get_asm_panel().on_arch_changed()

@@ -188,6 +188,9 @@ class AsmPanel(QTableWidget):
         self.resizeColumnsToContents()
         self.scrollToTop()
 
+    def clear(self):
+        self.range = None
+
     def swap_arm_mode(self):
         if self.app.get_arch() == 'arm':
             if self.cs_mode == CS_MODE_ARM:
