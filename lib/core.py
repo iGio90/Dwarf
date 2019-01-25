@@ -61,6 +61,9 @@ class Dwarf(object):
         self.native_pending_args = None
         self.java_pending_args = None
 
+        # tracers
+        self.native_traced_tid = 0
+
         # core utils
         self.prefs = Prefs()
         self.git = Git()
@@ -92,6 +95,9 @@ class Dwarf(object):
         self.temporary_input = ''
         self.native_pending_args = None
         self.java_pending_args = None
+
+        # tracers
+        self.native_traced_tid = 0
 
     def device_picked(self, device):
         self.device = device
@@ -387,6 +393,34 @@ class Dwarf(object):
         if self.app.get_log_panel() is not None:
             self.app.get_log_panel().log(what)
 
+    def native_tracer_start(self, tid=0):
+        if self.native_traced_tid > 0:
+            return
+        if tid == 0:
+            accept, tid = InputDialog.input(self.app, hint='insert thread id to trace', placeholder='10432')
+            if not accept:
+                return
+            try:
+                if tid.startswith('0x'):
+                    tid = int(tid, 16)
+                else:
+                    tid = int(tid)
+            except:
+                return
+        self.native_traced_tid = tid
+        self.app.dwarf_api('startNativeTracer', [tid, True])
+        if self.app.get_trace_panel() is None:
+            self.app.get_session_ui().add_dwarf_tab('trace', request_focus=True)
+        self.app_window.get_menu().on_native_tracer_change(True)
+
+    def native_tracer_stop(self):
+        if self.native_traced_tid == 0:
+            return
+        self.dwarf_api('stopNativeTracer')
+        if self.app.get_trace_panel() is not None:
+            self.app.get_trace_panel().stop()
+        self.app_window.get_menu().on_native_tracer_change(False)
+
     def read_memory(self, ptr, len):
         if len > 1024 * 1024:
             position = 0
@@ -422,6 +456,9 @@ class Dwarf(object):
 
     def get_loading_library(self):
         return self.loading_library
+
+    def get_native_traced_tid(self):
+        return self.native_traced_tid
 
     def get_prefs(self):
         return self.prefs

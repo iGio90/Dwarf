@@ -26,13 +26,11 @@ class ContextsPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 0)
 
-        self.traced_tid = 0
-
     def set_menu_actions(self, item, menu):
         if item is not None:
             ctx = self.item(item.row(), 0)
             if isinstance(ctx, ContextItem):
-                if self.traced_tid > 0:
+                if self.app.get_dwarf().get_native_traced_tid() > 0:
                     trace = menu.addAction("Stop trace")
                 else:
                     trace = menu.addAction("Trace")
@@ -45,14 +43,11 @@ class ContextsPanel(TableBaseWidget):
         ctx = self.item(item.row(), 0)
         if isinstance(ctx, ContextItem):
             if action_data == 'trace':
-                if self.traced_tid > 0:
-                    self.app.dwarf_api('stopTracer')
-                    self.app.get_trace_panel().stop()
+                if self.app.get_dwarf().get_native_traced_tid() > 0:
+                    self.app.get_dwarf().native_tracer_stop()
                 else:
-                    self.traced_tid = ctx.get_tid()
-                    self.app.dwarf_api('startTracer', tid=self.traced_tid)
-
-                    self.app.get_session_ui().add_dwarf_tab('trace', request_focus=False)
+                    tid = ctx.get_tid()
+                    self.app.get_dwarf().native_tracer_start(tid)
             elif action_data == 'resume':
                 self.app.resume(ctx.get_tid())
                 return False
@@ -107,4 +102,3 @@ class ContextsPanel(TableBaseWidget):
         self.setColumnCount(0)
         self.resizeColumnsToContents()
         self.horizontalHeader().setStretchLastSection(True)
-        self.traced_tid = 0

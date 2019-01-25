@@ -38,11 +38,14 @@ class MenuBar(object):
         self.menu_actions = []
         self.action_enumerate_java_classes = None
         self.action_find_bytes = None
+        self.action_native_trace_start = None
+        self.action_native_trace_stop = None
 
         self.build_device_menu()
         self.build_process_menu()
         self.build_kernel_menu()
         self.build_hooks_menu()
+        self.build_trace_menu()
         self.build_find_menu()
         self.build_session_menu()
         self.build_view_menu()
@@ -114,10 +117,10 @@ class MenuBar(object):
         action_ftrace = QAction("&ftrace", self.app_window)
         action_ftrace.triggered.connect(self.handler_kernel_ftrace)
 
-        find_menu = self.menu.addMenu('&Kernel')
-        self.add_menu_action(find_menu, action_lookup_symbol, require_script=True, require_kernel=True)
-        find_menu.addSeparator()
-        self.add_menu_action(find_menu, action_ftrace, require_script=True, require_kernel=True)
+        kernel_menu = self.menu.addMenu('&Kernel')
+        self.add_menu_action(kernel_menu, action_lookup_symbol, require_script=True, require_kernel=True)
+        kernel_menu.addSeparator()
+        self.add_menu_action(kernel_menu, action_ftrace, require_script=True, require_kernel=True)
 
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
@@ -136,6 +139,21 @@ class MenuBar(object):
         self.add_menu_action(hooks_menu, hook_native, True)
         self.add_menu_action(hooks_menu, hook_java, True, True)
         self.add_menu_action(hooks_menu, hook_onload, True, True)
+
+    def build_trace_menu(self):
+        native_menu = self.menu.addMenu('&Native')
+
+        self.action_native_trace_start = QAction("&Start", self.app_window)
+        self.action_native_trace_start.triggered.connect(self.handler_trace_native_start)
+
+        self.action_native_trace_stop = QAction("&Stop", self.app_window)
+        self.action_native_trace_stop.triggered.connect(self.handler_trace_native_stop)
+        self.action_native_trace_stop.setEnabled(False)
+
+        native_menu.addAction(self.action_native_trace_start)
+        native_menu.addAction(self.action_native_trace_stop)
+        trace_menu = self.menu.addMenu('&Trace')
+        trace_menu.addMenu(native_menu)
 
     def build_find_menu(self):
         self.action_find_bytes = QAction("&Bytes", self.app_window)
@@ -309,6 +327,12 @@ class MenuBar(object):
                                 'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
                                 'WJlNDVjZDcwNGE')
 
+    def handler_trace_native_start(self):
+        self.app_window.get_dwarf().native_tracer_start()
+
+    def handler_trace_native_stop(self):
+        self.app_window.get_dwarf().native_tracer_stop()
+
     def handler_view_data(self):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, request_focus=True)
 
@@ -353,6 +377,10 @@ class MenuBar(object):
     def on_java_classes_enumeration_complete(self):
         if self.app_window.get_dwarf().script is not None:
             self.action_enumerate_java_classes.setEnabled(True)
+
+    def on_native_tracer_change(self, started):
+        self.action_native_trace_start.setEnabled(not started)
+        self.action_native_trace_stop.setEnabled(started)
 
     def on_script_destroyed(self):
         for action in self.menu_actions:
