@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidgetItem, QScrollBar
 
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
@@ -96,19 +96,18 @@ class RegistersPanel(TableBaseWidget):
                         q = QTableWidgetItem('null')
                         q.setForeground(Qt.gray)
                     else:
-                        q = QTableWidgetItem(str(context[reg]['arg']))
+                        q = NotEditableTableWidgetItem(str(context[reg]['arg']))
                 else:
                     q = NativeRegisterWidget(self.app, reg, context[reg])
 
                 if self.is_java_context:
-                    q.setFlags(Qt.NoItemFlags)
+                    q.setForeground(Qt.gray)
                     self.setItem(i, 2, q)
                 else:
                     self.setItem(i, 1, q)
 
                     q = NotEditableTableWidgetItem(str(int(context[reg]['value'], 16)))
                     q.setForeground(Qt.darkCyan)
-                    q.setFlags(Qt.NoItemFlags)
                     self.setItem(i, 2, q)
 
                     if context[reg]['isValidPointer']:
