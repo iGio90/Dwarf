@@ -29,6 +29,7 @@ from lib.prefs import Prefs
 from lib.scripts_manager import ScriptsManager
 from ui.dialog_input import InputDialog
 from ui.panel_trace import TraceEvent
+from ui.ui_session import SessionUi
 
 
 class Dwarf(object):
@@ -264,6 +265,8 @@ class Dwarf(object):
                 self.app.get_data_panel().append_data(key, str(parts[2]))
         elif cmd == 'tracer':
             panel = self.app.get_trace_panel()
+            if panel is None:
+                panel = self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_TRACE)
             if panel is not None:
                 # safely checked later
                 panel.start()
