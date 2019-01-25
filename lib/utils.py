@@ -26,6 +26,20 @@ app_icon = None
 
 
 def do_shell_command(cmd, stdout=subprocess.PIPE):
+    if stdout == subprocess.PIPE:
+        '''
+        This solution is a shit because we don't know why on the following case:
+        on ubuntu + py 3.6, running adb shell with subprocess run and redirect stdout and stderr to pipe
+        return none and output the result on the console (O.O). On OSX i'm not facing this. 
+        Windows users have the problem as well. The following code works for everyone :S  
+        '''
+        p = subprocess.Popen(cmd.split(' '),
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             stdin=subprocess.PIPE)
+        out, err = p.communicate()
+        return out.decode('utf8') + '\n' + err.decode('utf8')
+
     result = subprocess.run(cmd.split(' '), stdout=stdout)
     if stdout == subprocess.PIPE:
         return result.stdout.decode('utf8')
@@ -58,6 +72,7 @@ def show_message_box(text, details=None):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
+    return None
 
 
 def parse_ptr(ptr):
