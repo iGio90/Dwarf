@@ -185,7 +185,7 @@ class Dwarf(object):
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_complete()
         elif cmd == 'enumerate_java_methods_complete':
-            Dwarf.bus.emit(parts[1], json.loads(parts[2]))
+            Dwarf.bus.emit(parts[1], json.loads(parts[2]), parts[1])
         elif cmd == 'ftrace':
             if self.app.get_ftrace_panel() is not None:
                 self.app.get_ftrace_panel().append_data(parts[1])

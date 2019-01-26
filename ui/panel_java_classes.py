@@ -13,6 +13,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt
 
+from lib.core import Dwarf
 from ui.panel_java_methods import JavaMethodsPanel
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_table_base import TableBaseWidget
@@ -30,16 +31,21 @@ class JavaClassesPanel(TableBaseWidget):
 
         if item is not None:
             menu.addSeparator()
-            action_hook = menu.addAction('Hook')
-            action_hook.setData('hook')
+            action_hook = menu.addAction('Hook constructor')
+            action_hook.setData('hook_constructor')
+            action_hook_all = menu.addAction('Hook all methods')
+            action_hook_all.setData('hook_all')
 
     def on_menu_action(self, action_data, item):
         if action_data == 'refresh':
             self.app.app_window.get_menu().handler_enumerate_java_classes(should_update_java_classes=True)
             return False
-        elif action_data == 'hook':
+        elif action_data == 'hook_constructor':
             self.app.get_dwarf().hook_java(item.text())
-
+            return False
+        elif action_data == 'hook_all':
+            self.app.dwarf_api('hookAllJavaMethods', item.text())
+            return False
         return True
 
     def item_double_clicked(self, item):

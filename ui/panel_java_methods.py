@@ -45,7 +45,7 @@ class JavaMethodsPanel(TableBaseWidget):
         Dwarf.bus.add_event(self.on_enumeration_complete, java_class)
         self.app.dwarf_api('enumerateJavaMethods', java_class)
 
-    def on_enumeration_complete(self, methods):
+    def on_enumeration_complete(self, methods, class_name):
         for method in sorted(methods):
             row = self.rowCount()
             self.insertRow(row)
