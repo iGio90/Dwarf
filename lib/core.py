@@ -397,7 +397,7 @@ class Dwarf(object):
         if self.native_traced_tid > 0:
             return
         if tid == 0:
-            accept, tid = InputDialog.input(self.app, hint='insert thread id to trace', placeholder='10432')
+            accept, tid = InputDialog.input(self.app, hint='insert thread id to trace', placeholder=str(self.pid))
             if not accept:
                 return
             try:
@@ -419,6 +419,7 @@ class Dwarf(object):
         self.dwarf_api('stopNativeTracer')
         if self.app.get_trace_panel() is not None:
             self.app.get_trace_panel().stop()
+        self.native_traced_tid = 0
         self.app_window.get_menu().on_native_tracer_change(False)
 
     def read_memory(self, ptr, len):

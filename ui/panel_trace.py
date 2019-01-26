@@ -30,11 +30,14 @@ class TraceEvent(object):
 
 
 class TracePanel(TableBaseWidget):
+    MAX_HIT_COUNT = 1000
+
     def __init__(self, app):
         super().__init__(app, 0, 0)
 
         self._worker = None
         self._run = False
+        self._hit_count = 0
         self.event_queue = []
 
     def add_trace_event(self, event):
@@ -62,11 +65,17 @@ class TracePanel(TableBaseWidget):
         self._run = False
 
     def _work(self):
+        self._hit_count = 0
         while self._run:
             if len(self.event_queue) > 0:
                 event = self.event_queue.pop(0)
                 self.add_trace_event(event)
+                self._hit_count += 1
+                if self._hit_count >= TracePanel.MAX_HIT_COUNT:
+                    self.app.get_dwarf().native_tracer_stop()
+                    break
             else:
                 time.sleep(0.5)
+        self._hit_count = 0
         self.event_queue.clear()
         self._worker = None
