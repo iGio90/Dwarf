@@ -108,16 +108,19 @@ class App(QWidget):
             self.get_contexts_panel().setRowCount(0)
             self.get_registers_panel().setRowCount(0)
             self.get_backtrace_panel().setRowCount(0)
-            self.get_java_explorer_panel().clear_panel()
             self.get_memory_panel().clear_panel()
             self.contexts.clear()
+            if self.get_java_explorer_panel() is not None:
+                self.get_java_explorer_panel().clear_panel()
         else:
             if self.context_tid == tid:
                 self.get_registers_panel().setRowCount(0)
                 self.get_backtrace_panel().setRowCount(0)
-                self.get_java_explorer_panel().clear_panel()
                 self.get_memory_panel().clear_panel()
+
             self.get_contexts_panel().resume_tid(tid)
+            if self.get_java_explorer_panel() is not None:
+                self.get_java_explorer_panel().clear_panel()
 
         self.dwarf_api('release', tid)
 

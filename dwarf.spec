@@ -35,9 +35,3 @@ exe = EXE(pyz,
           upx=True,
           runtime_tmpdir=None,
           console=True )
-
-
-
-
-
-
