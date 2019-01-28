@@ -15,6 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import argparse
+import sys
 
 import qdarkstyle
 
@@ -39,7 +40,5 @@ if __name__ == '__main__':
 
     app_window = AppWindow(args)
     app_window.showMaximized()
-
     app.exec_()
-
     app_window.get_app_instance().get_dwarf().detach()

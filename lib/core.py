@@ -117,8 +117,8 @@ class Dwarf(object):
         self.load_script(script)
 
     def detach(self):
-        self.dwarf_api('_detach')
         if self.script is not None:
+            self.dwarf_api('_detach')
             self.script.unload()
         if self.process is not None:
             self.process.detach()
@@ -226,6 +226,11 @@ class Dwarf(object):
             self.on_loads[parts[1]] = h
             if self.app.session_ui is not None and self.app.get_hooks_panel() is not None:
                 self.app.get_hooks_panel().hook_onload_callback(h)
+        elif cmd == 'java_trace':
+            panel = self.app.get_java_trace_panel()
+            if panel is None:
+                panel = self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_JAVA_TRACE)
+            panel.on_event(parts[1], parts[2], parts[3])
         elif cmd == 'memory_scan_match':
             Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
         elif cmd == 'memory_scan_complete':

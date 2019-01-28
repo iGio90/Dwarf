@@ -33,21 +33,28 @@ class JavaTracePanel(QWidget):
 
         self.tracing = False
         self.trace_classes = []
+        self.trace_depth = 0
 
         layout = QVBoxLayout()
         buttons = QHBoxLayout()
 
         self.btn_start = QPushButton('start')
         self.btn_start.clicked.connect(self.start_trace)
+        self.btn_pause = QPushButton('pause')
+        self.btn_pause.setEnabled(False)
+        self.btn_pause.clicked.connect(self.pause_trace)
         self.btn_stop = QPushButton('stop')
         self.btn_stop.setEnabled(False)
         self.btn_stop.clicked.connect(self.stop_trace)
 
         buttons.addWidget(self.btn_start)
+        buttons.addWidget(self.btn_pause)
         buttons.addWidget(self.btn_stop)
         layout.addLayout(buttons)
 
-        self.splitter = QSplitter()
+        self.setup_splitter = QSplitter()
+        self.events_list = QListWidget()
+        self.events_list.setVisible(False)
 
         self.trace_list = QListWidget()
         self.class_list = QListWidget()
@@ -69,10 +76,12 @@ class JavaTracePanel(QWidget):
         bar.setFixedHeight(0)
         self.class_list.setHorizontalScrollBar(bar)
 
-        self.splitter.addWidget(self.trace_list)
-        self.splitter.addWidget(self.class_list)
-        self.splitter.setHandleWidth(1)
-        layout.addWidget(self.splitter)
+        self.setup_splitter.addWidget(self.trace_list)
+        self.setup_splitter.addWidget(self.class_list)
+        self.setup_splitter.setHandleWidth(1)
+
+        layout.addWidget(self.setup_splitter)
+        layout.addWidget(self.events_list)
 
         self.setLayout(layout)
 
@@ -93,6 +102,11 @@ class JavaTracePanel(QWidget):
     def on_enumeration_match(self, java_class):
         try:
             if PREFIXED_CLASS.index(java_class) >= 0:
+                try:
+                    if self.trace_classes.index(java_class) >= 0:
+                        return
+                except:
+                    pass
                 q = NotEditableListWidgetItem(java_class)
                 self.trace_list.addItem(q)
                 self.trace_classes.append(java_class)
@@ -105,6 +119,34 @@ class JavaTracePanel(QWidget):
     def on_enumeration_complete(self):
         self.class_list.sortItems()
         self.trace_list.sortItems()
+
+    def on_event(self, event, clazz, data):
+        if event == 'leave':
+            indicator = '<------'
+            if self.trace_depth > 0:
+                self.trace_depth -= 1
+        else:
+            indicator = '------>'
+
+        if self.trace_depth == 0 and self.events_list.count() > 0 and event == 'enter':
+            q = NotEditableListWidgetItem('')
+            q.setFlags(Qt.NoItemFlags)
+            self.events_list.addItem(q)
+
+        q = NotEditableListWidgetItem('%s%s\t%s\t\t%s' % (
+            ' ' * (4 * self.trace_depth), indicator, clazz, data
+        ))
+        self.events_list.addItem(q)
+
+        if event == 'enter':
+            self.trace_depth += 1
+
+    def pause_trace(self):
+        self.app.dwarf_api('stopJavaTracer')
+        self.tracing = False
+        self.btn_stop.setEnabled(True)
+        self.btn_pause.setEnabled(False)
+        self.btn_start.setEnabled(True)
 
     def search(self):
         accept, input = InputDialog.input(self.app, hint='Search',
@@ -128,22 +170,24 @@ class JavaTracePanel(QWidget):
                 self.search()
 
     def start_trace(self):
-        if self.tracing:
-            return
-
-        if self.app.dwarf_api('startJavaTracer', [self.trace_classes]):
-            self.tracing = True
-            self.btn_stop.setEnabled(True)
-            self.btn_start.setEnabled(False)
+        self.app.dwarf_api('startJavaTracer', [self.trace_classes])
+        self.trace_depth = 0
+        self.tracing = True
+        self.setup_splitter.setVisible(False)
+        self.events_list.setVisible(True)
+        self.btn_stop.setEnabled(True)
+        self.btn_pause.setEnabled(True)
+        self.btn_start.setEnabled(False)
 
     def stop_trace(self):
-        if not self.tracing:
-            return
-
-        if self.app.dwarf_api('stopJavaTracer'):
-            self.tracing = False
-            self.btn_stop.setEnabled(False)
-            self.btn_start.setEnabled(True)
+        self.app.dwarf_api('stopJavaTracer')
+        self.tracing = False
+        self.setup_splitter.setVisible(True)
+        self.events_list.setVisible(False)
+        self.events_list.clear()
+        self.btn_stop.setEnabled(False)
+        self.btn_pause.setEnabled(False)
+        self.btn_start.setEnabled(True)
 
     def trace_list_double_click(self, item):
         try:
