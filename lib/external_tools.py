@@ -14,9 +14,20 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import os
+
+import urllib.request
 
 
-class AndroidPackage(object):
-    def __init__(self):
-        self.path = ''
-        self.package = ''
+def tool_exist(tool):
+    if not os.path.exists('tools'):
+        os.mkdir('tools')
+        return False
+    return os.path.exists('tools/%s' % tool)
+
+
+def get_tool(url, path):
+    if not os.path.exists('tools'):
+        os.mkdir('tools')
+
+    urllib.request.urlretrieve(url, 'tools/%s' % path)

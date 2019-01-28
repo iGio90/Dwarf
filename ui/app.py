@@ -189,6 +189,9 @@ class App(QWidget):
     def get_java_explorer_panel(self):
         return self.session_ui.java_explorer_panel
 
+    def get_java_trace_panel(self):
+        return self.session_ui.java_trace_panel
+
     def get_log_panel(self):
         return self.session_ui.log_panel
 

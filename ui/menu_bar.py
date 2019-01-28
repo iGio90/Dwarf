@@ -20,6 +20,7 @@ import webbrowser
 from PyQt5.QtWidgets import QAction, QFileDialog
 
 from lib import prefs
+from lib.android import AndroidDecompileUtil
 from ui.dialog_input import InputDialog
 from ui.dialog_list import ListDialog
 from ui.panel_search import SearchPanel
@@ -68,9 +69,15 @@ class MenuBar(object):
     def build_device_menu(self):
         save_apk = QAction("&Save APK", self.app_window)
         save_apk.triggered.connect(self.handler_save_apk)
+        decompile_apk = QAction("&Decompile APK", self.app_window)
+        decompile_apk.triggered.connect(self.handler_decompile_apk)
+
+        save_apk.setEnabled(self.app_window.get_adb().adb_available)
+        decompile_apk.setEnabled(self.app_window.get_adb().adb_available)
 
         device_menu = self.menu.addMenu('&Device')
         self.add_menu_action(device_menu, save_apk, False)
+        self.add_menu_action(device_menu, decompile_apk, False)
 
     def build_process_menu(self):
         ranges = QAction("&Ranges", self.app_window)
@@ -150,10 +157,14 @@ class MenuBar(object):
         self.action_native_trace_stop.triggered.connect(self.handler_trace_native_stop)
         self.action_native_trace_stop.setEnabled(False)
 
+        java_tracer = QAction("&Java", self.app_window)
+        java_tracer.triggered.connect(self.handler_trace_java)
+
         native_menu.addAction(self.action_native_trace_start)
         native_menu.addAction(self.action_native_trace_stop)
         trace_menu = self.menu.addMenu('&Trace')
         trace_menu.addMenu(native_menu)
+        self.add_menu_action(trace_menu, java_tracer, require_script=True, require_java=True)
 
     def build_find_menu(self):
         self.action_find_bytes = QAction("&Bytes", self.app_window)
@@ -217,14 +228,15 @@ class MenuBar(object):
         self.app_window.get_dwarf().get_prefs().put(pref, not visible)
         panel.setVisible(not visible)
 
-    def handler_wiki(self):
-        webbrowser.open_new_tab('https://github.com/iGio90/Dwarf/wiki')
-
-    def handler_find_bytes(self):
-        accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
-        if accept:
-            self.action_find_bytes.setEnabled(False)
-            SearchPanel.bytes_search_panel(self.app_window.get_app_instance(), input)
+    def handler_decompile_apk(self):
+        packages = self.app_window.get_adb().list_packages()
+        if packages:
+            accept, items = ListDialog.build_and_show(
+                self.build_packages_list, packages, double_click_to_accept=True)
+            if accept:
+                if len(items) > 0:
+                    path = items[0].get_apk_path()
+                    AndroidDecompileUtil.decompile(self.app_window.get_adb(), path)
 
     def handler_detach(self):
         self.app_window.get_dwarf().detach()
@@ -240,6 +252,12 @@ class MenuBar(object):
             SessionUi.TAB_JAVA_CLASSES, request_focus=True)
         if should_update_java_classes:
             self.app_window.get_dwarf().dwarf_api('enumerateJavaClasses')
+
+    def handler_find_bytes(self):
+        accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
+        if accept:
+            self.action_find_bytes.setEnabled(False)
+            SearchPanel.bytes_search_panel(self.app_window.get_app_instance(), input)
 
     def handler_find_symbol(self):
         accept, input = InputDialog().input(self.app_window, 'find symbol by pattern', placeholder='*_open*')
@@ -268,7 +286,7 @@ class MenuBar(object):
                 self.build_packages_list, packages, double_click_to_accept=True)
             if accept:
                 if len(items) > 0:
-                    path = items[0].get_package_name().path
+                    path = items[0].get_apk_path()
                     r = QFileDialog.getSaveFileName()
                     if len(r) > 0 and len(r[0]) > 0:
                         self.app_window.get_adb().pull(path, r[0])
@@ -327,6 +345,12 @@ class MenuBar(object):
                                 'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
                                 'WJlNDVjZDcwNGE')
 
+    def handler_trace_java(self):
+        should_request_classes = self.app_window.get_app_instance().get_java_trace_panel() is None
+        self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_JAVA_TRACE, request_focus=True)
+        if should_request_classes:
+            self.app_window.get_dwarf().dwarf_api('enumerateJavaClasses')
+
     def handler_trace_native_start(self):
         self.app_window.get_dwarf().native_tracer_start()
 
@@ -354,6 +378,9 @@ class MenuBar(object):
     def handler_view_watchers(self):
         self._set_panel_visibility(self.app_window.get_app_instance().get_watchers_panel(), prefs.VIEW_WATCHERS)
 
+    def handler_wiki(self):
+        webbrowser.open_new_tab('https://github.com/iGio90/Dwarf/wiki')
+
     #
     #
     # Just a separator
@@ -363,7 +390,7 @@ class MenuBar(object):
     def build_packages_list(self, list, data):
         list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
         for ap in sorted(data, key=lambda x: x.package):
-            list.addItem(AndroidPackageWidget(ap['name'], ap['identifier'], 0))
+            list.addItem(AndroidPackageWidget(ap.package, ap.package, 0, apk_path=ap.path))
 
     def on_bytes_search_complete(self):
         if self.app_window.get_dwarf().script is not None:

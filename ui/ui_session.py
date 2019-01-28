@@ -31,6 +31,7 @@ class SessionUi(QTabWidget):
     TAB_JAVA_CLASSES = 'java'
     TAB_TRACE = 'trace'
     TAB_FTRACE = 'ftrace'
+    TAB_JAVA_TRACE = 'java_trace'
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -80,7 +81,7 @@ class SessionUi(QTabWidget):
         self.hooks_panel = None
         self.java_class_panel = None
         self.java_explorer_panel = None
-        self.log_panel = None
+        self.java_trace_panel = None
         self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None
@@ -211,9 +212,11 @@ class SessionUi(QTabWidget):
 
         self.memory_panel.on_script_destroyed()
 
-        self.java_class_panel = None
-        self.trace_panel = None
         self.ftrace_panel = None
+        self.java_class_panel = None
+        self.java_explorer_panel = None
+        self.java_trace_panel = None
+        self.trace_panel = None
 
     def close_tab(self, index):
         w = self.widget(index)
@@ -236,7 +239,15 @@ class SessionUi(QTabWidget):
         self.removeTab(index)
 
     def add_dwarf_tab(self, tab_id, request_focus=False):
-        if tab_id == SessionUi.TAB_DATA:
+        if tab_id == SessionUi.TAB_ASM:
+            if self.asm_panel is None:
+                from ui.panel_asm import AsmPanel
+                self.asm_panel = AsmPanel(self.app)
+            self.addTab(self.asm_panel, 'asm')
+            if request_focus:
+                self.setCurrentWidget(self.asm_panel)
+            return self.asm_panel
+        elif tab_id == SessionUi.TAB_DATA:
             if self.data_panel is None:
                 from ui.panel_data import DataPanel
                 self.data_panel = DataPanel(self.app)
@@ -244,6 +255,30 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.data_panel)
             return self.hooks_panel
+        elif tab_id == SessionUi.TAB_FTRACE:
+            if self.ftrace_panel is None:
+                from ui.panel_ftrace import FTracePanel
+                self.ftrace_panel = FTracePanel(self.app)
+            self.addTab(self.ftrace_panel, 'ftrace')
+            if request_focus:
+                self.setCurrentWidget(self.ftrace_panel)
+            return self.trace_panel
+        elif tab_id == SessionUi.TAB_JAVA_CLASSES:
+            if self.java_class_panel is None:
+                from ui.panel_java_classes import JavaClassesPanel
+                self.java_class_panel = JavaClassesPanel(self.app)
+            self.addTab(self.java_class_panel, 'java classes')
+            if request_focus:
+                self.setCurrentWidget(self.java_class_panel)
+            return self.java_class_panel
+        elif tab_id == SessionUi.TAB_JAVA_TRACE:
+            if self.java_trace_panel is None:
+                from ui.panel_java_trace import JavaTracePanel
+                self.java_trace_panel = JavaTracePanel(self.app)
+            self.addTab(self.java_trace_panel, 'java trace')
+            if request_focus:
+                self.setCurrentWidget(self.java_trace_panel)
+            return self.java_trace_panel
         elif tab_id == SessionUi.TAB_MODULES:
             if self.modules_panel is None:
                 from ui.panel_modules import ModulesPanel
@@ -260,40 +295,13 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.ranges_panel)
             return self.ranges_panel
-        elif tab_id == SessionUi.TAB_ASM:
-            if self.asm_panel is None:
-                from ui.panel_asm import AsmPanel
-                self.asm_panel = AsmPanel(self.app)
-            self.addTab(self.asm_panel, 'asm')
-            if request_focus:
-                self.setCurrentWidget(self.asm_panel)
-            return self.asm_panel
-        elif tab_id == SessionUi.TAB_JAVA_CLASSES:
-            if self.java_class_panel is None:
-                from ui.panel_java_classes import JavaClassesPanel
-                self.java_class_panel = JavaClassesPanel(self.app)
-            if self.java_class_panel.parent() is None:
-                self.addTab(self.java_class_panel, 'Java Classes')
-            if request_focus:
-                self.setCurrentWidget(self.java_class_panel)
-            return self.java_class_panel
         elif tab_id == SessionUi.TAB_TRACE:
             if self.trace_panel is None:
                 from ui.panel_trace import TracePanel
                 self.trace_panel = TracePanel(self.app)
-            if self.trace_panel.parent() is None:
-                self.addTab(self.trace_panel, 'Trace')
+            self.addTab(self.trace_panel, 'trace')
             if request_focus:
                 self.setCurrentWidget(self.trace_panel)
-            return self.trace_panel
-        elif tab_id == SessionUi.TAB_FTRACE:
-            if self.ftrace_panel is None:
-                from ui.panel_ftrace import FTracePanel
-                self.ftrace_panel = FTracePanel(self.app)
-            if self.ftrace_panel.parent() is None:
-                self.addTab(self.ftrace_panel, 'ftrace')
-            if request_focus:
-                self.setCurrentWidget(self.ftrace_panel)
             return self.trace_panel
 
     def add_tab(self, tab_widget, tab_label):

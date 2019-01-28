@@ -177,13 +177,19 @@ class Dwarf(object):
         elif cmd == 'enumerate_java_classes_start':
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_start()
+            if self.app.get_java_trace_panel() is not None:
+                self.app.get_java_trace_panel().on_enumeration_start()
         elif cmd == 'enumerate_java_classes_match':
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_match(parts[1])
+            if self.app.get_java_trace_panel() is not None:
+                self.app.get_java_trace_panel().on_enumeration_match(parts[1])
         elif cmd == 'enumerate_java_classes_complete':
             self.app_window.get_menu().on_java_classes_enumeration_complete()
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_complete()
+            if self.app.get_java_trace_panel() is not None:
+                self.app.get_java_trace_panel().on_enumeration_complete()
         elif cmd == 'enumerate_java_methods_complete':
             Dwarf.bus.emit(parts[1], json.loads(parts[2]), parts[1])
         elif cmd == 'ftrace':

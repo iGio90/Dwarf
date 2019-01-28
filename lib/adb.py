@@ -17,7 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import subprocess
 
 from lib import utils
-from lib.android_package import AndroidPackage
+from lib.android import AndroidPackage
 
 
 class Adb(object):

@@ -8,3 +8,5 @@ Dwarf.iml
 .shortcuts
 .dwarf
 .git_cache
+tools
+.decompile
