@@ -84,7 +84,7 @@ class Kernel(object):
     def is_available(self):
         ret = self.dwarf.dwarf_api('evaluate', ['kernel.available()', True])
         if ret is not None:
-            return self.dwarf.dwarf_api('evaluate', ['kernel.available()', True]).startswith('a')
+            return ret.startswith('a')
         return False
 
     def lookup_symbol(self, symbol):

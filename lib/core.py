@@ -195,8 +195,8 @@ class Dwarf(object):
         elif cmd == 'ftrace':
             if self.app.get_ftrace_panel() is not None:
                 self.app.get_ftrace_panel().append_data(parts[1])
-        elif cmd == 'log':
-            self.app.get_log_panel().log(parts[1])
+        elif cmd == 'enable_kernel':
+            self.app_window.get_menu().enable_kernel_menu()
         elif cmd == 'hook_java_callback':
             h = Hook(Hook.HOOK_JAVA)
             h.set_ptr(1)
@@ -231,6 +231,8 @@ class Dwarf(object):
             if panel is None:
                 panel = self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_JAVA_TRACE)
             panel.on_event(parts[1], parts[2], parts[3])
+        elif cmd == 'log':
+            self.app.get_log_panel().log(parts[1])
         elif cmd == 'memory_scan_match':
             Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
         elif cmd == 'memory_scan_complete':

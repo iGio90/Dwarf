@@ -42,6 +42,9 @@ class MenuBar(object):
         self.action_native_trace_start = None
         self.action_native_trace_stop = None
 
+        # menu
+        self.kernel_menu = None
+
         self.build_device_menu()
         self.build_process_menu()
         self.build_kernel_menu()
@@ -54,13 +57,11 @@ class MenuBar(object):
 
     def add_menu_action(self, menu, action,
                         require_script=False,
-                        require_java=False,
-                        require_kernel=False):
+                        require_java=False):
         self.menu_actions.append({
             'action': action,
             'require_script': require_script,
-            'require_java': require_java,
-            'require_kernel': require_kernel
+            'require_java': require_java
         })
         if self.app_window.get_dwarf().script is None:
             action.setEnabled(not require_script)
@@ -124,10 +125,12 @@ class MenuBar(object):
         action_ftrace = QAction("&ftrace", self.app_window)
         action_ftrace.triggered.connect(self.handler_kernel_ftrace)
 
-        kernel_menu = self.menu.addMenu('&Kernel')
-        self.add_menu_action(kernel_menu, action_lookup_symbol, require_script=True, require_kernel=True)
-        kernel_menu.addSeparator()
-        self.add_menu_action(kernel_menu, action_ftrace, require_script=True, require_kernel=True)
+        self.kernel_menu = self.menu.addMenu('&Kernel')
+        self.kernel_menu.setEnabled(False)
+
+        self.add_menu_action(self.kernel_menu, action_lookup_symbol, require_script=True)
+        self.kernel_menu.addSeparator()
+        self.add_menu_action(self.kernel_menu, action_ftrace, require_script=True)
 
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
@@ -392,6 +395,9 @@ class MenuBar(object):
         for ap in sorted(data, key=lambda x: x.package):
             list.addItem(AndroidPackageWidget(ap.package, ap.package, 0, apk_path=ap.path))
 
+    def enable_kernel_menu(self):
+        self.kernel_menu.setEnabled(True)
+
     def on_bytes_search_complete(self):
         if self.app_window.get_dwarf().script is not None:
             self.action_find_bytes.setEnabled(True)
@@ -410,17 +416,15 @@ class MenuBar(object):
         self.action_native_trace_stop.setEnabled(started)
 
     def on_script_destroyed(self):
+        self.kernel_menu.setEnabled(False)
+
         for action in self.menu_actions:
             action['action'].setEnabled(not action['require_script'])
 
     def on_script_loaded(self):
-        kernel_available = self.app_window.get_dwarf().get_kernel().is_available()
 
         for action in self.menu_actions:
             if action['require_java'] and not self.app_window.get_dwarf().java_available:
-                action['action'].setEnabled(False)
-                continue
-            if action['require_kernel'] and not kernel_available:
                 action['action'].setEnabled(False)
                 continue
             action['action'].setEnabled(True)
