@@ -36,20 +36,6 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=True )
 
-var m = Process.findModuleByName('libg.so');
-Memory.protect(m.base, m.size, 'rwx');
-var svc_send = Memory.scanSync(m.base, m.size, '14 70 9F E5 00 00 00 EF');
-var svc_recv = Memory.scanSync(m.base, m.size, '49 7F A0 E3 00 00 00 EF');
-Interceptor.attach(svc_send[0]['address'], function () {
-    if (sw(Memory.readUShort(this.context.r1)) === 10101) {
-        return 0;
-    }
-    return -1;
-});
-function sw(val) {
-    return ((val & 0xFF) << 8) | ((val >> 8) & 0xFF);
-}
-
 
 
 
