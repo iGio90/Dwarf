@@ -50,4 +50,4 @@ class AndroidDecompileUtil(object):
             utils.show_message_box('failed to find java')
             return
 
-        utils.do_shell_command('java -jar tools/luyten.jar .decompile/base.jar')
+        utils.do_shell_command('java -jar tools/luyten.jar .decompile/base.jar &')
