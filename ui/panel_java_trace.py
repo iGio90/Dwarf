@@ -106,23 +106,26 @@ class JavaTracePanel(QWidget):
         self.class_list.sortItems()
         self.trace_list.sortItems()
 
+    def search(self):
+        accept, input = InputDialog.input(self.app, hint='Search',
+                                          input_content=self.current_class_search,
+                                          placeholder='Search something...')
+        if accept:
+            self.current_class_search = input.lower()
+            for i in range(0, self.class_list.count()):
+                try:
+                    if self.class_list.item(i).text().lower().index(self.current_class_search.lower()) >= 0:
+                        self.class_list.setRowHidden(i, False)
+                except:
+                    self.class_list.setRowHidden(i, True)
+
     def show_class_list_menu(self, pos):
         menu = QMenu()
         search = menu.addAction('Search')
         action = menu.exec_(self.class_list.mapToGlobal(pos))
         if action:
             if action == search:
-                accept, input = InputDialog.input(self.app, hint='Search',
-                                                  input_content=self.current_class_search,
-                                                  placeholder='Search something...')
-                if accept:
-                    self.current_class_search = input.lower()
-                    for i in range(0, self.class_list.count()):
-                        try:
-                            if self.class_list.item(i).text().lower().index(self.current_class_search.lower()) >= 0:
-                                self.class_list.setRowHidden(i, False)
-                        except:
-                            self.class_list.setRowHidden(i, True)
+                self.search()
 
     def start_trace(self):
         if self.tracing:
@@ -151,3 +154,9 @@ class JavaTracePanel(QWidget):
             return
         self.trace_classes.pop(index)
         self.trace_list.takeItem(self.trace_list.row(item))
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_F:
+                self.search()
+        super(JavaTracePanel, self).keyPressEvent(event)

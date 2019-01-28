@@ -168,6 +168,7 @@ class HooksPanel(TableBaseWidget):
 
     def delete_hook(self, item, hook):
         self.removeRow(item.row())
+
         if hook.hook_type == Hook.HOOK_NATIVE:
             self.app.dwarf_api('deleteHook', hook.get_ptr())
         elif hook.hook_type == Hook.HOOK_JAVA:

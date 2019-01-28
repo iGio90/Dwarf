@@ -75,22 +75,7 @@ class TableBaseWidget(QTableWidget):
         action = menu.exec_(self.mapToGlobal(pos))
         if action:
             if search is not None and action == search:
-                accept, input = InputDialog.input(self.app, hint='Search',
-                                                  input_content=self.current_search,
-                                                  placeholder='Search something...')
-                if accept:
-                    self.current_search = input.lower()
-                    for i in range(0, self.rowCount()):
-                        match = False
-                        for c in range(0, self.columnCount()):
-                            item = self.item(i, c)
-                            try:
-                                if str(item.text().lower()).index(self.current_search) >= 0:
-                                    match = True
-                                    break
-                            except:
-                                pass
-                        self.setRowHidden(i, not match)
+                self.search()
             if not self.on_menu_action(action.data(), item):
                return
             if isinstance(item, MemoryAddressWidget):
@@ -120,6 +105,12 @@ class TableBaseWidget(QTableWidget):
                                                     length=item.get_size(),
                                                     base=item.get_base_address())
 
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_F:
+                self.search()
+        super(TableBaseWidget, self).keyPressEvent(event)
+
     def is_search_enabled(self):
         return True
 
@@ -128,6 +119,24 @@ class TableBaseWidget(QTableWidget):
 
     def on_menu_action(self, action_data, item):
         return True
+
+    def search(self):
+        accept, input = InputDialog.input(self.app, hint='Search',
+                                          input_content=self.current_search,
+                                          placeholder='Search something...')
+        if accept:
+            self.current_search = input.lower()
+            for i in range(0, self.rowCount()):
+                match = False
+                for c in range(0, self.columnCount()):
+                    item = self.item(i, c)
+                    try:
+                        if str(item.text().lower()).index(self.current_search) >= 0:
+                            match = True
+                            break
+                    except:
+                        pass
+                self.setRowHidden(i, not match)
 
     def set_menu_actions(self, item, menu):
         pass
