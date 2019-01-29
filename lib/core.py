@@ -297,6 +297,9 @@ class Dwarf(object):
                                    trace_events_parts.pop(0),
                                    trace_events_parts.pop(0))
                     panel.event_queue.append(t)
+        elif cmd == 'unhandled_exception':
+            # todo
+            pass
         elif cmd == 'update_modules':
             self.app.apply_context({'tid': parts[1], 'modules': json.loads(parts[2])})
         elif cmd == 'update_ranges':
