@@ -85,6 +85,8 @@ class AsmPanel(QTableWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_G:
             self.trigger_jump_to()
+        elif event.key() == Qt.Key_O:
+            self.swap_arm_mode()
         else:
             # dispatch those to super
             super(AsmPanel, self).keyPressEvent(event)
