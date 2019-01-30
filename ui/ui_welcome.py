@@ -152,6 +152,9 @@ class WelcomeUi(QSplitter):
             if most_recent_remote_commit == '':
                 most_recent_remote_commit = commit['sha']
                 if most_recent_remote_commit != most_recent_local_commit:
+                    print(most_recent_local_commit)
+                    print(most_recent_remote_commit)
+
                     self.dwarf_update_button.setVisible(True)
 
                     q = NotEditableListWidgetItem('')

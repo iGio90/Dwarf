@@ -38,7 +38,10 @@ def do_shell_command(cmd, stdout=subprocess.PIPE):
                              stderr=subprocess.PIPE,
                              stdin=subprocess.PIPE)
         out, err = p.communicate()
-        return out.decode('utf8') + '\n' + err.decode('utf8')
+        out = out.decode('utf8')
+        if len(out) > 0:
+            return out
+        return err.decode('utf8')
 
     result = subprocess.run(cmd.split(' '), stdout=stdout)
     if stdout == subprocess.PIPE:
