@@ -76,7 +76,6 @@ class SessionUi(QTabWidget):
         self.asm_panel = None
         self.backtrace_panel = None
         self.contexts_panel = None
-        self.data_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
         self.java_class_panel = None
@@ -106,6 +105,8 @@ class SessionUi(QTabWidget):
         if bt:
             bt.resize(0, 0)
         self.add_main_tabs()
+
+        self.data_panel = DataPanel(self.app)
 
     def add_main_tabs(self):
         self.add_dwarf_tab(SessionUi.TAB_MODULES)
@@ -235,7 +236,9 @@ class SessionUi(QTabWidget):
                     v[obj].clear()
                 except:
                     pass
-                v[obj] = None
+                # prevent data panel to be nullified
+                if not isinstance(v[obj], DataPanel):
+                    v[obj] = None
         self.removeTab(index)
 
     def add_dwarf_tab(self, tab_id, request_focus=False):
