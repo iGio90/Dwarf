@@ -112,17 +112,17 @@ class App(QWidget):
             self.contexts.clear()
             if self.get_java_explorer_panel() is not None:
                 self.get_java_explorer_panel().clear_panel()
-        else:
-            if self.context_tid == tid:
-                self.get_registers_panel().setRowCount(0)
-                self.get_backtrace_panel().setRowCount(0)
-                self.get_memory_panel().clear_panel()
-
-            self.get_contexts_panel().resume_tid(tid)
-            if self.get_java_explorer_panel() is not None:
-                self.get_java_explorer_panel().clear_panel()
 
         self.dwarf_api('release', tid)
+
+    def on_tid_resumed(self, tid):
+        if self.context_tid == tid:
+            self.get_registers_panel().setRowCount(0)
+            self.get_backtrace_panel().setRowCount(0)
+            self.get_memory_panel().clear_panel()
+            self.get_java_explorer_panel().clear_panel()
+
+        self.get_contexts_panel().resume_tid(tid)
 
     def clear(self):
         self.modules_panel.setRowCount(0)

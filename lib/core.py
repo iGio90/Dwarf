@@ -243,6 +243,8 @@ class Dwarf(object):
             self.app.get_log_panel().log('hook onload %s @thread := %s' % (
                 parts[1], parts[3]))
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
+        elif cmd == 'resume':
+            self.app.on_tid_resumed(int(parts[1]))
         elif cmd == 'set_context':
             data = json.loads(parts[1])
             self.app.get_contexts().append(data)
