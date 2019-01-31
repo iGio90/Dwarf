@@ -250,8 +250,6 @@ class MemoryPanel(QTableWidget):
         elif event.key() == Qt.Key_A:
             self.show_asm_view()
             pass
-        elif event.key() == Qt.Key_O:
-            self.swap_arm_mode()
         else:
             # dispatch those to super
             super(MemoryPanel, self).keyPressEvent(event)
