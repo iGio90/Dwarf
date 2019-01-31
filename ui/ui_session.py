@@ -81,6 +81,7 @@ class SessionUi(QTabWidget):
         self.java_class_panel = None
         self.java_explorer_panel = None
         self.java_trace_panel = None
+        self.log_panel = None
         self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None

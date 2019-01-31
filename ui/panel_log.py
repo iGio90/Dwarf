@@ -84,13 +84,11 @@ class LogPanel(QWidget):
         self.list.setStyleSheet('''
             QListWidget::item:hover { 
                 color: white; 
-                background-color: 
-                transparent; 
+                background-color: rgba(255, 255, 255, 5); 
             }
             QListWidget::item:selected { 
                 color: white; 
-                background-color: 
-                transparent; 
+                background-color: rgba(255, 255, 255, 5); 
             }
         ''')
         bar = QScrollBar()
