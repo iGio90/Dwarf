@@ -306,7 +306,8 @@ class MenuBar(object):
                     self.app_window.get_dwarf().hook_java(hook['input'], hook)
                 for hook in session['onloads']:
                     self.app_window.get_dwarf().hook_onload(hook)
-                self.app_window.get_app_instance().get_log_panel().set_js_script_text(session['script'])
+                self.app_window.get_app_instance().get_console_panel().\
+                    get_js_console().set_js_script_text(session['script'])
 
     def handler_session_save(self):
         r = QFileDialog.getSaveFileName()
@@ -337,7 +338,7 @@ class MenuBar(object):
                 'natives': hooks,
                 'java': java_hooks,
                 'onloads': onload_hooks,
-                'script': self.app_window.get_app_instance().get_log_panel().get_js_script_text()
+                'script': self.app_window.get_app_instance().get_console_panel().get_js_console().get_js_script_text()
             }
             with open(r[0], 'w') as f:
                 f.write(json.dumps(session))

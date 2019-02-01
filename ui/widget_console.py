@@ -16,16 +16,17 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt, QMargins
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QLineEdit, QHBoxLayout, QPushButton, \
-    QSplitter, QVBoxLayout, QScrollBar
+    QVBoxLayout, QScrollBar
 
 from ui.dialog_js_editor import JsEditorDialog
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
-class JsInput(QLineEdit):
-    def __init__(self, log_panel, *__args):
+class QConsoleInputWidget(QLineEdit):
+    def __init__(self, console_panel, callback, *__args):
         super().__init__(*__args)
-        self.log_panel = log_panel
+        self.console_panel = console_panel
+        self.callback = callback
         self.cmds = []
         self.cmd_index = 0
 
@@ -36,14 +37,12 @@ class JsInput(QLineEdit):
             if l > 0:
                 if l > 100:
                     self.cmds.pop(0)
-
                 if cmd != self.cmds[l - 1]:
                     self.cmds.append(cmd)
             else:
                 self.cmds.append(cmd)
-
             self.cmd_index = 0
-            self.log_panel.app.dwarf_api('evaluate', self.text())
+            self.callback(self.text())
             self.setText('')
         elif event.key() == Qt.Key_Up:
             l = len(self.cmds)
@@ -68,14 +67,14 @@ class JsInput(QLineEdit):
         self.cmds.clear()
 
 
-class LogPanel(QWidget):
-    def __init__(self, app, flags=None, *args, **kwargs):
+class QConsoleWidget(QWidget):
+    def __init__(self, app, callback, input_placeholder='', function_box=False, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
         layout = QVBoxLayout()
 
         self.app = app
-        self.js_script = ''
+        self.function_content = ''
 
         self.setContentsMargins(QMargins(0, 0, 0, 0))
         layout.setContentsMargins(QMargins(0, 0, 0, 0))
@@ -98,21 +97,22 @@ class LogPanel(QWidget):
         self.list.model().rowsInserted.connect(self.on_row_inserted)
         layout.addWidget(self.list)
 
-        js_box = QHBoxLayout()
-        js_box.setContentsMargins(QMargins(3, 3, 3, 3))
+        box = QHBoxLayout()
+        box.setContentsMargins(QMargins(3, 3, 3, 3))
 
-        self.input = JsInput(self)
-        self.input.setPlaceholderText('$>')
-        js_box.addWidget(self.input)
+        self.input = QConsoleInputWidget(self, callback)
+        self.input.setPlaceholderText(input_placeholder)
+        box.addWidget(self.input)
 
-        function_btn = QPushButton('ƒ')
-        function_btn.setMinimumWidth(25)
-        function_btn.clicked.connect(self.js_function_box)
-        js_box.addWidget(function_btn)
+        if function_box:
+            function_btn = QPushButton('ƒ')
+            function_btn.setMinimumWidth(25)
+            function_btn.clicked.connect(self.js_function_box)
+            box.addWidget(function_btn)
 
-        js_box_widget = QWidget()
-        js_box_widget.setLayout(js_box)
-        layout.addWidget(js_box_widget)
+        box_widget = QWidget()
+        box_widget.setLayout(box)
+        layout.addWidget(box_widget)
 
         self.setLayout(layout)
 
@@ -133,18 +133,18 @@ class LogPanel(QWidget):
 
     def js_function_box(self):
         accept, what = JsEditorDialog(
-            self.app, def_text=self.js_script,
+            self.app, def_text=self.function_content,
             placeholder_text='// js script with both frida and dwarf api.\n'
                              '// note that it\'s evaluated. Which means, if you define a variable\n'
                              '// or attach an Interceptor, it won\'t be removed by '
                              'just deleting the script content').show()
         if accept:
-            self.js_script = what
+            self.function_content = what
             if len(what) > 0:
                 self.app.dwarf_api('evaluateFunction', what)
 
     def get_js_script_text(self):
-        return self.js_script
+        return self.function_content
 
     def set_js_script_text(self, script):
-        self.js_script = script
+        self.function_content = script

@@ -247,7 +247,7 @@ class Dwarf(object):
                 panel = self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_JAVA_TRACE)
             panel.on_event(parts[1], parts[2], parts[3])
         elif cmd == 'log':
-            self.app.get_log_panel().log(parts[1])
+            self.app.get_console_panel().get_js_console().log(parts[1])
         elif cmd == 'memory_scan_match':
             Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
         elif cmd == 'memory_scan_complete':
@@ -255,7 +255,7 @@ class Dwarf(object):
             Dwarf.bus.emit(parts[1] + ' complete', 0, 0)
         elif cmd == 'onload_callback':
             self.loading_library = parts[1]
-            self.app.get_log_panel().log('hook onload %s @thread := %s' % (
+            self.app.get_console_panel().get_js_console().log('hook onload %s @thread := %s' % (
                 parts[1], parts[3]))
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
         elif cmd == 'release':
@@ -287,7 +287,7 @@ class Dwarf(object):
                 self.pointer_size = data['pointerSize']
                 self.pid = data['pid']
                 self.java_available = data['java']
-                self.app.get_log_panel().log('injected into := ' + str(self.pid))
+                self.app.get_console_panel().get_js_console().log('injected into := ' + str(self.pid))
                 self.app_window.on_context_info()
 
             self.context_tid = data['tid']
@@ -338,7 +338,8 @@ class Dwarf(object):
     def on_destroyed(self):
         self._reinitialize()
 
-        self.app.get_log_panel().log('detached from %d. script destroyed' % self.pid)
+        if self.app.get_console_panel() is not None:
+            self.app.get_console_panel().get_js_console().log('detached from %d. script destroyed' % self.pid)
         self.app_window.on_script_destroyed()
 
     def add_watcher(self, ptr=None):
@@ -383,7 +384,7 @@ class Dwarf(object):
         try:
             return self.script.exports.api(tid, api, args)
         except Exception as e:
-            self.app.get_log_panel().log(str(e))
+            self.app.get_console_panel().get_js_console().log(str(e))
             return None
 
     def hook_java(self, input=None, pending_args=None):
@@ -424,8 +425,8 @@ class Dwarf(object):
         self.dwarf_api('hookOnLoad', input)
 
     def log(self, what):
-        if self.app.get_log_panel() is not None:
-            self.app.get_log_panel().log(what)
+        if self.app.get_console_panel() is not None:
+            self.app.get_console_panel().get_js_console().log(what)
 
     def native_tracer_start(self, tid=0):
         if self.native_traced_tid > 0:

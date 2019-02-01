@@ -17,10 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSplitter, QTabWidget, QTabBar, QVBoxLayout, QWidget
 
-from ui.panel_asm import AsmPanel
 from ui.panel_data import DataPanel
-from ui.panel_modules import ModulesPanel
-from ui.panel_ranges import RangesPanel
 
 
 class SessionUi(QTabWidget):
@@ -75,13 +72,13 @@ class SessionUi(QTabWidget):
 
         self.asm_panel = None
         self.backtrace_panel = None
+        self.console_panel = None
         self.contexts_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
         self.java_class_panel = None
         self.java_explorer_panel = None
         self.java_trace_panel = None
-        self.log_panel = None
         self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None
@@ -154,9 +151,9 @@ class SessionUi(QTabWidget):
         q.setLayout(box)
         main_panel.addWidget(q)
 
-        from ui.panel_log import LogPanel
-        self.log_panel = LogPanel(self.app)
-        main_panel.addWidget(self.log_panel)
+        from ui.panel_console import ConsolePanel
+        self.console_panel = ConsolePanel(self.app)
+        main_panel.addWidget(self.console_panel)
 
         main_panel.setStretchFactor(0, 1)
         main_panel.setStretchFactor(1, 3)
@@ -188,7 +185,7 @@ class SessionUi(QTabWidget):
                 self.removeTab(i)
 
         self.contexts_panel.clear()
-        self.log_panel.clear()
+        self.console_panel.clear()
         if self.data_panel is not None:
             self.data_panel.clear()
         if self.watchers_panel is not None:

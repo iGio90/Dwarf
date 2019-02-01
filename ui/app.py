@@ -123,7 +123,7 @@ class App(QWidget):
     def clear(self):
         self.modules_panel.setRowCount(0)
         self.ranges_panel.setRowCount(0)
-        self.session_ui.get_log_panel().clear()
+        self.session_ui.console_panel().clear()
 
     def set_modules(self, modules):
         self.session_ui.modules_panel.set_modules(modules)
@@ -181,8 +181,8 @@ class App(QWidget):
     def get_java_trace_panel(self):
         return self.session_ui.java_trace_panel
 
-    def get_log_panel(self):
-        return self.session_ui.log_panel
+    def get_console_panel(self):
+        return self.session_ui.console_panel
 
     def get_memory_panel(self):
         return self.session_ui.memory_panel
