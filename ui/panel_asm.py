@@ -55,6 +55,8 @@ class AsmPanel(QTableWidget):
         self.customContextMenuRequested.connect(self.show_menu)
         self.itemDoubleClicked.connect(self.item_double_clicked)
 
+        self.history = []
+
     def show_menu(self, pos):
         menu = QMenu()
 
@@ -88,6 +90,10 @@ class AsmPanel(QTableWidget):
             self.trigger_jump_to()
         elif event.key() == Qt.Key_O:
             self.swap_arm_mode()
+        elif event.key() == Qt.Key_Escape:
+            if len(self.history) > 1:
+                self.history.pop(len(self.history) - 1)
+                self.read_memory(self.history[len(self.history) - 1])
         else:
             # dispatch those to super
             super(AsmPanel, self).keyPressEvent(event)
@@ -115,6 +121,14 @@ class AsmPanel(QTableWidget):
 
         if _range:
             self.range = _range
+
+        if self.range is None:
+            return 1
+
+        if len(self.history) == 0 or self.history[len(self.history) - 1] != self.range.start_address:
+            self.history.append(self.range.start_address)
+            if len(self.history) > 25:
+                self.history.pop(0)
 
         md = Cs(self.cs_arch, self.cs_mode)
         md.detail = True
@@ -190,6 +204,7 @@ class AsmPanel(QTableWidget):
 
         self.resizeColumnsToContents()
         self.scrollToTop()
+        return 0
 
     def clear(self):
         self.range = None

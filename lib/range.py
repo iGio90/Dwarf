@@ -46,6 +46,7 @@ class Range(object):
 
         if self.base > 0:
             if self.base < self.start_address < self.tail:
+                self.start_offset = self.start_address - self.base
                 return -1
 
         try:
