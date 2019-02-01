@@ -96,7 +96,11 @@ class Emulator(object):
 
         return 0
 
-    def setup(self, tid):
+    def setup(self, tid=0):
+        if tid == 0:
+            # get current context tid if none provided
+            tid = self.dwarf.context_tid
+
         # make sure it's int
         tid = int(tid)
         self.context = None
@@ -159,13 +163,14 @@ class Emulator(object):
                          UC_HOOK_MEM_WRITE_UNMAPPED |
                          UC_HOOK_MEM_READ_UNMAPPED,
                          self.hook_unmapped)
-
         return err
 
     def start(self, until):
         self.end_ptr = utils.parse_ptr(until)
         if self.context is None:
-            return 1
+            err = self.setup()
+            if err > 0:
+                return 200 + err
         if self.uc._arch == UC_ARCH_ARM:
             address = self.uc.reg_read(UC_ARM_REG_PC)
         elif self.uc._arch == UC_ARCH_ARM64:
@@ -183,6 +188,7 @@ class Emulator(object):
         except UcError as err:
             self.uc.emu_stop()
             print(err)
+
             return 0
         except Exception as e:
             self.uc.emu_stop()

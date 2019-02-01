@@ -221,7 +221,7 @@ class MemoryPanel(QTableWidget):
 
     def read_memory(self, ptr, length=0, base=0):
         if self.range is None:
-            self.range = Range(self.app)
+            self.range = Range(self.app.get_dwarf())
 
         self.app.get_session_ui().request_session_ui_focus()
         init = self.range.init_with_address(ptr, length, base)
