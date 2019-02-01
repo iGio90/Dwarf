@@ -32,10 +32,11 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class AsmPanel(QTableWidget):
-    def __init__(self, dwarf):
+    def __init__(self, app):
         super(AsmPanel, self).__init__(app)
 
-        self.dwarf = dwarf
+        self.app = app
+        self.dwarf = app.get_dwarf()
         self.range = None
 
         self.cs_arch = 0
