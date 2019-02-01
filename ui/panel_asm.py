@@ -32,10 +32,10 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class AsmPanel(QTableWidget):
-    def __init__(self, app):
+    def __init__(self, dwarf):
         super(AsmPanel, self).__init__(app)
 
-        self.app = app
+        self.dwarf = dwarf
         self.range = None
 
         self.cs_arch = 0
@@ -194,7 +194,7 @@ class AsmPanel(QTableWidget):
         self.range = None
 
     def swap_arm_mode(self):
-        if self.app.get_arch() == 'arm':
+        if self.dwarf.arch == 'arm':
             if self.cs_mode == CS_MODE_ARM:
                 self.cs_mode = CS_MODE_THUMB
             elif self.cs_mode == CS_MODE_THUMB:
@@ -209,7 +209,7 @@ class AsmPanel(QTableWidget):
             self.disasm()
 
     def trigger_write_instruction(self, item):
-        if not self.app.get_dwarf().keystone_installed:
+        if not self.dwarf.keystone_installed:
             details = ''
             try:
                 import keystone.keystone_const
@@ -237,7 +237,7 @@ class AsmPanel(QTableWidget):
                 encoding, count = ks.asm(inst)
                 asm_widget = self.item(item.row(), 0)
                 offset = asm_widget.get_offset()
-                if self.app.dwarf_api('writeBytes', [asm_widget.get_address(), encoding]):
+                if self.dwarf.dwarf_api('writeBytes', [asm_widget.get_address(), encoding]):
                     new_data = bytearray(self.range.data)
                     for i in range(0, len(encoding)):
                         try:
@@ -248,18 +248,18 @@ class AsmPanel(QTableWidget):
                     self.range.data = bytes(new_data)
                     self.disa()
             except Exception as e:
-                self.app.get_log_panel().log(str(e))
+                self.dwarf.log(e)
 
     def on_arch_changed(self):
-        if self.app.get_arch() == 'arm64':
+        if self.dwarf.arch == 'arm64':
             self.cs_arch = CS_ARCH_ARM64
             self.cs_mode = CS_MODE_LITTLE_ENDIAN
         else:
             self.cs_arch = CS_ARCH_ARM
             self.cs_mode = CS_MODE_ARM
-        if self.app.get_dwarf().keystone_installed:
+        if self.dwarf.keystone_installed:
             import keystone.keystone_const as ks
-            if self.app.get_arch() == 'arm64':
+            if self.dwarf.arch == 'arm64':
                 self.ks_arch = ks.KS_ARCH_ARM64
                 self.ks_mode = ks.KS_MODE_LITTLE_ENDIAN
             else:

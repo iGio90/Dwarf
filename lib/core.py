@@ -14,7 +14,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import binascii
 import json
+from threading import Thread
 
 import frida
 from PyQt5.QtWidgets import QFileDialog
@@ -22,6 +24,8 @@ from event_bus import EventBus
 from hexdump import hexdump
 
 from lib import utils
+from lib.context import Context
+from lib.emulator import Emulator
 from lib.git import Git
 from lib.hook import Hook
 from lib.kernel import Kernel
@@ -61,12 +65,19 @@ class Dwarf(object):
         self.native_pending_args = None
         self.java_pending_args = None
 
+        # context
+        self.arch = ''
+        self.pointer_size = 0
+        self.contexts = {}
+        self.context_tid = 0
+
         # tracers
         self.native_traced_tid = 0
 
         # core utils
-        self.prefs = Prefs()
+        self.emulator = Emulator(self)
         self.git = Git()
+        self.prefs = Prefs()
         self.script_manager = ScriptsManager(self)
 
         self.keystone_installed = False
@@ -174,6 +185,9 @@ class Dwarf(object):
                     self.app.get_backtrace_panel().set_backtrace(json.loads(parts[1]))
                 except:
                     pass
+        elif cmd == 'emulator':
+            # on a separate thread to allow js api recursion
+            Thread(target=self.emulator.api, args=(parts[1:],)).start()
         elif cmd == 'enumerate_java_classes_start':
             if self.app.get_java_classes_panel() is not None:
                 self.app.get_java_classes_panel().on_enumeration_start()
@@ -211,6 +225,7 @@ class Dwarf(object):
             h = Hook(Hook.HOOK_NATIVE)
             h.set_ptr(int(parts[1], 16))
             h.set_input(self.temporary_input)
+            h.set_bytes(binascii.unhexlify(parts[2]))
             self.temporary_input = ''
             if self.native_pending_args:
                 h.set_condition(self.native_pending_args['condition'])
@@ -243,38 +258,39 @@ class Dwarf(object):
             self.app.get_log_panel().log('hook onload %s @thread := %s' % (
                 parts[1], parts[3]))
             self.app.get_hooks_panel().hit_onload(parts[1], parts[2])
-        elif cmd == 'resume':
+        elif cmd == 'release':
+            if parts[1] in self.contexts:
+                del self.contexts[parts[1]]
             self.app.on_tid_resumed(int(parts[1]))
         elif cmd == 'set_context':
             data = json.loads(parts[1])
-            self.app.get_contexts().append(data)
-
             if 'context' in data:
+                context = Context(data['context'])
+                self.contexts[str(data['tid'])] = context
+
                 sym = ''
-                if 'pc' in data['context']:
+                if 'pc' in context.__dict__:
                     name = data['ptr']
-                    if 'moduleName' in data['symbol']:
-                        sym = '(%s - %s)' % (data['symbol']['moduleName'], data['symbol']['name'])
+                    if context.pc.symbol_name is not None:
+                        sym = '(%s - %s)' % (context.pc.symbol_module_name, context.pc.symbol_name)
                 else:
                     name = data['ptr']
                 self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
                 # check if data['reason'] is 0 (REASON_HOOK)
                 if self.loading_library is None and data['reason'] == 0:
                     self.log('hook %s %s @thread := %d' % (name, sym, data['tid']))
-                if len(self.app.get_contexts()) > 1 and self.app.get_registers_panel().have_context():
+                if len(self.contexts.keys()) > 1 and self.app.get_registers_panel().have_context():
                     return
                 self.app.get_session_ui().request_session_ui_focus()
             else:
-                self.app.set_arch(data['arch'])
-                if self.app.get_arch() == 'arm':
-                    self.app.pointer_size = 4
-                else:
-                    self.app.pointer_size = 8
+                self.arch = data['arch']
+                self.pointer_size = data['pointerSize']
                 self.pid = data['pid']
                 self.java_available = data['java']
                 self.app.get_log_panel().log('injected into := ' + str(self.pid))
                 self.app_window.on_context_info()
 
+            self.context_tid = data['tid']
             self.app.apply_context(data)
             if self.loading_library is not None:
                 self.loading_library = None
@@ -359,7 +375,7 @@ class Dwarf(object):
 
     def dwarf_api(self, api, args=None, tid=0):
         if tid == 0:
-            tid = self.app.get_context_tid()
+            tid = self.context_tid
         if args is not None and not isinstance(args, list):
             args = [args]
         if self.script is None:

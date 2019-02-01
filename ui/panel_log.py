@@ -126,7 +126,7 @@ class LogPanel(QWidget):
         if isinstance(what, QListWidgetItem):
             self.list.addItem(what)
         else:
-            self.list.addItem(NotEditableListWidgetItem(what))
+            self.list.addItem(NotEditableListWidgetItem(str(what)))
 
     def clear(self):
         self.list.clear()

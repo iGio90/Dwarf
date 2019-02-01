@@ -28,29 +28,39 @@ class Hook(object):
         self.condition = ''
         self.logic = ''
 
-    def set_ptr(self, ptr):
-        self.ptr = ptr
+        # hold the original bytes of address + (pointer size * 2)
+        # to be used from Range class when dumping memory and avoid showing frida asm trampolines
+        self._bytes = bytes()
 
-    def set_input(self, input):
-        self.input = input
+    def set_bytes(self, _bytes):
+        self._bytes = _bytes
 
     def set_condition(self, condition):
         self.condition = condition
 
+    def set_input(self, input):
+        self.input = input
+
     def set_logic(self, logic):
         self.logic = logic
+
+    def set_ptr(self, ptr):
+        self.ptr = ptr
+
+    def get_bytes(self):
+        return self._bytes
+
+    def get_condition(self):
+        return self.condition
+
+    def get_input(self):
+        return self.input
+
+    def get_logic(self):
+        return self.logic
 
     def get_ptr(self):
         if self.ptr == 1:
             # for java hooks, return class and method
             return self.input
         return self.ptr
-
-    def get_input(self):
-        return self.input
-
-    def get_condition(self):
-        return self.condition
-
-    def get_logic(self):
-        return self.logic

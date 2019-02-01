@@ -1,5 +1,5 @@
 hexdump>=3.3
-capstone>=3.0.4
+capstone>=4
 requests>=2.18.4
 frida>=12.0.5
 keystone_engine>=0.9.1.post3

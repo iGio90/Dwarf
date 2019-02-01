@@ -76,17 +76,12 @@ class App(QWidget):
         super().__init__(flags, *args, **kwargs)
 
         self.app_window = app_window
-        self.arch = ''
-        self.pointer_size = 0
 
         self.box = QVBoxLayout()
         self.box.setContentsMargins(0, 0, 0, 0)
 
         self.welcome_ui = None
         self.session_ui = None
-
-        self.contexts = []
-        self.context_tid = 0
 
     def setup_ui(self):
         self.session_ui = SessionUi(self)
@@ -109,14 +104,14 @@ class App(QWidget):
             self.get_registers_panel().setRowCount(0)
             self.get_backtrace_panel().setRowCount(0)
             self.get_memory_panel().clear_panel()
-            self.contexts.clear()
+            self.get_dwarf().contexts.clear()
             if self.get_java_explorer_panel() is not None:
                 self.get_java_explorer_panel().clear_panel()
 
         self.dwarf_api('release', tid)
 
     def on_tid_resumed(self, tid):
-        if self.context_tid == tid:
+        if self.get_dwarf().context_tid == tid:
             self.get_registers_panel().setRowCount(0)
             self.get_backtrace_panel().setRowCount(0)
             self.get_memory_panel().clear_panel()
@@ -136,7 +131,6 @@ class App(QWidget):
         self.session_ui.ranges_panel.set_ranges(ranges)
 
     def _apply_context(self, context):
-        self.context_tid = context['tid']
         if 'modules' in context:
             self.set_modules(context['modules'])
         if 'ranges' in context:
@@ -159,17 +153,8 @@ class App(QWidget):
     def get_asm_panel(self):
         return self.session_ui.asm_panel
 
-    def get_arch(self):
-        return self.arch
-
     def get_backtrace_panel(self):
         return self.session_ui.backtrace_panel
-
-    def get_context_tid(self):
-        return self.context_tid
-
-    def get_contexts(self):
-        return self.contexts
 
     def get_contexts_panel(self):
         return self.session_ui.contexts_panel
@@ -237,8 +222,3 @@ class App(QWidget):
 
         # trigger this to clear lists
         self.welcome_ui.on_device_changed()
-
-    def set_arch(self, arch):
-        self.arch = arch
-        if self.get_asm_panel() is not None:
-            self.get_asm_panel().on_arch_changed()

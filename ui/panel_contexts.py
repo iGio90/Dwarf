@@ -79,7 +79,7 @@ class ContextsPanel(TableBaseWidget):
         if library_onload is None:
             if not is_java:
                 q = NotEditableTableWidgetItem('%s - %s' % (
-                    data['symbol']['moduleName'], data['symbol']['name']))
+                    data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
             else:
                 q = NotEditableTableWidgetItem('.'.join(parts[:len(parts) - 1]))
         else:

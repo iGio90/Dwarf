@@ -14,13 +14,15 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+from lib import utils
+from lib.hook import Hook
 
 
 class Range(object):
-    def __init__(self, app):
+    def __init__(self, dwarf):
         super().__init__()
 
-        self.app = app
+        self.dwarf = dwarf
 
         self.base = 0
         self.size = 0
@@ -40,36 +42,42 @@ class Range(object):
         self.start_offset = 0
 
     def init_with_address(self, address, length=0, base=0):
-        if isinstance(address, str):
-            if address.startswith('0x'):
-                self.start_address = int(address, 16)
-            else:
-                self.start_address = int(address)
-        else:
-            self.start_address = address
+        self.start_address = utils.parse_ptr(address)
 
         if self.base > 0:
             if self.base < self.start_address < self.tail:
                 return -1
 
         try:
-            range = self.app.dwarf_api('getRange', address)
-        except:
+            _range = self.dwarf.dwarf_api('getRange', self.start_address)
+        except Exception as e:
             return 1
 
-        if range is None or len(range) == 0:
+        if _range is None or len(_range) == 0:
             return 1
 
-        self.base = int(range['base'], 16)
+        # setup range fields
+        self.base = int(_range['base'], 16)
         if base > 0:
-           self.base = base
-        self.size = range['size']
+            self.base = base
+        self.size = _range['size']
         if 0 < length < self.size:
             self.size = length
         self.tail = self.base + self.size
         self.start_offset = self.start_address - self.base
 
-        self.data = self.app.get_dwarf().read_memory(self.base, self.size)
+        # read data
+        self.data = self.dwarf.read_memory(self.base, self.size)
+
+        # check if we have hooks in range and patch data
+        for key in self.dwarf.hooks.keys():
+            hook = self.dwarf.hooks[key]
+            if hook.hook_type == Hook.HOOK_NATIVE:
+                hook_address = hook.get_ptr()
+                if self.base < hook_address < self.tail:
+                    offset = hook_address - self.base
+                    # patch bytes
+                    self.patch_bytes(hook.get_bytes(), offset)
 
         if self.data is None:
             self.data = bytes()
@@ -77,6 +85,11 @@ class Range(object):
         if len(self.data) == 0:
             return 1
         return 0
+
+    def patch_bytes(self, _bytes, offset):
+        data_bt = bytearray(self.data)
+        data_bt[offset:offset+len(_bytes)] = bytearray(_bytes)
+        self.data = bytes(data_bt)
 
     def set_start_offset(self, offset):
         self.start_offset = offset
