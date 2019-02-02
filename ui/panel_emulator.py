@@ -69,7 +69,7 @@ class AsmTableWidget(QTableWidget):
         if CS_GRP_JUMP in hook.instruction.groups or CS_GRP_CALL in hook.instruction.groups:
             is_jmp = True
 
-        op_imm_value = 0
+        op_imm_value = None
         if len(hook.instruction.operands) > 0:
             for op in hook.instruction.operands:
                 if op.type == CS_OP_IMM:
@@ -77,7 +77,7 @@ class AsmTableWidget(QTableWidget):
                         is_jmp = True
                     op_imm_value = op.value.imm
 
-        if is_jmp and op_imm_value > 0:
+        if is_jmp and op_imm_value is not None:
             w = MemoryAddressWidget(hook.instruction.op_str)
             w.set_address(op_imm_value)
         else:

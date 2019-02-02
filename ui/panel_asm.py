@@ -157,7 +157,8 @@ class AsmPanel(QTableWidget):
             if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
                 is_jmp = True
 
-            op_imm_value = 0
+            op_imm_value = None
+
             if len(i.operands) > 0:
                 for op in i.operands:
                     if op.type == CS_OP_IMM:
@@ -174,7 +175,7 @@ class AsmPanel(QTableWidget):
                             w.setForeground(Qt.lightGray)
                             self.setItem(row, 4, w)
 
-            if is_jmp and op_imm_value > 0:
+            if is_jmp and op_imm_value is not None:
                 w = MemoryAddressWidget(i.op_str)
                 w.set_address(op_imm_value)
             else:
