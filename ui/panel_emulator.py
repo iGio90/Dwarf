@@ -123,7 +123,10 @@ class AsmTableWidget(QTableWidget):
             if self._require_register_result is not None:
                 res = '%s = %s' % (self._require_register_result[1], hex(value))
         else:
-            res = '%s = %s' % (hex(address), hex(value))
+            if self.item(self.rowCount() - 1, 4) is not None:
+                res = '%s, %s = %s' % (self.item(self.rowCount() - 1, 4).text(), hex(address), hex(value))
+            else:
+                res = '%s = %s' % (hex(address), hex(value))
         if res is not None:
             # invalidate
             self._require_register_result = None
