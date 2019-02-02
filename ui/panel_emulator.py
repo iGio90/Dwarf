@@ -16,7 +16,7 @@ import binascii
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QSplitter, QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
-    QTabWidget
+    QTabWidget, QHeaderView
 
 from lib.range import Range
 from ui.dialog_input import InputDialog
@@ -35,9 +35,10 @@ class AsmTableWidget(QTableWidget):
         self.app = app
 
         self.verticalHeader().hide()
-        self.setHorizontalHeaderLabels(['', '', '', '', ''])
+        self.horizontalHeader().hide()
         self.setShowGrid(False)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.horizontalHeader().setStretchLastSection(True)
 
         self._require_register_result = None

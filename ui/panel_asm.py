@@ -20,7 +20,7 @@ from PyQt5.QtGui import QFont
 from capstone import *
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction
+from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QHeaderView
 
 from lib import utils
 from lib.range import Range
@@ -49,6 +49,7 @@ class AsmPanel(QTableWidget):
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         self.setColumnCount(5)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.setShowGrid(False)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
