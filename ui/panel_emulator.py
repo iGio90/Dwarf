@@ -42,8 +42,9 @@ class AsmTableWidget(QTableWidget):
         self.horizontalHeader().setStretchLastSection(True)
 
         self._require_register_result = None
+        self._last_instruction_address = 0
 
-    def add_hook(self, uc, hook):
+    def add_hook(self, uc, instruction):
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
             res = '%s = %s' % (self._require_register_result[1],
@@ -52,41 +53,37 @@ class AsmTableWidget(QTableWidget):
             # invalidate
             self._require_register_result = None
 
+        # check if the code jumped
+        if self._last_instruction_address > 0:
+            if instruction.address > self._last_instruction_address + self.app.get_dwarf().pointer_size or\
+                    instruction.address < self._last_instruction_address:
+                # insert an empty line
+                self.insertRow(self.rowCount())
+        self._last_instruction_address = instruction.address
+
         row = self.rowCount()
         self.insertRow(row)
 
-        w = MemoryAddressWidget('0x%x' % hook.address)
+        w = MemoryAddressWidget('0x%x' % instruction.address)
         w.setFlags(Qt.NoItemFlags)
         w.setForeground(Qt.red)
         self.setItem(row, 0, w)
 
-        w = NotEditableTableWidgetItem(binascii.hexlify(hook.instruction.bytes).decode('utf8'))
+        w = NotEditableTableWidgetItem(binascii.hexlify(instruction.bytes).decode('utf8'))
         w.setFlags(Qt.NoItemFlags)
         w.setForeground(Qt.darkYellow)
         self.setItem(row, 1, w)
 
-        is_jmp = False
-        if CS_GRP_JUMP in hook.instruction.groups or CS_GRP_CALL in hook.instruction.groups:
-            is_jmp = True
-
-        op_imm_value = None
-        if len(hook.instruction.operands) > 0:
-            for op in hook.instruction.operands:
-                if op.type == CS_OP_IMM:
-                    if len(hook.instruction.operands) == 1:
-                        is_jmp = True
-                    op_imm_value = op.value.imm
-
-        if is_jmp and op_imm_value is not None:
-            w = MemoryAddressWidget(hook.instruction.op_str)
-            w.set_address(op_imm_value)
+        if instruction.is_jump and instruction.jump_address != 0:
+            w = MemoryAddressWidget(instruction.op_str)
+            w.set_address(instruction.jump_address)
         else:
-            w = NotEditableTableWidgetItem(hook.instruction.op_str)
+            w = NotEditableTableWidgetItem(instruction.op_str)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.lightGray)
         self.setItem(row, 3, w)
 
-        w = NotEditableTableWidgetItem(hook.instruction.mnemonic.upper())
+        w = NotEditableTableWidgetItem(instruction.mnemonic.upper())
         w.setFlags(Qt.NoItemFlags)
         w.setForeground(Qt.white)
         w.setTextAlignment(Qt.AlignCenter)
@@ -94,29 +91,21 @@ class AsmTableWidget(QTableWidget):
         self.setItem(row, 2, w)
 
         # implicit regs read are notified later through mem access
-        if len(hook.instruction.regs_read) == 0:
-            if len(hook.instruction.operands) > 0:
-                for i in hook.instruction.operands:
+        if len(instruction.regs_read) == 0:
+            if len(instruction.operands) > 0:
+                for i in instruction.operands:
                     if i.type == CS_OP_REG:
                         self._require_register_result = [
                             i.value.reg,
-                            hook.instruction.reg_name(i.value.reg)
+                            instruction.reg_name(i.value.reg)
                         ]
                         break
 
-        if is_jmp:
-            sym = self.app.dwarf_api('getSymbolByAddress', op_imm_value)
-            if sym is not None:
-                module = ''
-                if 'moduleName' in sym:
-                    module = '- %s' % sym['moduleName']
-                w = NotEditableTableWidgetItem('%s %s' % (sym['name'], module))
-                w.setFlags(Qt.NoItemFlags)
-                w.setForeground(Qt.lightGray)
-                self.setItem(row, 4, w)
-
-            # insert an empty line
-            self.insertRow(self.rowCount())
+        if instruction.symbol_name is not None:
+            w = NotEditableTableWidgetItem('%s (%s)' % (instruction.symbol_name, instruction.symbol_module))
+            w.setFlags(Qt.NoItemFlags)
+            w.setForeground(Qt.lightGray)
+            self.setItem(row, 4, w)
 
     def add_memory_hook(self, uc, access, address, value):
         res = None
@@ -237,8 +226,8 @@ class EmulatorPanel(QWidget):
     def handle_stop(self):
         self.emulator.stop()
 
-    def on_emulator_hook(self, uc, hook):
-        self.asm_table.add_hook(uc, hook)
+    def on_emulator_hook(self, uc, instruction):
+        self.asm_table.add_hook(uc, instruction)
 
     def on_emulator_log(self, log):
         self.console.log(log)

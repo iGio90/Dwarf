@@ -23,6 +23,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QHeaderView
 
 from lib import utils
+from lib.instruction import Instruction
 from lib.range import Range
 from ui.dialog_cs_configs import CsConfigsDialog
 from ui.dialog_input import InputDialog
@@ -139,6 +140,8 @@ class AsmPanel(QTableWidget):
             if insts > 128:
                 break
 
+            instruction = Instruction(self.dwarf, i)
+
             row = self.rowCount()
             self.insertRow(row)
 
@@ -148,52 +151,35 @@ class AsmPanel(QTableWidget):
             w.set_offset(self.range.base - i.address)
             self.setItem(row, 0, w)
 
-            w = NotEditableTableWidgetItem(binascii.hexlify(i.bytes).decode('utf8'))
+            w = NotEditableTableWidgetItem(binascii.hexlify(instruction.bytes).decode('utf8'))
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.darkYellow)
             self.setItem(row, 1, w)
 
-            is_jmp = False
-            if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
-                is_jmp = True
-
-            op_imm_value = None
-
-            if len(i.operands) > 0:
-                for op in i.operands:
-                    if op.type == CS_OP_IMM:
-                        if len(i.operands) == 1:
-                            is_jmp = True
-                        if is_jmp:
-                            op_imm_value = op.value.imm
-                            sym = self.app.dwarf_api('getSymbolByAddress', op_imm_value)
-                            module = ''
-                            if 'moduleName' in sym:
-                                module = '- %s' % sym['moduleName']
-                            w = NotEditableTableWidgetItem('%s %s' % (sym['name'], module))
-                            w.setFlags(Qt.NoItemFlags)
-                            w.setForeground(Qt.lightGray)
-                            self.setItem(row, 4, w)
-
-            if is_jmp and op_imm_value is not None:
-                w = MemoryAddressWidget(i.op_str)
-                w.set_address(op_imm_value)
+            if instruction.is_jump and instruction.jump_address != 0:
+                w = MemoryAddressWidget(instruction.op_str)
+                w.set_address(instruction.jump_address)
             else:
-                w = NotEditableTableWidgetItem(i.op_str)
+                w = NotEditableTableWidgetItem(instruction.op_str)
                 w.setFlags(Qt.NoItemFlags)
                 w.setForeground(Qt.lightGray)
             self.setItem(row, 3, w)
 
-            w = NotEditableTableWidgetItem(i.mnemonic.upper())
+            w = NotEditableTableWidgetItem(instruction.mnemonic.upper())
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.white)
             w.setTextAlignment(Qt.AlignCenter)
             w.setFont(QFont(None, 11, QFont.Bold))
             self.setItem(row, 2, w)
 
+            if instruction.symbol_name is not None:
+                w = NotEditableTableWidgetItem('%s (%s)' % (instruction.symbol_name, instruction.symbol_module))
+                w.setFlags(Qt.NoItemFlags)
+                w.setForeground(Qt.lightGray)
+                self.setItem(row, 4, w)
+
             insts += 1
 
-        self.resizeColumnsToContents()
         self.scrollToTop()
         return 0
 

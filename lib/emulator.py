@@ -20,6 +20,7 @@ from threading import Thread
 
 from capstone import *
 from lib import utils
+from lib.instruction import Instruction
 from lib.range import Range
 from unicorn import *
 from unicorn.arm_const import *
@@ -27,12 +28,6 @@ from unicorn.arm64_const import *
 
 
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
-
-
-class Hook(object):
-    def __init__(self, instruction):
-        self.address = instruction.address
-        self.instruction = instruction
 
 
 class Emulator(object):
@@ -81,10 +76,13 @@ class Emulator(object):
             else:
                 self.stepping[1] = True
 
-        self._next_instruction = address + size
         for i in self.cs.disasm(bytes(uc.mem_read(address, size)), address):
-            hook = Hook(i)
-            self.dwarf.get_bus().emit('emulator_hook', uc, hook)
+            instruction = Instruction(self.dwarf, i)
+            if instruction.jump_address != 0:
+                self._next_instruction = instruction.jump_address
+            else:
+                self._next_instruction = address + size
+            self.dwarf.get_bus().emit('emulator_hook', uc, instruction)
         time.sleep(0.5)
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
@@ -95,6 +93,7 @@ class Emulator(object):
 
     def hook_unmapped(self, uc, access, address, size, value, user_data):
         self.log_to_ui("[*] Trying to access an unmapped memory address at 0x%x" % address)
+        self.log_to_ui('[*] access %d, size %d, value %d' % (access, size, value))
         err = self.map_range(address)
         if err > 0:
             self.log_to_ui('[*] Error %d mapping range at %s' % (err, hex(address)))
