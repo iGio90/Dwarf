@@ -82,10 +82,11 @@ class InputDialog(QDialog):
         return result == QDialog.Accepted, text
 
     @staticmethod
-    def input_pointer(app):
+    def input_pointer(app, input_content='', hint='insert pointer'):
         accept, inp = InputDialog.input(
             app,
-            hint='insert pointer',
+            hint=hint,
+            input_content=input_content,
             placeholder='Module.findExportByName(\'target\', \'export\')')
         if not accept:
             return 0, ''

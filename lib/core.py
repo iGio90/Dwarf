@@ -37,8 +37,6 @@ from ui.ui_session import SessionUi
 
 
 class Dwarf(object):
-    bus = EventBus()
-
     def __init__(self, app_window):
         self.app_window = app_window
         self.app = app_window.get_app_instance()
@@ -75,6 +73,7 @@ class Dwarf(object):
         self.native_traced_tid = 0
 
         # core utils
+        self.bus = EventBus()
         self.emulator = Emulator(self)
         self.git = Git()
         self.prefs = Prefs()
@@ -205,7 +204,7 @@ class Dwarf(object):
             if self.app.get_java_trace_panel() is not None:
                 self.app.get_java_trace_panel().on_enumeration_complete()
         elif cmd == 'enumerate_java_methods_complete':
-            Dwarf.bus.emit(parts[1], json.loads(parts[2]), parts[1])
+            self.bus.emit(parts[1], json.loads(parts[2]), parts[1])
         elif cmd == 'ftrace':
             if self.app.get_ftrace_panel() is not None:
                 self.app.get_ftrace_panel().append_data(parts[1])
@@ -249,10 +248,10 @@ class Dwarf(object):
         elif cmd == 'log':
             self.app.get_console_panel().get_js_console().log(parts[1])
         elif cmd == 'memory_scan_match':
-            Dwarf.bus.emit(parts[1], parts[2], json.loads(parts[3]))
+            self.bus.emit(parts[1], parts[2], json.loads(parts[3]))
         elif cmd == 'memory_scan_complete':
             self.app_window.get_menu().on_bytes_search_complete()
-            Dwarf.bus.emit(parts[1] + ' complete', 0, 0)
+            self.bus.emit(parts[1] + ' complete', 0, 0)
         elif cmd == 'onload_callback':
             self.loading_library = parts[1]
             self.app.get_console_panel().get_js_console().log('hook onload %s @thread := %s' % (
@@ -483,6 +482,18 @@ class Dwarf(object):
 
     def remove_watcher(self, ptr):
         return self.dwarf_api('removeWatcher', ptr)
+
+    ###########
+    #         #
+    # getters #
+    #         #
+    ###########
+
+    def get_bus(self):
+        return self.bus
+
+    def get_emulator(self):
+        return self.emulator
 
     def get_git(self):
         return self.git

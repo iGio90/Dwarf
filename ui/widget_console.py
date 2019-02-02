@@ -68,7 +68,7 @@ class QConsoleInputWidget(QLineEdit):
 
 
 class QConsoleWidget(QWidget):
-    def __init__(self, app, callback, input_placeholder='', function_box=False, flags=None, *args, **kwargs):
+    def __init__(self, app, callback=None, input_placeholder='', function_box=False, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
         layout = QVBoxLayout()
@@ -100,9 +100,10 @@ class QConsoleWidget(QWidget):
         box = QHBoxLayout()
         box.setContentsMargins(QMargins(3, 3, 3, 3))
 
-        self.input = QConsoleInputWidget(self, callback)
-        self.input.setPlaceholderText(input_placeholder)
-        box.addWidget(self.input)
+        if callback is not None:
+            self.input = QConsoleInputWidget(self, callback)
+            self.input.setPlaceholderText(input_placeholder)
+            box.addWidget(self.input)
 
         if function_box:
             function_btn = QPushButton('ƒ')

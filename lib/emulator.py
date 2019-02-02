@@ -15,18 +15,24 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import binascii
+import time
+from threading import Thread
 
 from capstone import *
-
+from lib import utils
+from lib.range import Range
 from unicorn import *
 from unicorn.arm_const import *
 from unicorn.arm64_const import *
 
-from lib import utils
-from lib.range import Range
-
 
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
+
+
+class Hook(object):
+    def __init__(self, instruction):
+        self.address = instruction.address
+        self.instruction = instruction
 
 
 class Emulator(object):
@@ -39,6 +45,21 @@ class Emulator(object):
         self.context = None
         self.thumb = False
         self.end_ptr = 0
+
+        self.stepping = [False, False]
+        self._running = False
+        self._next_instruction = 0
+
+    def __start(self, address, until):
+        try:
+            self._running = True
+            self.uc.emu_start(address, self.end_ptr)
+        except UcError as e:
+            self.log_to_ui('[*] error: ' + str(e))
+        except Exception as e:
+            self.log_to_ui('[*] error: ' + str(e))
+        self._running = False
+        self.dwarf.get_bus().emit('emulator_stop')
 
     def api(self, parts):
         """
@@ -53,33 +74,35 @@ class Emulator(object):
             self.dwarf.log(self.start(parts[1]))
 
     def hook_code(self, uc, address, size, user_data):
-        # hold address for thumb
-        s_address = address
-        if self.thumb:
-            s_address = s_address | 1
+        if self.stepping[0]:
+            if self.stepping[1]:
+                uc.emu_stop()
+                return
+            else:
+                self.stepping[1] = True
+
+        self._next_instruction = address + size
         for i in self.cs.disasm(bytes(uc.mem_read(address, size)), address):
-            print("0x%x:\t%s\t%s" % (s_address, i.mnemonic, i.op_str))
+            hook = Hook(i)
+            self.dwarf.get_bus().emit('emulator_hook', uc, hook)
+        time.sleep(0.5)
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
-        if access == UC_MEM_WRITE:
-            print(">>> Memory is being WRITE at 0x%x, data size = %u, data value = 0x%x"
-                  % (address, size, value))
-        else:
-            print(">>> Memory is being READ at 0x%x, data size = %u, data value = 0x%s"
-                  % (address, size, binascii.hexlify(self.uc.mem_read(address, size)).decode('utf8')))
+        v = value
+        if access == UC_MEM_READ:
+            v = int.from_bytes(uc.mem_read(address, size), 'little')
+        self.dwarf.get_bus().emit('emulator_memory_hook', uc, access, address, v)
 
     def hook_unmapped(self, uc, access, address, size, value, user_data):
-        print(">>> Unmapped memory at 0x%x, data size = %u, data value = 0x%x" % (address, size, value))
+        self.log_to_ui("[*] Trying to access an unmapped memory address at 0x%x" % address)
         err = self.map_range(address)
         if err > 0:
-            print('error %d mapping range for %s' % (err, hex(address)))
-        else:
-            self.start(self.end_ptr)
+            self.log_to_ui('[*] Error %d mapping range at %s' % (err, hex(address)))
+            return False
+        return True
 
     def map_range(self, address):
-        print('mapping -> ' + hex(address))
-
-        range = Range(self.dwarf)
+        range = Range(Range.SOURCE_TARGET, self.dwarf)
         if range.init_with_address(address) > 0:
             return 300
         try:
@@ -94,6 +117,8 @@ class Emulator(object):
             self.dwarf.log(e)
             return 302
 
+        self.log_to_ui("[*] Mapped %d at 0x%x" % (range.size, range.base))
+        self.dwarf.get_bus().emit('emulator_memory_range_mapped', range.base, range.size)
         return 0
 
     def setup(self, tid=0):
@@ -116,13 +141,11 @@ class Emulator(object):
             if self.thumb:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
                 self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
-
                 # Enable VFP instr
                 self.uc.mem_map(0x1000, 1024)
                 self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
                 self.uc.emu_start(0x1000 | 1, 0x1000 + len(VFP))
                 self.uc.mem_unmap(0x1000, 1024)
-
             else:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_ARM)
                 self.uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
@@ -132,6 +155,8 @@ class Emulator(object):
         else:
             # unsupported arch
             return 5
+
+        self.cs.detail = True
 
         err = self.map_range(self.context.pc.value)
         if err > 0:
@@ -165,32 +190,52 @@ class Emulator(object):
                          self.hook_unmapped)
         return err
 
-    def start(self, until):
-        self.end_ptr = utils.parse_ptr(until)
+    def start(self, until=0):
+        if self._running:
+            return 10
+
+        if until > 0:
+            self.end_ptr = utils.parse_ptr(until)
+            if self.end_ptr == 0:
+                # invalid end pointer
+                return 1
         if self.context is None:
             err = self.setup()
             if err > 0:
                 return 200 + err
-        if self.uc._arch == UC_ARCH_ARM:
-            address = self.uc.reg_read(UC_ARM_REG_PC)
-        elif self.uc._arch == UC_ARCH_ARM64:
-            address = self.uc.reg_read(UC_ARM64_REG_PC)
+
+        address = self._next_instruction
+        if address == 0:
+            # calculate the start address
+            if self.uc._arch == UC_ARCH_ARM:
+                address = self.uc.reg_read(UC_ARM_REG_PC)
+            elif self.uc._arch == UC_ARCH_ARM64:
+                address = self.uc.reg_read(UC_ARM64_REG_PC)
+            else:
+                # unsupported arch
+                return 2
+
+        if until > 0:
+            self.log_to_ui('[*] start emulation from %s to %s' % (hex(address), hex(self.end_ptr)))
         else:
-            # unsupported arch
-            return 2
+            self.log_to_ui('[*] stepping %s' % hex(address))
+        self.dwarf.get_bus().emit('emulator_start')
+
         if self.thumb:
             address = address | 1
-        print('starting -> ' + hex(address))
-        print('until -> ' + hex(self.end_ptr))
-        try:
-            self.uc.emu_start(address, self.end_ptr)
-            return 0
-        except UcError as err:
-            self.uc.emu_stop()
-            print(err)
 
-            return 0
-        except Exception as e:
+        # until is 0 (i.e we are stepping)
+        if until == 0:
+            self.stepping = [True, False]
+            until = address + self.dwarf.pointer_size
+        else:
+            self.stepping = [False, False]
+        Thread(target=self.__start, args=(address, until,)).start()
+        return 0
+
+    def stop(self):
+        if self._running:
             self.uc.emu_stop()
-            print(e)
-            return 5
+
+    def log_to_ui(self, what):
+        self.dwarf.get_bus().emit('emulator_log', what)

@@ -57,6 +57,22 @@ def get_app_icon():
     return app_icon
 
 
+def parse_ptr(ptr):
+    if isinstance(ptr, str):
+        if ptr.startswith('#'):
+            ptr = ptr[1:]
+        if ptr.startswith('0x'):
+            ptr = int(ptr, 16)
+        else:
+            try:
+                ptr = int(ptr)
+            except:
+                ptr = 0
+    if not isinstance(ptr, int):
+        ptr = 0
+    return ptr
+
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -76,19 +92,3 @@ def show_message_box(text, details=None):
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
     return None
-
-
-def parse_ptr(ptr):
-    if isinstance(ptr, str):
-        if ptr.startswith('#'):
-            ptr = ptr[1:]
-        if ptr.startswith('0x'):
-            ptr = int(ptr, 16)
-        else:
-            try:
-                ptr = int(ptr)
-            except:
-                ptr = 0
-    if not isinstance(ptr, int):
-        ptr = 0
-    return ptr

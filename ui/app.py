@@ -166,6 +166,9 @@ class App(QWidget):
     def get_dwarf(self):
         return self.app_window.get_dwarf()
 
+    def get_emulator_panel(self):
+        return self.session_ui.emulator_panel
+
     def get_ftrace_panel(self):
         return self.session_ui.ftrace_panel
 

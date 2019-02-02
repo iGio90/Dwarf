@@ -19,9 +19,15 @@ from lib.hook import Hook
 
 
 class Range(object):
-    def __init__(self, dwarf):
+    # dump memory from target proc
+    SOURCE_TARGET = 0
+    # dump memory from emulator proc
+    SOURCE_EMULATOR = 1
+
+    def __init__(self, source, dwarf):
         super().__init__()
 
+        self.source = source
         self.dwarf = dwarf
 
         self.base = 0
@@ -49,37 +55,49 @@ class Range(object):
                 self.start_offset = self.start_address - self.base
                 return -1
 
-        try:
-            _range = self.dwarf.dwarf_api('getRange', self.start_address)
-        except Exception as e:
-            return 1
+        if self.source == Range.SOURCE_TARGET:
+            try:
+                _range = self.dwarf.dwarf_api('getRange', self.start_address)
+            except Exception as e:
+                return 1
+            if _range is None or len(_range) == 0:
+                return 1
 
-        if _range is None or len(_range) == 0:
-            return 1
+            # setup range fields
+            self.base = int(_range['base'], 16)
+            if base > 0:
+                self.base = base
+            self.size = _range['size']
+            if 0 < length < self.size:
+                self.size = length
+            self.tail = self.base + self.size
+            self.start_offset = self.start_address - self.base
 
-        # setup range fields
-        self.base = int(_range['base'], 16)
-        if base > 0:
-            self.base = base
-        self.size = _range['size']
-        if 0 < length < self.size:
-            self.size = length
-        self.tail = self.base + self.size
-        self.start_offset = self.start_address - self.base
+            # read data
+            self.data = self.dwarf.read_memory(self.base, self.size)
 
-        # read data
-        self.data = self.dwarf.read_memory(self.base, self.size)
-
-        # check if we have hooks in range and patch data
-        for key in self.dwarf.hooks.keys():
-            hook = self.dwarf.hooks[key]
-            if hook.hook_type == Hook.HOOK_NATIVE:
-                hook_address = hook.get_ptr()
-                if self.base < hook_address < self.tail:
-                    offset = hook_address - self.base
-                    # patch bytes
-                    self.patch_bytes(hook.get_bytes(), offset)
-
+            # check if we have hooks in range and patch data
+            for key in self.dwarf.hooks.keys():
+                hook = self.dwarf.hooks[key]
+                if hook.hook_type == Hook.HOOK_NATIVE:
+                    hook_address = hook.get_ptr()
+                    if self.base < hook_address < self.tail:
+                        offset = hook_address - self.base
+                        # patch bytes
+                        self.patch_bytes(hook.get_bytes(), offset)
+        elif self.source == Range.SOURCE_EMULATOR:
+            uc = self.dwarf.get_emulator().uc
+            if uc is not None:
+                for base, tail, perm in uc.mem_regions():
+                    if base <= self.start_address <= tail:
+                        self.base = base
+                        self.tail = tail
+                        self.start_offset = self.start_address - self.base
+                        self.size = self.tail - self.base
+                        break
+                if self.base > 0:
+                    # read data
+                    self.data = uc.mem_read(self.base, self.size)
         if self.data is None:
             self.data = bytes()
             return 1

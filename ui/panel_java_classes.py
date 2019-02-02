@@ -13,7 +13,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt
 
-from lib.core import Dwarf
 from ui.panel_java_methods import JavaMethodsPanel
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_table_base import TableBaseWidget

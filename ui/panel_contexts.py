@@ -16,6 +16,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt
 
+from ui.ui_session import SessionUi
 from ui.widget_context import ContextItem
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
@@ -30,6 +31,11 @@ class ContextsPanel(TableBaseWidget):
         if item is not None:
             ctx = self.item(item.row(), 0)
             if isinstance(ctx, ContextItem):
+                emulator = menu.addAction('Emulator')
+                if self.app.get_emulator_panel() is not None:
+                    emulator.setEnabled(False)
+                else:
+                    emulator.setData('emulator')
                 if self.app.get_dwarf().get_native_traced_tid() > 0:
                     trace = menu.addAction("Stop trace")
                 else:
@@ -42,7 +48,9 @@ class ContextsPanel(TableBaseWidget):
     def on_menu_action(self, action_data, item):
         ctx = self.item(item.row(), 0)
         if isinstance(ctx, ContextItem):
-            if action_data == 'trace':
+            if action_data == 'emulator':
+                self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_EMULATOR, request_focus=True)
+            elif action_data == 'trace':
                 if self.app.get_dwarf().get_native_traced_tid() > 0:
                     self.app.get_dwarf().native_tracer_stop()
                 else:

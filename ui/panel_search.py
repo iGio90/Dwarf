@@ -18,7 +18,6 @@ from threading import Thread
 
 from PyQt5.QtCore import Qt
 
-from lib.core import Dwarf
 from ui.widget_item_not_editable import NotEditableTableWidgetItem
 from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_table_base import TableBaseWidget
@@ -96,8 +95,8 @@ class SearchPanel(TableBaseWidget):
     @staticmethod
     def bytes_search_panel(app, input):
         panel = SearchPanel(app, [])
-        Dwarf.bus.add_event(panel.add_bytes_match_item, input)
-        Dwarf.bus.add_event(panel.sortByColumn, input + ' complete')
+        app.get_dwarf().get_bus().add_event(panel.add_bytes_match_item, input)
+        app.get_dwarf().get_bus().add_event(panel.sortByColumn, input + ' complete')
         search_label = input
         if len(search_label) > 7:
             search_label = search_label[:6] + '...'

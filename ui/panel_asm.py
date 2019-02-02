@@ -109,7 +109,7 @@ class AsmPanel(QTableWidget):
 
     def read_memory(self, ptr, length=0):
         if self.range is None:
-            self.range = Range(self.dwarf)
+            self.range = Range(Range.SOURCE_TARGET, self.dwarf)
         init = self.range.init_with_address(ptr, length)
         if init > 0:
             return 1
@@ -141,17 +141,6 @@ class AsmPanel(QTableWidget):
             row = self.rowCount()
             self.insertRow(row)
 
-            if insts == 0:
-                sym = self.app.dwarf_api('getSymbolByAddress', i.address)
-                if sym:
-                    module = ''
-                    if 'moduleName' in sym:
-                        module = '- %s' % sym['moduleName']
-                    w = NotEditableTableWidgetItem('%s %s' % (sym['name'], module))
-                    w.setFlags(Qt.NoItemFlags)
-                    w.setForeground(Qt.lightGray)
-                    self.setItem(row, 4, w)
-
             w = MemoryAddressWidget('0x%x' % i.address)
             w.setFlags(Qt.NoItemFlags)
             w.setForeground(Qt.red)
@@ -165,7 +154,7 @@ class AsmPanel(QTableWidget):
 
             is_jmp = False
             if CS_GRP_JUMP in i.groups or CS_GRP_CALL in i.groups:
-                is_jmp = False
+                is_jmp = True
 
             op_imm_value = 0
             if len(i.operands) > 0:
@@ -184,7 +173,7 @@ class AsmPanel(QTableWidget):
                             w.setForeground(Qt.lightGray)
                             self.setItem(row, 4, w)
 
-            if is_jmp:
+            if is_jmp and op_imm_value > 0:
                 w = MemoryAddressWidget(i.op_str)
                 w.set_address(op_imm_value)
             else:

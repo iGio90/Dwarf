@@ -21,14 +21,15 @@ from ui.panel_data import DataPanel
 
 
 class SessionUi(QTabWidget):
+    TAB_ASM = 'asm'
+    TAB_DATA = 'data'
+    TAB_EMULATOR = 'emulator'
+    TAB_FTRACE = 'ftrace'
+    TAB_JAVA_CLASSES = 'java'
+    TAB_JAVA_TRACE = 'java_trace'
     TAB_MODULES = 'modules'
     TAB_RANGES = 'ranges'
-    TAB_DATA = 'data'
-    TAB_ASM = 'asm'
-    TAB_JAVA_CLASSES = 'java'
     TAB_TRACE = 'trace'
-    TAB_FTRACE = 'ftrace'
-    TAB_JAVA_TRACE = 'java_trace'
 
     def __init__(self, app, *__args):
         super().__init__(*__args)
@@ -74,6 +75,7 @@ class SessionUi(QTabWidget):
         self.backtrace_panel = None
         self.console_panel = None
         self.contexts_panel = None
+        self.emulator_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
         self.java_class_panel = None
@@ -256,6 +258,14 @@ class SessionUi(QTabWidget):
             if request_focus:
                 self.setCurrentWidget(self.data_panel)
             return self.hooks_panel
+        elif tab_id == SessionUi.TAB_EMULATOR:
+            if self.emulator_panel is None:
+                from ui.panel_emulator import EmulatorPanel
+                self.emulator_panel= EmulatorPanel(self.app)
+            self.addTab(self.emulator_panel, 'emulator')
+            if request_focus:
+                self.setCurrentWidget(self.emulator_panel)
+            return self.trace_panel
         elif tab_id == SessionUi.TAB_FTRACE:
             if self.ftrace_panel is None:
                 from ui.panel_ftrace import FTracePanel
