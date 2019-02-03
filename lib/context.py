@@ -19,6 +19,9 @@ from lib.register import Register
 
 class Context(object):
     def __init__(self, context):
-        for register in context:
-            if len(register) > 0 and register != 'toJSON':
-                self.__dict__[register] = Register(context[register])
+
+        # quickest way to check if it's native context
+        if 'toJSON' in context:
+            for register in context:
+                if len(register) > 0 and register != 'toJSON':
+                    self.__dict__[register] = Register(context[register])
