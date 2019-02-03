@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QSplitter, QTableWidget, QWidget, QVBoxLayout, QHBox
     QTabWidget, QHeaderView
 
 from lib.range import Range
+from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.widget_console import QConsoleWidget
 from ui.widget_item_not_editable import NotEditableTableWidgetItem, NotEditableListWidgetItem
@@ -40,6 +41,7 @@ class AsmTableWidget(QTableWidget):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.horizontalHeader().setStretchLastSection(True)
+        self.model().rowsInserted.connect(self.on_row_inserted)
 
         self._require_register_result = None
         self._last_instruction_address = 0
@@ -64,7 +66,10 @@ class AsmTableWidget(QTableWidget):
         row = self.rowCount()
         self.insertRow(row)
 
-        w = MemoryAddressWidget('0x%x' % instruction.address)
+        address = instruction.address
+        if instruction.thumb:
+            address = address | 1
+        w = MemoryAddressWidget('0x%x' % address)
         w.setFlags(Qt.NoItemFlags)
         w.setForeground(Qt.red)
         self.setItem(row, 0, w)
@@ -107,6 +112,8 @@ class AsmTableWidget(QTableWidget):
             w.setForeground(Qt.lightGray)
             self.setItem(row, 4, w)
 
+        self.scrollToBottom()
+
     def add_memory_hook(self, uc, access, address, value):
         res = None
         if access == UC_MEM_READ:
@@ -122,6 +129,9 @@ class AsmTableWidget(QTableWidget):
             self._require_register_result = None
 
             self.setItem(self.rowCount() - 1, 4, NotEditableTableWidgetItem(res))
+
+    def on_row_inserted(self, qindex, a, b):
+        self.scrollToBottom()
 
 
 class MemoryTableWidget(QMemoryWidget):
@@ -200,7 +210,7 @@ class EmulatorPanel(QWidget):
         self.app.get_dwarf().get_bus().add_event(self.on_emulator_log, 'emulator_log')
 
     def handle_options(self):
-        pass
+        EmulatorConfigsDialog.show_dialog(self.app.get_dwarf())
 
     def handle_start(self):
         ph = ''

@@ -19,7 +19,8 @@ import time
 from threading import Thread
 
 from capstone import *
-from lib import utils
+
+from lib import utils, prefs
 from lib.instruction import Instruction
 from lib.range import Range
 from unicorn import *
@@ -43,12 +44,16 @@ class Emulator(object):
 
         self.stepping = [False, False]
         self._running = False
-        self._next_instruction = 0
+        self._current_instruction = 0
+        self._current_cpu_mode = 0
+
+        # configurations
+        self.instructions_delay = 0
 
     def __start(self, address, until):
         try:
             self._running = True
-            self.uc.emu_start(address, self.end_ptr)
+            self.uc.emu_start(address, until)
         except UcError as e:
             self.log_to_ui('[*] error: ' + str(e))
         except Exception as e:
@@ -69,6 +74,17 @@ class Emulator(object):
             self.dwarf.log(self.start(parts[1]))
 
     def hook_code(self, uc, address, size, user_data):
+        self._current_instruction = address
+
+        # if it's arm we query the cpu mode to detect switches between arm and thumb and set capstone mode if needed
+        if self.cs.arch == CS_ARCH_ARM:
+            mode = self.uc.query(UC_QUERY_MODE)
+            if self._current_cpu_mode != mode:
+                self._current_cpu_mode = mode
+                self.cs.mode = self._current_cpu_mode
+                self.thumb = self._current_cpu_mode == UC_MODE_THUMB
+
+        print('hit ' + hex(address))
         if self.stepping[0]:
             if self.stepping[1]:
                 uc.emu_stop()
@@ -78,12 +94,8 @@ class Emulator(object):
 
         for i in self.cs.disasm(bytes(uc.mem_read(address, size)), address):
             instruction = Instruction(self.dwarf, i)
-            if instruction.jump_address != 0:
-                self._next_instruction = instruction.jump_address
-            else:
-                self._next_instruction = address + size
             self.dwarf.get_bus().emit('emulator_hook', uc, instruction)
-        time.sleep(0.5)
+        time.sleep(self.instructions_delay)
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
         v = value
@@ -93,12 +105,14 @@ class Emulator(object):
 
     def hook_unmapped(self, uc, access, address, size, value, user_data):
         self.log_to_ui("[*] Trying to access an unmapped memory address at 0x%x" % address)
-        self.log_to_ui('[*] access %d, size %d, value %d' % (access, size, value))
         err = self.map_range(address)
         if err > 0:
             self.log_to_ui('[*] Error %d mapping range at %s' % (err, hex(address)))
             return False
         return True
+
+    def invalida_configurations(self):
+        self.instructions_delay = self.dwarf.get_prefs().get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0.5)
 
     def map_range(self, address):
         range = Range(Range.SOURCE_TARGET, self.dwarf)
@@ -140,6 +154,7 @@ class Emulator(object):
             if self.thumb:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
                 self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+                self._current_cpu_mode = UC_MODE_THUMB
                 # Enable VFP instr
                 self.uc.mem_map(0x1000, 1024)
                 self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
@@ -148,9 +163,12 @@ class Emulator(object):
             else:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_ARM)
                 self.uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+                self._current_cpu_mode = UC_MODE_ARM
         elif self.dwarf.arch == 'arm64':
             self.uc = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
             self.cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
+
+            self._current_cpu_mode = UC_MODE_LITTLE_ENDIAN
         else:
             # unsupported arch
             return 5
@@ -203,9 +221,9 @@ class Emulator(object):
             if err > 0:
                 return 200 + err
 
-        address = self._next_instruction
+        # calculate the start address
+        address = self._current_instruction
         if address == 0:
-            # calculate the start address
             if self.uc._arch == UC_ARCH_ARM:
                 address = self.uc.reg_read(UC_ARM_REG_PC)
             elif self.uc._arch == UC_ARCH_ARM64:
@@ -223,13 +241,16 @@ class Emulator(object):
         if self.thumb:
             address = address | 1
 
+        # invalidate prefs before start
+        self.invalida_configurations()
+
         # until is 0 (i.e we are stepping)
         if until == 0:
             self.stepping = [True, False]
-            until = address + self.dwarf.pointer_size
+            self.end_ptr = address + (self.dwarf.pointer_size * 2)
         else:
             self.stepping = [False, False]
-        Thread(target=self.__start, args=(address, until,)).start()
+        Thread(target=self.__start, args=(address, self.end_ptr)).start()
         return 0
 
     def stop(self):

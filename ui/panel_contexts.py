@@ -70,20 +70,27 @@ class ContextsPanel(TableBaseWidget):
             self.setColumnCount(3)
             self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
 
+        is_java = data['is_java']
+
         row = self.rowCount()
         self.insertRow(row)
         q = ContextItem(data, str(data['tid']))
         q.setForeground(Qt.darkCyan)
         self.setItem(row, 0, q)
-        is_java = data['is_java']
+
         if not is_java:
-            q = MemoryAddressWidget(data['ptr'])
+            pc = int(data['ptr'], 16)
+            # dethumbify
+            if pc & 1 == 1:
+                pc -= 1
+            q = MemoryAddressWidget(hex(pc))
         else:
             parts = data['ptr'].split('.')
             q = NotEditableTableWidgetItem(parts[len(parts) - 1])
             q.setForeground(Qt.red)
             q.setFlags(Qt.NoItemFlags)
         self.setItem(row, 1, q)
+
         if library_onload is None:
             if not is_java:
                 q = NotEditableTableWidgetItem('%s - %s' % (

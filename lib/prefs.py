@@ -23,6 +23,8 @@ VIEW_CONTEXT = 'view_context'
 VIEW_HOOKS = 'view_hooks'
 VIEW_WATCHERS = 'view_watchers'
 
+EMULATOR_INSTRUCTIONS_DELAY = 'emulator_instructions_delay'
+
 
 class Prefs(object):
     def __init__(self):

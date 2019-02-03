@@ -16,14 +16,17 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 
 from capstone import *
+from capstone.arm_const import *
 
 
 class Instruction(object):
     def __init__(self, dwarf, instruction):
+        self.id = instruction.id
         self.address = instruction.address
 
         self.bytes = instruction.bytes
 
+        self.groups = instruction.groups
         self.op_str = instruction.op_str
         self.mnemonic = instruction.mnemonic
         self.operands = instruction.operands
@@ -33,6 +36,8 @@ class Instruction(object):
 
         self.reg_name = instruction.reg_name
 
+        self.thumb = dwarf.arch == 'arm' and (ARM_GRP_THUMB in self.groups or ARM_GRP_THUMB1ONLY in self.groups
+                                              or ARM_GRP_THUMB2 in self.groups or ARM_GRP_THUMB2DSP in self.groups)
         self.is_jump = False
         if CS_GRP_JUMP in instruction.groups or CS_GRP_CALL in instruction.groups:
             self.is_jump = True
