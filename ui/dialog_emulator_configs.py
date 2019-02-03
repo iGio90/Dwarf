@@ -22,10 +22,23 @@ from lib import prefs
 class EmulatorConfigsDialog(QDialog):
     def __init__(self, dwarf, parent=None):
         super(EmulatorConfigsDialog, self).__init__(parent)
+        self.dwarf = dwarf
 
         layout = QVBoxLayout(self)
 
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(500)
+
+        layout.addWidget(QLabel('callbacks path'))
+        callbacks_layout = QHBoxLayout()
+        pick_path = QPushButton('choose')
+        pick_path.clicked.connect(self.pick_callbacks_path)
+        current_callbacks_path = dwarf.get_prefs().get(prefs.EMULATOR_CALLBACKS_PATH)
+        if current_callbacks_path == '':
+            current_callbacks_path = 'none'
+        self.callbacks_path_label = QLabel(current_callbacks_path)
+        callbacks_layout.addWidget(pick_path)
+        callbacks_layout.addWidget(self.callbacks_path_label)
+        layout.addLayout(callbacks_layout)
 
         layout.addWidget(QLabel('delay between instructions'))
         self.instructions_delay = QLineEdit()
@@ -41,6 +54,12 @@ class EmulatorConfigsDialog(QDialog):
         buttons.addWidget(accept)
 
         layout.addLayout(buttons)
+
+    def pick_callbacks_path(self):
+        r = QFileDialog.getOpenFileName()
+        if len(r) > 0 and len(r[0]) > 0:
+            self.dwarf.get_prefs().put(prefs.EMULATOR_CALLBACKS_PATH, r[0])
+            self.callbacks_path_label.setText(r[0])
 
     @staticmethod
     def show_dialog(dwarf):

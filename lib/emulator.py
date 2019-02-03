@@ -16,13 +16,15 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import binascii
 import time
-from threading import Thread
+
+from importlib._bootstrap import spec_from_loader, module_from_spec
+from importlib._bootstrap_external import SourceFileLoader
 
 from capstone import *
-
 from lib import utils, prefs
 from lib.instruction import Instruction
 from lib.range import Range
+from threading import Thread
 from unicorn import *
 from unicorn.arm_const import *
 from unicorn.arm64_const import *
@@ -48,6 +50,8 @@ class Emulator(object):
         self._current_cpu_mode = 0
 
         # configurations
+        self.callbacks_path = None
+        self.callbacks = None
         self.instructions_delay = 0
 
     def __setup(self):
@@ -134,6 +138,9 @@ class Emulator(object):
             self.dwarf.log(self.start(parts[1]))
 
     def clean(self):
+        if self._running:
+            return 1
+
         self.stepping = [False, False]
         self._current_instruction = 0
         self._current_cpu_mode = 0
@@ -161,6 +168,13 @@ class Emulator(object):
         for i in self.cs.disasm(bytes(uc.mem_read(address, size)), address):
             instruction = Instruction(self.dwarf, i)
             self.dwarf.get_bus().emit('emulator_hook', uc, instruction)
+            if self.callbacks is not None:
+                try:
+                    self.callbacks.hook_code(self, instruction, address, size)
+                except:
+                    # hook code not implemented in callbacks
+                    pass
+
         time.sleep(self.instructions_delay)
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
@@ -168,6 +182,12 @@ class Emulator(object):
         if access == UC_MEM_READ:
             v = int.from_bytes(uc.mem_read(address, size), 'little')
         self.dwarf.get_bus().emit('emulator_memory_hook', uc, access, address, v)
+        if self.callbacks is not None:
+            try:
+                self.callbacks.hook_memory_access(self, access, address, size, v)
+            except:
+                # hook code not implemented in callbacks
+                pass
 
     def hook_unmapped(self, uc, access, address, size, value, user_data):
         self.log_to_ui("[*] Trying to access an unmapped memory address at 0x%x" % address)
@@ -178,6 +198,7 @@ class Emulator(object):
         return True
 
     def invalida_configurations(self):
+        self.callbacks_path = self.dwarf.get_prefs().get(prefs.EMULATOR_CALLBACKS_PATH, '')
         self.instructions_delay = self.dwarf.get_prefs().get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0.5)
 
     def map_range(self, address):
@@ -253,6 +274,21 @@ class Emulator(object):
 
         # invalidate prefs before start
         self.invalida_configurations()
+
+        # load callbacks if needed
+        if self.callbacks_path is not None and self.callbacks_path != '':
+            try:
+                spec = spec_from_loader("callbacks", SourceFileLoader("callbacks", self.callbacks_path))
+                self.callbacks = module_from_spec(spec)
+                spec.loader.exec_module(self.callbacks)
+            except Exception as e:
+                self.log_to_ui('[*] failed to load callbacks: %s' % str(e))
+                # reset callbacks path
+                self.dwarf.get_prefs().put(prefs.EMULATOR_CALLBACKS_PATH, '')
+                self.callbacks_path = ''
+                self.callbacks = None
+        else:
+            self.callbacks = None
 
         # until is 0 (i.e we are stepping)
         if until == 0:

@@ -23,6 +23,7 @@ VIEW_CONTEXT = 'view_context'
 VIEW_HOOKS = 'view_hooks'
 VIEW_WATCHERS = 'view_watchers'
 
+EMULATOR_CALLBACKS_PATH = 'emulator_callbacks_path'
 EMULATOR_INSTRUCTIONS_DELAY = 'emulator_instructions_delay'
 
 
@@ -34,6 +35,9 @@ class Prefs(object):
         if os.path.exists(self._prefs_file):
             with open(self._prefs_file, 'r') as f:
                 self._prefs = json.load(f)
+
+        # reset single instance preferences
+        self.put(EMULATOR_CALLBACKS_PATH, '')
 
     def get(self, key, default=None):
         if key in self._prefs:
