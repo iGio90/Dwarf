@@ -50,6 +50,66 @@ class Emulator(object):
         # configurations
         self.instructions_delay = 0
 
+    def __setup(self):
+        if self.dwarf.arch == 'arm':
+            self.thumb = self.context.pc.thumb
+            if self.thumb:
+                self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
+                self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+                self._current_cpu_mode = UC_MODE_THUMB
+                # Enable VFP instr
+                self.uc.mem_map(0x1000, 1024)
+                self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
+                self.uc.emu_start(0x1000 | 1, 0x1000 + len(VFP))
+                self.uc.mem_unmap(0x1000, 1024)
+            else:
+                self.cs = Cs(CS_ARCH_ARM, CS_MODE_ARM)
+                self.uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+                self._current_cpu_mode = UC_MODE_ARM
+        elif self.dwarf.arch == 'arm64':
+            self.uc = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
+            self.cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
+
+            self._current_cpu_mode = UC_MODE_LITTLE_ENDIAN
+        else:
+            # unsupported arch
+            return 5
+
+        # enable capstone details
+        self.cs.detail = True
+
+        err = self.map_range(self.context.pc.value)
+        if err > 0:
+            return err
+        if self.dwarf.arch == 'arm':
+            self.uc.reg_write(UC_ARM_REG_R0, self.context.r0.value)
+            self.uc.reg_write(UC_ARM_REG_R1, self.context.r1.value)
+            self.uc.reg_write(UC_ARM_REG_R2, self.context.r2.value)
+            self.uc.reg_write(UC_ARM_REG_R3, self.context.r3.value)
+            self.uc.reg_write(UC_ARM_REG_R4, self.context.r4.value)
+            self.uc.reg_write(UC_ARM_REG_R5, self.context.r5.value)
+            self.uc.reg_write(UC_ARM_REG_R6, self.context.r6.value)
+            self.uc.reg_write(UC_ARM_REG_R7, self.context.r7.value)
+            self.uc.reg_write(UC_ARM_REG_R8, self.context.r8.value)
+            self.uc.reg_write(UC_ARM_REG_R9, self.context.r9.value)
+            self.uc.reg_write(UC_ARM_REG_R10, self.context.r10.value)
+            self.uc.reg_write(UC_ARM_REG_R11, self.context.r11.value)
+            self.uc.reg_write(UC_ARM_REG_R12, self.context.r12.value)
+            self.uc.reg_write(UC_ARM_REG_PC, self.context.pc.value)
+            self.uc.reg_write(UC_ARM_REG_SP, self.context.sp.value)
+            self.uc.reg_write(UC_ARM_REG_LR, self.context.lr.value)
+        elif self.dwarf.arch == 'arm64':
+            # todo
+            pass
+
+        self.uc.hook_add(UC_HOOK_CODE, self.hook_code)
+        self.uc.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, self.hook_mem_access)
+        self.uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED |
+                         UC_HOOK_MEM_WRITE_UNMAPPED |
+                         UC_HOOK_MEM_READ_UNMAPPED,
+                         self.hook_unmapped)
+        return err
+
     def __start(self, address, until):
         try:
             self._running = True
@@ -73,6 +133,13 @@ class Emulator(object):
         elif cmd == 'start':
             self.dwarf.log(self.start(parts[1]))
 
+    def clean(self):
+        self.stepping = [False, False]
+        self._current_instruction = 0
+        self._current_cpu_mode = 0
+
+        return self.__setup()
+
     def hook_code(self, uc, address, size, user_data):
         self._current_instruction = address
 
@@ -84,7 +151,6 @@ class Emulator(object):
                 self.cs.mode = self._current_cpu_mode
                 self.thumb = self._current_cpu_mode == UC_MODE_THUMB
 
-        print('hit ' + hex(address))
         if self.stepping[0]:
             if self.stepping[1]:
                 uc.emu_stop()
@@ -149,63 +215,7 @@ class Emulator(object):
         if self.context is None:
             return 1
 
-        if self.dwarf.arch == 'arm':
-            self.thumb = self.context.pc.thumb
-            if self.thumb:
-                self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
-                self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
-                self._current_cpu_mode = UC_MODE_THUMB
-                # Enable VFP instr
-                self.uc.mem_map(0x1000, 1024)
-                self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
-                self.uc.emu_start(0x1000 | 1, 0x1000 + len(VFP))
-                self.uc.mem_unmap(0x1000, 1024)
-            else:
-                self.cs = Cs(CS_ARCH_ARM, CS_MODE_ARM)
-                self.uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
-                self._current_cpu_mode = UC_MODE_ARM
-        elif self.dwarf.arch == 'arm64':
-            self.uc = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
-            self.cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
-
-            self._current_cpu_mode = UC_MODE_LITTLE_ENDIAN
-        else:
-            # unsupported arch
-            return 5
-
-        self.cs.detail = True
-
-        err = self.map_range(self.context.pc.value)
-        if err > 0:
-            return err
-        if self.dwarf.arch == 'arm':
-            self.uc.reg_write(UC_ARM_REG_R0, self.context.r0.value)
-            self.uc.reg_write(UC_ARM_REG_R1, self.context.r1.value)
-            self.uc.reg_write(UC_ARM_REG_R2, self.context.r2.value)
-            self.uc.reg_write(UC_ARM_REG_R3, self.context.r3.value)
-            self.uc.reg_write(UC_ARM_REG_R4, self.context.r4.value)
-            self.uc.reg_write(UC_ARM_REG_R5, self.context.r5.value)
-            self.uc.reg_write(UC_ARM_REG_R6, self.context.r6.value)
-            self.uc.reg_write(UC_ARM_REG_R7, self.context.r7.value)
-            self.uc.reg_write(UC_ARM_REG_R8, self.context.r8.value)
-            self.uc.reg_write(UC_ARM_REG_R9, self.context.r9.value)
-            self.uc.reg_write(UC_ARM_REG_R10, self.context.r10.value)
-            self.uc.reg_write(UC_ARM_REG_R11, self.context.r11.value)
-            self.uc.reg_write(UC_ARM_REG_R12, self.context.r12.value)
-            self.uc.reg_write(UC_ARM_REG_PC, self.context.pc.value)
-            self.uc.reg_write(UC_ARM_REG_SP, self.context.sp.value)
-            self.uc.reg_write(UC_ARM_REG_LR, self.context.lr.value)
-        elif self.dwarf.arch == 'arm64':
-            # todo
-            pass
-
-        self.uc.hook_add(UC_HOOK_CODE, self.hook_code)
-        self.uc.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, self.hook_mem_access)
-        self.uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED |
-                         UC_HOOK_MEM_WRITE_UNMAPPED |
-                         UC_HOOK_MEM_READ_UNMAPPED,
-                         self.hook_unmapped)
-        return err
+        return self.__setup()
 
     def start(self, until=0):
         if self._running:

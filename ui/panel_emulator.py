@@ -161,11 +161,15 @@ class EmulatorPanel(QWidget):
         self.btn_stop = QPushButton('stop')
         self.btn_stop.clicked.connect(self.handle_stop)
         self.btn_stop.setEnabled(False)
+        self.btn_clean = QPushButton('clean')
+        self.btn_clean.clicked.connect(self.handle_clean)
+        self.btn_clean.setEnabled(False)
         self.btn_options = QPushButton('options')
         self.btn_options.clicked.connect(self.handle_options)
         buttons.addWidget(self.btn_start)
         buttons.addWidget(self.btn_step)
         buttons.addWidget(self.btn_stop)
+        buttons.addWidget(self.btn_clean)
         buttons.addWidget(self.btn_options)
         layout.addLayout(buttons)
 
@@ -208,6 +212,13 @@ class EmulatorPanel(QWidget):
         self.app.get_dwarf().get_bus().add_event(self.on_emulator_memory_hook, 'emulator_memory_hook')
         self.app.get_dwarf().get_bus().add_event(self.on_emulator_memory_range_mapped, 'emulator_memory_range_mapped')
         self.app.get_dwarf().get_bus().add_event(self.on_emulator_log, 'emulator_log')
+
+    def handle_clean(self):
+        self.ranges_list.clear()
+        self.asm_table.setRowCount(0)
+        self.memory_table.setRowCount(0)
+        self.console.clear()
+        self.emulator.clean()
 
     def handle_options(self):
         EmulatorConfigsDialog.show_dialog(self.app.get_dwarf())
@@ -255,12 +266,14 @@ class EmulatorPanel(QWidget):
         self.btn_start.setEnabled(False)
         self.btn_step.setEnabled(False)
         self.btn_stop.setEnabled(True)
+        self.btn_clean.setEnabled(False)
         self.btn_options.setEnabled(False)
 
     def on_emulator_stop(self):
         self.btn_start.setEnabled(True)
         self.btn_step.setEnabled(True)
         self.btn_stop.setEnabled(False)
+        self.btn_clean.setEnabled(True)
         self.btn_options.setEnabled(True)
 
     def ranges_item_double_clicked(self, item):
