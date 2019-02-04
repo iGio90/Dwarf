@@ -21,6 +21,9 @@ from lib.android import AndroidPackage
 class Adb(object):
     def __init__(self):
         # self.app = app #not used here
+
+        self._sdk_version = 0
+
         self._adb_available = False
         self._dev_emu = False
         self._is_root = False
@@ -58,7 +61,7 @@ class Adb(object):
                     utils.do_shell_command('adb kill-server')
                     utils.show_message_box('device not authorized! allow access from this computer on the device')
 
-                if res and 'no devices/emulators' or 'device not found' in res:
+                if res and ('no devices/emulators' or 'device not found' in res):
                     self._dev_emu = False
                 else:
                     self._dev_emu = True
@@ -86,9 +89,19 @@ class Adb(object):
                             self._is_root = False
                             print('rootcheck: %s' % res)
 
+            # grab the sdk version
+            res = self._do_adb_command('adb shell getprop ro.build.version.sdk')
+            if res is not None:
+                self._sdk_version = int(res)
+
             # check if we have pidof
             self._have_pidof = self._do_adb_command('adb shell pidof') == ''
-            self._alternate_ps = self._do_adb_command('ps -A | grep test | awk \'{print $2}\'') == "0"
+            # check for alternative ps
+            if self._sdk_version > 25:
+                # oreo uses -A to list all procs
+                self._alternate_ps = self._do_adb_command('ps -A | grep test | awk \'{print $2}\'') == "0"
+            else:
+                self._alternate_ps = self._do_adb_command('ps | grep test | awk \'{print $2}\'') == "0"
 
             # fix some frida server problems
             # frida default port: 27042
@@ -136,10 +149,15 @@ class Adb(object):
                 pid = self.su('pidof %s' % proc)
                 self.su('kill -9 %s' % pid)
         else:
+            # check for alternative ps
+            ps = 'ps'
+            awk_print = '$1'
+            if self._sdk_version > 25:
+                ps += ' -A'
             if not self._alternate_ps:
-                self.su('kill -9 $(ps -A | grep \'frida\' | awk \'{ print $2 }\')')
-            else:
-                self.su('kill -9 $(ps -A | grep \'frida\' | awk \'{ print $1 }\')')
+                awk_print = '$2'
+
+            self.su('kill -9 $(%s | grep \'frida\' | awk \'{ print %s }\')' % (ps, awk_print))
 
         return True
 
@@ -179,10 +197,14 @@ class Adb(object):
             result = self.su('pidof frida')
             return result is not None and result != ''
 
+        ps = 'ps'
+        awk_print = '$1 " " $4'
+        if self._sdk_version > 25:
+            ps += ' -A'
         if not self._alternate_ps:
-            result = self.su('ps | grep \'frida\' | awk \'{ print $2 " " $9 }\'')
-        else:
-            result = self.su('ps | grep \'frida\' | awk \'{ print $1 " " $4 }\'')
+            awk_print = '$2 " " $9'
+
+        result = self.su('%s | grep \'frida\' | awk \'{ print %s }\'' % (ps, awk_print))
 
         # result should
         # xxxx frida
