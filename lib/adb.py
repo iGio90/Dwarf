@@ -1,13 +1,16 @@
 """
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
+
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
@@ -90,27 +93,27 @@ class Adb(object):
                             self._is_root = False
                             print('rootcheck: %s' % res)
 
-            #get some infos about the device and keep for later
-            self._sdk_version = self._do_adb_command('adb shell getprop ro.build.version.sdk')
-            self._sdk_version = self._sdk_version.join(self._sdk_version.split()) #cleans '\r\n'
-            self._android_version = self._do_adb_command('adb shell getprop ro.build.version.release')
-            self._android_version = self._android_version.join(self._android_version.split())
-
-            try:
-                self._oreo_plus = (int(self._android_version.split('.')[0]) >= 8)
-            except ValueError:
-                try:
-                    self._oreo_plus = (int(self._sdk_version) > 25)
-                except ValueError:
-                    pass
-
-            # check if we have pidof
-            if self._oreo_plus:
-                self._have_pidof = self._do_adb_command('adb shell pidof') == ''
-
-            # fix some frida server problems
-            # frida default port: 27042
             if self._dev_emu:
+                # get some infos about the device and keep for later
+                self._sdk_version = self._do_adb_command('adb shell getprop ro.build.version.sdk')
+                self._sdk_version = self._sdk_version.join(self._sdk_version.split())  # cleans '\r\n'
+                self._android_version = self._do_adb_command('adb shell getprop ro.build.version.release')
+                self._android_version = self._android_version.join(self._android_version.split())
+
+                try:
+                    self._oreo_plus = (int(self._android_version.split('.')[0]) >= 8)
+                except ValueError:
+                    try:
+                        self._oreo_plus = (int(self._sdk_version) > 25)
+                    except ValueError:
+                        pass
+
+                # check if we have pidof
+                if self._oreo_plus:
+                    self._have_pidof = self._do_adb_command('adb shell pidof') == ''
+
+                # fix some frida server problems
+                # frida default port: 27042
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
 
         # print states
