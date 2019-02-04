@@ -225,4 +225,4 @@ class App(QWidget):
         self.session_ui.show()
 
         # trigger this to clear lists
-        self.welcome_ui.on_device_changed()
+        self.welcome_ui.on_devices_updated()
