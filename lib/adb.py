@@ -14,6 +14,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import frida
+
 from lib import utils
 from lib.android import AndroidPackage
 
@@ -123,7 +125,13 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        self.su('kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
+        procs = self.su('ps -A -o comm,pid | grep frida')
+        if procs is not None:
+            for proc in procs.split('\n'):
+                parts = proc.split(' ')
+                pid = parts[-1]
+                if pid != '':
+                    self.su('kill -9 %s' % pid)
 
         return True
 
@@ -140,10 +148,10 @@ class Adb(object):
                 self.kill_frida()
 
         if not daemonize:
-            result = self.su('frida&')
+            result = self.su('frida &')
         else:
             # with nox it starts frida fine but keeps running without return so it needs some timeout here
-            result = self.su('frida -D', timeout=10)
+            result = self.su('frida -D', timeout=5)
 
         if result is not None and 'Unable to start server' in result:
             return False
@@ -159,21 +167,10 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        result = self.su('ps | grep \'frida\' | awk \'{ print $2 " " $9 }\'')
+        result = self.su('ps -A -o comm | grep \'frida\'')
 
-        # result should
-        # xxxx frida
-        # xxxx /data/local/tmp/re.frida.server/frida-helper-xxxx
-        if result is not None:
-            if result and 'frida' in result and 'frida-helper' in result:
-                result = result.split()
-                if len(result) != 4:
-                    return False
-                try:
-                    if int(result[0]) > 0 and int(result[2]) > 0:
-                        return True
-                except ValueError:
-                    return False
+        if result is not None and 'frida' in result.split('\n'):
+            return True
 
         return False
 
@@ -248,10 +245,8 @@ class Adb(object):
             return None
 
         if self._is_su:
-            res = self._do_adb_command('adb shell su -c \'' + cmd + '\'', timeout=timeout)
+            return self._do_adb_command('adb shell su -c \'' + cmd + '\'', timeout=timeout)
         elif self._is_root:
-            res = self._do_adb_command('adb shell ' + cmd, timeout=timeout)
+            return self._do_adb_command('adb shell ' + cmd, timeout=timeout)
         else:
-            res = None
-
-        return res
+            return None

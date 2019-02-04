@@ -45,12 +45,11 @@ def do_shell_command(cmd, timeout=60):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  stdin=subprocess.PIPE)
-            out, err = p.communicate()
+            out, err = p.communicate(timeout=timeout)
             out = out.decode('utf8')
             if len(out) > 0:
                 return out
             return err.decode('utf8')
-
     except subprocess.TimeoutExpired:
         return None  # todo: timeout doesnt mean cmd failed
 
