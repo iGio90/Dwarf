@@ -60,7 +60,7 @@ class Adb(object):
 
                 if res and 'no devices/emulators' in res:
                     self._dev_emu = False
-                elif 'device not found' in res:
+                elif res and 'device not found' in res:
                     self._dev_emu = False
                 else:
                     self._dev_emu = True
