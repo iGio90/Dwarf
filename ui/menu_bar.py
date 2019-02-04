@@ -73,8 +73,8 @@ class MenuBar(object):
         decompile_apk = QAction("&Decompile APK", self.app_window)
         decompile_apk.triggered.connect(self.handler_decompile_apk)
 
-        save_apk.setEnabled(self.app_window.get_adb().adb_available)
-        decompile_apk.setEnabled(self.app_window.get_adb().adb_available)
+        save_apk.setEnabled(self.app_window.get_adb().is_available())
+        decompile_apk.setEnabled(self.app_window.get_adb().is_available())
 
         device_menu = self.menu.addMenu('&Device')
         self.add_menu_action(device_menu, save_apk, False)

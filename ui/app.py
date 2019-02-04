@@ -31,7 +31,7 @@ class AppWindow(QMainWindow):
         super().__init__(flags, *args, **kwargs)
 
         self.app = App(self)
-        self.adb = Adb(self.app)
+        self.adb = Adb()
 
         self.dwarf = Dwarf(self)
 

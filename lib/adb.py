@@ -88,9 +88,6 @@ class Adb(object):
             if self._dev_emu:
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
 
-        # print results
-        print(self.get_states_string())
-
     def get_states_string(self):
         """ Prints check results
         """
@@ -152,6 +149,9 @@ class Adb(object):
             return False
         else:
             return True
+
+    def is_available(self):
+        return self._adb_available
 
     def is_frida_running(self):
         """ Checks if frida is running
