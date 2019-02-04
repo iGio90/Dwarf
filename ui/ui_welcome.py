@@ -640,13 +640,16 @@ class WelcomeUi(QSplitter):
                 if not self.app.get_adb().is_frida_running():
                     self.frida_update_button.setText('start frida')
                     self.frida_update_button.setVisible(True)
+                    self.frida_update_button.setEnabled(True)
                 else:
                     self.frida_update_button.setText('stop frida')
                     self.frida_update_button.setVisible(True)
+                    self.frida_update_button.setEnabled(True)
             else:
                 self.update_status_label('frida not found')
                 self.frida_update_button.setText('install frida')
                 self.frida_update_button.setVisible(True)
+                self.frida_update_button.setEnabled(True)
         else:
             self.update_status_label('-')
 
