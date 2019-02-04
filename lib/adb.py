@@ -97,11 +97,9 @@ class Adb(object):
             # check if we have pidof
             self._have_pidof = self._do_adb_command('adb shell pidof') == ''
             # check for alternative ps
-            if self._sdk_version > 25:
-                # oreo uses -A to list all procs
-                self._alternate_ps = self._do_adb_command('ps -A | grep test | awk \'{print $2}\'') == "0"
-            else:
-                self._alternate_ps = self._do_adb_command('ps | grep test | awk \'{print $2}\'') == "0"
+            # oreo uses -A to list all procs
+            ps = self.get_ps_cmd()
+            self._alternate_ps = (self._do_adb_command('%s | grep test | awk \'{print $2}\'') % ps) == "0"
 
             # fix some frida server problems
             # frida default port: 27042
@@ -150,10 +148,8 @@ class Adb(object):
                 self.su('kill -9 %s' % pid)
         else:
             # check for alternative ps
-            ps = 'ps'
+            ps = self.get_ps_cmd()
             awk_print = '$1'
-            if self._sdk_version > 25:
-                ps += ' -A'
             if not self._alternate_ps:
                 awk_print = '$2'
 
@@ -197,10 +193,8 @@ class Adb(object):
             result = self.su('pidof frida')
             return result is not None and result != ''
 
-        ps = 'ps'
+        ps = self.get_ps_cmd()
         awk_print = '$1 " " $4'
-        if self._sdk_version > 25:
-            ps += ' -A'
         if not self._alternate_ps:
             awk_print = '$2 " " $9'
 
@@ -237,6 +231,12 @@ class Adb(object):
                 result = None
 
         return result
+
+    def get_ps_cmd(self):
+        res = 'ps'
+        if self._sdk_version > 25:
+            res += ' -A'
+        return res
 
     def kill_package(self, package):
         if not self._adb_available:
