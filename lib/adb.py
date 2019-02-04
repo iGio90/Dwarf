@@ -14,8 +14,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import frida
-
 from lib import utils
 from lib.android import AndroidPackage
 
