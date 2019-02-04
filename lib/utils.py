@@ -20,41 +20,27 @@ import sys
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QAction, QMessageBox
+from PyQt5.QtWidgets import QMessageBox
 
-app_icon = None
+APP_ICON = None
 
 
-def do_shell_command(cmd, stdout=subprocess.PIPE):
-    if stdout == subprocess.PIPE:
-        '''
-        This solution is a shit because we don't know why on the following case:
-        on ubuntu + py 3.6, running adb shell with subprocess run and redirect stdout and stderr to pipe
-        return none and output the result on the console (O.O). On OSX i'm not facing this. 
-        Windows users have the problem as well. The following code works for everyone :S  
-        '''
-        p = subprocess.Popen(cmd.split(' '),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             stdin=subprocess.PIPE)
-        out, err = p.communicate()
-        out = out.decode('utf8')
-        if len(out) > 0:
-            return out
-        return err.decode('utf8')
+def do_shell_command(cmd, timeout=60):
+    try:
+        result = subprocess.run(cmd.split(' '), timeout=timeout, capture_output=True)
+        if len(result.stderr) > 0 and len(result.stdout) == 0:
+            return result.stderr.decode('utf8')
 
-    result = subprocess.run(cmd.split(' '), stdout=stdout)
-    if stdout == subprocess.PIPE:
         return result.stdout.decode('utf8')
-    else:
-        return ''
+    except subprocess.TimeoutExpired:
+        return None  # todo: timeout doesnt mean cmd failed
 
 
 def get_app_icon():
-    global app_icon
-    if app_icon is None:
-        app_icon = QPixmap(resource_path('ui/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
-    return app_icon
+    global APP_ICON
+    if APP_ICON is None:
+        APP_ICON = QPixmap(resource_path('ui/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
+    return APP_ICON
 
 
 def parse_ptr(ptr):
@@ -66,7 +52,7 @@ def parse_ptr(ptr):
         else:
             try:
                 ptr = int(ptr)
-            except:
+            except ValueError:
                 ptr = 0
     if not isinstance(ptr, int):
         ptr = 0
@@ -74,12 +60,14 @@ def parse_ptr(ptr):
 
 
 def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
+    """get path to resource
+    """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    # its /lib/ now so move one up os.pardir
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(base_path, relative_path)
+    else:
+        return os.path.join(base_path, os.pardir, relative_path)
 
 
 def show_message_box(text, details=None):
@@ -91,4 +79,3 @@ def show_message_box(text, details=None):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
-    return None
