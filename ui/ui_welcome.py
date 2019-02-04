@@ -24,7 +24,6 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 
 from lib import utils
-from threading import Thread
 
 from ui.dialog_js_editor import JsEditorDialog
 from ui.list_pick import PickList
@@ -345,6 +344,8 @@ class WelcomeUi(QSplitter):
         self.devices_thread = None
         self.procs_update_thread = None
         self.spawns_update_thread = None
+        self.update_commits_thread = None
+        self.update_dwarf_thread = None
 
         self.setup_threads()
 
@@ -479,12 +480,20 @@ class WelcomeUi(QSplitter):
         self.update_device_ui()
 
     def update_commits(self):
-        update_commits = DwarfCommitsThread(app=self.app)
-        update_commits.on_update_available.connect(self.on_dwarf_isupdate)
-        update_commits.on_add_commit.connect(self.on_dwarf_commit)
-        # update_commits.on_finished.connect()
-        # update_commits.on_status_text.connect()
-        update_commits.run()
+        if self.update_commits_thread is None:
+            self.update_commits_thread = DwarfCommitsThread(app=self.app)
+            self.update_commits_thread.on_update_available.connect(self.on_dwarf_isupdate)
+            self.update_commits_thread.on_add_commit.connect(self.on_dwarf_commit)
+            if not self.update_commits_thread.isRunning():
+                self.update_commits_thread.start()
+
+    def update_dwarf(self):
+        if self.update_dwarf_thread is None:
+            self.update_dwarf_thread = DwarfUpdateThread(self.app)
+            self.update_dwarf_thread.on_finished.connect(self.on_dwarf_updated)
+            self.update_dwarf_thread.on_status_text(self.on_dwarf_status)
+            if not self.update_dwarf_thread.isRunning():
+                self.update_dwarf_thread.start()
 
     def on_dwarf_isupdate(self):
         self.dwarf_update_button.setVisible(True)
@@ -495,12 +504,6 @@ class WelcomeUi(QSplitter):
         if color:
             q.setForeground(Qt.white)
         self.commit_list.addItem(q)
-
-    def update_dwarf(self):
-        dwarf_update_thread = DwarfUpdateThread(self.app)
-        dwarf_update_thread.on_finished.connect(self.on_dwarf_updated)
-        dwarf_update_thread.on_status_text(self.on_dwarf_status)
-        dwarf_update_thread.run()
 
     # temp
     # needs real status label

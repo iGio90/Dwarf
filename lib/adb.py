@@ -26,6 +26,9 @@ class Adb(object):
         self._is_root = False
         self._is_su = False
 
+        self._have_pidof = False
+        self._alternate_ps = False
+
         self._check_requirements()
 
     def _check_requirements(self):
@@ -83,6 +86,10 @@ class Adb(object):
                             self._is_root = False
                             print('rootcheck: %s' % res)
 
+            # check if we have pidof
+            self._have_pidof = self._do_adb_command('adb shell pidof') == ''
+            self._alternate_ps = self._do_adb_command('ps -A | grep test | awk \'{print $2}\'') == "0"
+
             # fix some frida server problems
             # frida default port: 27042
             if self._dev_emu:
@@ -123,13 +130,16 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        procs = self.su('ps -A -o comm,pid | grep frida')
-        if procs is not None:
-            for proc in procs.split('\n'):
-                parts = proc.split(' ')
-                pid = parts[-1]
-                if pid != '':
-                    self.su('kill -9 %s' % pid)
+        if self._have_pidof:
+            procs = ['frida', 'frida-helper-32', 'frida-helper-64']
+            for proc in procs:
+                pid = self.su('pidof %s' % proc)
+                self.su('kill -9 %s' % pid)
+        else:
+            if not self._alternate_ps:
+                self.su('kill -9 $(ps -A | grep \'frida\' | awk \'{ print $2 }\')')
+            else:
+                self.su('kill -9 $(ps -A | grep \'frida\' | awk \'{ print $1 }\')')
 
         return True
 
@@ -165,10 +175,28 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        result = self.su('ps -A -o comm | grep \'frida\'')
+        if self._have_pidof:
+            result = self.su('pidof frida')
+            return result is not None and result != ''
 
-        if result is not None and 'frida' in result.split('\n'):
-            return True
+        if not self._alternate_ps:
+            result = self.su('ps | grep \'frida\' | awk \'{ print $2 " " $9 }\'')
+        else:
+            result = self.su('ps | grep \'frida\' | awk \'{ print $1 " " $4 }\'')
+
+        # result should
+        # xxxx frida
+        # xxxx /data/local/tmp/re.frida.server/frida-helper-xxxx
+        if result is not None:
+            if result and 'frida' in result and 'frida-helper' in result:
+                result = result.split()
+                if len(result) != 4:
+                    return False
+                try:
+                    if int(result[0]) > 0 and int(result[2]) > 0:
+                        return True
+                except ValueError:
+                    return False
 
         return False
 
