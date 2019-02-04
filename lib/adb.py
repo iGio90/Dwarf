@@ -1,16 +1,13 @@
 """
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
@@ -21,16 +18,16 @@ from lib.android import AndroidPackage
 class Adb(object):
     def __init__(self):
         # self.app = app #not used here
-
-        self._sdk_version = 0
-
         self._adb_available = False
         self._dev_emu = False
         self._is_root = False
         self._is_su = False
 
         self._have_pidof = False
-        self._alternate_ps = False
+
+        self._android_version = ''
+        self._sdk_version = ''
+        self._oreo_plus = False
 
         self._check_requirements()
 
@@ -61,13 +58,17 @@ class Adb(object):
                     utils.do_shell_command('adb kill-server')
                     utils.show_message_box('device not authorized! allow access from this computer on the device')
 
-                if res and ('no devices/emulators' or 'device not found' in res):
+                if res and 'no devices/emulators' in res:
+                    self._dev_emu = False
+                elif 'device not found' in res:
                     self._dev_emu = False
                 else:
                     self._dev_emu = True
 
                 # user can run su?
                 if res and 'Permission denied' in res:
+                    self._is_su = False
+                elif res and 'su: not found' in res:
                     self._is_su = False
                 else:
                     if self._dev_emu:
@@ -89,22 +90,31 @@ class Adb(object):
                             self._is_root = False
                             print('rootcheck: %s' % res)
 
-            # grab the sdk version
-            res = self._do_adb_command('adb shell getprop ro.build.version.sdk')
-            if res is not None:
-                self._sdk_version = int(res)
+            #get some infos about the device and keep for later
+            self._sdk_version = self._do_adb_command('adb shell getprop ro.build.version.sdk')
+            self._sdk_version = self._sdk_version.join(self._sdk_version.split()) #cleans '\r\n'
+            self._android_version = self._do_adb_command('adb shell getprop ro.build.version.release')
+            self._android_version = self._android_version.join(self._android_version.split())
+
+            try:
+                self._oreo_plus = (int(self._android_version.split('.')[0]) >= 8)
+            except ValueError:
+                try:
+                    self._oreo_plus = (int(self._sdk_version) > 25)
+                except ValueError:
+                    pass
 
             # check if we have pidof
-            self._have_pidof = self._do_adb_command('adb shell pidof') == ''
-            # check for alternative ps
-            # oreo uses -A to list all procs
-            ps = self.get_ps_cmd()
-            self._alternate_ps = (self._do_adb_command('%s | grep test | awk \'{print $2}\'') % ps) == "0"
+            if self._oreo_plus:
+                self._have_pidof = self._do_adb_command('adb shell pidof') == ''
 
             # fix some frida server problems
             # frida default port: 27042
             if self._dev_emu:
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
+
+        # print states
+        print(self.get_states_string())
 
     def get_states_string(self):
         """ Prints check results
@@ -141,19 +151,16 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        if self._have_pidof:
-            procs = ['frida', 'frida-helper-32', 'frida-helper-64']
-            for proc in procs:
-                pid = self.su('pidof %s' % proc)
-                self.su('kill -9 %s' % pid)
+        if self._oreo_plus:
+            if self._have_pidof:
+                procs = ['frida', 'frida-helper-32', 'frida-helper-64']
+                for proc in procs:
+                    pid = self.su('pidof %s' % proc)
+                    self.su('kill -9 %s' % pid)
+            else:
+                self.su('kill -9 $(ps -A | grep \'frida\' | awk \'{ print $1 }\')')
         else:
-            # check for alternative ps
-            ps = self.get_ps_cmd()
-            awk_print = '$1'
-            if not self._alternate_ps:
-                awk_print = '$2'
-
-            self.su('kill -9 $(%s | grep \'frida\' | awk \'{ print %s }\')' % (ps, awk_print))
+            self.su('kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
 
         return True
 
@@ -189,32 +196,17 @@ class Adb(object):
         if not self._adb_available:
             return False
 
-        if self._have_pidof:
-            result = self.su('pidof frida')
-            return result is not None and result != ''
+        found = False
 
-        ps = self.get_ps_cmd()
-        awk_print = '$1 " " $4'
-        if not self._alternate_ps:
-            awk_print = '$2 " " $9'
+        result = self.su('ps | grep \'frida\'')
+        result = result.split()
 
-        result = self.su('%s | grep \'frida\' | awk \'{ print %s }\'' % (ps, awk_print))
+        if 'frida' in result:
+            for r in result:
+                if 'frida-helper' in r:
+                    found = True
 
-        # result should
-        # xxxx frida
-        # xxxx /data/local/tmp/re.frida.server/frida-helper-xxxx
-        if result is not None:
-            if result and 'frida' in result and 'frida-helper' in result:
-                result = result.split()
-                if len(result) != 4:
-                    return False
-                try:
-                    if int(result[0]) > 0 and int(result[2]) > 0:
-                        return True
-                except ValueError:
-                    return False
-
-        return False
+        return found
 
     def get_frida_version(self):
         """ Returns version from 'frida --version'
@@ -231,12 +223,6 @@ class Adb(object):
                 result = None
 
         return result
-
-    def get_ps_cmd(self):
-        res = 'ps'
-        if self._sdk_version > 25:
-            res += ' -A'
-        return res
 
     def kill_package(self, package):
         if not self._adb_available:
