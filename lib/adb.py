@@ -116,9 +116,6 @@ class Adb(object):
                 # frida default port: 27042
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
 
-        # print states
-        print(self.get_states_string())
-
     def get_states_string(self):
         """ Prints check results
         """
