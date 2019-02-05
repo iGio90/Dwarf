@@ -58,13 +58,11 @@ class DwarfCommitsThread(QThread):
             if io_error.errno == 2:
                 # git command not available
                 self.on_status_text.emit('error: git not available on your system')
-                self.on_finished.emit('error: git not available on your system')
                 return
 
         data = self.app.get_dwarf().get_git().get_dwarf_commits()
         if data is None:
             self.on_status_text.emit('Failed to fetch commit list. Try later.')
-            self.on_finished.emit('Failed to fetch commit list. Try later.')
             return
 
         most_recent_remote_commit = ''
@@ -86,8 +84,6 @@ class DwarfCommitsThread(QThread):
 
             s = ('{0} - {1} ({2})'.format(date[1][:-1], commit['message'], commit['author']['name']))
             self.on_add_commit.emit(s, True)
-
-        self.on_finished.emit()
 
 
 class DwarfUpdateThread(QThread):
@@ -637,7 +633,9 @@ class WelcomeUi(QSplitter):
             if local_version is not None:
                 local_version = local_version.join(local_version.split())
                 self.update_status_label(local_version)
+
                 self.frida_update_button.setVisible(self.updated_frida_version != local_version)
+
                 if not self.app.get_adb().is_frida_running():
                     self.frida_update_button.setText('start frida')
                     self.frida_update_button.setVisible(True)
