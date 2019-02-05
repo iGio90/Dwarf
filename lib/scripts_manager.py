@@ -24,8 +24,11 @@ class ScriptsManager(object):
         self.update_scripts()
 
     def update_scripts(self):
-        scripts = self.dwarf.get_git().get_dwarf_scripts()\
-            .replace(' ', '')\
+        scripts = self.dwarf.get_git().get_dwarf_scripts()
+
+        if scripts is None:
+            return
+        scripts = scripts.replace(' ', '')\
             .replace('\t', '')\
             .split('\n')
         submodule_path = '[submodule"'
