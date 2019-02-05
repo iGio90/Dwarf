@@ -491,7 +491,8 @@ class WelcomeUi(QSplitter):
         if self.update_dwarf_thread is None:
             self.update_dwarf_thread = DwarfUpdateThread(self.app)
             self.update_dwarf_thread.on_finished.connect(self.on_dwarf_updated)
-            self.update_dwarf_thread.on_status_text(self.on_dwarf_status)
+            self.update_dwarf_thread.on_status_text.emit(self.on_dwarf_status)
+
             if not self.update_dwarf_thread.isRunning():
                 self.update_dwarf_thread.start()
 
