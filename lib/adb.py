@@ -94,9 +94,9 @@ class Adb(object):
                             print('rootcheck: %s' % res)
 
             if self._dev_emu:
-                # get some infos about the device and keep for later
+                #get some infos about the device and keep for later
                 self._sdk_version = self._do_adb_command('adb shell getprop ro.build.version.sdk')
-                self._sdk_version = self._sdk_version.join(self._sdk_version.split())  # cleans '\r\n'
+                self._sdk_version = self._sdk_version.join(self._sdk_version.split()) #cleans '\r\n'
                 self._android_version = self._do_adb_command('adb shell getprop ro.build.version.release')
                 self._android_version = self._android_version.join(self._android_version.split())
 
