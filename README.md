@@ -28,6 +28,19 @@ pip3 install -r requirements.txt
 python3 dwarf.py
 ```
 
+### Optionally
+
+You can install keystone-engine to enable assembler:
+
+```$xslt
+Windows
+x86: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win32.msi
+x64: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win64.msi
+
+OSX / Unix
+pip3 install keystone-engine
+```
+
 ```
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
