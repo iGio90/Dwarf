@@ -87,12 +87,11 @@ class Emulator(object):
             return err
 
         # setup context
-
         uc_registers = {}
         for v in unicorn_consts.__dict__:
             if '_REG_' in v:
                 reg = v.lower().split('_')[-1]
-                uc_registers[reg] = unicorn.arm64_const.__dict__[v]
+                uc_registers[reg] = unicorn_consts.__dict__[v]
 
         for k in self.context.__dict__:
             self.uc.reg_write(uc_registers[k], self.context.__dict__[k].value)
