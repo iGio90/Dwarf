@@ -86,6 +86,23 @@ class Dwarf(object):
         except:
             pass
 
+    def _get_device(self):
+        try:
+            self.device = frida.get_usb_device()
+        except frida.TimedOutError:
+            self.device = None
+
+        if self.device is None:
+            # now check for a local device
+            try:
+                self.device = frida.get_local_device()
+            except frida.TimedOutError:
+                self.device = None
+
+            if self.device is None:
+                return 1
+        return 0
+
     def _reinitialize(self):
         self.java_available = False
         self.loading_library = False
@@ -114,7 +131,11 @@ class Dwarf(object):
 
     def attach(self, pid_or_package, script=None):
         if self.device is None:
-            return
+            # fallback to usb device
+            # can come from -p in args
+            err = self._get_device()
+            if err > 0:
+                return err
 
         if self.process is not None:
             self.detach()
@@ -123,8 +144,10 @@ class Dwarf(object):
             self.process = self.device.attach(pid_or_package)
         except Exception as e:
             utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
-            return
+            return 2
+
         self.load_script(script)
+        return 0
 
     def detach(self):
         if self.script is not None:
@@ -150,9 +173,9 @@ class Dwarf(object):
         if self.device is None:
             # fallback to usb device
             # can come from -p in args
-            self.device = frida.get_usb_device()
-            if self.device is None:
-                return
+            err = self._get_device()
+            if err > 0:
+                return err
 
         if self.process is not None:
             self.detach()
@@ -162,9 +185,10 @@ class Dwarf(object):
             self.process = self.device.attach(pid)
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
-            return
+            return 2
         self.load_script(script)
         self.device.resume(pid)
+        return 0
 
     def on_message(self, message, data):
         if 'payload' not in message:
