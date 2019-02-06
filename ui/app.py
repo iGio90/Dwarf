@@ -100,8 +100,8 @@ class App(QWidget):
 
     def resume(self, tid=0):
         if tid == 0:
-            self.get_contexts_panel().setRowCount(0)
-            self.get_registers_panel().setRowCount(0)
+            self.get_contexts_lists_panel().setRowCount(0)
+            self.get_context_panel().setRowCount(0)
             self.get_backtrace_panel().setRowCount(0)
             self.get_memory_panel().clear_panel()
             self.get_dwarf().contexts.clear()
@@ -112,13 +112,13 @@ class App(QWidget):
 
     def on_tid_resumed(self, tid):
         if self.get_dwarf().context_tid == tid:
-            self.get_registers_panel().setRowCount(0)
+            self.get_context_panel().setRowCount(0)
             self.get_backtrace_panel().setRowCount(0)
             self.get_memory_panel().clear_panel()
             if self.get_java_explorer_panel() is not None:
                 self.get_java_explorer_panel().clear_panel()
 
-        self.get_contexts_panel().resume_tid(tid)
+        self.get_contexts_lists_panel().resume_tid(tid)
 
     def clear(self):
         self.modules_panel.setRowCount(0)
@@ -138,9 +138,11 @@ class App(QWidget):
             self.set_ranges(context['ranges'])
         if 'context' in context:
             is_java = context['is_java']
-            self.get_registers_panel().set_context(context['ptr'], is_java, context['context'])
             if is_java:
+                self.get_context_panel().set_context(context['ptr'], 1, context['context'])
                 self.get_java_explorer_panel().set_handle_arg(-1)
+            else:
+                self.get_context_panel().set_context(context['ptr'], 0, context['context'])
 
     def apply_context(self, context):
         threading.Thread(target=self._apply_context, args=(context,)).start()
@@ -157,8 +159,11 @@ class App(QWidget):
     def get_backtrace_panel(self):
         return self.session_ui.backtrace_panel
 
-    def get_contexts_panel(self):
-        return self.session_ui.contexts_panel
+    def get_context_panel(self):
+        return self.session_ui.context_panel
+
+    def get_contexts_lists_panel(self):
+        return self.session_ui.contexts_list_panel
 
     def get_data_panel(self):
         return self.session_ui.data_panel
@@ -198,9 +203,6 @@ class App(QWidget):
 
     def get_ranges_panel(self):
         return self.session_ui.ranges_panel
-
-    def get_registers_panel(self):
-        return self.session_ui.registers_panel
 
     def get_session_ui(self):
         return self.session_ui

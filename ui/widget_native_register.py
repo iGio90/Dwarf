@@ -20,7 +20,7 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class NativeRegisterWidget(MemoryAddressWidget):
-    def __init__(self, app, register, value, *__args):
+    def __init__(self, register, value, *__args):
         super().__init__(*__args)
 
         self.register = register

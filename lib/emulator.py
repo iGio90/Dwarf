@@ -23,6 +23,7 @@ from importlib._bootstrap_external import SourceFileLoader
 import unicorn
 from capstone import *
 from lib import utils, prefs
+from lib.context import EmulatorContext
 from lib.instruction import Instruction
 from lib.range import Range
 from threading import Thread
@@ -41,6 +42,8 @@ class Emulator(object):
         self.context = None
         self.thumb = False
         self.end_ptr = 0
+
+        self.current_context = None
 
         self.stepping = [False, False]
         self._running = False
@@ -86,15 +89,10 @@ class Emulator(object):
         if err > 0:
             return err
 
-        # setup context
-        uc_registers = {}
-        for v in unicorn_consts.__dict__:
-            if '_REG_' in v:
-                reg = v.lower().split('_')[-1]
-                uc_registers[reg] = unicorn_consts.__dict__[v]
-
-        for k in self.context.__dict__:
-            self.uc.reg_write(uc_registers[k], self.context.__dict__[k].value)
+        self.current_context = EmulatorContext(self.dwarf)
+        for reg in self.current_context._unicorn_registers:
+            if reg in self.context.__dict__:
+                self.uc.reg_write(self.current_context._unicorn_registers[reg], self.context.__dict__[reg].value)
 
         self.uc.hook_add(unicorn.UC_HOOK_CODE, self.hook_code)
         self.uc.hook_add(unicorn.UC_HOOK_MEM_WRITE | unicorn.UC_HOOK_MEM_READ, self.hook_mem_access)
@@ -102,6 +100,7 @@ class Emulator(object):
                          unicorn.UC_HOOK_MEM_WRITE_UNMAPPED |
                          unicorn.UC_HOOK_MEM_READ_UNMAPPED,
                          self.hook_unmapped)
+        self.current_context.set_context(self.uc)
         return err
 
     def __start(self, address, until):
@@ -142,6 +141,9 @@ class Emulator(object):
     def hook_code(self, uc, address, size, user_data):
         self._current_instruction = address
 
+        # set the current context
+        self.current_context.set_context(self.uc)
+
         # if it's arm we query the cpu mode to detect switches between arm and thumb and set capstone mode if needed
         if self.cs.arch == CS_ARCH_ARM:
             mode = self.uc.query(unicorn.UC_QUERY_MODE)
@@ -159,7 +161,7 @@ class Emulator(object):
 
         for i in self.cs.disasm(bytes(uc.mem_read(address, size)), address):
             instruction = Instruction(self.dwarf, i)
-            self.dwarf.get_bus().emit('emulator_hook', uc, instruction)
+            self.dwarf.get_bus().emit('emulator_hook', self, instruction)
             if self.callbacks is not None:
                 try:
                     self.callbacks.hook_code(self, instruction, address, size)

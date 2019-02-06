@@ -274,11 +274,11 @@ class Dwarf(object):
                         sym = '(%s - %s)' % (context.pc.symbol_module_name, context.pc.symbol_name)
                 else:
                     name = data['ptr']
-                self.app.get_contexts_panel().add_context(data, library_onload=self.loading_library)
+                self.app.get_contexts_lists_panel().add_context(data, library_onload=self.loading_library)
                 # check if data['reason'] is 0 (REASON_HOOK)
                 if self.loading_library is None and data['reason'] == 0:
                     self.log('hook %s %s @thread := %d' % (name, sym, data['tid']))
-                if len(self.contexts.keys()) > 1 and self.app.get_registers_panel().have_context():
+                if len(self.contexts.keys()) > 1 and self.app.get_context_panel().have_context():
                     return
                 self.app.get_session_ui().request_session_ui_focus()
             else:

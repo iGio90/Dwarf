@@ -23,7 +23,7 @@ from ui.widget_memory_address import MemoryAddressWidget
 from ui.widget_table_base import TableBaseWidget
 
 
-class ContextsPanel(TableBaseWidget):
+class ContextsListPanel(TableBaseWidget):
     def __init__(self, app, *__args):
         super().__init__(app, 0, 0)
 

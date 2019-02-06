@@ -74,7 +74,8 @@ class SessionUi(QTabWidget):
         self.asm_panel = None
         self.backtrace_panel = None
         self.console_panel = None
-        self.contexts_panel = None
+        self.context_panel = None
+        self.contexts_list_panel = None
         self.emulator_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
@@ -84,7 +85,6 @@ class SessionUi(QTabWidget):
         self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None
-        self.registers_panel = None
         self.trace_panel = None
         self.watchers_panel = None
 
@@ -134,9 +134,9 @@ class SessionUi(QTabWidget):
         main_panel.setOrientation(Qt.Vertical)
         main_panel.setContentsMargins(0, 0, 0, 0)
 
-        from ui.panel_registers import RegistersPanel
-        self.registers_panel = RegistersPanel(self.app, 0, 0)
-        main_panel.addWidget(self.registers_panel)
+        from ui.panel_context import ContextPanel
+        self.context_panel = ContextPanel(self.app, 0, 0)
+        main_panel.addWidget(self.context_panel)
 
         box = QVBoxLayout()
         box.setContentsMargins(0, 0, 0, 0)
@@ -168,9 +168,9 @@ class SessionUi(QTabWidget):
         splitter.setOrientation(Qt.Vertical)
         splitter.setContentsMargins(0, 0, 0, 0)
 
-        from ui.panel_contexts import ContextsPanel
-        self.contexts_panel = ContextsPanel(self.app)
-        splitter.addWidget(self.contexts_panel)
+        from ui.panel_contexts_list import ContextsListPanel
+        self.contexts_list_panel = ContextsListPanel(self.app)
+        splitter.addWidget(self.contexts_list_panel)
 
         from ui.panel_backtrace import BacktracePanel
         self.backtrace_panel = BacktracePanel(self.app)
@@ -186,7 +186,7 @@ class SessionUi(QTabWidget):
             if i > 0:
                 self.removeTab(i)
 
-        self.contexts_panel.clear()
+        self.contexts_list_panel.clear()
         self.console_panel.clear()
         if self.data_panel is not None:
             self.data_panel.clear()
@@ -208,8 +208,8 @@ class SessionUi(QTabWidget):
         self.backtrace_panel.setRowCount(0)
         self.backtrace_panel.setColumnCount(0)
 
-        self.registers_panel.setRowCount(0)
-        self.registers_panel.setColumnCount(0)
+        self.context_panel.setRowCount(0)
+        self.context_panel.setColumnCount(0)
 
         self.memory_panel.on_script_destroyed()
 

@@ -368,7 +368,7 @@ class MenuBar(object):
         self._set_panel_visibility(self.app_window.get_app_instance().get_backtrace_panel(), prefs.VIEW_BACKTRACE)
 
     def handler_view_context(self):
-        self._set_panel_visibility(self.app_window.get_app_instance().get_contexts_panel(), prefs.VIEW_CONTEXT)
+        self._set_panel_visibility(self.app_window.get_app_instance().get_contexts_lists_panel(), prefs.VIEW_CONTEXT)
 
     def handler_view_hooks(self):
         self._set_panel_visibility(self.app_window.get_app_instance().get_hooks_panel(), prefs.VIEW_HOOKS)

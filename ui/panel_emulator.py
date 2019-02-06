@@ -46,11 +46,11 @@ class AsmTableWidget(QTableWidget):
         self._require_register_result = None
         self._last_instruction_address = 0
 
-    def add_hook(self, uc, instruction):
+    def add_hook(self, emulator, instruction):
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
             res = '%s = %s' % (self._require_register_result[1],
-                               hex(uc.reg_read(self._require_register_result[0])))
+                               hex(emulator.uc.reg_read(self._require_register_result[0])))
             self.setItem(self.rowCount() - 1, 4, NotEditableTableWidgetItem(res))
             # invalidate
             self._require_register_result = None
@@ -181,18 +181,31 @@ class EmulatorPanel(QWidget):
         self.panel.setHandleWidth(1)
         self.panel.setOrientation(Qt.Horizontal)
 
+        self.central_panel = QSplitter()
+        self.central_panel.setHandleWidth(1)
+        self.central_panel.setOrientation(Qt.Vertical)
+
         self.asm_table = AsmTableWidget(self.app)
         self.memory_table = MemoryTableWidget(self.app)
 
         self.ranges_list = QListWidget(self.app)
         self.ranges_list.itemDoubleClicked.connect(self.ranges_item_double_clicked)
 
+        from ui.panel_context import ContextPanel
+        self.context_panel = ContextPanel(self.app)
+
         self.tabs = QTabWidget()
         self.tabs.addTab(self.asm_table, 'asm')
         self.tabs.addTab(self.memory_table, 'hex')
 
+        self.central_panel.addWidget(self.context_panel)
+        self.central_panel.addWidget(self.tabs)
+
+        self.central_panel.setStretchFactor(0, 1)
+        self.central_panel.setStretchFactor(1, 3)
+
         self.panel.addWidget(self.ranges_list)
-        self.panel.addWidget(self.tabs)
+        self.panel.addWidget(self.central_panel)
 
         self.panel.setStretchFactor(0, 1)
         self.panel.setStretchFactor(1, 4)
@@ -247,8 +260,9 @@ class EmulatorPanel(QWidget):
     def handle_stop(self):
         self.emulator.stop()
 
-    def on_emulator_hook(self, uc, instruction):
-        self.asm_table.add_hook(uc, instruction)
+    def on_emulator_hook(self, emulator, instruction):
+        self.context_panel.set_context(emulator.current_context.pc, 2, emulator.current_context)
+        self.asm_table.add_hook(emulator, instruction)
 
     def on_emulator_log(self, log):
         self.console.log(log)
