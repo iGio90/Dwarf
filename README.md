@@ -1,8 +1,8 @@
 # DWARF
 
-A debugger for mobile reverse engineers and crackers.
-Or damn, what a reversed fluffy or yet, duck warriors are rich as fuck. Whatever you like!
-Built on top of pyqt5, frida and some terrible code. 
+A debugger for reverse engineers, crackers and security analyst.
+Or you can call it damn, why are raspberries so fluffy or yet, duck warriors are rich as fuck. Whatever you like!
+Built on top of pyqt5, frida and some terrible code.
 
 ![Dwarf](https://i.ibb.co/WBK0jq7/Schermata-2019-01-04-alle-18-31-39.png)
 
@@ -16,7 +16,7 @@ For discussion and suggestions, please let's have a speak on [Slack](https://joi
 Checkout the [wiki](https://github.com/iGio90/Dwarf/wiki) for features and api
 
 ### Pre requisites
-A rooted Android or a jailbroken iOS with frida server installed and running.
+A frida server running anywhere.
 
 ### Setup and run
 
