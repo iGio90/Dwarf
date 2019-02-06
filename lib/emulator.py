@@ -122,7 +122,9 @@ class Emulator(object):
         :return: the result from the api
         """
         cmd = parts[0]
-        if cmd == 'setup':
+        if cmd == 'clean':
+            self.dwarf.log(self.clean())
+        elif cmd == 'setup':
             self.dwarf.log(self.setup(parts[1]))
         elif cmd == 'start':
             self.dwarf.log(self.start(parts[1]))
