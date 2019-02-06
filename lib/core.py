@@ -111,6 +111,7 @@ class Dwarf(object):
         self.device = None
 
         # process
+        self._spawned = False
         self.pid = 0
         self.process = None
         self.script = None
@@ -142,6 +143,8 @@ class Dwarf(object):
 
         try:
             self.process = self.device.attach(pid_or_package)
+            self.pid = self.process._impl.pid
+            self._spawned = False
         except Exception as e:
             if print_debug_error:
                 utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
@@ -182,13 +185,12 @@ class Dwarf(object):
             self.detach()
 
         try:
-            pid = self.device.spawn(package)
-            self.process = self.device.attach(pid)
+            self.pid = self.device.spawn(package)
+            self.process = self.device.attach(self.pid)
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
             return 2
         self.load_script(script)
-        self.device.resume(pid)
         return 0
 
     def on_message(self, message, data):
@@ -309,7 +311,6 @@ class Dwarf(object):
             else:
                 self.arch = data['arch']
                 self.pointer_size = data['pointerSize']
-                self.pid = data['pid']
                 self.java_available = data['java']
                 self.app.get_console_panel().get_js_console().log('injected into := ' + str(self.pid))
                 self.app_window.on_context_info()
@@ -324,6 +325,9 @@ class Dwarf(object):
                 self.app.get_data_panel().append_data(key, hexdump(data, result='return'))
             else:
                 self.app.get_data_panel().append_data(key, str(parts[2]))
+        elif cmd == 'script_loaded':
+            if self._spawned:
+                self.device.resume(self.pid)
         elif cmd == 'tracer':
             panel = self.app.get_trace_panel()
             if panel is None:

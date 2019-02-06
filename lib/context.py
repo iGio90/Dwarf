@@ -38,6 +38,8 @@ class EmulatorContext(object):
             unicorn_consts = unicorn.arm_const
         elif dwarf.arch == 'arm64':
             unicorn_consts = unicorn.arm64_const
+        elif dwarf.arch == 'ia32' or dwarf.arch == 'x64':
+            unicorn_consts = unicorn.x86_const
         else:
             raise Exception('unsupported arch')
 

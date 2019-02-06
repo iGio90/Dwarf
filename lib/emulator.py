@@ -57,7 +57,6 @@ class Emulator(object):
 
     def __setup(self):
         if self.dwarf.arch == 'arm':
-            unicorn_consts = unicorn.arm_const
             self.thumb = self.context.pc.thumb
             if self.thumb:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
@@ -73,11 +72,14 @@ class Emulator(object):
                 self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM, unicorn.UC_MODE_ARM)
                 self._current_cpu_mode = unicorn.UC_MODE_ARM
         elif self.dwarf.arch == 'arm64':
-            unicorn_consts = unicorn.arm64_const
             self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM64, unicorn.UC_MODE_LITTLE_ENDIAN)
             self.cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
 
             self._current_cpu_mode = unicorn.UC_MODE_LITTLE_ENDIAN
+        elif self.dwarf.arch == 'ia32':
+            self.uc = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
+        elif self.dwarf.arch == 'x64':
+            self.uc = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_64)
         else:
             # unsupported arch
             return 5
