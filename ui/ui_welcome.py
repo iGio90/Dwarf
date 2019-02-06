@@ -349,12 +349,12 @@ class WelcomeUi(QSplitter):
         frida.get_device_manager().on('removed', self.update_device_ui)
 
         if not self.app.get_adb().available():
-            utils.show_message_box('adb/device/emu not found or not rooted! see details or output'
-                                   , self.app.get_adb().get_states_string())
+            # additional check for null local device
+            if frida.get_local_device() is None:
+                utils.show_message_box('adb/device/emu not found or not rooted! see details or output',
+                                       self.app.get_adb().get_states_string())
 
         self.update_ui_sync()
-        # only mainthread should update the ui
-        # Thread(target=self.update_ui_sync).start()
 
     def setup_ui(self):
         self.setHandleWidth(1)

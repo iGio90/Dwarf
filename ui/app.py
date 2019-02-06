@@ -16,6 +16,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import threading
 
+import frida
+
+from lib import utils
 from lib.adb import Adb
 from lib.core import Dwarf
 from ui.menu_bar import MenuBar
@@ -42,6 +45,13 @@ class AppWindow(QMainWindow):
 
         self.menu = MenuBar(self)
         if dwarf_args.package is not None:
+            # we skip welcome ui here
+            if not self.get_adb().available():
+                # additional check if we have a local server to starts with
+                if frida.get_local_device() is None:
+                    utils.show_message_box('adb/device/emu not found or not rooted! see details or output',
+                                           self.app.get_adb().get_states_string())
+
             self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
     def get_adb(self):
