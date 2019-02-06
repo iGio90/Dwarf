@@ -20,14 +20,12 @@ import time
 from importlib._bootstrap import spec_from_loader, module_from_spec
 from importlib._bootstrap_external import SourceFileLoader
 
+import unicorn
 from capstone import *
 from lib import utils, prefs
 from lib.instruction import Instruction
 from lib.range import Range
 from threading import Thread
-from unicorn import *
-from unicorn.arm_const import *
-from unicorn.arm64_const import *
 
 
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
@@ -56,11 +54,12 @@ class Emulator(object):
 
     def __setup(self):
         if self.dwarf.arch == 'arm':
+            unicorn_consts = unicorn.arm_const
             self.thumb = self.context.pc.thumb
             if self.thumb:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
-                self.uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
-                self._current_cpu_mode = UC_MODE_THUMB
+                self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM, unicorn.UC_MODE_THUMB)
+                self._current_cpu_mode = unicorn.UC_MODE_THUMB
                 # Enable VFP instr
                 self.uc.mem_map(0x1000, 1024)
                 self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
@@ -68,13 +67,14 @@ class Emulator(object):
                 self.uc.mem_unmap(0x1000, 1024)
             else:
                 self.cs = Cs(CS_ARCH_ARM, CS_MODE_ARM)
-                self.uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
-                self._current_cpu_mode = UC_MODE_ARM
+                self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM, unicorn.UC_MODE_ARM)
+                self._current_cpu_mode = unicorn.UC_MODE_ARM
         elif self.dwarf.arch == 'arm64':
-            self.uc = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
+            unicorn_consts = unicorn.arm64_const
+            self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM64, unicorn.UC_MODE_LITTLE_ENDIAN)
             self.cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
 
-            self._current_cpu_mode = UC_MODE_LITTLE_ENDIAN
+            self._current_cpu_mode = unicorn.UC_MODE_LITTLE_ENDIAN
         else:
             # unsupported arch
             return 5
@@ -85,32 +85,23 @@ class Emulator(object):
         err = self.map_range(self.context.pc.value)
         if err > 0:
             return err
-        if self.dwarf.arch == 'arm':
-            self.uc.reg_write(UC_ARM_REG_R0, self.context.r0.value)
-            self.uc.reg_write(UC_ARM_REG_R1, self.context.r1.value)
-            self.uc.reg_write(UC_ARM_REG_R2, self.context.r2.value)
-            self.uc.reg_write(UC_ARM_REG_R3, self.context.r3.value)
-            self.uc.reg_write(UC_ARM_REG_R4, self.context.r4.value)
-            self.uc.reg_write(UC_ARM_REG_R5, self.context.r5.value)
-            self.uc.reg_write(UC_ARM_REG_R6, self.context.r6.value)
-            self.uc.reg_write(UC_ARM_REG_R7, self.context.r7.value)
-            self.uc.reg_write(UC_ARM_REG_R8, self.context.r8.value)
-            self.uc.reg_write(UC_ARM_REG_R9, self.context.r9.value)
-            self.uc.reg_write(UC_ARM_REG_R10, self.context.r10.value)
-            self.uc.reg_write(UC_ARM_REG_R11, self.context.r11.value)
-            self.uc.reg_write(UC_ARM_REG_R12, self.context.r12.value)
-            self.uc.reg_write(UC_ARM_REG_PC, self.context.pc.value)
-            self.uc.reg_write(UC_ARM_REG_SP, self.context.sp.value)
-            self.uc.reg_write(UC_ARM_REG_LR, self.context.lr.value)
-        elif self.dwarf.arch == 'arm64':
-            # todo
-            pass
 
-        self.uc.hook_add(UC_HOOK_CODE, self.hook_code)
-        self.uc.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, self.hook_mem_access)
-        self.uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED |
-                         UC_HOOK_MEM_WRITE_UNMAPPED |
-                         UC_HOOK_MEM_READ_UNMAPPED,
+        # setup context
+
+        uc_registers = {}
+        for v in unicorn_consts.__dict__:
+            if '_REG_' in v:
+                reg = v.lower().split('_')[-1]
+                uc_registers[reg] = unicorn.arm64_const.__dict__[v]
+
+        for k in self.context.__dict__:
+            self.uc.reg_write(uc_registers[k], self.context.__dict__[k].value)
+
+        self.uc.hook_add(unicorn.UC_HOOK_CODE, self.hook_code)
+        self.uc.hook_add(unicorn.UC_HOOK_MEM_WRITE | unicorn.UC_HOOK_MEM_READ, self.hook_mem_access)
+        self.uc.hook_add(unicorn.UC_HOOK_MEM_FETCH_UNMAPPED |
+                         unicorn.UC_HOOK_MEM_WRITE_UNMAPPED |
+                         unicorn.UC_HOOK_MEM_READ_UNMAPPED,
                          self.hook_unmapped)
         return err
 
@@ -118,7 +109,7 @@ class Emulator(object):
         try:
             self._running = True
             self.uc.emu_start(address, until)
-        except UcError as e:
+        except unicorn.UcError as e:
             self.log_to_ui('[*] error: ' + str(e))
         except Exception as e:
             self.log_to_ui('[*] error: ' + str(e))
@@ -152,11 +143,11 @@ class Emulator(object):
 
         # if it's arm we query the cpu mode to detect switches between arm and thumb and set capstone mode if needed
         if self.cs.arch == CS_ARCH_ARM:
-            mode = self.uc.query(UC_QUERY_MODE)
+            mode = self.uc.query(unicorn.UC_QUERY_MODE)
             if self._current_cpu_mode != mode:
                 self._current_cpu_mode = mode
                 self.cs.mode = self._current_cpu_mode
-                self.thumb = self._current_cpu_mode == UC_MODE_THUMB
+                self.thumb = self._current_cpu_mode == unicorn.UC_MODE_THUMB
 
         if self.stepping[0]:
             if self.stepping[1]:
@@ -179,7 +170,7 @@ class Emulator(object):
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
         v = value
-        if access == UC_MEM_READ:
+        if access == unicorn.UC_MEM_READ:
             v = int.from_bytes(uc.mem_read(address, size), 'little')
         self.dwarf.get_bus().emit('emulator_memory_hook', uc, access, address, v)
         if self.callbacks is not None:
@@ -255,10 +246,10 @@ class Emulator(object):
         # calculate the start address
         address = self._current_instruction
         if address == 0:
-            if self.uc._arch == UC_ARCH_ARM:
-                address = self.uc.reg_read(UC_ARM_REG_PC)
-            elif self.uc._arch == UC_ARCH_ARM64:
-                address = self.uc.reg_read(UC_ARM64_REG_PC)
+            if self.uc._arch == unicorn.UC_ARCH_ARM:
+                address = self.uc.reg_read(unicorn.arm_const.UC_ARM_REG_PC)
+            elif self.uc._arch == unicorn.UC_ARCH_ARM64:
+                address = self.uc.reg_read(unicorn.arm64_const.UC_ARM64_REG_PC)
             else:
                 # unsupported arch
                 return 2
