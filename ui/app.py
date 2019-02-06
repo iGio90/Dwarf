@@ -52,7 +52,7 @@ class AppWindow(QMainWindow):
                     utils.show_message_box('adb/device/emu not found or not rooted! see details or output',
                                            self.app.get_adb().get_states_string())
 
-            err = self.dwarf.attach(dwarf_args.package, dwarf_args.script)
+            err = self.dwarf.attach(dwarf_args.package, dwarf_args.script, print_debug_error=False)
             if err > 0:
                 if err == 1:
                     # no device? kidding?

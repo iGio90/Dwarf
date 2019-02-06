@@ -129,7 +129,7 @@ class Dwarf(object):
     def device_picked(self, device):
         self.device = device
 
-    def attach(self, pid_or_package, script=None):
+    def attach(self, pid_or_package, script=None, print_debug_error=True):
         if self.device is None:
             # fallback to usb device
             # can come from -p in args
@@ -143,7 +143,8 @@ class Dwarf(object):
         try:
             self.process = self.device.attach(pid_or_package)
         except Exception as e:
-            utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
+            if print_debug_error:
+                utils.show_message_box('Failed to attach to %s' % str(pid_or_package), str(e))
             return 2
 
         self.load_script(script)
