@@ -187,6 +187,7 @@ class Dwarf(object):
         try:
             self.pid = self.device.spawn(package)
             self.process = self.device.attach(self.pid)
+            self._spawned = True
         except Exception as e:
             utils.show_message_box('Failed to spawn to %s' % package, str(e))
             return 2
