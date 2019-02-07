@@ -30,6 +30,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--script", action='store_true', help="an additional script to load with "
                                                                     "dwarf and frida js api")
     parser.add_argument("-p", "--package", help="package name or pid")
+    parser.add_argument("-sp", "--spawn", action='store_true', help="force spawn")
     args = parser.parse_args()
 
     app = QApplication([])

@@ -51,15 +51,19 @@ class AppWindow(QMainWindow):
                 if frida.get_local_device() is None:
                     utils.show_message_box('adb/device/emu not found or not rooted! see details or output',
                                            self.app.get_adb().get_states_string())
+                    return
 
-            err = self.dwarf.attach(dwarf_args.package, dwarf_args.script, print_debug_error=False)
-            if err > 0:
-                if err == 1:
-                    # no device? kidding?
-                    pass
-                elif err == 2:
-                    # no proc to attach - spawn it
-                    err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
+            if dwarf_args.spawn is not None:
+                err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
+            else:
+                err = self.dwarf.attach(dwarf_args.package, dwarf_args.script, print_debug_error=False)
+                if err > 0:
+                    if err == 1:
+                        # no device? kidding?
+                        pass
+                    elif err == 2:
+                        # no proc to attach - fallback to spawn
+                        err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
     def get_adb(self):
         return self.adb
