@@ -247,14 +247,26 @@ class AsmPanel(QTableWidget):
         if self.dwarf.arch == 'arm64':
             self.cs_arch = CS_ARCH_ARM64
             self.cs_mode = CS_MODE_LITTLE_ENDIAN
-        else:
+        elif self.dwarf.arch == 'arm':
             self.cs_arch = CS_ARCH_ARM
             self.cs_mode = CS_MODE_ARM
+        elif self.dwarf.arch == 'ia32':
+            self.cs_arch = CS_ARCH_X86
+            self.cs_mode = CS_MODE_32
+        elif self.cs_arch == 'x64':
+            self.cs_arch = CS_ARCH_X86
+            self.cs_mode = CS_MODE_64
         if self.dwarf.keystone_installed:
             import keystone.keystone_const as ks
             if self.dwarf.arch == 'arm64':
                 self.ks_arch = ks.KS_ARCH_ARM64
                 self.ks_mode = ks.KS_MODE_LITTLE_ENDIAN
-            else:
+            elif self.dwarf.arch == 'arm':
                 self.ks_arch = ks.KS_ARCH_ARM
                 self.ks_mode = ks.KS_MODE_ARM
+            elif self.dwarf.arch == 'ia32':
+                self.ks_arch = ks.KS_ARCH_X86
+                self.ks_mode = ks.KS_MODE_32
+            elif self.cs_arch == 'x64':
+                self.ks_arch = ks.KS_ARCH_X86
+                self.ks_mode = ks.KS_MODE_64
