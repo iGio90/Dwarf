@@ -1,0 +1,9 @@
+hexdump>=3.3
+unicorn>=1.0.1
+capstone>=4.0.1
+requests>=2.18.4
+frida>=12.0.5
+PyQt5>=5.11.3
+event_bus>=1.0.2
+pyperclip>=1.7.0
+qdarkstyle>=2.6.5

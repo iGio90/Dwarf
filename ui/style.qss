@@ -1,0 +1,283 @@
+QWidget {
+    background-color: #090909;
+}
+
+QWidget:hover {
+    background-color: #090909;
+    border-color: #32414B;
+    text-decoration: none;
+}
+
+QListWidget,
+QTableWidget {
+    border: 1px solid #32414B;
+}
+
+QListWidget:hover,
+QTableWidget:hover {
+    border: 1px solid #32414B;
+}
+
+QListWidget::item:hover,
+QListWidget::item:focus,
+QListWidget::item:hover:!active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #32414B;
+    text-decoration: none;
+    color: #BA0000;
+}
+
+QListView::item:!selected:hover,
+QTreeView::item:!selected:hover,
+QTableView::item:!selected:hover,
+QColumnView::item:!selected:hover {
+    outline: 0;
+    color: #BA0000;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QListView::item:selected:hover,
+QTreeView::item:selected:hover,
+QTableView::item:selected:hover,
+QColumnView::item:selected:hover {
+    color: #BA0000;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QListView::item:pressed,
+QTreeView::item:pressed,
+QColumnView::item:pressed,
+QListView::item:selected,
+QTreeView::item:selected,
+QColumnView::item:selected,
+QListView::item:selected:active,
+QTreeView::item:selected:active,
+QColumnView::item:selected:active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QListView::item:selected:!active,
+QTreeView::item:selected:!active,
+QColumnView::item:selected:!active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QScrollBar::handle:horizontal:hover,
+QScrollBar::handle:vertical:hover {
+    background-color: #787878;
+    border: 1px solid #32414B;
+}
+
+QScrollBar:hover,
+QScrollBar:disabled:hover,
+QScrollBar:hover:!active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+QSplitter {
+    spacing: 0;
+    padding: 0;
+    margin: 0;
+}
+
+QSplitter::handle,
+QSplitter::handle:hover {
+    background-color: #32414B;
+}
+
+QTabWidget::tab-bar:top {
+    top: 1px;
+}
+
+QTabWidget::tab-bar:bottom {
+    bottom: 1px;
+}
+
+QTabWidget::tab-bar:left {
+    right: 1px;
+}
+
+QTabWidget::tab-bar:right {
+    left: 1px;
+}
+
+QPushButton:hover {
+    border: 1px solid #BA0000;
+}
+
+/* QTabBar::tab - selected ----------------------------------------------- */
+
+QTabBar::tab:top:selected:disabled {
+    border-bottom: 0px solid #14506E;
+    color: #32414B;
+    background-color: #32414B;
+}
+
+QTabBar::tab:bottom:selected:disabled {
+    border-top: 0px solid #14506E;
+    color: #32414B;
+    background-color: #32414B;
+}
+
+QTabBar::tab:left:selected:disabled {
+    border-left: 0px solid #14506E;
+    color: #32414B;
+    background-color: #32414B;
+}
+
+QTabBar::tab:right:selected:disabled {
+    border-right: 0px solid #14506E;
+    color: #32414B;
+    background-color: #32414B;
+}
+
+/* QTabBar::tab - !selected and disabled ---------------------------------- */
+
+QTabBar::tab:top:!selected:disabled {
+    border-bottom: 0px solid #19232D;
+    color: #32414B;
+    background-color: #19232D;
+}
+
+QTabBar::tab:bottom:!selected:disabled {
+    border-top: 0px solid #19232D;
+    color: #32414B;
+    background-color: #19232D;
+}
+
+QTabBar::tab:left:!selected:disabled {
+    border-right: 0px solid #19232D;
+    color: #32414B;
+    background-color: #19232D;
+}
+
+QTabBar::tab:right:!selected:disabled {
+    border-left: 0px solid #19232D;
+    color: #32414B;
+    background-color: #19232D;
+}
+
+/* QTabBar::tab - selected ----------------------------------------------- */
+
+QTabBar::tab:top:!selected {
+    border-bottom: 1px solid #32414B;
+    margin-top: 2px;
+}
+
+QTabBar::tab:top {
+    background-color: #090909;
+    color: #F0F0F0;
+    margin-left: 2px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    min-width: 5px;
+    border-bottom: 1px solid #32414B;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+QTabBar::tab:top:selected {
+    background-color: transparent;
+    color: #F0F0F0;
+    border-bottom: 1px solid #BA0000;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+QTabBar::tab:top:!selected:hover {
+    border-bottom: 2px solid #32414B;
+    border-left: 0px solid #32414B;
+    border-top: 0px solid transparent;
+    border-right: 0px solid transparent;
+}
+
+QHeaderView::section:enabled {
+    background-color: transparent;
+    color: white;
+    border-left: 1px solid #32414B;
+    border-bottom: 1px solid #32414B;
+    border-right: 0px solid transparent;
+}
+
+QHeaderView {
+    background-color: transparent;
+    border: 0;
+}
+
+QTableWidget::item,
+QTableWidget::item:selected,
+QTableWidget::item:focus,
+QTableWidget::item:selected:!active,
+QTableWidget::item:hover:!active,
+QTableWidget::item:focus:active,
+QTableWidget::item:pressed,
+QTableWidget::item:selected:active {
+    background-color: #090909;
+    background: #090909;
+    text-decoration: none;
+}
+
+QTableWidget::item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+QTableWidget::item:selected,
+QTableWidget::item:selected:hover,
+QTableWidget::item:selected:focus,
+QTableWidget::item:hover:active {
+    color: #BA0000;
+    background-color: #090909;
+    background: #090909;
+}
+
+QMenu {
+    border: 1px solid #32414B;
+    color: #F0F0F0;
+    margin: 0px;
+    background-color: #090909;
+    background: #090909;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #32414B;
+    color: #F0F0F0;
+    padding-left: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+QMenu::icon {
+    margin: 0px;
+    padding-left:4px;
+}
+
+QMenu::item {
+    padding: 4px 24px 4px 24px;
+    border: 1px transparent #32414B;  /* reserve space for selection border */
+    background-color: #090909;
+}
+
+QMenu::item:focus,
+QMenu::item:selected,
+QMenu::item:hover {
+    color: #090909;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+QToolTip {
+    background-color: #1a1a1a;
+    border: 1px solid #19232D;
+    color: #BA0000;
+    padding: 0;   /*remove padding, for fix combo box tooltip*/
+    opacity: 230; /*#BA0000ucing transparency to read better*/
+}
+
+QTreeView:branch:selected,
+QTreeView:branch:selected:focus,
+QTreeView:branch:selected:hover,
+QTreeView:branch:hover {
+    background-color: #090909;
+}
