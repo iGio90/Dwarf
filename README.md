@@ -13,7 +13,7 @@ Built on top of pyqt5, frida and some terrible code.
 ---
 For discussion and suggestions, please let's have a speak on [Slack](https://join.slack.com/t/resecret/shared_invite/enQtMzc1NTg4MzE3NjA1LTlkNzYxNTIwYTc2ZTYyOWY1MTQ1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwNWJlNDVjZDcwNGE)!
 
-Checkout the [wiki](https://github.com/iGio90/Dwarf/wiki) for features and api
+Checkout the [documentation](https://igio90.github.io/Dwarf/) for features and api
 
 ### Pre requisites
 A frida server running anywhere.
