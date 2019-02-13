@@ -41,7 +41,7 @@ class InputDialogTextEdit(QTextEdit):
 
 
 class InputDialog(QDialog):
-    def __init__(self, parent=None, hint=None, input_content='', placeholder=''):
+    def __init__(self, parent=None, hint=None, input_content='', placeholder='', options_callback=None):
         super(InputDialog, self).__init__(parent)
 
         box = QVBoxLayout(self)
@@ -59,8 +59,12 @@ class InputDialog(QDialog):
         box.addWidget(self.input_widget)
 
         buttons = QHBoxLayout()
-        ok = QPushButton('Ok')
+        ok = QPushButton('ok')
         buttons.addWidget(ok)
+        if options_callback:
+            options = QPushButton('options')
+            options.clicked.connect(options_callback)
+            buttons.addWidget(options)
         ok.clicked.connect(self.accept)
         cancel = QPushButton('cancel')
         cancel.clicked.connect(self.close)
@@ -75,8 +79,9 @@ class InputDialog(QDialog):
             super(InputDialog, self).keyPressEvent(event)
 
     @staticmethod
-    def input(parent, hint=None, input_content='', placeholder=''):
-        dialog = InputDialog(parent=parent, hint=hint, input_content=input_content, placeholder=placeholder)
+    def input(parent, hint=None, input_content='', placeholder='', options_callback=None):
+        dialog = InputDialog(parent=parent, hint=hint, input_content=input_content,
+                             placeholder=placeholder, options_callback=options_callback)
         result = dialog.exec_()
         text = dialog.input_widget.toPlainText()
         return result == QDialog.Accepted, text

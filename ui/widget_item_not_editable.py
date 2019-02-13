@@ -23,6 +23,14 @@ class NotEditableListWidgetItem(QListWidgetItem):
         super().__init__(*__args)
         self.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
+        self.data = None
+
+    def set_data(self, data):
+        self.data = data
+
+    def get_data(self):
+        return self.data
+
 
 class NotEditableTableWidgetItem(QTableWidgetItem):
     def __init__(self, *__args):

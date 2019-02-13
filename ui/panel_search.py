@@ -93,7 +93,7 @@ class SearchPanel(TableBaseWidget):
         Thread(target=_work).start()
 
     @staticmethod
-    def bytes_search_panel(app, input):
+    def bytes_search_panel(app, input, modules_filter_list=None):
         panel = SearchPanel(app, [])
         app.get_dwarf().get_bus().add_event(panel.add_bytes_match_item, input)
         app.get_dwarf().get_bus().add_event(panel.sortByColumn, input + ' complete')
@@ -101,4 +101,4 @@ class SearchPanel(TableBaseWidget):
         if len(search_label) > 7:
             search_label = search_label[:6] + '...'
         app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
-        app.dwarf_api('memoryScan', input)
+        app.dwarf_api('memoryScan', [input, modules_filter_list])

@@ -17,6 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import json
 import webbrowser
 
+from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtWidgets import QAction, QFileDialog
 
 from lib import prefs
@@ -26,6 +27,7 @@ from ui.dialog_list import ListDialog
 from ui.panel_search import SearchPanel
 from ui.ui_session import SessionUi
 from ui.widget_android_package import AndroidPackageWidget
+from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 
 class MenuBar(object):
@@ -33,6 +35,7 @@ class MenuBar(object):
         self.git_available = False
 
         self.app_window = app_window
+        self.dwarf = app_window.get_dwarf()
         self.menu = app_window.menuBar()
 
         # actions
@@ -55,6 +58,9 @@ class MenuBar(object):
         self.build_view_menu()
         self.build_about_menu()
 
+        # vars held for actions
+        self._bytes_find_modules_list = None
+
     def add_menu_action(self, menu, action,
                         require_script=False,
                         require_java=False):
@@ -63,7 +69,7 @@ class MenuBar(object):
             'require_script': require_script,
             'require_java': require_java
         })
-        if self.app_window.get_dwarf().script is None:
+        if self.dwarf.script is None:
             action.setEnabled(not require_script)
         menu.addAction(action)
 
@@ -135,15 +141,15 @@ class MenuBar(object):
     def build_hooks_menu(self):
         hook_native = QAction("&Native", self.app_window)
         hook_native.setShortcut("Ctrl+N")
-        hook_native.triggered.connect(self.app_window.get_dwarf().hook_native)
+        hook_native.triggered.connect(self.dwarf.hook_native)
 
         hook_java = QAction("&Java", self.app_window)
         hook_java.setShortcut("Ctrl+J")
-        hook_java.triggered.connect(self.app_window.get_dwarf().hook_java)
+        hook_java.triggered.connect(self.dwarf.hook_java)
 
         hook_onload = QAction("&Module load", self.app_window)
         hook_onload.setShortcut("Ctrl+M")
-        hook_onload.triggered.connect(self.app_window.get_dwarf().hook_onload)
+        hook_onload.triggered.connect(self.dwarf.hook_onload)
 
         hooks_menu = self.menu.addMenu('&Hooks')
         self.add_menu_action(hooks_menu, hook_native, True)
@@ -228,7 +234,7 @@ class MenuBar(object):
             return
 
         visible = panel.isVisible()
-        self.app_window.get_dwarf().get_prefs().put(pref, not visible)
+        self.dwarf.get_prefs().put(pref, not visible)
         panel.setVisible(not visible)
 
     def handler_decompile_apk(self):
@@ -242,10 +248,10 @@ class MenuBar(object):
                     AndroidDecompileUtil.decompile(self.app_window.get_adb(), path)
 
     def handler_detach(self):
-        self.app_window.get_dwarf().detach()
+        self.dwarf.detach()
 
     def handler_dump_memory(self):
-        self.app_window.get_dwarf().dump_memory()
+        self.dwarf.dump_memory()
 
     def handler_enumerate_java_classes(self, should_update_java_classes=False):
         if not should_update_java_classes:
@@ -254,13 +260,33 @@ class MenuBar(object):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(
             SessionUi.TAB_JAVA_CLASSES, request_focus=True)
         if should_update_java_classes:
-            self.app_window.get_dwarf().dwarf_api('enumerateJavaClasses')
+            self.dwarf.dwarf_api('enumerateJavaClasses')
 
     def handler_find_bytes(self):
-        accept, input = InputDialog().input(self.app_window, 'find bytes', placeholder='ff b3 ac 9d 0f ...')
+        # invalidate modules list filter
+        self._bytes_find_modules_list = None
+
+        accept, input = InputDialog().input(self.app_window, 'find bytes',
+                                            placeholder='ff b3 ac 9d 0f ...',
+                                            options_callback=self.handler_find_bytes_options)
         if accept:
             self.action_find_bytes.setEnabled(False)
-            SearchPanel.bytes_search_panel(self.app_window.get_app_instance(), input)
+            SearchPanel.bytes_search_panel(self.app_window.get_app_instance(), input,
+                                           self._bytes_find_modules_list)
+
+        # invalidate it once again
+        self._bytes_find_modules_list = None
+
+    def handler_find_bytes_options(self):
+        modules = self.dwarf.dwarf_api('getModules')
+        if modules is not None:
+            accept, items = ListDialog.build_and_show(
+                self.build_modules_list, modules, double_click_to_accept=False, checkable=True)
+            if accept:
+                n_items = []
+                for module in items:
+                    n_items.append(module.get_data())
+                self._bytes_find_modules_list = n_items
 
     def handler_find_symbol(self):
         accept, input = InputDialog().input(self.app_window, 'find symbol by pattern', placeholder='*_open*')
@@ -271,7 +297,7 @@ class MenuBar(object):
         accept, input = InputDialog().input(self.app_window, 'lookup kernel symbol by exact name',
                                             placeholder='SyS_open')
         if accept and len(input) > 0:
-            self.app_window.get_dwarf().get_kernel().lookup_symbol(input)
+            self.dwarf.get_kernel().lookup_symbol(input)
 
     def handler_kernel_ftrace(self):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_FTRACE, request_focus=True)
@@ -301,11 +327,11 @@ class MenuBar(object):
                 session = json.load(f)
                 self.app_window.get_app_instance().get_hooks_panel()
                 for hook in session['natives']:
-                    self.app_window.get_dwarf().hook_native(hook['input'], hook)
+                    self.dwarf.hook_native(hook['input'], hook)
                 for hook in session['java']:
-                    self.app_window.get_dwarf().hook_java(hook['input'], hook)
+                    self.dwarf.hook_java(hook['input'], hook)
                 for hook in session['onloads']:
-                    self.app_window.get_dwarf().hook_onload(hook)
+                    self.dwarf.hook_onload(hook)
                 self.app_window.get_app_instance().get_console_panel().\
                     get_js_console().set_js_script_text(session['script'])
 
@@ -313,8 +339,8 @@ class MenuBar(object):
         r = QFileDialog.getSaveFileName()
         if len(r) > 0 and len(r[0]) > 0:
             hooks = []
-            for hook in self.app_window.get_dwarf().hooks:
-                h = self.app_window.get_dwarf().hooks[hook]
+            for hook in self.dwarf.hooks:
+                h = self.dwarf.hooks[hook]
                 if h.get_input is None or len(h.get_input) == 0:
                     continue
                 hooks.append({
@@ -323,17 +349,17 @@ class MenuBar(object):
                     'logic': h.get_logic(),
                 })
             java_hooks = []
-            for hook in self.app_window.get_dwarf().java_hooks:
-                h = self.app_window.get_dwarf().java_hooks[hook]
+            for hook in self.dwarf.java_hooks:
+                h = self.dwarf.java_hooks[hook]
                 java_hooks.append({
                     'input': h.get_input(),
                     'condition': h.get_condition(),
                     'logic': h.get_logic()
                 })
             onload_hooks = []
-            for hook in self.app_window.get_dwarf().on_loads:
+            for hook in self.dwarf.on_loads:
                 onload_hooks.append(
-                    self.app_window.get_dwarf().on_loads[hook].get_input())
+                    self.dwarf.on_loads[hook].get_input())
             session = {
                 'natives': hooks,
                 'java': java_hooks,
@@ -353,13 +379,13 @@ class MenuBar(object):
         should_request_classes = self.app_window.get_app_instance().get_java_trace_panel() is None
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_JAVA_TRACE, request_focus=True)
         if should_request_classes:
-            self.app_window.get_dwarf().dwarf_api('enumerateJavaClasses')
+            self.dwarf.dwarf_api('enumerateJavaClasses')
 
     def handler_trace_native_start(self):
-        self.app_window.get_dwarf().native_tracer_start()
+        self.dwarf.native_tracer_start()
 
     def handler_trace_native_stop(self):
-        self.app_window.get_dwarf().native_tracer_stop()
+        self.dwarf.native_tracer_stop()
 
     def handler_view_data(self):
         self.app_window.get_app_instance().get_session_ui().add_dwarf_tab(SessionUi.TAB_DATA, request_focus=True)
@@ -391,6 +417,15 @@ class MenuBar(object):
     #
     #
 
+    def build_modules_list(self, list, modules):
+        list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 3))
+        for m in sorted(modules, key=lambda x: x['name']):
+            q = NotEditableListWidgetItem('%s (%s)' % (m['name'], str(m['base'])))
+            q.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            q.setCheckState(Qt.Checked)
+            q.set_data(m)
+            list.addItem(q)
+
     def build_packages_list(self, list, data):
         list.setMinimumWidth(int(self.app_window.get_app_instance().width() / 4))
         for ap in sorted(data, key=lambda x: x.package):
@@ -400,16 +435,16 @@ class MenuBar(object):
         self.kernel_menu.setEnabled(True)
 
     def on_bytes_search_complete(self):
-        if self.app_window.get_dwarf().script is not None:
+        if self.dwarf.script is not None:
             self.action_find_bytes.setEnabled(True)
 
     def on_context_info(self):
         for action in self.menu_actions:
-            if action['require_java'] and not self.app_window.get_dwarf().java_available:
+            if action['require_java'] and not self.dwarf.java_available:
                 action['action'].setEnabled(False)
 
     def on_java_classes_enumeration_complete(self):
-        if self.app_window.get_dwarf().script is not None:
+        if self.dwarf.script is not None:
             self.action_enumerate_java_classes.setEnabled(True)
 
     def on_native_tracer_change(self, started):
@@ -425,7 +460,7 @@ class MenuBar(object):
     def on_script_loaded(self):
 
         for action in self.menu_actions:
-            if action['require_java'] and not self.app_window.get_dwarf().java_available:
+            if action['require_java'] and not self.dwarf.java_available:
                 action['action'].setEnabled(False)
                 continue
             action['action'].setEnabled(True)
