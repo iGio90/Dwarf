@@ -26,6 +26,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QAbstractItemView, QMenu, QAction
 from hexdump import PY3K
 
+from lib import utils
 from lib.range import Range
 from ui.dialog_input import InputDialog
 from ui.widget_memory_address import MemoryAddressWidget
@@ -280,12 +281,12 @@ class QMemoryWidget(QTableWidget):
         if item.column() == 0:
             item = self.item(item.row(), 1)
         if isinstance(item, ByteWidget):
-            ptr = item.get_ptr()
-            if ptr + 16 > self.data['end']:
+            ptr = utils.parse_ptr(item.get_ptr())
+            if ptr + 16 > self.range.tail:
                 if self.read_memory(ptr) > 0:
                     return
             mem = self.app.dwarf_api('readBytes', ptr, 16)
-            mem = binascii.hexlify(mem).decode('utf8')
+            mem = binascii.hexlify(bytes(mem)).decode('utf8')
             mem = ' '.join(re.findall('.{1,2}', mem))
             content = InputDialog.input(
                 self.app,
