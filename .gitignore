@@ -10,3 +10,9 @@ Dwarf.iml
 .git_cache
 tools
 .decompile
+
+#Virtualenv
+venv
+venv3
+env
+
