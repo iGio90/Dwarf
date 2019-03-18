@@ -44,10 +44,7 @@ class AndroidDecompileUtil(object):
             external_tools.get_tool('https://github.com/deathmarine/Luyten/releases/download/v0.5.3/luyten-0.5.3.jar',
                                     'luyten.jar')
         java_version = utils.do_shell_command('java -version')
-        try:
-            java_version.index('java version')
-        except:
+        if 'java version' not in java_version and 'openjdk version' not in java_version:
             utils.show_message_box('failed to find java')
             return
-
         utils.do_shell_command('java -jar tools/luyten.jar .decompile/base.jar &')
