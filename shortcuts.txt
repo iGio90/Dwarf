@@ -1,0 +1,17 @@
+Global Shortcuts
+---------------------------------------------
+CTRL+W  - Add new Watcher
+CTRL+N  - New Native Hook
+CTRL+J  - New Java Hook
+CTRL+O  - New Onload Hook
+
+F4      - Thread Resume
+F5      - Process Resume
+F9      - Process Restart
+F10     - Detach
+
+
+Disassembly
+--------------------------
+BackSpace   - Go Back
+CTRL+G      - Goto/Jumpto
