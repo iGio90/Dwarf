@@ -30,7 +30,7 @@ class InputDialogTextEdit(QTextEdit):
         self.setHorizontalScrollBar(bar)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setLineWrapMode(QTextEdit.NoWrap)
-        self.setFixedHeight(34)
+        # self.setFixedHeight(28)
         self.setMinimumWidth(350)
 
     def keyPressEvent(self, event):
@@ -79,7 +79,7 @@ class InputDialog(QDialog):
             super(InputDialog, self).keyPressEvent(event)
 
     @staticmethod
-    def input(parent, hint=None, input_content='', placeholder='', options_callback=None):
+    def input(parent=None, hint=None, input_content='', placeholder='', options_callback=None):
         dialog = InputDialog(parent=parent, hint=hint, input_content=input_content,
                              placeholder=placeholder, options_callback=options_callback)
         result = dialog.exec_()
@@ -87,15 +87,15 @@ class InputDialog(QDialog):
         return result == QDialog.Accepted, text
 
     @staticmethod
-    def input_pointer(app, input_content='', hint='insert pointer'):
+    def input_pointer(parent=None, input_content='', hint='insert pointer'):
         accept, inp = InputDialog.input(
-            app,
+            parent=parent,
             hint=hint,
             input_content=input_content,
             placeholder='Module.findExportByName(\'target\', \'export\')')
         if not accept:
             return 0, ''
         try:
-            return int(app.dwarf_api('evaluatePtr', inp), 16), inp
+            return int(parent.dwarf.dwarf_api('evaluatePtr', inp), 16), inp
         except:
             return 0, ''

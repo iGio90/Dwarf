@@ -24,9 +24,9 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class TableBaseWidget(QTableWidget):
-    def __init__(self, app, *__args):
+    def __init__(self, parent, *__args):
         super().__init__(*__args)
-        self.app = app
+        self.app = parent
 
         self.verticalHeader().hide()
         self.horizontalScrollBar().hide()
@@ -44,7 +44,7 @@ class TableBaseWidget(QTableWidget):
         menu = QMenu()
         search = None
         if isinstance(item, MemoryAddressWidget):
-            sym = self.app.dwarf_api('getSymbolByAddress', item.get_address())
+            sym = self.app.dwarf.dwarf_api('getSymbolByAddress', item.get_address())
             if sym is not None:
                 if sym['name'] == '' or sym['name'] is None:
                     sym['name'] = sym['address']
@@ -63,7 +63,7 @@ class TableBaseWidget(QTableWidget):
             if len(menu.actions()) > 0:
                 menu.addSeparator()
 
-            if self.app.dwarf_api('isAddressWatched', item.get_address()):
+            if self.app.dwarf.dwarf_api('isAddressWatched', item.get_address()):
                 watcher = menu.addAction('Remove memory watcher')
             else:
                 watcher = menu.addAction('Add memory watcher')
@@ -77,21 +77,21 @@ class TableBaseWidget(QTableWidget):
             if search is not None and action == search:
                 self.search()
             if not self.on_menu_action(action.data(), item):
-               return
+                return
             if isinstance(item, MemoryAddressWidget):
                 if action == copy_address:
                     pyperclip.copy(hex(item.get_address()))
                 elif action == watcher:
-                    if self.app.dwarf_api('isAddressWatched', item.get_address()):
-                        self.app.get_dwarf().remove_watcher(item.get_address())
+                    if self.app.dwarf.dwarf_api('isAddressWatched', item.get_address()):
+                        self.app.dwarf.remove_watcher(item.get_address())
                     else:
-                        self.app.get_dwarf().add_watcher(item.get_address())
+                        self.app.dwarf.add_watcher(item.get_address())
                 elif action == jump_to_address:
-                    self.app.get_memory_panel().read_memory(ptr=item.get_address(),
+                    self.app.memory_panal.read_memory(ptr=item.get_address(),
                                                             length=item.get_size(),
                                                             base=item.get_base_address())
                 elif action == dump:
-                    self.app.get_dwarf().dump_memory(ptr=item.get_address(), length=item.get_size())
+                    self.app.dwarf.dump_memory(ptr=item.get_address(), length=item.get_size())
 
     def _item_double_clicked(self, item):
         if not item:
@@ -101,7 +101,7 @@ class TableBaseWidget(QTableWidget):
             return
 
         if isinstance(item, MemoryAddressWidget):
-            self.app.get_memory_panel().read_memory(ptr=item.get_address(),
+            self.app.memory_panel.read_memory(ptr=item.get_address(),
                                                     length=item.get_size(),
                                                     base=item.get_base_address())
 

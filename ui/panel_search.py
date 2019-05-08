@@ -95,8 +95,8 @@ class SearchPanel(TableBaseWidget):
     @staticmethod
     def bytes_search_panel(app, input, modules_filter_list=None):
         panel = SearchPanel(app, [])
-        app.get_dwarf().get_bus().add_event(panel.add_bytes_match_item, input)
-        app.get_dwarf().get_bus().add_event(panel.sortByColumn, input + ' complete')
+        #app.get_dwarf().get_bus().add_event(panel.add_bytes_match_item, input)
+        #app.get_dwarf().get_bus().add_event(panel.sortByColumn, input + ' complete')
         search_label = input
         if len(search_label) > 7:
             search_label = search_label[:6] + '...'

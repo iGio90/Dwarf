@@ -17,6 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import json
 import os
 
+from PyQt5.QtCore import QObject, pyqtSignal
 
 VIEW_BACKTRACE = 'view_backtrace'
 VIEW_CONTEXT = 'view_context'
@@ -27,24 +28,56 @@ EMULATOR_CALLBACKS_PATH = 'emulator_callbacks_path'
 EMULATOR_INSTRUCTIONS_DELAY = 'emulator_instructions_delay'
 
 
-class Prefs(object):
+class Prefs(QObject):
+    """ Preferences
+
+        json settings '.dwarf'
+
+        signals:
+            settingChanged(key, value)
+            prefsChanged()
+    """
+
+    prefsChanged = pyqtSignal(name='prefsChanged')
+
     def __init__(self):
+        super(Prefs, self).__init__()
+
         self._prefs = {}
         self._prefs_file = '.dwarf'
 
         if os.path.exists(self._prefs_file):
             with open(self._prefs_file, 'r') as f:
-                self._prefs = json.load(f)
+                try:
+                    self._prefs = json.load(f)
+                except:
+                    pass
 
         # reset single instance preferences
         self.put(EMULATOR_CALLBACKS_PATH, '')
 
     def get(self, key, default=None):
+        """ Get Setting
+
+            key - setting name
+            default
+        """
         if key in self._prefs:
             return self._prefs[key]
         return default
 
     def put(self, key, value):
+        """ Set Setting
+
+            key - setting name
+            value
+
+            emits
+                settingChanged(key, value)
+                prefsChanged()
+        """
         self._prefs[key] = value
         with open(self._prefs_file, 'w') as f:
             f.write(json.dumps(self._prefs))
+
+        self.prefsChanged.emit()

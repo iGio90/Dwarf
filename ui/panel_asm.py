@@ -20,7 +20,8 @@ from PyQt5.QtGui import QFont
 from capstone import *
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QHeaderView
+from PyQt5.QtGui import QPainter
+from PyQt5.QtWidgets import QTableWidget, QMenu, QAction, QHeaderView, QAbstractScrollArea
 
 from lib import utils
 from lib.instruction import Instruction
@@ -33,11 +34,11 @@ from ui.widget_memory_address import MemoryAddressWidget
 
 
 class AsmPanel(QTableWidget):
-    def __init__(self, app):
-        super(AsmPanel, self).__init__(app)
+    def __init__(self, parent=None):
+        super(AsmPanel, self).__init__(parent=parent)
 
-        self.app = app
-        self.dwarf = app.get_dwarf()
+        self.app = parent
+        self.dwarf = parent.dwarf
         self.range = None
 
         self.cs_arch = 0

@@ -16,12 +16,12 @@ import sys
 
 import frida
 import requests
-import subprocess
-import time
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QSplitter,
+    QApplication, QMainWindow, QAction, QWidget, QLabel, QListWidget,
+    QAbstractItemView, QPushButton, QComboBox)
 
 from lib import utils
 
@@ -30,6 +30,8 @@ from ui.list_pick import PickList
 from ui.widget_android_package import AndroidPackageWidget
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
+# TODO: renames
+
 
 class DwarfCommitsThread(QThread):
     """ Commits Thread
@@ -37,13 +39,13 @@ class DwarfCommitsThread(QThread):
             on_status_text(str)
             on_add_commit(str, bool) - adds item to list (bool == use white color)
             on_update_available()
-            on_finished()
+            on_finished(str)
     """
 
     on_status_text = pyqtSignal(str)
     on_update_available = pyqtSignal()
     on_add_commit = pyqtSignal(str, bool)
-    on_finished = pyqtSignal()
+    on_finished = pyqtSignal(str)
 
     def __init__(self, parent=None, app=None):
         super().__init__(parent)
@@ -78,16 +80,25 @@ class DwarfCommitsThread(QThread):
             date = commit['committer']['date'].split('T')
             if most_recent_date != date[0]:
                 if most_recent_date != '':
-                    self.on_add_commit.emit('', False)
-                self.on_add_commit.emit(date[0], False)
+                    self.on_add_commit.emit('', True)
+                self.on_add_commit.emit(date[0], True)
                 most_recent_date = date[0]
 
             s = ('{0} - {1} ({2})'.format(date[1][:-1], commit['message'], commit['author']['name']))
-            self.on_add_commit.emit(s, True)
+            self.on_add_commit.emit(s, False)
+
+        if most_recent_remote_commit != most_recent_local_commit:
+            self.on_finished.emit('There is an newer Version available... You can use the UpdateButton in Menu')
+        else:
+            # keep: it clears status text
+            self.on_finished.emit('')
 
 
 class DwarfUpdateThread(QThread):
     """ Dwarf update Thread
+        signals:
+            on_status_text(str)
+            on_finished(str)
     """
 
     on_status_text = pyqtSignal(str)
@@ -112,6 +123,9 @@ class DwarfUpdateThread(QThread):
         utils.do_shell_command('git checkout -f -q master')
         utils.do_shell_command('git reset --hard FETCH_HEAD')
         sha = utils.do_shell_command('git log -1 master --pretty=format:%H')
+
+        s = ('Dwarf updated to commit := {0} - Please restart...'.format(sha))
+        self.on_status_text.emit(s)
         self.on_finished.emit(sha)
 
 
@@ -183,11 +197,11 @@ class FridaUpdateThread(QThread):
                     # kill frida
                     self.adb.kill_frida()
                     # copy file note: mv give sometimes a invalid id error
-                    self.adb.su('cp /sdcard/frida /system/xbin/frida')
+                    self.adb.su_cmd('cp /sdcard/frida /system/xbin/frida')
                     # remove file
-                    self.adb.su('rm /sdcard/frida')
+                    self.adb.su_cmd('rm /sdcard/frida')
                     # make it executable
-                    self.adb.su('chmod 755 /system/xbin/frida')
+                    self.adb.su_cmd('chmod 755 /system/xbin/frida')
                     # start it
                     if not self.adb.start_frida():
                         self.on_status_text('failed to start frida')
@@ -241,10 +255,12 @@ class ProcsThread(QThread):
         signals:
             clear_proc()
             add_proc(NotEditableListWidgetItem)
+            is_error(str) - shows str in statusbar
         device must set before run
     """
     clear_procs = pyqtSignal()
     add_proc = pyqtSignal(NotEditableListWidgetItem)
+    is_error = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -262,23 +278,29 @@ class ProcsThread(QThread):
                     self.add_proc.emit(proc_item)
             # ServerNotRunningError('unable to connect to remote frida-server: closed')
             except frida.ServerNotRunningError:
-                print('unable to connect to remote frida server: not started')
+                self.is_error.emit('unable to connect to remote frida server: not started')
             except frida.TransportError:
-                print('unable to connect to remote frida server: closed')
+                self.is_error.emit('unable to connect to remote frida server: closed')
             except frida.TimedOutError:
-                print('unable to connect to remote frida server: timedout')
+                self.is_error.emit('unable to connect to remote frida server: timedout')
             except Exception:
-                pass
+                self.is_error.emit('something was wrong...')
 
         self.device = None
 
 
 class SpawnsThread(QThread):
     """ Updates the SpawnsList
+        signals:
+            clear_proc()
+            add_spawn(NotEditableListWidgetItem)
+            is_error(str) - shows str in statusbar
+        device must set before run
     """
 
     clear_spawns = pyqtSignal()
     add_spawn = pyqtSignal(NotEditableListWidgetItem)
+    is_error = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -312,13 +334,13 @@ class SpawnsThread(QThread):
                     item = AndroidPackageWidget(app_name, app.identifier, 0)
                     self.add_spawn.emit(item)
             except frida.ServerNotRunningError:
-                print('unable to connect to remote frida server: not started')
+                self.is_error.emit('unable to connect to remote frida server: not started')
             except frida.TransportError:
-                print('unable to connect to remote frida server: closed')
+                self.is_error.emit('unable to connect to remote frida server: closed')
             except frida.TimedOutError:
-                print('unable to connect to remote frida server: timedout')
+                self.is_error.emit('unable to connect to remote frida server: timedout')
             except Exception:
-                pass
+                self.is_error.emit('something was wrong...')
 
         self.device = None
 
@@ -330,6 +352,18 @@ class WelcomeUi(QSplitter):
         self.app = app
 
         self.startup_script = ''
+
+        self.menu_bar = None
+        self.status_bar = None
+
+        _app = QApplication.instance()
+        for w in _app.topLevelWidgets():
+            if isinstance(w, QMainWindow):
+                #self.menu_bar = w.get_menu()
+                self.status_bar = w.get_statusbar()
+
+        self.update_action = QAction('Update Dwarf')
+        self.update_action.triggered.connect(self.update_dwarf)
 
         self.setup_ui()
 
@@ -357,94 +391,120 @@ class WelcomeUi(QSplitter):
         self.update_ui_sync()
 
     def setup_ui(self):
-        self.setHandleWidth(1)
+        """ Setups the ui
+        """
+        left_side = QWidget()
+        right_side = QWidget()
 
-        box_container = QWidget()
-        left_box = QVBoxLayout()
-        header = QHBoxLayout()
+        # -------------------------------------------
+        # Left Side
+        # -------------------------------------------
+        wrapper = QVBoxLayout()
+        head = QHBoxLayout()
 
+        # dwarf icon
         icon = QLabel()
-        icon.setPixmap(utils.get_app_icon())
+        icon.setPixmap(self.app.get_icon())
         icon.setFixedWidth(75)
-        title = QLabel('DWARF')
-        title.setFont(QFont('impact', 75, QFont.Normal))
+        head.addWidget(icon)
 
-        header.addWidget(icon)
-        header.addWidget(title)
+        # main titleDwarf
+        title = QLabel('Dwarf')
+        title.setFont(QFont('Anton', 58, QFont.Bold))
+        head.addWidget(title)
 
+        wrapper.addLayout(head)
+
+        # commit list
         self.commit_list = QListWidget()
         self.commit_list.setSelectionMode(QAbstractItemView.NoSelection)
+        wrapper.addWidget(self.commit_list)
 
         frida_update_box = QHBoxLayout()
-        self.frida_update_label = QLabel('device frida version: -\nupdated frida version: -')
 
+        # frida versions
+        self.frida_update_label = QLabel('device frida version: -\nupdated frida version: -')
+        frida_update_box.addWidget(self.frida_update_label)
+
+        # frida update-button
         self.frida_update_button = QPushButton('update frida')
         self.frida_update_button.setVisible(False)
         self.frida_update_button.clicked.connect(self.update_frida_server)
-
-        self.dwarf_update_button = QPushButton('update dwarf')
-        self.dwarf_update_button.setVisible(False)
-        self.dwarf_update_button.clicked.connect(self.update_dwarf)
-
-        frida_update_box.addWidget(self.frida_update_label)
         frida_update_box.addWidget(self.frida_update_button)
-        frida_update_box.addWidget(self.dwarf_update_button)
 
-        left_box.addLayout(header)
-        left_box.addWidget(self.commit_list)
-        left_box.addLayout(frida_update_box)
+        # frida control-button
+        self.frida_control_button = QPushButton('update frida')
+        self.frida_control_button.setVisible(False)
+        self.frida_control_button.clicked.connect(self.control_frida)
+        frida_update_box.addWidget(self.frida_control_button)
 
-        box_container.setLayout(left_box)
+        wrapper.addLayout(frida_update_box)
 
-        right_box_container = QWidget()
-        right_box = QVBoxLayout()
+        # finish
+        left_side.setLayout(wrapper)
 
+        # -------------------------------------------
+        # right side
+        # -------------------------------------------
+        wrapper = QVBoxLayout()
+
+        # devices label
         devices_label = QLabel('DEVICES')
-        devices_label.setFont(QFont('impact', 25, QFont.Normal))
-        right_box.addWidget(devices_label)
+        devices_label.setFont(QFont('Anton', 20, QFont.Normal))
+        wrapper.addWidget(devices_label)
+
+        # devices combobox
         self.devices_list = QComboBox(self)
         self.devices_list.currentIndexChanged.connect(self.device_picked)
-        right_box.addWidget(self.devices_list)
+        wrapper.addWidget(self.devices_list)
 
-        cols = QHBoxLayout()
+        # procs/spawns lists
+        spawns_vbox = QVBoxLayout()
 
-        spawns_container = QVBoxLayout()
         spawns_label = QLabel('SPAWN')
-        spawns_label.setFont(QFont('impact', 25, QFont.Normal))
+        spawns_label.setFont(QFont('Anton', 20, QFont.Normal))
+        spawns_vbox.addWidget(spawns_label)
 
         self.spawn_list = PickList(self.on_spawn_picked)
-        spawns_container.addWidget(spawns_label)
-        spawns_container.addWidget(self.spawn_list)
+        spawns_vbox.addWidget(self.spawn_list)
 
         spawns_refresh_button = QPushButton('refresh')
         spawns_refresh_button.clicked.connect(self.on_refresh_spawns)
-        spawns_container.addWidget(spawns_refresh_button)
+        spawns_vbox.addWidget(spawns_refresh_button)
 
-        procs_container = QVBoxLayout()
+        procs_vbox = QVBoxLayout()
+
         procs_label = QLabel('PROCS')
-        procs_label.setFont(QFont('impact', 25, QFont.Normal))
+        procs_label.setFont(QFont('Anton', 20, QFont.Normal))
+        procs_vbox.addWidget(procs_label)
 
         self.proc_list = PickList(self.on_proc_picked)
-        procs_container.addWidget(procs_label)
-        procs_container.addWidget(self.proc_list)
+        procs_vbox.addWidget(self.proc_list)
 
         procs_refresh_button = QPushButton('refresh')
         procs_refresh_button.clicked.connect(self.on_refresh_procs)
-        procs_container.addWidget(procs_refresh_button)
+        procs_vbox.addWidget(procs_refresh_button)
 
-        cols.addLayout(spawns_container)
-        cols.addLayout(procs_container)
-        right_box.addLayout(cols)
+        inner_hbox = QHBoxLayout()
+        inner_hbox.addLayout(spawns_vbox)
+        inner_hbox.addLayout(procs_vbox)
+        wrapper.addLayout(inner_hbox)
 
-        right_box_container.setLayout(right_box)
+        # finish
+        right_side.setLayout(wrapper)
 
-        self.addWidget(box_container)
-        self.addWidget(right_box_container)
+        # final
+        self.addWidget(left_side)
+        self.addWidget(right_side)
 
+        self.setAutoFillBackground(True)
+        self.setHandleWidth(1)
         self.setStretchFactor(0, 4)
         self.setStretchFactor(1, 2)
 
     def setup_threads(self):
+        """ Setups the Threads used here
+        """
         if self.devices_thread is None:
             self.devices_thread = DevicesUpdateThread(self.app)
             self.devices_thread.add_device.connect(self.on_add_deviceitem)
@@ -457,16 +517,18 @@ class WelcomeUi(QSplitter):
             self.spawns_update_thread = SpawnsThread(self.app)
             self.spawns_update_thread.add_spawn.connect(self.on_add_spawn)
             self.spawns_update_thread.clear_spawns.connect(self.on_clear_spawnlist)
+            self.spawns_update_thread.is_error.connect(self.on_status_text)
 
         if self.procs_update_thread is None:
             self.procs_update_thread = ProcsThread(self.app)
             self.procs_update_thread.add_proc.connect(self.on_add_proc)
             self.procs_update_thread.clear_procs.connect(self.on_clear_proclist)
+            self.procs_update_thread.is_error.connect(self.on_status_text)
 
         if self.frida_update_thread is None:
             self.frida_update_thread = FridaUpdateThread(self.app)
             self.frida_update_thread.adb = self.app.get_adb()
-            self.frida_update_thread.on_status_text.connect(self.update_status_label)
+            self.frida_update_thread.on_status_text.connect(self.frida_status_label)
             self.frida_update_thread.on_finished.connect(self.update_frida_version)
             self.frida_update_thread.adb = self.app.get_adb()
 
@@ -480,6 +542,8 @@ class WelcomeUi(QSplitter):
             self.update_commits_thread = DwarfCommitsThread(app=self.app)
             self.update_commits_thread.on_update_available.connect(self.on_dwarf_isupdate)
             self.update_commits_thread.on_add_commit.connect(self.on_dwarf_commit)
+            self.update_commits_thread.on_status_text.connect(self.on_status_text)
+            self.update_commits_thread.on_finished.connect(self.on_status_text)
             if not self.update_commits_thread.isRunning():
                 self.update_commits_thread.start()
 
@@ -487,29 +551,33 @@ class WelcomeUi(QSplitter):
         if self.update_dwarf_thread is None:
             self.update_dwarf_thread = DwarfUpdateThread(self.app)
             self.update_dwarf_thread.on_finished.connect(self.on_dwarf_updated)
-            self.update_dwarf_thread.on_status_text.connect(self.on_dwarf_status)
+            self.update_dwarf_thread.on_status_text.connect(self.on_status_text)
 
             if not self.update_dwarf_thread.isRunning():
                 self.update_dwarf_thread.start()
 
     def on_dwarf_isupdate(self):
-        self.dwarf_update_button.setVisible(True)
+        """ Used in DwarfCommitsThread
+            enables the UpdateBtn in menu
+        """
+        # self.menu_bar.menu.addAction(self.update_action)
 
     def on_dwarf_commit(self, com_text, color=False):
         q = NotEditableListWidgetItem(com_text)
         q.setFlags(Qt.NoItemFlags)
         if color:
-            q.setForeground(Qt.white)
+            q.setForeground(QColor('#ef5350'))
         self.commit_list.addItem(q)
 
-    # temp
-    # needs real status label
-    def on_dwarf_status(self, text):
-        q = NotEditableListWidgetItem(text)
-        q.setFlags(Qt.NoItemFlags)
-        self.commit_list.addItem(q)
+    def on_status_text(self, text):
+        """ Sets text in StatusBar
+        """
+        if self.status_bar is not None:
+            self.status_bar.showMessage(text)
 
     def on_dwarf_updated(self, sha):
+        """ runs after dwarf_update
+        """
         if 'error' in sha:
             utils.show_message_box(sha)
             return
@@ -610,6 +678,20 @@ class WelcomeUi(QSplitter):
                 self.procs_update_thread.device = device
                 self.procs_update_thread.start()
 
+    def control_frida(self):
+        """ Controls Frida on Device run/stop
+        """
+        if self.frida_control_button.text() == 'start frida':
+            if self.app.get_adb().available():
+                self.app.get_adb().start_frida()
+                self.devices_list.currentIndexChanged.disconnect()
+                self.on_devices_updated()
+        elif self.frida_control_button.text() == 'stop frida':
+            if self.app.get_adb().available():
+                self.app.get_adb().kill_frida()
+
+        self.update_frida_version()
+
     def update_frida_version(self):
         data = self.app.get_dwarf().get_git().get_frida_version()
         if data is None:
@@ -630,29 +712,32 @@ class WelcomeUi(QSplitter):
 
         if self.app.get_adb().available():
             local_version = self.app.get_adb().get_frida_version()
+
+            # control button
+            if local_version is not None:
+                self.frida_control_button.setVisible(True)
+                if not self.app.get_adb().is_frida_running():
+                    self.frida_control_button.setText('start frida')
+                else:
+                    self.frida_control_button.setText('stop frida')
+            else:
+                self.frida_control_button.setVisible(False)
+
+            # update button
             if local_version is not None:
                 local_version = local_version.join(local_version.split())
-                self.update_status_label(local_version)
-
+                self.frida_status_label(local_version)
                 self.frida_update_button.setVisible(self.updated_frida_version != local_version)
-
-                if not self.app.get_adb().is_frida_running():
-                    self.frida_update_button.setText('start frida')
-                    self.frida_update_button.setVisible(True)
-                    self.frida_update_button.setEnabled(True)
-                else:
-                    self.frida_update_button.setText('stop frida')
-                    self.frida_update_button.setVisible(True)
-                    self.frida_update_button.setEnabled(True)
             else:
-                self.update_status_label('frida not found')
+                self.frida_status_label('frida not found')
                 self.frida_update_button.setText('install frida')
                 self.frida_update_button.setVisible(True)
                 self.frida_update_button.setEnabled(True)
         else:
-            self.update_status_label('-')
+            self.frida_status_label('-')
 
-    def update_status_label(self, update_text):
+    # todo: rename func
+    def frida_status_label(self, update_text):
         """ sets status text from fridaserver update
         """
         label_text = ('device frida version: {0}\nupdated frida version: {1}'
@@ -663,24 +748,12 @@ class WelcomeUi(QSplitter):
     def server_update_complete(self):
         """ Fires when FridaServer update is completed
         """
-        self.update_status_label("finished")
+        self.frida_status_label("finished")
         self.update_frida_version()
 
     def update_frida_server(self):
         """ Updates the FridaServer on the Device
         """
-        if self.frida_update_button.text() == 'start frida':
-            if self.app.get_adb().available():
-                self.app.get_adb().start_frida()
-                self.devices_list.currentIndexChanged.disconnect()
-                self.on_devices_updated()
-                self.update_frida_version()
-                return
-        elif self.frida_update_button.text() == 'stop frida':
-            if self.app.get_adb().available():
-                self.app.get_adb().kill_frida()
-                self.update_frida_version()
-                return
 
         # urls are empty
         if not self.updated_frida_assets_url:

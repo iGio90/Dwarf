@@ -14,13 +14,13 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+
 from lib.range import Range
-from ui.widget_memory import QMemoryWidget
+from ui.hex_edit import HexEditor
 
-
-class MemoryPanel(QMemoryWidget):
+class MemoryPanel(HexEditor):
     def __init__(self, app, *__args):
-        super().__init__(app, *__args)
+        super(MemoryPanel, self).__init__(app)
 
     def get_source_type(self):
         return Range.SOURCE_TARGET

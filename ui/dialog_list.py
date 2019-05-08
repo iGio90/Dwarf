@@ -17,6 +17,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidget, QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 
+from ui.list_view import DwarfListView
+
 
 class ListDialog(QDialog):
     def __init__(self, parent=None, setup_list_cb=None, setup_list_cb_args=None,
@@ -26,11 +28,11 @@ class ListDialog(QDialog):
         self.right_click_handler = None
 
         layout = QVBoxLayout(self)
-        self.list = QListWidget()
+        self.list = DwarfListView()  # QListWidget()
 
         self.list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         if double_click_to_accept:
-            self.list.itemDoubleClicked.connect(self.accept)
+            self.list.doubleClicked.connect(self.accept)
 
         if setup_list_cb is not None:
             setup_list_cb(self.list, setup_list_cb_args)

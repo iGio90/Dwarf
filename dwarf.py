@@ -14,32 +14,68 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import argparse
+import os
 import sys
-
-import qdarkstyle
-
-from PyQt5.QtGui import QIcon
+import argparse
 from PyQt5.QtWidgets import QApplication
 
-from lib import utils
 from ui.app import AppWindow
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--script", action='store_true', help="an additional script to load with "
-                                                                    "dwarf and frida js api")
-    parser.add_argument("-p", "--package", help="package name or pid")
-    parser.add_argument("-sp", "--spawn", action='store_true', help="force spawn")
-    args = parser.parse_args()
 
-    app = QApplication([])
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    with open('ui/style.qss', 'r') as f:
-        app.setStyleSheet(app.styleSheet() + '\n' + f.read())
-    app.setWindowIcon(QIcon(utils.resource_path('ui/dwarf.png')))
+def process_args():
+    """ process commandline params
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-t",
+        "--type",
+        type=str,
+        help="SessionType - android, ios, local, remote - default: local")
+
+    parser.add_argument(
+        "-s",
+        "--script",
+        type=str,
+        help="Path to an additional script to load with dwarf and frida js api"
+    )
+
+    parser.add_argument(
+        "-p", "--package", help="Attach Dwarf to given packagename")
+    #parser.add_argument("-a", "--attach", type=int, help="Attach Dwarf to given pid")
+
+    parser.add_argument(
+        "-sp", "--spawn", action='store_true', help="force spawn")
+
+    args = parser.parse_args()
+    return args
+
+
+def _on_restart():
+    os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+
+
+def run_dwarf():
+    """ fire it up
+    """
+    #_internal.main(["install", "--upgrade","--user", "frida"])
+    args = process_args()
+
+    qapp = QApplication([])
 
     app_window = AppWindow(args)
-    app_window.showMaximized()
-    app.exec_()
-    app_window.get_app_instance().get_dwarf().detach()
+    app_window.onRestart.connect(_on_restart)
+
+    try:
+        sys.exit(qapp.exec_())
+    except SystemExit as sys_err:
+        if sys_err.code == 0:
+            # thanks for using dwarf
+            print('Thank\'s for using Dwarf\nHave a nice day...')
+        else:
+            # something was wrong
+            print('sysexit with: %d' % sys_err.code)
+
+
+if __name__ == '__main__':
+    run_dwarf()

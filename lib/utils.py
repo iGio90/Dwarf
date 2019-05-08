@@ -18,21 +18,31 @@ import os
 import subprocess
 import sys
 
+import pyperclip
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QMessageBox
 
-APP_ICON = None
+from lib.prefs import Prefs
+
 VERSION = sys.version_info
 
 
 def do_shell_command(cmd, timeout=60):
+    """ Execute cmd
+    """
     try:
         # capture output is only supported in py 3.7
         if VERSION.minor >= 7:
             result = subprocess.run(cmd.split(' '), timeout=timeout, capture_output=True)
         else:
-            result = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout)
+            result = subprocess.run(
+                cmd.split(' '),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=timeout
+            )
 
         if result.stderr:
             return result.stderr.decode('utf8')
@@ -44,13 +54,14 @@ def do_shell_command(cmd, timeout=60):
 
 
 def get_app_icon():
-    global APP_ICON
-    if APP_ICON is None:
-        APP_ICON = QPixmap(resource_path('ui/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
-    return APP_ICON
+    """ Returns Icon (QPixmap)
+    """
+    return QPixmap(resource_path('assets/dwarf.png')).scaledToHeight(75, Qt.SmoothTransformation)
 
 
 def parse_ptr(ptr):
+    """ ptr parsing
+    """
     if isinstance(ptr, str):
         if ptr.startswith('#'):
             ptr = ptr[1:]
@@ -78,6 +89,8 @@ def resource_path(relative_path):
 
 
 def show_message_box(text, details=None):
+    """ Shows a MessageBox
+    """
     msg = QMessageBox()
     msg.setIconPixmap(get_app_icon())
 
@@ -86,3 +99,49 @@ def show_message_box(text, details=None):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()
+
+
+def get_os_monospace_font():
+    """ Get MonospaceFont for OS
+    """
+    platform = sys.platform
+
+    if 'linux' in platform:
+        return QFont('Monospace', 10)
+    elif 'darwin' in platform:
+        return QFont('Monaco', 12)
+    elif 'freebsd' in platform:
+        return QFont('Bitstream Vera Sans Mono', 10)
+    else:
+        # windows
+        return QFont('Courier', 10)  # Consolas ??
+
+    # return QFontDatabase.systemFont(QFontDatabase.FixedFont) ??
+
+
+def copy_str_to_clipboard(text):
+    """ Helper for copying text
+    """
+    if isinstance(text, str):
+        pyperclip.copy(text)
+
+
+def copy_hex_to_clipboard(hex_str):
+    """ Helper for copying hexstr in prefered style
+    """
+    _prefs = Prefs()
+    uppercase = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
+    if isinstance(hex_str, str):
+        if hex_str.startswith('0x'):
+            if uppercase:
+                hex_str = hex_str.upper().replace('0X', '0x')
+            else:
+                hex_str = hex_str.lower()
+
+            pyperclip.copy(hex_str)
+    elif isinstance(hex_str, int):
+        str_fmt = '0x{0:x}'
+        if uppercase:
+            str_fmt = '0x{0:X}'
+
+        pyperclip.copy(str_fmt.format(hex_str))

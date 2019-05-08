@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
-
+import subprocess
 from lib import utils, external_tools
 
 
@@ -39,12 +39,15 @@ class AndroidDecompileUtil(object):
         except:
             utils.show_message_box('failed to find %s' % dex2jar)
             return
-        utils.do_shell_command('d2j-dex2jar.sh %s' % '.decompile/base.apk -o .decompile/base.jar -f')
+        utils.do_shell_command(dex2jar + ' .decompile/base.apk -o .decompile/base.jar -f')
         if not external_tools.tool_exist('luyten.jar'):
             external_tools.get_tool('https://github.com/deathmarine/Luyten/releases/download/v0.5.3/luyten-0.5.3.jar',
                                     'luyten.jar')
         java_version = utils.do_shell_command('java -version')
-        if 'java version' not in java_version and 'openjdk version' not in java_version:
+        try:
+            java_version.index('java version')
+        except:
             utils.show_message_box('failed to find java')
             return
+
         utils.do_shell_command('java -jar tools/luyten.jar .decompile/base.jar &')

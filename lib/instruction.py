@@ -17,6 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
 from capstone import *
 from capstone.arm_const import *
+from capstone.x86_const import *
 
 
 class Instruction(object):
@@ -39,14 +40,14 @@ class Instruction(object):
         self.thumb = dwarf.arch == 'arm' and (ARM_GRP_THUMB in self.groups or ARM_GRP_THUMB1ONLY in self.groups
                                               or ARM_GRP_THUMB2 in self.groups or ARM_GRP_THUMB2DSP in self.groups)
         self.is_jump = False
-        if CS_GRP_JUMP in instruction.groups or CS_GRP_CALL in instruction.groups:
+        if instruction.group(CS_GRP_JUMP) or instruction.group(CS_GRP_CALL):
             self.is_jump = True
         self.jump_address = 0
         if len(instruction.operands) > 0:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
-                    if len(instruction.operands) == 1:
-                        self.is_jump = True
+                    # if len(instruction.operands) == 1:
+                    #    self.is_jump = True
                     self.jump_address = op.value.imm
 
         # resolve jump symbol
@@ -59,3 +60,11 @@ class Instruction(object):
                 self.symbol_module = '-'
                 if 'moduleName' in sym:
                     self.symbol_module = sym['moduleName']
+
+        self.string = None
+        if len(instruction.operands) > 0:
+            for op in instruction.operands:
+                if op.type == CS_OP_IMM:
+                    self.string = dwarf.dwarf_api('readString', op.value.imm)
+                    # if len([x for x in self.string if not x.isprintable()]) > 0:
+                    #self.string = None

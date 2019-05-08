@@ -16,13 +16,14 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtWidgets import *
 
-from lib import prefs
+from lib.prefs import Prefs
 
 
 class EmulatorConfigsDialog(QDialog):
     def __init__(self, dwarf, parent=None):
         super(EmulatorConfigsDialog, self).__init__(parent)
         self.dwarf = dwarf
+        self._prefs = Prefs()
 
         layout = QVBoxLayout(self)
 
@@ -32,7 +33,7 @@ class EmulatorConfigsDialog(QDialog):
         callbacks_layout = QHBoxLayout()
         pick_path = QPushButton('choose')
         pick_path.clicked.connect(self.pick_callbacks_path)
-        current_callbacks_path = dwarf.get_prefs().get(prefs.EMULATOR_CALLBACKS_PATH)
+        current_callbacks_path = self._prefs.get(prefs.EMULATOR_CALLBACKS_PATH)
         if current_callbacks_path == '':
             current_callbacks_path = 'none'
         self.callbacks_path_label = QLabel(current_callbacks_path)
@@ -42,7 +43,7 @@ class EmulatorConfigsDialog(QDialog):
 
         layout.addWidget(QLabel('delay between instructions'))
         self.instructions_delay = QLineEdit()
-        self.instructions_delay.setText(str(dwarf.get_prefs().get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0.5)))
+        self.instructions_delay.setText(str(self._prefs.get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0.5)))
         layout.addWidget(self.instructions_delay)
 
         buttons = QHBoxLayout()
@@ -58,7 +59,7 @@ class EmulatorConfigsDialog(QDialog):
     def pick_callbacks_path(self):
         r = QFileDialog.getOpenFileName()
         if len(r) > 0 and len(r[0]) > 0:
-            self.dwarf.get_prefs().put(prefs.EMULATOR_CALLBACKS_PATH, r[0])
+            self._prefs.put(prefs.EMULATOR_CALLBACKS_PATH, r[0])
             self.callbacks_path_label.setText(r[0])
 
     @staticmethod
@@ -68,6 +69,6 @@ class EmulatorConfigsDialog(QDialog):
 
         if result == QDialog.Accepted:
             try:
-                dwarf.get_prefs().put(prefs.EMULATOR_INSTRUCTIONS_DELAY, float(dialog.instructions_delay.text()))
+                self._prefs.put(prefs.EMULATOR_INSTRUCTIONS_DELAY, float(dialog.instructions_delay.text()))
             except:
                 pass

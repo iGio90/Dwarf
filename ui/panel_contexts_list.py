@@ -14,106 +14,129 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QTreeView, QHeaderView, QMenu
 
-from ui.ui_session import SessionUi
-from ui.widget_context import ContextItem
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
-from ui.widget_memory_address import MemoryAddressWidget
-from ui.widget_table_base import TableBaseWidget
+from ui.list_view import DwarfListView
 
 
-class ContextsListPanel(TableBaseWidget):
-    def __init__(self, app, *__args):
-        super().__init__(app, 0, 0)
+class ContextsListPanel(DwarfListView):
 
-    def set_menu_actions(self, item, menu):
-        if item is not None:
-            ctx = self.item(item.row(), 0)
-            if isinstance(ctx, ContextItem):
-                emulator = menu.addAction('Emulator')
-                if self.app.get_emulator_panel() is not None:
-                    emulator.setEnabled(False)
-                else:
-                    emulator.setData('emulator')
-                if self.app.get_dwarf().get_native_traced_tid() > 0:
-                    trace = menu.addAction("Stop trace")
-                else:
-                    trace = menu.addAction("Trace")
-                trace.setData('trace')
-                menu.addSeparator()
-                resume = menu.addAction("Resume")
-                resume.setData('resume')
+    onItemDoubleClicked = pyqtSignal(dict, name='onItemDoubleClicked')
 
-    def on_menu_action(self, action_data, item):
-        ctx = self.item(item.row(), 0)
-        if isinstance(ctx, ContextItem):
-            if action_data == 'emulator':
-                self.app.get_session_ui().add_dwarf_tab(SessionUi.TAB_EMULATOR, request_focus=True)
-            elif action_data == 'trace':
-                if self.app.get_dwarf().get_native_traced_tid() > 0:
-                    self.app.get_dwarf().native_tracer_stop()
-                else:
-                    tid = ctx.get_tid()
-                    self.app.get_dwarf().native_tracer_start(tid)
-            elif action_data == 'resume':
-                self.app.resume(ctx.get_tid())
-                return False
+    def __init__(self, parent=None):
+        super(ContextsListPanel, self).__init__(parent=parent)
+        self._app_window = parent
+        self.dwarf = parent.dwarf
 
-    def resume_tid(self, tid):
-        items = self.findItems(str(tid), Qt.MatchExactly)
-        if len(items) > 0:
-            self.removeRow(items[0].row())
+        self.threads_model = QStandardItemModel(0, 3)
+        self.threads_model.setHeaderData(0, Qt.Horizontal, 'TID')
+        self.threads_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        if self.dwarf.arch == 'ia32':
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'EIP')
+        elif self.dwarf.arch == 'x64':
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'RIP')
+        else:
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'PC')
+        self.threads_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self.threads_model.setHeaderData(2, Qt.Horizontal, 'Symbol')
+
+        self.setModel(self.threads_model)
+        self.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._on_context_menu)
+
+        self.doubleClicked.connect(self._item_doubleclicked)
 
     def add_context(self, data, library_onload=None):
-        if self.columnCount() == 0:
-            self.setColumnCount(3)
-            self.setHorizontalHeaderLabels(['tid', 'pc', 'symbol'])
-
+        if self.dwarf.arch == 'ia32':
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'EIP')
+        elif self.dwarf.arch == 'x64':
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'RIP')
+        else:
+            self.threads_model.setHeaderData(1, Qt.Horizontal, 'PC')
         is_java = data['is_java']
+        tid = QStandardItem()
+        tid.setText(str(data['tid']))
+        tid.setData(data, Qt.UserRole + 1)
+        tid.setTextAlignment(Qt.AlignCenter)
 
-        row = self.rowCount()
-        self.insertRow(row)
-        q = ContextItem(data, str(data['tid']))
-        q.setForeground(Qt.darkCyan)
-        self.setItem(row, 0, q)
-
+        pc_col = QStandardItem()
         if not is_java:
             pc = int(data['ptr'], 16)
-            # dethumbify
-            if pc & 1 == 1:
-                pc -= 1
-            q = MemoryAddressWidget(hex(pc))
+            if 'arm' in self.dwarf.arch:
+                # dethumbify
+                if pc & 1 == 1:
+                    pc -= 1
+
+            str_fmt = '0x{0:X}'
+            if self._uppercase_hex:
+                str_fmt = '0x{0:X}'
+            else:
+                str_fmt = '0x{0:x}'
+
+            pc_col.setText(str_fmt.format(pc))
         else:
             parts = data['ptr'].split('.')
-            q = NotEditableTableWidgetItem(parts[len(parts) - 1])
-            q.setForeground(Qt.red)
-            q.setFlags(Qt.NoItemFlags)
-        self.setItem(row, 1, q)
+            pc_col.setText(parts[len(parts) - 1])
 
+        symb_col = QStandardItem()
         if library_onload is None:
             if not is_java:
-                q = NotEditableTableWidgetItem('%s - %s' % (
-                    data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
+                str_fmt = ('{0} - {1}'.format(data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
+                symb_col.setText(str_fmt)
             else:
-                q = NotEditableTableWidgetItem('.'.join(parts[:len(parts) - 1]))
+                symb_col.setText('.'.join(parts[:len(parts) - 1]))
         else:
-            q = NotEditableTableWidgetItem('loading %s' % library_onload)
+            str_fmt = ('loading {0}'.format(library_onload))
+            symb_col.setText(str_fmt)
 
-        q.setFlags(Qt.NoItemFlags)
-        q.setForeground(Qt.gray)
-        self.setItem(row, 2, q)
-        self.resizeRowsToContents()
-        self.horizontalHeader().setStretchLastSection(True)
+        self.threads_model.appendRow([tid, pc_col, symb_col])
+        self.resizeColumnToContents(0)
+        self.resizeColumnToContents(1)
 
-    def item_double_clicked(self, item):
-        if isinstance(item, ContextItem):
-            self.app.apply_context(item.get_context())
-            return False
-        return True
+    def resume_tid(self, tid):
+        if self.dwarf._spawned and not self.dwarf._resumed:
+            self.dwarf.resume_proc()
+            return
 
-    def clear(self):
-        self.setRowCount(0)
-        self.setColumnCount(0)
-        self.resizeColumnsToContents()
-        self.horizontalHeader().setStretchLastSection(True)
+        # todo: check why removing here and removing in on_proc_resume
+        for i in range(self.threads_model.rowCount()):
+            is_tid = self.threads_model.item(i, 0).text()
+            if is_tid == str(tid):
+                self.threads_model.removeRow(i)
+
+    def _item_doubleclicked(self, model_index):
+        row = self.threads_model.itemFromIndex(model_index).row()
+        if row != -1:
+            context_data = self.threads_model.item(row, 0).data(Qt.UserRole + 1)
+            self.onItemDoubleClicked.emit(context_data)
+
+    def _on_context_menu(self, pos):
+        index = self.indexAt(pos).row()
+        if index != -1:
+            tid = int(self.get_item_text(index, 0))
+            glbl_pt = self.mapToGlobal(pos)
+            context_menu = QMenu()
+            context_menu.addAction('Emulator', self._on_cm_emulator)
+            if self.dwarf.native_trace_tid == tid:
+                context_menu.addAction('Stop Trace', self.dwarf.native_tracer_stop)
+            else:
+                context_menu.addAction('Trace', lambda: self._on_cm_starttrace(tid))
+            context_menu.addSeparator()
+            context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
+            context_menu.exec_(glbl_pt)
+
+    def _on_cm_starttrace(self, tid):
+        self.dwarf.native_tracer_start(int(tid))
+
+    def _on_cm_emulator(self):
+        if self._app_window.emulator_panel is None:
+            self._app_window._create_ui_elem('emulator')
+
+        self._app_window.show_main_tab('emulator')

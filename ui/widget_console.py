@@ -14,25 +14,41 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt, QMargins
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QWidget, QLineEdit, QHBoxLayout, QPushButton, \
-    QVBoxLayout, QScrollBar
+import datetime
+from PyQt5.Qt import QFontMetrics
+from PyQt5.QtCore import Qt, QMargins, pyqtSignal
+from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QVBoxLayout,
+                             QPlainTextEdit, QSizePolicy)
 
 from ui.dialog_js_editor import JsEditorDialog
-from ui.widget_item_not_editable import NotEditableListWidgetItem
+from ui.code_editor import JsCodeEditor
 
 
-class QConsoleInputWidget(QLineEdit):
-    def __init__(self, console_panel, callback, *__args):
-        super().__init__(*__args)
-        self.console_panel = console_panel
-        self.callback = callback
+class QConsoleInputWidget(JsCodeEditor):
+    """
+    """
+
+    onEnterKeyPressed = pyqtSignal(str, name='onEnterKeyPressed')
+
+    def __init__(self, parent=None):
+        super(QConsoleInputWidget, self).__init__(parent=parent)
         self.cmds = []
         self.cmd_index = 0
+        self.setStyleSheet('padding: 0; padding: 0 5px;')
+        # calc size for single line
+        font_metric = QFontMetrics(self.font())
+        row_height = font_metric.lineSpacing()
+        self.setFixedHeight(row_height + 10)  # 10 == 2*5px padding
 
     def keyPressEvent(self, event):
+        # when codecompletion popup dont respond to enter
+        if self.completer and self.completer.popup() and self.completer.popup(
+        ).isVisible():
+            event.ignore()
+            return super().keyPressEvent(event)
+
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
-            cmd = self.text()
+            cmd = self.toPlainText()
             l = len(self.cmds)
             if l > 0:
                 if l > 100:
@@ -42,12 +58,12 @@ class QConsoleInputWidget(QLineEdit):
             else:
                 self.cmds.append(cmd)
             self.cmd_index = 0
-            self.callback(self.text())
-            self.setText('')
+            self.onEnterKeyPressed.emit(cmd)
+            self.setPlainText('')
         elif event.key() == Qt.Key_Up:
             l = len(self.cmds)
             try:
-                self.setText(self.cmds[l - 1 - self.cmd_index])
+                self.setPlainText(self.cmds[l - 1 - self.cmd_index])
                 if self.cmd_index < l - 1:
                     self.cmd_index += 1
             except:
@@ -56,9 +72,10 @@ class QConsoleInputWidget(QLineEdit):
             try:
                 if self.cmd_index >= 0:
                     self.cmd_index -= 1
-                self.setText(self.cmds[len(self.cmds) - 1 - self.cmd_index])
+                self.setPlainText(
+                    self.cmds[len(self.cmds) - 1 - self.cmd_index])
             except:
-                self.setText('')
+                self.setPlainText('')
                 self.cmd_index = 0
         else:
             return super().keyPressEvent(event)
@@ -68,81 +85,87 @@ class QConsoleInputWidget(QLineEdit):
 
 
 class QConsoleWidget(QWidget):
-    def __init__(self, app, callback=None, input_placeholder='', function_box=False, flags=None, *args, **kwargs):
-        super().__init__(flags, *args, **kwargs)
+
+    onCommandExecute = pyqtSignal(str, name='onCommandExecute')
+
+    def __init__(self, parent=None, input_placeholder='', function_box=False, has_input=True):
+        super(QConsoleWidget, self).__init__(parent=parent)
+
+        self.app_window = parent
 
         layout = QVBoxLayout()
 
-        self.app = app
         self.function_content = ''
 
         self.setContentsMargins(QMargins(0, 0, 0, 0))
         layout.setContentsMargins(QMargins(0, 0, 0, 0))
 
-        self.list = QListWidget()
-        self.list.setStyleSheet('''
-            QListWidget::item:hover { 
-                color: white; 
-                background-color: rgba(255, 255, 255, 5); 
-            }
-            QListWidget::item:selected { 
-                color: white; 
-                background-color: rgba(255, 255, 255, 5); 
-            }
-        ''')
-        bar = QScrollBar()
-        bar.setMaximumHeight(0)
-        bar.setMaximumWidth(0)
-        self.list.setHorizontalScrollBar(bar)
-        self.list.model().rowsInserted.connect(self.on_row_inserted)
-        layout.addWidget(self.list)
+        # use textedit to allow copy contents
+        self.output = QPlainTextEdit()
+        self.output.setReadOnly(True)
+        self.output.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        box = QHBoxLayout()
-        box.setContentsMargins(QMargins(3, 3, 3, 3))
+        layout.addWidget(self.output)
 
-        if callback is not None:
-            self.input = QConsoleInputWidget(self, callback)
+        if has_input:
+            box = QHBoxLayout()
+            box.setContentsMargins(QMargins(3, 3, 3, 3))
+
+            self.input = QConsoleInputWidget(self)
+            self.input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             self.input.setPlaceholderText(input_placeholder)
+            self.input.onEnterKeyPressed.connect(self._enter_pressed)
             box.addWidget(self.input)
 
-        if function_box:
-            function_btn = QPushButton('ƒ')
-            function_btn.setMinimumWidth(25)
-            function_btn.clicked.connect(self.js_function_box)
-            box.addWidget(function_btn)
+            if function_box:
+                function_btn = QPushButton('ƒ')
+                function_btn.setMinimumWidth(25)
+                function_btn.clicked.connect(self.js_function_box)
+                box.addWidget(function_btn)
 
-        box_widget = QWidget()
-        box_widget.setLayout(box)
-        layout.addWidget(box_widget)
+            box_widget = QWidget()
+            box_widget.setLayout(box)
+            layout.addWidget(box_widget)
 
         self.setLayout(layout)
 
-    def on_row_inserted(self, qindex, a, b):
-        self.list.scrollToBottom()
+    def _enter_pressed(self, cmd):
+        self.onCommandExecute.emit(cmd)
 
     def log(self, what, clear=False):
         if clear:
             self.clear()
 
-        if isinstance(what, QListWidgetItem):
-            self.list.addItem(what)
+        what = str(what)
+
+        # color up stuff
+        if 'error' in what.lower():
+            html_text = '<font color="crimson">' + what + '</font>'
         else:
-            self.list.addItem(NotEditableListWidgetItem(str(what)))
+            html_text = what
+        time_stamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
+        self.output.appendHtml(
+            '<p><font color="yellowgreen" size="2" style="font-style:italic">'
+            + time_stamp + '</font>&nbsp;&nbsp;' + html_text + '</p>')
+        self.output.verticalScrollBar().setValue(
+            self.output.verticalScrollBar().maximum())
 
     def clear(self):
-        self.list.clear()
+        self.output.setPlainText('')
 
     def js_function_box(self):
         accept, what = JsEditorDialog(
-            self.app, def_text=self.function_content,
+            self.app_window,
+            def_text=self.function_content,
             placeholder_text='// js script with both frida and dwarf api.\n'
-                             '// note that it\'s evaluated. Which means, if you define a variable\n'
-                             '// or attach an Interceptor, it won\'t be removed by '
-                             'just deleting the script content').show()
+            '// note that it\'s evaluated. Which means, if you define a variable\n'
+            '// or attach an Interceptor, it won\'t be removed by '
+            'just deleting the script content').show()
         if accept:
             self.function_content = what
-            if len(what) > 0:
-                self.app.dwarf_api('evaluateFunction', what)
+            if what:
+                self.app_window.session_manager.session.dwarf.dwarf_api(
+                    'evaluateFunction', what)
 
     def get_js_script_text(self):
         return self.function_content

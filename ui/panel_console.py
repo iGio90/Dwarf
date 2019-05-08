@@ -20,15 +20,21 @@ from ui.widget_console import QConsoleWidget
 
 
 class ConsolePanel(QTabWidget):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
+    def __init__(self, parent=None):
+        super(ConsolePanel, self).__init__(parent=parent)
+        self.parent = parent
 
-        self.js_console = QConsoleWidget(self.app, self.js_callback, input_placeholder='$>', function_box=True)
-        self.py_console = QConsoleWidget(self.app, self.py_callback, input_placeholder='>>>')
+        self.js_console = QConsoleWidget(parent, input_placeholder='$>', function_box=True)
+        self.js_console.onCommandExecute.connect(self.js_callback)
+
+        self.py_console = QConsoleWidget(parent, input_placeholder='>>>')
+        self.py_console.onCommandExecute.connect(self.py_callback)
+
+        self.emu_console = QConsoleWidget(parent, has_input=False)
 
         self.addTab(self.js_console, 'javascript')
         self.addTab(self.py_console, 'python')
+        self.addTab(self.emu_console, 'emulator')
 
     def clear(self):
         self.js_console.clear()
@@ -40,9 +46,23 @@ class ConsolePanel(QTabWidget):
     def get_py_console(self):
         return self.py_console
 
+    def get_emu_console(self):
+        return self.emu_console
+
+    def show_console_tab(self, tab_name):
+        tab_name = tab_name.join(tab_name.split()).lower()
+        if tab_name == 'javascript':
+            self.setCurrentIndex(0)
+        elif tab_name == 'python':
+            self.setCurrentIndex(1)
+        elif tab_name == 'emulator':
+            self.setCurrentIndex(2)
+        else:
+            self.setCurrentIndex(0)
+
     def js_callback(self, text):
         # the output in the logs is handled in dwarf_api
-        self.app.dwarf_api('evaluate', text)
+        self.parent.dwarf.dwarf_api('evaluate', text)
 
     def py_callback(self, text):
         self.py_console.log(eval(text))

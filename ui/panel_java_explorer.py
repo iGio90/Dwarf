@@ -136,8 +136,6 @@ class JavaExplorerPanel(QWidget):
         self.setLayout(box)
 
     def _set_data(self, data):
-        if not self.isVisible():
-            self.app.get_session_ui().show_java_panel()
 
         self.clazz.setText(data['class'])
         data = data['data']
@@ -161,14 +159,14 @@ class JavaExplorerPanel(QWidget):
         self.fields.sortByColumn(0, 0)
 
     def set_handle(self, handle):
-        data = self.app.dwarf_api('javaExplorer', handle)
+        data = self.app.dwarf.dwarf_api('javaExplorer', handle)
         if data is None:
             return
         self.handle_history.append({'handle': handle})
         self._set_data(data)
 
     def set_handle_arg(self, arg):
-        data = self.app.dwarf_api('javaExplorer', arg)
+        data = self.app.dwarf.dwarf_api('javaExplorer', arg)
         if data is None:
             return
         self.handle_history.append({'handle': arg})
