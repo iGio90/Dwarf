@@ -15,19 +15,14 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
-
-import frida
+import shutil
 
 from lib import utils
-from lib.core import Dwarf
 from lib.prefs import Prefs
 
-from PyQt5 import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *  # QIcon, QFontDatabase
 from PyQt5.QtWidgets import *
-
-from ui.ui_welcome import WelcomeUi
 
 from lib.session_manager import SessionManager
 
@@ -227,12 +222,7 @@ class AppWindow(QMainWindow):
 
     def remove_tmp_dir(self):
         if os.path.exists('.tmp'):
-            for root, dirs, files in os.walk('.tmp', topdown=False):
-                for name in files:
-                    os.remove(os.path.join(root, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(root, name))
-            os.rmdir(root)
+            shutil.rmtree('.tmp')
 
     def _set_theme(self, qaction):
         if qaction:
