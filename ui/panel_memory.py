@@ -18,6 +18,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 from lib.range import Range
 from ui.hex_edit import HexEditor
 
+
 class MemoryPanel(HexEditor):
     def __init__(self, app, *__args):
         super(MemoryPanel, self).__init__(app)

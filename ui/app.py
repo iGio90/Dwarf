@@ -254,6 +254,11 @@ class AppWindow(QMainWindow):
 
         self.main_tabs.setCurrentIndex(index)
 
+    def jump_to_address(self, ptr):
+        if self.memory_panel is not None:
+            self.show_main_tab('memory')
+            self.memory_panel.read_memory(ptr)
+
     @pyqtSlot(name='mainMenuGitHub')
     def _menu_github(self):
         QDesktopServices.openUrl(QUrl('https://github.com/iGio90/Dwarf'))

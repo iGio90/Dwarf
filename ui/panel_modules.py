@@ -371,7 +371,7 @@ class ModulesPanel(QWidget):
                     self.modules_model.item(index, 1).text(),
                     self.modules_model.item(index, 2).text()))
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self.modules_model.item(index, 1).text()))
             context_menu.addSeparator()
             context_menu.addAction(
@@ -398,7 +398,7 @@ class ModulesPanel(QWidget):
                 'Add Hook', lambda: self._add_hook(addr, func_name))
             context_menu.addSeparator()
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self.imports_model.item(index, 1).text()))
             context_menu.addSeparator()
             context_menu.addAction(
@@ -422,7 +422,7 @@ class ModulesPanel(QWidget):
                 'Add Hook', lambda: self._add_hook(addr, func_name))
             context_menu.addSeparator()
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self.exports_model.item(index, 1).text()))
             context_menu.addSeparator()
             context_menu.addAction(

@@ -252,7 +252,7 @@ class HooksPanel(QWidget):
         index = self._hooks_list.indexAt(pos).row()
         if index != -1:
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._hooks_model.item(index, 0).text()))
             context_menu.addSeparator()
             context_menu.addAction(

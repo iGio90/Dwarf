@@ -184,7 +184,7 @@ class RangesPanel(DwarfListView):
                     self._ranges_model.item(index, 0).text()))
 
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._ranges_model.item(index, 0).text()))
             context_menu.addSeparator()
 

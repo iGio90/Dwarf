@@ -390,7 +390,7 @@ class WatchersPanel(QWidget):
             glbl_pt = self.list_view.mapToGlobal(pos)
             context_menu = QMenu(self)
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._watchers_model.item(index, 0).text()))
             context_menu.addAction(
                 'Delete Address', lambda: self.remove_address(

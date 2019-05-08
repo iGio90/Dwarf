@@ -250,8 +250,6 @@ class ContextPanel(QTabWidget):
         else:
             self.show_context_tab('Java')
 
-        context_ptr = ptr
-
         for arg in context:
             _arg = QStandardItem()
             _arg.setText(arg)
@@ -279,7 +277,10 @@ class ContextPanel(QTabWidget):
         context_menu = QMenu(self)
         if index != -1:
             context_menu.addAction(
-                'Copy Address', lambda: utils.copy_hex_to_clipboard(
+                'Jump to address', lambda: self._app_window.jump_to_address(
+                    self._nativectx_model.item(index, 1).text()))
+            context_menu.addAction(
+                'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._nativectx_model.item(index, 1).text()))
         context_menu.exec_(glbl_pt)
 
