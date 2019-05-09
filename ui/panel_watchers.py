@@ -308,7 +308,6 @@ class WatchersPanel(QWidget):
         self.list_view.setHeaderHidden(False)
 
         # create items to add
-        str_frmt = ''
         if self._uppercase_hex:
             str_frmt = '0x{0:X}'
         else:
@@ -386,16 +385,20 @@ class WatchersPanel(QWidget):
     # ************************************************************************
     def _on_contextmenu(self, pos):
         index = self.list_view.indexAt(pos).row()
+        glbl_pt = self.list_view.mapToGlobal(pos)
+        context_menu = QMenu(self)
         if index != -1:
-            glbl_pt = self.list_view.mapToGlobal(pos)
-            context_menu = QMenu(self)
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._watchers_model.item(index, 0).text()))
             context_menu.addAction(
-                'Delete Address', lambda: self.remove_address(
+                'Delete address', lambda: self.remove_address(
                     self._watchers_model.item(index, 0).text()))
-            context_menu.exec_(glbl_pt)
+            context_menu.addSeparator()
+
+        context_menu.addAction(
+            'Add watcher', lambda: self._on_additem_clicked())
+        context_menu.exec_(glbl_pt)
 
     def _on_item_dblclick(self, model_index):
         row = self._watchers_model.itemFromIndex(model_index).row()
