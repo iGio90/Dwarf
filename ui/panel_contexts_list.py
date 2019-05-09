@@ -74,7 +74,6 @@ class ContextsListPanel(DwarfListView):
                 if pc & 1 == 1:
                     pc -= 1
 
-            str_fmt = '0x{0:X}'
             if self._uppercase_hex:
                 str_fmt = '0x{0:X}'
             else:

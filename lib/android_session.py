@@ -63,10 +63,14 @@ class SmaliThread(QThread):
                 _baksmali_cmd = 'd2j-baksmali.sh'
                 if os.name == 'nt':
                     _baksmali_cmd = _baksmali_cmd.replace('.sh', '.bat')
-                utils.do_shell_command(_baksmali_cmd + ' .tmp/base.apk -o .tmp/smali')
-                self.onFinished.emit()
-
-        self.onError.emit()
+                try:
+                    utils.do_shell_command(_baksmali_cmd + ' .tmp/base.apk -o .tmp/smali')
+                    self.onFinished.emit()
+                except:
+                    # no d2j
+                    self.onError.emit()
+        else:
+            self.onError.emit()
 
 
 class AndroidSession(Session):
