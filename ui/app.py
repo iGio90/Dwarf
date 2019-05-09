@@ -222,7 +222,7 @@ class AppWindow(QMainWindow):
 
     def remove_tmp_dir(self):
         if os.path.exists('.tmp'):
-            shutil.rmtree('.tmp')
+            shutil.rmtree('.tmp', ignore_errors=True)
 
     def _set_theme(self, qaction):
         if qaction:

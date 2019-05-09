@@ -127,14 +127,19 @@ class Adb(QObject):
                     except ValueError:
                         pass
 
-                # check if we have pidof
-                if self._oreo_plus:
-                    self._have_pidof = self._do_adb_command(
-                        'adb shell pidof') == ''
-
                 # fix some frida server problems
                 # frida default port: 27042
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
+
+            # check if we have pidof
+            if self._oreo_plus:
+                res = self._do_adb_command('adb shell pidof')
+                self._have_pidof = 'not found' not in res
+
+            # check for root
+            if self._is_root:
+                res = self.su_cmd('id')
+                self._is_root = 'uid=0' in res
 
     def get_states_string(self):
         """ Prints check results
@@ -161,8 +166,7 @@ class Adb(QObject):
     def available(self):
         """ Returns True if adb and dev/emu and (su or root) is True
         """
-        return self._adb_available and self._dev_emu and (self._is_root
-                                                          or self._is_su)
+        return self._adb_available and self._dev_emu and (self._is_root or self._is_su)
 
     def get_device_arch(self):
         """ Returns value from ro.product.cpu.abi
