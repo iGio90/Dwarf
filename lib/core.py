@@ -344,7 +344,6 @@ class Dwarf(QObject):
                     self.dwarf_api('evaluateFunction', user_script)
 
             self.onScriptLoaded.emit()
-
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
             was_error = True
@@ -352,13 +351,6 @@ class Dwarf(QObject):
             error_msg = 'Process not responding (ProcessNotRespondingError)'
             was_error = True
         except frida.TimedOutError:
-<<<<<<< HEAD
-            print('frida timeout')
-            self._on_destroyed()
-        except frida.TransportError:
-            print('frida transporterror')
-            self._on_destroyed()
-=======
             error_msg = 'Frida timeout (TimedOutError)'
             was_error = True
         except frida.ServerNotRunningError:
@@ -371,7 +363,6 @@ class Dwarf(QObject):
             if was_error:
                 utils.show_message_box(error_msg)
                 self._on_destroyed()
->>>>>>> 335592f... 'fixes'
 
     def spawn(self, package, script=None):
         if self.device is None:

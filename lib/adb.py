@@ -127,19 +127,6 @@ class Adb(QObject):
                     except ValueError:
                         pass
 
-<<<<<<< HEAD
-=======
-                # check if we have pidof
-                if self._oreo_plus:
-                    res = self._do_adb_command('adb shell pidof')
-                    self._have_pidof = 'not found' not in res
-
-                # check for root
-                if self._is_root:
-                    res = self.su_cmd('id')
-                    self._is_root = 'uid=0' in res
-
->>>>>>> 335592f... 'fixes'
                 # fix some frida server problems
                 # frida default port: 27042
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')

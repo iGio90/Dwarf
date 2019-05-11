@@ -289,69 +289,9 @@ class DisassemblyView(QAbstractScrollArea):
         self.disassemble(self._range)
         return 0
 
-<<<<<<< HEAD
-    def mouseDoubleClickEvent(self, event):
-        loc_x = event.pos().x()
-        loc_y = event.pos().y()
-
-        index = self.pixel_to_line(loc_x, loc_y)
-        left_side = self._breakpoint_linewidth + self._jumps_width
-        addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
-        if loc_x > left_side:
-            if loc_x < left_side + addr_width:
-                if isinstance(self._lines[index + self.pos], Instruction):
-                    self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
-            if loc_x > left_side + addr_width:
-                if isinstance(self._lines[index + self.pos], Instruction):
-                    if self._follow_jumps and self._lines[index + self.pos].is_jump:
-                        new_pos = self._lines[index + self.pos].jump_address
-                        self.read_memory(new_pos)
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Backspace:
-            if len(self._history) > 1:
-                self._history.pop(len(self._history) - 1)
-                self.read_memory(self._history[len(self._history) - 1])
-        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
-            self._on_jump_to()
-        else:
-            # dispatch those to super
-            super().keyPressEvent(event)
-
-    def _on_jump_to(self):
-        ptr, input_ = InputDialog.input_pointer(self._app_window)
-        if ptr > 0:
-            self.read_memory(ptr)
-
-    # pylint: disable=C0103
-    def mouseMoveEvent(self, event):
-        """ onmousemove
-        """
-        loc_x = event.pos().x()
-        loc_y = event.pos().y()
-
-        if loc_x > self._breakpoint_linewidth + self._jumps_width:
-            self.current_jump = -1
-            index = self.pixel_to_line(loc_x, loc_y)
-
-            if 0 <= index < self.visible_lines():
-                self._current_line = index
-                if index + self.pos < len(self._lines):
-                    if isinstance(self._lines[index + self.pos], Instruction):
-                        if self._lines[index + self.pos].is_jump:
-                            self.current_jump = self._lines[index + self.pos].address
-
-            #self.viewport().update(0, 0, self._breakpoint_linewidth + self._jumps_width, self.viewport().height())
-            y_pos = self._header_height + (index * (self._char_height + self._ver_spacing))
-            y_pos += (self._char_height * 0.5)
-            y_pos -= self._ver_spacing
-            self.viewport().update(0, 0, self.viewport().width(), self.viewport().height())
-
-=======
     # ************************************************************************
     # **************************** Drawing ***********************************
     # ************************************************************************
->>>>>>> 335592f... 'fixes'
     def paint_jumps(self, painter):
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump]
@@ -578,10 +518,6 @@ class DisassemblyView(QAbstractScrollArea):
 
         painter.fillRect(drawing_pos_x, 0, 1, self.viewport().height(), self._ctrl_colors['divider'])
 
-<<<<<<< HEAD
-    def _on_switch_mode(self):
-        self._lines.clear()
-=======
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
@@ -601,7 +537,6 @@ class DisassemblyView(QAbstractScrollArea):
         else:
             # dispatch those to super
             super().keyPressEvent(event)
->>>>>>> 335592f... 'fixes'
 
         if self.capstone_mode == CS_MODE_ARM:
             self.capstone_mode = CS_MODE_THUMB
@@ -636,8 +571,6 @@ class DisassemblyView(QAbstractScrollArea):
             elif self._app_window.dwarf.arch == 'x64':
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
-<<<<<<< HEAD
-=======
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -742,4 +675,3 @@ class DisassemblyView(QAbstractScrollArea):
             else:
                 self.capstone_mode = CS_MODE_ARM
             self.disassemble(self._range)
->>>>>>> 335592f... 'fixes'
