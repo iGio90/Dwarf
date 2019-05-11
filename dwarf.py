@@ -58,7 +58,6 @@ def _on_restart():
 def run_dwarf():
     """ fire it up
     """
-    #_internal.main(["install", "--upgrade","--user", "frida"])
     args = process_args()
 
     qapp = QApplication([])

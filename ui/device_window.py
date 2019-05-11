@@ -224,16 +224,22 @@ class DeviceBar(QWidget):
             self.update_label.setText('Device found: ' + device_name)
             self._adb._check_requirements()
             if self._adb.available():
+                # try getting frida version
                 device_frida = self._adb.get_frida_version()
+                # frida not found show install button
                 if device_frida is None:
                     self._install_btn.setVisible(True)
                 else:
+                    # frida is old show update button
                     if self.updated_frida_version != device_frida:
                         self._update_btn.setVisible(True)
+                        # old frida is running allow use of this version
                         if self._adb.is_frida_running():
                             self.onDeviceUpdated.emit()
+                    # frida not running show start button
                     elif device_frida and not self._adb.is_frida_running():
                         self._start_btn.setVisible(True)
+                    # frida is running with last version show restart button
                     elif device_frida and self._adb.is_frida_running():
                         self._restart_btn.setVisible(True)
                         self.onDeviceUpdated.emit()

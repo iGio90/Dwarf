@@ -387,17 +387,27 @@ class WatchersPanel(QWidget):
         index = self.list_view.indexAt(pos).row()
         glbl_pt = self.list_view.mapToGlobal(pos)
         context_menu = QMenu(self)
+<<<<<<< HEAD
         if index != -1:
+=======
+        context_menu.addAction('Add watcher', self._on_additem_clicked)
+        if index != -1:
+            context_menu.addSeparator()
+>>>>>>> 335592f... 'fixes'
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._watchers_model.item(index, 0).text()))
             context_menu.addAction(
                 'Delete address', lambda: self.remove_address(
                     self._watchers_model.item(index, 0).text()))
+<<<<<<< HEAD
             context_menu.addSeparator()
 
         context_menu.addAction(
             'Add watcher', lambda: self._on_additem_clicked())
+=======
+
+>>>>>>> 335592f... 'fixes'
         context_menu.exec_(glbl_pt)
 
     def _on_item_dblclick(self, model_index):

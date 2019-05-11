@@ -95,7 +95,7 @@ def show_message_box(text, details=None):
     msg.setIconPixmap(get_app_icon())
 
     msg.setText(text)
-    if details:
+    if details and isinstance(details, str):
         msg.setDetailedText(details)
     msg.setStandardButtons(QMessageBox.Ok)
     msg.exec_()

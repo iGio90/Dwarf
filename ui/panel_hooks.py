@@ -336,3 +336,4 @@ class HooksPanel(QWidget):
             ptr = utils.parse_ptr(ptr)
             self._app_window.dwarf.dwarf_api('deleteHook', ptr)
             self.onHookRemoved.emit(str(ptr))
+        self._hooks_model.removeRow(num_row)

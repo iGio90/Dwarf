@@ -97,7 +97,7 @@ class AndroidSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'threads', 'registers', 'memory', 'console', 'watchers']
+        return ['hooks', 'threads', 'registers', 'memory', 'console', 'watchers', 'modules', 'java-inspector']
 
     @property
     def session_type(self):
@@ -216,7 +216,8 @@ class AndroidSession(Session):
         if device:
             self.dwarf.device = device
         if pid:
-            self.dwarf.attach(pid)
+            if self.dwarf.attach(pid):
+                self.stop()
 
     def on_spawn_selected(self, data):
         device, package_name = data

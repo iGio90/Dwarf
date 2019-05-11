@@ -282,6 +282,9 @@ class ContextPanel(QTabWidget):
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._nativectx_model.item(index, 1).text()))
+            context_menu.addAction(
+                'Jump to address', lambda: self.onShowMemoryRequest.emit(
+                    self._nativectx_model.item(index, 1).text()))
         context_menu.exec_(glbl_pt)
 
     def _on_emulator_contextmenu(self, pos):

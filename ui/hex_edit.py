@@ -1096,7 +1096,7 @@ class HexEditor(QAbstractScrollArea):
         if self.data:
             show = False
             if loc_y > self._header_height + self._ver_spacing:
-                if self._hex_start < loc_x < self._ascii_start:
+                if (self._hex_start - self._hor_spacing) < loc_x < self._ascii_start:
                     coord_x, coord_y = self.pixel_to_data(
                         loc_x - self._hex_start, loc_y)
                     line = int(ceil(coord_x - (coord_x / 3)))
@@ -1225,7 +1225,12 @@ class HexEditor(QAbstractScrollArea):
             if self.range:
                 show = False
                 if loc_y > self._header_height + self._ver_spacing:
+<<<<<<< HEAD
                     if self._hex_start < loc_x < self._ascii_start:
+=======
+                    # cursor in hex
+                    if (self._hex_start - self._hor_spacing) < loc_x < self._ascii_start:
+>>>>>>> 335592f... 'fixes'
                         coord_x, coord_y = self.pixel_to_data(
                             loc_x - self._hex_start, loc_y)
                         line = int(ceil(coord_x - (coord_x / 3)))

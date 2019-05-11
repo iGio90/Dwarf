@@ -185,6 +185,9 @@ class ModulesPanel(QWidget):
     def set_modules(self, modules):
         """ Fills the ModulesList with data
         """
+        if self.modules_list is None:
+            return
+
         self.modules_list.clear()
         for module in modules:
             name = QStandardItem()
@@ -218,6 +221,9 @@ class ModulesPanel(QWidget):
     def set_imports(self, imports):
         """ Fills the ImportsList with data
         """
+        if self.imports_list is None:
+            return
+
         self.imports_list.clear()
         for import_ in imports:
             name = QStandardItem()
@@ -248,6 +254,9 @@ class ModulesPanel(QWidget):
     def set_exports(self, exports):
         """ Fills the ExportsList with data
         """
+        if self.exports_list is None:
+            return
+
         self.exports_list.clear()
         for export in exports:
             name = QStandardItem()
@@ -270,6 +279,9 @@ class ModulesPanel(QWidget):
     def set_symbols(self, symbols):
         """ Fills the SymbolsList with data
         """
+        if self.symbols_list is None:
+            return
+
         self.symbols_list.clear()
         for symbol in symbols:
             name = QStandardItem()

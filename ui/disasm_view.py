@@ -12,6 +12,8 @@ from lib import utils
 from lib.instruction import Instruction
 from ui.dialog_input import InputDialog
 
+from lib.prefs import Prefs
+
 
 class DisassemblyView(QAbstractScrollArea):
 
@@ -19,6 +21,9 @@ class DisassemblyView(QAbstractScrollArea):
 
     def __init__(self, parent=None):
         super(DisassemblyView, self).__init__(parent=parent)
+
+        _prefs = Prefs()
+        self._uppercase_hex = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
 
         self._app_window = parent
 
@@ -284,6 +289,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.disassemble(self._range)
         return 0
 
+<<<<<<< HEAD
     def mouseDoubleClickEvent(self, event):
         loc_x = event.pos().x()
         loc_y = event.pos().y()
@@ -341,6 +347,11 @@ class DisassemblyView(QAbstractScrollArea):
             y_pos -= self._ver_spacing
             self.viewport().update(0, 0, self.viewport().width(), self.viewport().height())
 
+=======
+    # ************************************************************************
+    # **************************** Drawing ***********************************
+    # ************************************************************************
+>>>>>>> 335592f... 'fixes'
     def paint_jumps(self, painter):
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump]
@@ -443,6 +454,9 @@ class DisassemblyView(QAbstractScrollArea):
         if num > 8:
             str_fmt = '{0:016x}'
 
+        if self._uppercase_hex:
+            str_fmt = str_fmt.replace('x', 'X')
+
         painter.drawText(drawing_pos_x, drawing_pos_y, str_fmt.format(line.address))
 
         is_watched = False
@@ -492,7 +506,7 @@ class DisassemblyView(QAbstractScrollArea):
 
         drawing_pos_x += (self._longest_mnemonic + 1) * self._char_width
         if line.operands and not line.is_jump:
-            ops_str = line.op_str.split(', ')
+            ops_str = line.op_str.split(', ', len(line.operands) - 1)
             a = 0
             for op in line.operands:
                 if op.type == CS_OP_IMM:
@@ -503,7 +517,7 @@ class DisassemblyView(QAbstractScrollArea):
                 painter.drawText(drawing_pos_x, drawing_pos_y, ops_str[a])
                 drawing_pos_x += len(ops_str[a] * self._char_width)
 
-                if len(line.operands) > 1 and a == 0:
+                if len(line.operands) > 1 and a < len(line.operands) - 1:
                     painter.setPen(self._ctrl_colors['foreground'])
                     painter.drawText(drawing_pos_x, drawing_pos_y, ', ')
                     drawing_pos_x += 2 * self._char_width
@@ -564,8 +578,30 @@ class DisassemblyView(QAbstractScrollArea):
 
         painter.fillRect(drawing_pos_x, 0, 1, self.viewport().height(), self._ctrl_colors['divider'])
 
+<<<<<<< HEAD
     def _on_switch_mode(self):
         self._lines.clear()
+=======
+    # ************************************************************************
+    # **************************** Handlers **********************************
+    # ************************************************************************
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace:
+            if len(self._history) > 1:
+                self._history.pop(len(self._history) - 1)
+                self.read_memory(self._history[len(self._history) - 1])
+        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
+            self._on_jump_to()
+        elif event.key() == Qt.Key_M and event.modifiers() & Qt.ControlModifier:  # ctrl+m
+            self._on_switch_mode()
+        elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
+            pass  # patch instruction
+        elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
+            pass  # patch bytes
+        else:
+            # dispatch those to super
+            super().keyPressEvent(event)
+>>>>>>> 335592f... 'fixes'
 
         if self.capstone_mode == CS_MODE_ARM:
             self.capstone_mode = CS_MODE_THUMB
@@ -600,3 +636,110 @@ class DisassemblyView(QAbstractScrollArea):
             elif self._app_window.dwarf.arch == 'x64':
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
+<<<<<<< HEAD
+=======
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.adjust()
+
+    def mouseDoubleClickEvent(self, event):
+        loc_x = event.pos().x()
+        loc_y = event.pos().y()
+
+        index = self.pixel_to_line(loc_x, loc_y)
+        left_side = self._breakpoint_linewidth + self._jumps_width
+        addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
+        if loc_x > left_side:
+            if loc_x < left_side + addr_width:
+                if isinstance(self._lines[index + self.pos], Instruction):
+                    self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
+            if loc_x > left_side + addr_width:
+                if isinstance(self._lines[index + self.pos], Instruction):
+                    if self._follow_jumps and self._lines[index + self.pos].is_jump:
+                        new_pos = self._lines[index + self.pos].jump_address
+                        self.read_memory(new_pos)
+
+    # pylint: disable=C0103
+    def mouseMoveEvent(self, event):
+        """ onmousemove
+        """
+        loc_x = event.pos().x()
+        loc_y = event.pos().y()
+
+        if loc_x > self._breakpoint_linewidth + self._jumps_width:
+            self.current_jump = -1
+            index = self.pixel_to_line(loc_x, loc_y)
+
+            if 0 <= index < self.visible_lines():
+                self._current_line = index
+                if index + self.pos < len(self._lines):
+                    if isinstance(self._lines[index + self.pos], Instruction):
+                        if self._lines[index + self.pos].is_jump:
+                            self.current_jump = self._lines[index + self.pos].address
+
+            #self.viewport().update(0, 0, self._breakpoint_linewidth + self._jumps_width, self.viewport().height())
+            y_pos = self._header_height + (index * (self._char_height + self._ver_spacing))
+            y_pos += (self._char_height * 0.5)
+            y_pos -= self._ver_spacing
+            self.viewport().update(0, 0, self.viewport().width(), self.viewport().height())
+
+    def mousePressEvent(self, event):
+        # context menu
+        if event.button() == Qt.RightButton:
+            if self._range is None:
+                return
+            self._on_context_menu(event)
+            return
+
+    def _on_context_menu(self, event):
+        """ build and show contextmenu
+        """
+        loc_x = event.pos().x()
+        loc_y = event.pos().y()
+
+        context_menu = QMenu()
+
+        # allow modeswitch arm/thumb
+        if self.capstone_arch == CS_ARCH_ARM:
+            mode_str = 'ARM'
+            if self.capstone_mode == CS_MODE_ARM:
+                mode_str = 'THUMB'
+
+            entry_str = '&Switch to {0} Mode'.format(mode_str)
+            context_menu.addAction(entry_str, self._on_switch_mode)
+            context_menu.addSeparator()
+
+        index = self.pixel_to_line(loc_x, loc_y)
+        if 0 <= index < self.visible_lines():
+            if index + self.pos < len(self._lines):
+                if isinstance(self._lines[index + self.pos], Instruction):
+                    context_menu.addAction('Copy Address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
+
+                    context_menu.addSeparator()
+                    if self._uppercase_hex:
+                        str_fmt = '0x{0:X}'
+                    else:
+                        str_fmt = '0x{0:x}'
+                    addr_str = str_fmt.format(self._lines[index + self.pos].address)
+                    if self._app_window.watchers_panel:
+                        context_menu.addAction('Watch Address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
+                    if self._app_window.hooks_panel:
+                        context_menu.addAction('Hook Address', lambda: self._app_window.dwarf.hook_native(addr_str))
+
+        glbl_pt = self.mapToGlobal(event.pos())
+        context_menu.exec_(glbl_pt)
+
+    def _on_switch_mode(self):
+        if self._range is None:
+            return
+
+        if self._app_window.dwarf.arch == 'arm':
+            self._lines.clear()
+
+            if self.capstone_mode == CS_MODE_ARM:
+                self.capstone_mode = CS_MODE_THUMB
+            else:
+                self.capstone_mode = CS_MODE_ARM
+            self.disassemble(self._range)
+>>>>>>> 335592f... 'fixes'

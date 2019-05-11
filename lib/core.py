@@ -286,16 +286,19 @@ class Dwarf(QObject):
             self._process.enable_jit()
             self._pid = pid[0]
         except frida.ProcessNotFoundError:
-            error_msg = 'Process not found'
+            error_msg = 'Process not found (ProcessNotFoundError)'
             was_error = True
         except frida.ProcessNotRespondingError:
-            error_msg = 'Process not responding'
+            error_msg = 'Process not responding (ProcessNotRespondingError)'
             was_error = True
         except frida.TimedOutError:
-            error_msg = 'Frida timeout'
+            error_msg = 'Frida timeout (TimedOutError)'
             was_error = True
         except frida.ServerNotRunningError:
-            error_msg = 'Frida not running'
+            error_msg = 'Frida not running (ServerNotRunningError)'
+            was_error = True
+        except frida.TransportError:
+            error_msg = 'Frida timeout was reached (TransportError)'
             was_error = True
         # keep for debug
         except Exception as error:  # pylint: disable=broad-except
@@ -341,12 +344,34 @@ class Dwarf(QObject):
                     self.dwarf_api('evaluateFunction', user_script)
 
             self.onScriptLoaded.emit()
+
+        except frida.ProcessNotFoundError:
+            error_msg = 'Process not found (ProcessNotFoundError)'
+            was_error = True
+        except frida.ProcessNotRespondingError:
+            error_msg = 'Process not responding (ProcessNotRespondingError)'
+            was_error = True
         except frida.TimedOutError:
+<<<<<<< HEAD
             print('frida timeout')
             self._on_destroyed()
         except frida.TransportError:
             print('frida transporterror')
             self._on_destroyed()
+=======
+            error_msg = 'Frida timeout (TimedOutError)'
+            was_error = True
+        except frida.ServerNotRunningError:
+            error_msg = 'Frida not running (ServerNotRunningError)'
+            was_error = True
+        except frida.TransportError:
+            error_msg = 'Frida timeout was reached (TransportError)'
+            was_error = True
+
+            if was_error:
+                utils.show_message_box(error_msg)
+                self._on_destroyed()
+>>>>>>> 335592f... 'fixes'
 
     def spawn(self, package, script=None):
         if self.device is None:
@@ -663,6 +688,7 @@ class Dwarf(QObject):
     def _on_destroyed(self):
         self._reinitialize()
         str_fmt = ('Detached from {0:d}. Script destroyed.'.format(self.pid))
+        print(str_fmt)
         self.log(str_fmt)
         self.onScriptDestroyed.emit()
 

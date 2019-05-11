@@ -16,6 +16,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import os
 import shutil
+<<<<<<< HEAD
+=======
+
+import frida
+>>>>>>> 335592f... 'fixes'
 
 from lib import utils
 from lib.prefs import Prefs
