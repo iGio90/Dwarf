@@ -34,6 +34,16 @@ OSX / Unix
 pip3 install keystone-engine
 ```
 
+dex2jar tools (required for baksmali/decompiling)
+```
+Guide: https://sourceforge.net/p/dex2jar/wiki/UserGuide/
+Files: https://github.com/pxb1988/dex2jar/releases
+
+On Windows change:
+'java -Xms512m -Xmx1024m -cp "%CP%" %*'
+in d2j_invoke.bat to
+'java -Xms51
+
 ```
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
