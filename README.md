@@ -25,7 +25,7 @@ python3 dwarf.py
 
 You can install keystone-engine to enable assembler:
 
-```$xslt
+```
 Windows
 x86: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win32.msi
 x64: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win64.msi
@@ -39,7 +39,7 @@ dex2jar tools (required for baksmali/decompiling)
 Guide: https://sourceforge.net/p/dex2jar/wiki/UserGuide/
 Files: https://github.com/pxb1988/dex2jar/releases
 
-On Windows change:
+On Windows add d2j folder to %PATH% and change:
 'java -Xms512m -Xmx1024m -cp "%CP%" %*'
 in d2j_invoke.bat to
 'java -Xms512m -Xmx4096m -cp "%CP%" %*'
