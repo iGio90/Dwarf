@@ -82,6 +82,7 @@ class Dwarf(QObject):
     onAddNativeHook = pyqtSignal(Hook, name='onAddNativeHook')
     onAddJavaHook = pyqtSignal(Hook, name='onAddJavaHook')
     onAddOnLoadHook = pyqtSignal(Hook, name='onAddOnLoadHook')
+    onDeleteHook = pyqtSignal(list, name='onDeleteHook')
     # watcher related
     onWatcherAdded = pyqtSignal(str, int, name='onWatcherAdded')
     onWatcherRemoved = pyqtSignal(str, name='onWatcherRemoved')
@@ -590,6 +591,14 @@ class Dwarf(QObject):
             h.set_input(parts[1])
             self.on_loads[parts[1]] = h
             self.onAddOnLoadHook.emit(h)
+        elif cmd == 'hook_deleted':
+            if parts[1] == 'java':
+                self.java_hooks.pop(parts[2])
+            elif parts[1] == 'onload':
+                self.on_loads.pop(parts[2])
+            else:
+                self.hooks.pop(utils.parse_ptr(parts[2]))
+            self.onDeleteHook.emit(parts)
         elif cmd == 'java_trace':
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':

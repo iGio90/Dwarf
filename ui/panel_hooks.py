@@ -56,6 +56,7 @@ class HooksPanel(QWidget):
         self._app_window.dwarf.onAddNativeHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddOnLoadHook.connect(self._on_add_hook)
         self._app_window.dwarf.onHitOnLoad.connect(self._on_hit_onload)
+        self._app_window.dwarf.onDeleteHook.connect(self._on_hook_deleted)
 
         self._hooks_list = DwarfListView()
         self._hooks_list.doubleClicked.connect(self._on_dblclicked)
@@ -336,4 +337,22 @@ class HooksPanel(QWidget):
             ptr = utils.parse_ptr(ptr)
             self._app_window.dwarf.dwarf_api('deleteHook', ptr)
             self.onHookRemoved.emit(str(ptr))
-        self._hooks_model.removeRow(num_row)
+
+    def _on_hook_deleted(self, parts):
+        _msg, _type, _val = parts
+
+        if _type == 'java':
+            str_frmt = _val
+        elif _type == 'onload':
+            str_frmt = _val
+        else:
+            str_frmt = ''
+            _ptr = utils.parse_ptr(_val)
+            if self._hooks_list._uppercase_hex:
+                str_frmt = '0x{0:X}'.format(_ptr)
+            else:
+                str_frmt = '0x{0:x}'.format(_ptr)
+
+        for item in range(self._hooks_model.rowCount()):
+            if str_frmt == self._hooks_model.item(item).text():
+                self._hooks_model.removeRow(item)

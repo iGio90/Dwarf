@@ -453,6 +453,8 @@ class DisassemblyView(QAbstractScrollArea):
                     painter.setPen(QColor('#ff5500'))
                 elif op.type == 1:
                     painter.setPen(QColor('#82c300'))
+                else:
+                    painter.setPen(self._ctrl_colors['foreground'])
 
                 painter.drawText(drawing_pos_x, drawing_pos_y, ops_str[a])
                 drawing_pos_x += len(ops_str[a] * self._char_width)
@@ -650,15 +652,22 @@ class DisassemblyView(QAbstractScrollArea):
                     context_menu.addAction('Copy Address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
 
                     context_menu.addSeparator()
+
                     if self._uppercase_hex:
                         str_fmt = '0x{0:X}'
                     else:
                         str_fmt = '0x{0:x}'
                     addr_str = str_fmt.format(self._lines[index + self.pos].address)
                     if self._app_window.watchers_panel:
-                        context_menu.addAction('Watch Address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
+                        if self._app_window.dwarf.is_address_watched(self._lines[index + self.pos].address):
+                            context_menu.addAction('Remove Watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
+                        else:
+                            context_menu.addAction('Watch Address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
                     if self._app_window.hooks_panel:
-                        context_menu.addAction('Hook Address', lambda: self._app_window.dwarf.hook_native(addr_str))
+                        if self._lines[index + self.pos].address in self._app_window.dwarf.hooks:
+                            context_menu.addAction('Remove Hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
+                        else:
+                            context_menu.addAction('Hook Address', lambda: self._app_window.dwarf.hook_native(addr_str))
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
