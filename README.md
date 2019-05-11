@@ -42,8 +42,7 @@ Files: https://github.com/pxb1988/dex2jar/releases
 On Windows change:
 'java -Xms512m -Xmx1024m -cp "%CP%" %*'
 in d2j_invoke.bat to
-'java -Xms51
-
+'java -Xms512m -Xmx4096m -cp "%CP%" %*'
 ```
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
