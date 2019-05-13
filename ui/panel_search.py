@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadio
 
 from ui.list_view import DwarfListView
 from lib import utils
+from ui.hex_edit import HighLight, HighlightExistsError
 
 class SearchThread(QThread):
 
@@ -75,6 +76,7 @@ class SearchPanel(QWidget):
 
         self._blocking_search = show_progress_dlg
         self.progress = None
+        self._pattern_length = 0
 
         box = QVBoxLayout()
 
@@ -212,6 +214,8 @@ class SearchPanel(QWidget):
         self.search_btn.setEnabled(False)
         self.check_all_btn.setEnabled(False)
         self.uncheck_all_btn.setEnabled(False)
+
+        self._pattern_length = len(pattern) * .5
         
         search_thread = SearchThread(self._app_window.dwarf, self)
         search_thread.onCmdCompleted.connect(self._on_search_complete)
@@ -224,7 +228,16 @@ class SearchPanel(QWidget):
     def _on_search_result(self, data):
         if data is not None:
             for o in data:
-                self._result_model.appendRow(QStandardItem(o['address']))
+                addr = o['address']
+                if self.results._uppercase_hex:
+                    addr = addr.upper().replace('0X', '0x')
+                self._result_model.appendRow(QStandardItem(addr))
+
+                if self._app_window.memory_panel:
+                    try:
+                        self._app_window.memory_panel.add_highlight(HighLight('search', utils.parse_ptr(addr), self._pattern_length))
+                    except HighlightExistsError:
+                        pass
 
 
     def _on_search_complete(self):
