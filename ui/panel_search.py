@@ -14,19 +14,54 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadioButton, QPushButton, QProgressDialog, \
-    QSizePolicy
+    QSizePolicy, QApplication
 
 from ui.list_view import DwarfListView
+from lib import utils
+from ui.hex_edit import HighLight, HighlightExistsError
+
+class SearchThread(QThread):
+
+    onCmdCompleted = pyqtSignal(str, name='onCmdCompleted')
+    onError = pyqtSignal(str, name='onError')
+
+    dwarf = None
+    ranges = []
+    pattern = ''
+
+    def __init__(self, dwarf=None, parent=None):
+        super().__init__(parent=parent)
+        self.dwarf = dwarf
+
+    def run(self):
+        if self.dwarf is None:
+            self.onError.emit('Dwarf missing')
+            return
+        if self.pattern is '' or len(self.pattern) <= 0:
+            self.onError.emit('Pattern missing')
+            return
+        if len(self.ranges) <= 0:
+            self.onError.emit('Ranges missing')
+            return
+
+        for r in self.ranges:
+            self.dwarf.search(r[0], r[1], self.pattern)
+
+        self.onCmdCompleted.emit('finished')
+
+    
 
 
 class SearchPanel(QWidget):
     """ SearchPanel
     """
 
-    def __init__(self, parent=None):
+    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
+
+    def __init__(self, parent=None, show_progress_dlg=False):
         super(SearchPanel, self).__init__(parent=parent)
         self._app_window = parent
 
@@ -34,8 +69,14 @@ class SearchPanel(QWidget):
             print('SearchPanel created before Dwarf exists')
             return
 
+        self._app_window.dwarf.onMemoryScanResult.connect(self._on_search_result)
+
         self._ranges_model = None
         self._result_model = None
+
+        self._blocking_search = show_progress_dlg
+        self.progress = None
+        self._pattern_length = 0
 
         box = QVBoxLayout()
 
@@ -43,17 +84,17 @@ class SearchPanel(QWidget):
         self.input.setPlaceholderText('search for a sequence of bytes in hex format: deadbeef123456aabbccddeeff...')
         box.addWidget(self.input)
 
-        check_all = QPushButton('check all')
-        check_all.clicked.connect(self._on_click_check_all)
-        uncheck_all = QPushButton('uncheck all')
-        uncheck_all.clicked.connect(self._on_click_uncheck_all)
-        search = QPushButton('search')
-        search.clicked.connect(self._on_click_search)
+        self.check_all_btn = QPushButton('check all')
+        self.check_all_btn.clicked.connect(self._on_click_check_all)
+        self.uncheck_all_btn = QPushButton('uncheck all')
+        self.uncheck_all_btn.clicked.connect(self._on_click_uncheck_all)
+        self.search_btn = QPushButton('search')
+        self.search_btn.clicked.connect(self._on_click_search)
 
         h_box = QHBoxLayout()
-        h_box.addWidget(check_all)
-        h_box.addWidget(uncheck_all)
-        h_box.addWidget(search)
+        h_box.addWidget(self.check_all_btn)
+        h_box.addWidget(self.uncheck_all_btn)
+        h_box.addWidget(self.search_btn)
         box.addLayout(h_box)
 
         self.ranges = DwarfListView(self)
@@ -117,6 +158,7 @@ class SearchPanel(QWidget):
         self._result_model = QStandardItemModel(0, 1)
         self._result_model.setHeaderData(0, Qt.Horizontal, 'Address')
         self.results.setModel(self._result_model)
+        self.results.doubleClicked.connect(self._on_dblclicked)
 
     # ************************************************************************
     # **************************** Handlers **********************************
@@ -128,6 +170,12 @@ class SearchPanel(QWidget):
     def _on_click_uncheck_all(self):
         for i in range(self._ranges_model.rowCount()):
             self._ranges_model.item(i, 0).setCheckState(Qt.Unchecked)
+
+    def _on_dblclicked(self, model_index):
+        item = self._result_model.itemFromIndex(model_index)
+        if item:
+            self.onShowMemoryRequest.emit(
+                self._result_model.item(model_index.row(), 0).text())
 
     def _on_click_search(self):
         pattern = self.input.text().replace(' ', '')
@@ -144,26 +192,63 @@ class SearchPanel(QWidget):
         if len(ranges) == 0:
             return 1
 
-        progress = QProgressDialog()
-        progress.setFixedSize(300, 50)
-        progress.setAutoFillBackground(True)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setWindowTitle('Please wait')
-        progress.setLabelText('searching...')
-        progress.setSizeGripEnabled(False)
-        progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
-        progress.setModal(True)
-        progress.setCancelButton(None)
-        progress.setRange(0, 0)
-        progress.setMinimumDuration(0)
-        progress.forceShow()
+        if self._blocking_search:
+            self.progress = QProgressDialog()
+            self.progress.setFixedSize(300, 50)
+            self.progress.setAutoFillBackground(True)
+            self.progress.setWindowModality(Qt.WindowModal)
+            self.progress.setWindowTitle('Please wait')
+            self.progress.setLabelText('searching...')
+            self.progress.setSizeGripEnabled(False)
+            self.progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+            self.progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
+            self.progress.setModal(True)
+            self.progress.setCancelButton(None)
+            self.progress.setRange(0, 0)
+            self.progress.setMinimumDuration(0)
+            self.progress.forceShow()
+        
+        self._app_window.show_progress('searching...')
+        self.input.setEnabled(False)
+        self.search_btn.setEnabled(False)
+        self.check_all_btn.setEnabled(False)
+        self.uncheck_all_btn.setEnabled(False)
 
-        for r in ranges:
-            res = self._app_window.dwarf.search(r[0], r[1], pattern)
-            if res is not None:
-                for o in res:
-                    self._result_model.appendRow(QStandardItem(o['address']))
+        self._pattern_length = len(pattern) * .5
+        
+        search_thread = SearchThread(self._app_window.dwarf, self)
+        search_thread.onCmdCompleted.connect(self._on_search_complete)
+        search_thread.onError.connect(self._on_search_error)
+        search_thread.pattern = pattern
+        search_thread.ranges = ranges
+        search_thread.start()
 
-        progress.cancel()
+        
+    def _on_search_result(self, data):
+        if data is not None:
+            for o in data:
+                addr = o['address']
+                if self.results._uppercase_hex:
+                    addr = addr.upper().replace('0X', '0x')
+                self._result_model.appendRow(QStandardItem(addr))
+
+                if self._app_window.memory_panel:
+                    try:
+                        self._app_window.memory_panel.add_highlight(HighLight('search', utils.parse_ptr(addr), self._pattern_length))
+                    except HighlightExistsError:
+                        pass
+
+
+    def _on_search_complete(self):
+        self.input.setEnabled(True)
+        self.search_btn.setEnabled(True)
+        self.check_all_btn.setEnabled(True)
+        self.uncheck_all_btn.setEnabled(True)
+        self._app_window.hide_progress()
+        self._app_window.set_status_text('Search complete: {0} matches'.format(self._result_model.rowCount()))
+        if self._blocking_search:
+            self.progress.cancel()
+
+    def _on_search_error(self, msg):
+        utils.show_message_box(msg)

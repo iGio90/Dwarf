@@ -376,6 +376,7 @@ class AppWindow(QMainWindow):
         elif elem == 'search':
             from ui.panel_search import SearchPanel
             self.search_panel = SearchPanel(self)
+            self.search_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
             self.main_tabs.addTab(self.search_panel, 'Search')
         elif elem == 'data':
             from ui.panel_data import DataPanel

@@ -106,6 +106,8 @@ class Dwarf(QObject):
     # emulator
     onEmulator = pyqtSignal(list, name='onEmulator')
 
+    onMemoryScanResult = pyqtSignal(list, name='onMemoryScanResult')
+
     # ************************************************************************
     # **************************** Init **************************************
     # ************************************************************************
@@ -652,6 +654,9 @@ class Dwarf(QObject):
         elif cmd == 'watcher_removed':
             self._watchers.remove(utils.parse_ptr(parts[1]))
             self.onWatcherRemoved.emit(parts[1])
+
+        elif cmd == 'memoryscan_result':
+            self.onMemoryScanResult.emit(json.loads(parts[1]))
         else:
             print('unknown message: ' + what)
 
