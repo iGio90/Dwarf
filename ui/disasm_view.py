@@ -1,6 +1,5 @@
 
-from math import ceil, floor
-from PyQt5 import *
+from math import ceil
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -10,7 +9,6 @@ from capstone.x86_const import *
 from lib.range import Range
 from lib import utils
 from lib.instruction import Instruction
-from ui.dialog_input import InputDialog
 
 from lib.prefs import Prefs
 
@@ -164,21 +162,21 @@ class DisassemblyView(QAbstractScrollArea):
         self.adjust()
 
     def disassemble(self, dwarf_range, num_instructions=256, stop_on_ret=True):
-        self.progrss = QProgressDialog()
-        self.progrss.setFixedSize(300, 50)
-        self.progrss.setAutoFillBackground(True)
-        self.progrss.setWindowModality(Qt.WindowModal)
-        self.progrss.setWindowTitle('Please wait')
-        self.progrss.setLabelText('Disassembling...')
-        self.progrss.setSizeGripEnabled(False)
-        self.progrss.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.progrss.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.progrss.setWindowFlag(Qt.WindowCloseButtonHint, False)
-        # self.progrss.setModal(True)
-        self.progrss.setCancelButton(None)
-        self.progrss.setRange(0, 0)
-        self.progrss.setMinimumDuration(0)
-        self.progrss.show()
+        progress = QProgressDialog()
+        progress.setFixedSize(300, 50)
+        progress.setAutoFillBackground(True)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowTitle('Please wait')
+        progress.setLabelText('Disassembling...')
+        progress.setSizeGripEnabled(False)
+        progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        # progress.setModal(True)
+        progress.setCancelButton(None)
+        progress.setRange(0, 0)
+        progress.setMinimumDuration(0)
+        progress.show()
         QApplication.processEvents()
 
         # self._lines.clear()
@@ -209,7 +207,7 @@ class DisassemblyView(QAbstractScrollArea):
                 break
 
         self.adjust()
-        self.progrss.cancel()
+        progress.cancel()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

@@ -64,6 +64,7 @@ class AppWindow(QMainWindow):
         self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None
+        self.search_panel = None
         self.trace_panel = None
         self.watchers_panel = None
         self.welcome_window = None
@@ -235,6 +236,8 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.memory_panel)
         elif name == 'ranges':
             index = self.main_tabs.indexOf(self.ranges_panel)
+        elif name == 'search':
+            index = self.main_tabs.indexOf(self.search_panel)
         elif name == 'modules':
             index = self.main_tabs.indexOf(self.modules_panel)
         elif name == 'disassembly':
@@ -366,6 +369,10 @@ class AppWindow(QMainWindow):
             # connect to watcherpanel func
             self.ranges_panel.onAddWatcher.connect(self.watchers_panel.do_addwatcher_dlg)
             self.main_tabs.addTab(self.ranges_panel, 'Ranges')
+        elif elem == 'search':
+            from ui.panel_search import SearchPanel
+            self.search_panel = SearchPanel(self)
+            self.main_tabs.addTab(self.search_panel, 'Search')
         elif elem == 'data':
             from ui.panel_data import DataPanel
             self.data_panel = DataPanel(self)
@@ -694,6 +701,10 @@ class AppWindow(QMainWindow):
             self._create_ui_elem('ranges')
             # forward only now to panel it connects after creation
             self.ranges_panel.set_ranges(ranges)
+
+        # once we got ranges in place from our target we can create the search panel as well
+        if self.search_panel is None:
+            self._create_ui_elem('search')
 
         if self.ranges_panel is not None:
             self.show_main_tab('ranges')

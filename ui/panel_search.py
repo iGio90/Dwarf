@@ -14,91 +14,156 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from threading import Thread
-
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadioButton, QPushButton, QProgressDialog, \
+    QSizePolicy
 
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
-from ui.widget_memory_address import MemoryAddressWidget
-from ui.widget_table_base import TableBaseWidget
+from ui.list_view import DwarfListView
 
 
-class SearchPanel(TableBaseWidget):
-    def __init__(self, app, headers):
-        super().__init__(app, 0, len(headers))
-        self.setHorizontalHeaderLabels(headers)
+class SearchPanel(QWidget):
+    """ SearchPanel
+    """
 
-    def add_bytes_match_item(self, address, symbol):
-        r = self.rowCount()
-        if r == 0:
-            self.setColumnCount(2)
-            self.setHorizontalHeaderLabels(['address', 'symbol'])
-        self.insertRow(r)
-        self.setItem(r, 0, MemoryAddressWidget(address))
-        if symbol['moduleName'] is not None:
-            sym = symbol['moduleName']
-            if symbol['name'] is not None:
-                sym = '%s (%s)' % (symbol['name'], sym)
-            q = NotEditableTableWidgetItem(sym)
-            q.setFlags(Qt.NoItemFlags)
-            q.setForeground(Qt.lightGray)
-        else:
-            q = NotEditableTableWidgetItem('-')
-            q.setFlags(Qt.NoItemFlags)
-            q.setForeground(Qt.gray)
-        self.setItem(r, 1, q)
-        if r == 0:
-            self.resizeColumnsToContents()
-            self.horizontalHeader().setStretchLastSection(True)
+    def __init__(self, parent=None):
+        super(SearchPanel, self).__init__(parent=parent)
+        self._app_window = parent
 
-    @staticmethod
-    def debug_symbol_search_panel(app, input):
-        panel = SearchPanel(app, [])
-        search_label = input
-        if len(search_label) > 7:
-            search_label = search_label[:6] + '...'
-        app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
+        if self._app_window.dwarf is None:
+            print('SearchPanel created before Dwarf exists')
+            return
 
-        def _work():
-            matches = app.dwarf_api('findSymbol', input)
-            if len(matches) > 0:
-                panel.setColumnCount(3)
-                panel.setHorizontalHeaderLabels(['name', 'address', 'module'])
-                for ptr in matches:
-                    sym = app.dwarf_api('getSymbolByAddress', ptr)
-                    if sym is None:
-                        continue
-                    if sym['name'] == '' or sym['name'] is None:
-                        sym['name'] = sym['address']
+        self._ranges_model = None
+        self._result_model = None
 
-                    row = panel.rowCount()
-                    panel.insertRow(row)
+        box = QVBoxLayout()
 
-                    q = NotEditableTableWidgetItem(sym['name'])
-                    q.setFlags(Qt.NoItemFlags)
-                    q.setForeground(Qt.white)
-                    panel.setItem(row, 0, q)
+        self.input = QLineEdit()
+        self.input.setPlaceholderText('search for a sequence of bytes in hex format: deadbeef123456aabbccddeeff...')
+        box.addWidget(self.input)
 
-                    q = MemoryAddressWidget(sym['address'])
-                    panel.setItem(row, 1, q)
+        check_all = QPushButton('check all')
+        check_all.clicked.connect(self._on_click_check_all)
+        uncheck_all = QPushButton('uncheck all')
+        uncheck_all.clicked.connect(self._on_click_uncheck_all)
+        search = QPushButton('search')
+        search.clicked.connect(self._on_click_search)
 
-                    q = NotEditableTableWidgetItem(sym['moduleName'])
-                    q.setFlags(Qt.NoItemFlags)
-                    q.setForeground(Qt.lightGray)
-                    panel.setItem(row, 2, q)
-                    panel.sortByColumn(0, 0)
-                    if row == 0:
-                        panel.resizeColumnsToContents()
-                        panel.horizontalHeader().setStretchLastSection(True)
-        Thread(target=_work).start()
+        h_box = QHBoxLayout()
+        h_box.addWidget(check_all)
+        h_box.addWidget(uncheck_all)
+        h_box.addWidget(search)
+        box.addLayout(h_box)
 
-    @staticmethod
-    def bytes_search_panel(app, input, modules_filter_list=None):
-        panel = SearchPanel(app, [])
-        #app.get_dwarf().get_bus().add_event(panel.add_bytes_match_item, input)
-        #app.get_dwarf().get_bus().add_event(panel.sortByColumn, input + ' complete')
-        search_label = input
-        if len(search_label) > 7:
-            search_label = search_label[:6] + '...'
-        app.get_session_ui().add_tab(panel, 'search - %s' % search_label)
-        app.dwarf_api('memoryScan', [input, modules_filter_list])
+        self.ranges = DwarfListView(self)
+        self.results = DwarfListView(self)
+
+        h_box = QHBoxLayout()
+        h_box.addWidget(self.ranges)
+        h_box.addWidget(self.results)
+        box.addLayout(h_box)
+
+        self.setLayout(box)
+
+        self._setup_models()
+
+    # ************************************************************************
+    # **************************** Functions *********************************
+    # ************************************************************************
+    def _setup_models(self):
+        self._ranges_model = QStandardItemModel(0, 6)
+
+        # just replicate ranges panel model
+        self._ranges_model.setHeaderData(0, Qt.Horizontal, 'Address')
+        self._ranges_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Size')
+        self._ranges_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(2, Qt.Horizontal, 'Protection')
+        self._ranges_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, 'FileOffset')
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(4, Qt.Horizontal, 'FileSize')
+        self._ranges_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(5, Qt.Horizontal, 'FilePath')
+
+        # add all the ranges from the ranges panel
+        for i in range(self._app_window.ranges_panel._ranges_model.rowCount()):
+            addr = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 0).text())
+            addr.setCheckable(True)
+
+            size = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 1).text())
+            protection = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 2).text())
+            file_addr = self._app_window.ranges_panel._ranges_model.item(i, 3)
+            if file_addr is not None:
+                file_addr = QStandardItem(file_addr.text())
+            file_size = self._app_window.ranges_panel._ranges_model.item(i, 4)
+            if file_size is not None:
+                file_size = QStandardItem(file_size.text())
+            file_path = self._app_window.ranges_panel._ranges_model.item(i, 5)
+            if file_path is not None:
+                file_path = QStandardItem(file_path.text())
+            self._ranges_model.appendRow(
+                [addr, size, protection, file_addr, file_size, file_path])
+
+        self.ranges.setModel(self._ranges_model)
+
+        # setup results model
+        self._result_model = QStandardItemModel(0, 1)
+        self._result_model.setHeaderData(0, Qt.Horizontal, 'Address')
+        self.results.setModel(self._result_model)
+
+    # ************************************************************************
+    # **************************** Handlers **********************************
+    # ************************************************************************
+    def _on_click_check_all(self):
+        for i in range(self._ranges_model.rowCount()):
+            self._ranges_model.item(i, 0).setCheckState(Qt.Checked)
+
+    def _on_click_uncheck_all(self):
+        for i in range(self._ranges_model.rowCount()):
+            self._ranges_model.item(i, 0).setCheckState(Qt.Unchecked)
+
+    def _on_click_search(self):
+        pattern = self.input.text().replace(' ', '')
+        if pattern == '':
+            return 1
+
+        ranges = []
+        for i in range(self._ranges_model.rowCount()):
+            item = self._ranges_model.item(i, 0)
+            if item.checkState() == Qt.Checked:
+                size = self._ranges_model.item(i, 1)
+                ranges.append([item.text(), size.text()])
+
+        if len(ranges) == 0:
+            return 1
+
+        progress = QProgressDialog()
+        progress.setFixedSize(300, 50)
+        progress.setAutoFillBackground(True)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowTitle('Please wait')
+        progress.setLabelText('searching...')
+        progress.setSizeGripEnabled(False)
+        progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        progress.setModal(True)
+        progress.setCancelButton(None)
+        progress.setRange(0, 0)
+        progress.setMinimumDuration(0)
+        progress.forceShow()
+
+        for r in ranges:
+            res = self._app_window.dwarf.search(r[0], r[1], pattern)
+            if res is not None:
+                for o in res:
+                    self._result_model.appendRow(QStandardItem(o['address']))
+
+        progress.cancel()

@@ -99,9 +99,6 @@ class Dwarf(QObject):
     onEnumerateJavaClassesMatch = pyqtSignal(str, name='onEnumerateJavaClassesMatch')
     onEnumerateJavaClassesComplete = pyqtSignal(name='onEnumerateJavaClassesComplete')
     onEnumerateJavaMethodsComplete = pyqtSignal(list, name='onEnumerateJavaMethodsComplete')
-    # memory
-    onMemoryScanComplete = pyqtSignal(list, name='onMemoryScanComplete')
-    onMemoryScanMatch = pyqtSignal(list, name='onMemoryScanMatch')
     # trace
     onJavaTraceEvent = pyqtSignal(list, name='onJavaTraceEvent')
     onTraceData = pyqtSignal(str, name='onTraceData')
@@ -250,7 +247,6 @@ class Dwarf(QObject):
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
-
     def is_address_watched(self, ptr):
         ptr = utils.parse_ptr(ptr)
         if ptr in self._watchers:
@@ -530,6 +526,14 @@ class Dwarf(QObject):
     def remove_watcher(self, ptr):
         return self.dwarf_api('removeWatcher', ptr)
 
+    def search(self, start, size, pattern):
+        # sanify args
+        start = utils.parse_ptr(start)
+        size = int(size.replace(',', ''))
+        # convert to frida accepted pattern
+        pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
+        return self.dwarf_api('memoryScan', [start, size, pattern])
+
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
@@ -605,11 +609,6 @@ class Dwarf(QObject):
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':
             self.log(parts[1])
-        elif cmd == 'memory_scan_match':
-            self.onMemoryScanMatch.emit([parts[1], parts[2], json.loads(parts[3])])
-        elif cmd == 'memory_scan_complete':
-            self._app_window.get_menu().on_bytes_search_complete()
-            self.onMemoryScanComplete.emit([parts[1] + ' complete', 0, 0])
         elif cmd == 'onload_callback':
             self.loading_library = parts[1]
             str_fmt = ('Hook onload {0} @thread := {1}'.format(parts[1], parts[3]))
