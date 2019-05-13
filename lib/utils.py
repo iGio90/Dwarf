@@ -15,6 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
+import socket
 import subprocess
 import sys
 
@@ -145,3 +146,12 @@ def copy_hex_to_clipboard(hex_str):
             str_fmt = '0x{0:X}'
 
         pyperclip.copy(str_fmt.format(hex_str))
+
+
+def is_connected():
+    try:
+        socket.setdefaulttimeout(2)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        return True
+    except:
+        return False

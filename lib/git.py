@@ -21,6 +21,8 @@ import time
 
 import requests
 
+from lib import utils
+
 
 class Git(object):
     CACHE_PATH = '.git_cache'
@@ -42,24 +44,25 @@ class Git(object):
                 data = data['data']
                 if now - last_update < 60 * 15:
                     return data
-        try:
-            r = requests.get(url)
-        except:
-            return data
-        if r is None or r.status_code != 200:
-            return data
-        if _json:
+        if utils.is_connected():
             try:
-                data = r.json()
+                r = requests.get(url)
             except:
-                return None
-        else:
-            data = r.text
-        with open(path, 'w') as f:
-            f.write(json.dumps({
-                'updated': now,
-                'data': data
-            }))
+                return data
+            if r is None or r.status_code != 200:
+                return data
+            if _json:
+                try:
+                    data = r.json()
+                except:
+                    return None
+            else:
+                data = r.text
+            with open(path, 'w') as f:
+                f.write(json.dumps({
+                    'updated': now,
+                    'data': data
+                }))
         return data
 
     def get_dwarf_commits(self):
