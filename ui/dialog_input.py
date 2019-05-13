@@ -19,7 +19,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 
 
-class InputDialogTextEdit(QTextEdit):
+class InputDialogTextEdit(QLineEdit):
     def __init__(self, dialog, *__args):
         super().__init__(*__args)
         self.dialog = dialog
@@ -27,9 +27,9 @@ class InputDialogTextEdit(QTextEdit):
         bar = QScrollBar()
         bar.setFixedHeight(0)
         bar.setFixedWidth(0)
-        self.setHorizontalScrollBar(bar)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setLineWrapMode(QTextEdit.NoWrap)
+        #self.setHorizontalScrollBar(bar)
+        #self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        #self.setLineWrapMode(QTextEdit.NoWrap)
         # self.setFixedHeight(28)
         self.setMinimumWidth(350)
 
@@ -83,7 +83,7 @@ class InputDialog(QDialog):
         dialog = InputDialog(parent=parent, hint=hint, input_content=input_content,
                              placeholder=placeholder, options_callback=options_callback)
         result = dialog.exec_()
-        text = dialog.input_widget.toPlainText()
+        text = dialog.input_widget.text()
         return result == QDialog.Accepted, text
 
     @staticmethod
