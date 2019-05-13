@@ -117,7 +117,8 @@ class LocalSession(Session):
             # self.dwarf.device.resume(self.dwarf.pid)
             self._app_window.contexts_list_panel.clear()
             self._app_window.context_panel.clear()
-            # self._app_window.backtrace_panel.setRowCount(0)
+            if self._app_window.backtrace_panel is not None:
+                self._app_window.backtrace_panel.clear()
             self.dwarf.contexts.clear()
 
         self.dwarf.dwarf_api('release', tid)

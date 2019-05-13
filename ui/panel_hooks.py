@@ -341,12 +341,15 @@ class HooksPanel(QWidget):
     def _on_hook_deleted(self, parts):
         _msg, _type, _val = parts
 
+        additional = None
+
         if _type == 'java':
-            str_frmt = _val
+            _val = _val.split('.')
+            str_frmt = '.'.join(_val[:-1])
+            additional = _val[-1]
         elif _type == 'onload':
             str_frmt = _val
         else:
-            str_frmt = ''
             _ptr = utils.parse_ptr(_val)
             if self._hooks_list._uppercase_hex:
                 str_frmt = '0x{0:X}'.format(_ptr)
@@ -354,5 +357,9 @@ class HooksPanel(QWidget):
                 str_frmt = '0x{0:x}'.format(_ptr)
 
         for item in range(self._hooks_model.rowCount()):
-            if str_frmt == self._hooks_model.item(item).text():
-                self._hooks_model.removeRow(item)
+            if str_frmt == self._hooks_model.item(item, 0).text():
+                if additional is not None:
+                    if additional == self._hooks_model.item(item, 2).text():
+                        self._hooks_model.removeRow(item)
+                else:
+                    self._hooks_model.removeRow(item)

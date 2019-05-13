@@ -49,9 +49,9 @@ class AppWindow(QMainWindow):
         self.view_menu = None
 
         self.asm_panel = None
-        self.backtrace_panel = None
         self.console_panel = None
         self.context_panel = None
+        self.backtrace_panel = None
         self.contexts_list_panel = None
         self.data_panel = None
         self.emulator_panel = None
@@ -761,6 +761,8 @@ class AppWindow(QMainWindow):
         if self.dwarf:
             if self.dwarf.context_tid == tid:
                 self.context_panel.clear()
+                if self.backtrace_panel is not None:
+                    self.backtrace_panel.clear()
                 # self.context_panel.setRowCount(0)
                 # self.backtrace_panel.setRowCount(0)
                 # self.memory_panel.clear_panel()
