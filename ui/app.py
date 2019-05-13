@@ -339,8 +339,12 @@ class AppWindow(QMainWindow):
             self.view_menu.addAction(self.console_dock.toggleViewAction())
         elif elem == 'backtrace':
             from ui.panel_backtrace import BacktracePanel
+            self.backtrace_dock = QDockWidget('Backtrace', self)
             self.backtrace_panel = BacktracePanel(self)
-            # splitter.addWidget(self.backtrace_panel)
+            self.backtrace_dock.setWidget(self.backtrace_panel)
+            self.backtrace_dock.setObjectName('BacktracePanel')
+            self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
+            self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
         elif elem == 'threads':
             from ui.panel_contexts_list import ContextsListPanel
             self.threads_dock = QDockWidget('Threads', self)
