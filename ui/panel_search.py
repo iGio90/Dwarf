@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadio
     QSizePolicy, QApplication
 
 from ui.list_view import DwarfListView
+from lib import utils
 
 class SearchThread(QThread):
 
@@ -59,7 +60,7 @@ class SearchPanel(QWidget):
 
     onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
 
-    def __init__(self, parent=None, show_progress_dlg=True):
+    def __init__(self, parent=None, show_progress_dlg=False):
         super(SearchPanel, self).__init__(parent=parent)
         self._app_window = parent
 
@@ -214,7 +215,7 @@ class SearchPanel(QWidget):
         
         search_thread = SearchThread(self._app_window.dwarf, self)
         search_thread.onCmdCompleted.connect(self._on_search_complete)
-        search_thread.onError.connect(self._on_search_complete)
+        search_thread.onError.connect(self._on_search_error)
         search_thread.pattern = pattern
         search_thread.ranges = ranges
         search_thread.start()
@@ -235,3 +236,6 @@ class SearchPanel(QWidget):
         self._app_window.set_status_text('Search complete: {0} matches'.format(self._result_model.rowCount()))
         if self._blocking_search:
             self.progress.cancel()
+
+    def _on_search_error(self, msg):
+        utils.show_message_box(msg)
