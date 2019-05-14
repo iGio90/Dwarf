@@ -340,9 +340,7 @@ class Dwarf(QObject):
             self.onScriptLoaded.emit()
 
             # resume immediatly on android and ios
-            print(self._app_window.session_manager.session.session_type)
             if self._app_window.session_manager.session.session_type == 'Android':
-                print('resuming proc')
                 self.resume_proc()
             return 0
         except frida.ProcessNotFoundError:
