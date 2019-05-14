@@ -252,6 +252,8 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.java_trace_panel)
         elif name == 'java-inspector':
             index = self.main_tabs.indexOf(self.java_inspector_panel)
+        elif name == 'java-explorer':
+            index = self.main_tabs.indexOf(self.java_explorer_panel)
         elif name == 'smali':
             index = self.main_tabs.indexOf(self.smali_panel)
 
@@ -320,7 +322,7 @@ class AppWindow(QMainWindow):
             self.memory_panel.dataChanged.connect(self._on_memory_modified)
             self.memory_panel.statusChanged.connect(self.set_status_text)
             self.main_tabs.addTab(self.memory_panel, 'Memory')
-        elif elem == 'javaexplorer':
+        elif elem == 'java-explorer':
             from ui.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
             self.main_tabs.addTab(self.java_explorer_panel, 'JavaExplorer')
@@ -567,7 +569,7 @@ class AppWindow(QMainWindow):
                 self.memory_panel = None
                 self.main_tabs.removeTab(0)
                 # self.main_tabs
-            elif elem == 'javaexplorer':
+            elif elem == 'java-explorer':
                 self.java_explorer_panel.close()
                 self.java_explorer_panel = None
                 self.removeDockWidget(self.watchers_dwidget)
@@ -732,11 +734,11 @@ class AppWindow(QMainWindow):
             is_java = context['is_java']
             if is_java:
                 if self.java_explorer_panel is None:
-                    self._create_ui_elem('javaexplorer')
+                    self._create_ui_elem('java-explorer')
                 self.context_panel.set_context(context['ptr'], 1,
                                                context['context'])
                 self.java_explorer_panel.set_handle_arg(-1)
-                self.show_main_tab('javaexplorer')
+                self.show_main_tab('java-explorer')
             else:
                 self.context_panel.set_context(context['ptr'], 0,
                                                context['context'])
