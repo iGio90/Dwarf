@@ -24,6 +24,8 @@ class JavaFieldsWidget(DwarfListView):
         self.explorer_panel = explorer_panel
         self.is_native_fields_table = is_native
 
+        self.doubleClicked.connect(self.item_double_clicked)
+
         self._model = QStandardItemModel(0, 2)
         for i in range(len(headers)):
             self._model.setHeaderData(i, Qt.Horizontal, headers[i])
@@ -36,14 +38,15 @@ class JavaFieldsWidget(DwarfListView):
                 'handle_class': handle_class
             }
             handle_item = QStandardItem(name)
-            handle_item.setData(handle)
+            handle_item.setData(handle, Qt.UserRole + 1)
         else:
             handle_item = QStandardItem(name)
         self._model.appendRow([handle_item, QStandardItem(str(value))])
 
     def item_double_clicked(self, item):
-        if item.data() is not None:
-            self.explorer_panel.set_handle(item.data())
+        data = item.data(Qt.UserRole + 1)
+        if data is not None:
+            self.explorer_panel.set_handle(data)
         return False
 
 
@@ -62,9 +65,6 @@ class JavaMethodsWidget(DwarfListView):
         overloads = ref['overloads']
         for i in range(0, len(overloads)):
             overload = overloads[i]
-            if i > 0:
-                row = self.rowCount()
-                self.insertRow(row)
             args = []
             for arg in overload['args']:
                 args.append(arg['className'])
