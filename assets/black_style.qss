@@ -218,6 +218,8 @@ QTextEdit, QPlainTextEdit, QLineEdit {
 }
 
 /* Tabs */
+QTabWidget::tab-bar { alignment: left; }
+
 QTabBar::tab {
     alignment: left;
     background-color: #111;
