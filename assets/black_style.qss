@@ -384,3 +384,17 @@ QProgressBar {
 QProgressBar::chunk:horizontal {
     background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #080808, stop: 0.5 #ef5350, stop: 1 #080808);
 }
+
+
+QDockWidget {
+   background: black;
+}
+
+QDockWidget::title {
+   background-color: transparent;
+   font-size: 110%;
+   font-weight: bold;
+   padding: 5px 0;
+   margin-left: 10px;
+   text-transform: uppercase;
+}
