@@ -23,8 +23,8 @@ from ui.list_view import DwarfListView
 from lib import utils
 from ui.hex_edit import HighLight, HighlightExistsError
 
-class SearchThread(QThread):
 
+class SearchThread(QThread):
     onCmdCompleted = pyqtSignal(str, name='onCmdCompleted')
     onError = pyqtSignal(str, name='onError')
 
@@ -51,8 +51,6 @@ class SearchThread(QThread):
             self.dwarf.search(r[0], r[1], self.pattern)
 
         self.onCmdCompleted.emit('finished')
-
-    
 
 
 class SearchPanel(QWidget):
@@ -208,7 +206,7 @@ class SearchPanel(QWidget):
             self.progress.setRange(0, 0)
             self.progress.setMinimumDuration(0)
             self.progress.forceShow()
-        
+
         self._app_window.show_progress('searching...')
         self.input.setEnabled(False)
         self.search_btn.setEnabled(False)
@@ -216,7 +214,7 @@ class SearchPanel(QWidget):
         self.uncheck_all_btn.setEnabled(False)
 
         self._pattern_length = len(pattern) * .5
-        
+
         search_thread = SearchThread(self._app_window.dwarf, self)
         search_thread.onCmdCompleted.connect(self._on_search_complete)
         search_thread.onError.connect(self._on_search_error)
@@ -224,7 +222,6 @@ class SearchPanel(QWidget):
         search_thread.ranges = ranges
         search_thread.start()
 
-        
     def _on_search_result(self, data):
         if data is not None:
             for o in data:
@@ -235,10 +232,10 @@ class SearchPanel(QWidget):
 
                 if self._app_window.memory_panel:
                     try:
-                        self._app_window.memory_panel.add_highlight(HighLight('search', utils.parse_ptr(addr), self._pattern_length))
+                        self._app_window.memory_panel.add_highlight(
+                            HighLight('search', utils.parse_ptr(addr), self._pattern_length))
                     except HighlightExistsError:
                         pass
-
 
     def _on_search_complete(self):
         self.input.setEnabled(True)

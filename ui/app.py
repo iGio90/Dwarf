@@ -145,7 +145,7 @@ class AppWindow(QMainWindow):
         self.setStatusBar(self.statusbar)
 
         self.main_tabs = QTabWidget(self)
-        self.main_tabs.setMovable(False)
+        self.main_tabs.setMovable(True)
         self.main_tabs.setAutoFillBackground(True)
         self.setCentralWidget(self.main_tabs)
 
