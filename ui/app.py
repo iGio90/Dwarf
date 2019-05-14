@@ -343,6 +343,7 @@ class AppWindow(QMainWindow):
             self.backtrace_panel = BacktracePanel(self)
             self.backtrace_dock.setWidget(self.backtrace_panel)
             self.backtrace_dock.setObjectName('BacktracePanel')
+            self.backtrace_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
             self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
             self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
         elif elem == 'threads':

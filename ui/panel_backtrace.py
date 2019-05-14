@@ -14,47 +14,69 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QHeaderView, QMenu
 
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
-from ui.widget_memory_address import MemoryAddressWidget
-from ui.widget_table_base import TableBaseWidget
+from ui.list_view import DwarfListView
 
 
-class BacktracePanel(TableBaseWidget):
-    def __init__(self, app, *__args):
-        super().__init__(app, 0, 0)
+class BacktracePanel(DwarfListView):
+
+    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
+
+    def __init__(self, parent=None):
+        super(BacktracePanel, self).__init__(parent=parent)
+        self._app_window = parent
+
+        self._model = QStandardItemModel(0, 2)
+        self._model.setHeaderData(0, Qt.Horizontal, 'Address')
+        self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._model.setHeaderData(1, Qt.Horizontal, 'Symbol')
+
+        self.setModel(self._model)
+        self.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.doubleClicked.connect(self._item_doubleclicked)
+        self._mode = 'native'
 
     def set_backtrace(self, bt):
         if 'type' not in bt:
             return
-        self.setRowCount(0)
-        if self.columnCount() == 0:
-            self.setColumnCount(2)
+
+        self.clear()
+
         if bt['type'] == 'native':
+            self._mode = 'native'
+            self._model.setHeaderData(0, Qt.Horizontal, 'Address')
+            self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+            self._model.setHeaderData(1, Qt.Horizontal, 'Symbol')
+
             bt = bt['bt']
-            self.setHorizontalHeaderLabels(['symbol', 'address'])
+
             for a in bt:
-                row = self.rowCount()
-                self.insertRow(row)
+                addr = a['address']
+                if self.uppercase_hex:
+                    addr = addr.upper().replace('0X', '0x')
+
+                addr_item = QStandardItem()
+                addr_item.setText(addr)
+                addr_item.setTextAlignment(Qt.AlignCenter)
 
                 name = a['name']
                 if name is None:
-                    q = NotEditableTableWidgetItem('-')
-                    q.setFlags(Qt.NoItemFlags)
-                    q.setForeground(Qt.gray)
-                    self.setItem(row, 0, q)
-                else:
-                    q = NotEditableTableWidgetItem(name)
-                    q.setFlags(Qt.NoItemFlags)
-                    q.setForeground(Qt.darkGreen)
-                    self.setItem(row, 0, q)
-                q = MemoryAddressWidget(a['address'])
-                self.setItem(row, 1, q)
+                    name = '-'
+
+                self._model.appendRow([addr_item, QStandardItem(name)])
+
         elif bt['type'] == 'java':
+            self._mode = 'java'
+            self.clear()
+            self._model.setHeaderData(0, Qt.Horizontal, 'Method')
+            self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+            self._model.setHeaderData(1, Qt.Horizontal, 'Source')
+
             bt = bt['bt']
-            # Java backtrace
-            self.setHorizontalHeaderLabels(['method', 'source'])
             parts = bt.split('\n')
             for i in range(0, len(parts)):
                 if i == 0:
@@ -64,17 +86,10 @@ class BacktracePanel(TableBaseWidget):
                 if len(p) != 2:
                     continue
 
-                row = self.rowCount()
-                self.insertRow(row)
+                self._model.appendRow([QStandardItem(p[0]), QStandardItem(p[1].replace(')', ''))])
 
-                q = NotEditableTableWidgetItem(p[0])
-                q.setFlags(Qt.NoItemFlags)
-                q.setForeground(Qt.darkYellow)
-                self.setItem(row, 0, q)
-
-                q = NotEditableTableWidgetItem(p[1].replace(')', ''))
-                q.setFlags(Qt.NoItemFlags)
-                q.setForeground(Qt.gray)
-                self.setItem(row, 1, q)
-        self.resizeRowsToContents()
-        self.horizontalHeader().setStretchLastSection(True)
+    def _item_doubleclicked(self, model_index):
+        row = self._model.itemFromIndex(model_index).row()
+        if row != -1:
+            if self._mode == 'native':
+                self.onShowMemoryRequest.emit(self._model.item(row, 0).text())
