@@ -530,10 +530,14 @@ class Dwarf(QObject):
     def search(self, start, size, pattern):
         # sanify args
         start = utils.parse_ptr(start)
-        size = int(size.replace(',', ''))
+        size = int(size)
         # convert to frida accepted pattern
         pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
-        return self.dwarf_api('memoryScan', [start, size, pattern])
+        self.dwarf_api('memoryScan', [start, size, pattern])
+
+    def search_list(self, ranges_list, pattern):
+        pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
+        self.dwarf_api('memoryScanList', [json.dumps(ranges_list), pattern])
 
     # ************************************************************************
     # **************************** Handlers **********************************
@@ -653,9 +657,11 @@ class Dwarf(QObject):
         elif cmd == 'watcher_removed':
             self._watchers.remove(utils.parse_ptr(parts[1]))
             self.onWatcherRemoved.emit(parts[1])
-
         elif cmd == 'memoryscan_result':
-            self.onMemoryScanResult.emit(json.loads(parts[1]))
+            if parts[1] == '':
+                self.onMemoryScanResult.emit([])
+            else:
+                self.onMemoryScanResult.emit(json.loads(parts[1]))
         else:
             print('unknown message: ' + what)
 

@@ -47,9 +47,11 @@ class SearchThread(QThread):
             self.onError.emit('Ranges missing')
             return
 
+        _list = []
         for r in self.ranges:
-            self.dwarf.search(r[0], r[1], self.pattern)
+            _list.append({'start': r[0], 'size': int(r[1].replace(',', ''))})
 
+        self.dwarf.search_list(_list, self.pattern)
         self.onCmdCompleted.emit('finished')
 
 
