@@ -237,7 +237,8 @@ class Adb(QObject):
         found = False
 
         result = self.su_cmd('ps | grep \'frida\'')
-        result = result.split()
+        if result is not None:
+            result = result.split()
 
         if 'frida' in result:
             # in frida 12.5.0 there was no frida-helper on my tested devs TODO: Recheck
