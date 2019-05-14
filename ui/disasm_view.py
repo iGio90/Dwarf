@@ -252,12 +252,6 @@ class DisassemblyView(QAbstractScrollArea):
                  (self._ver_spacing + self._char_height)))
         return (data_x, data_y)
 
-    def mousePressEvent(self, event):
-        # context menu
-        if event.button() == Qt.RightButton:
-            self._on_context_menu(event)
-            return
-
     def _on_context_menu(self, event):
         """ build and show contextmenu
         """
@@ -572,10 +566,6 @@ class DisassemblyView(QAbstractScrollArea):
             elif self._app_window.dwarf.arch == 'x64':
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.adjust()
 
     def mouseDoubleClickEvent(self, event):
         loc_x = event.pos().x()
