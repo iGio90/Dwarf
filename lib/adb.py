@@ -111,8 +111,9 @@ class Adb(QObject):
                 # get some infos about the device and keep for later
                 self._sdk_version = self._do_adb_command(
                     'adb shell getprop ro.build.version.sdk')
-                self._sdk_version = self._sdk_version.join(
-                    self._sdk_version.split())  # cleans '\r\n'
+                if self._sdk_version is not None:
+                    self._sdk_version = self._sdk_version.join(
+                        self._sdk_version.split())  # cleans '\r\n'
                 self._android_version = self._do_adb_command(
                     'adb shell getprop ro.build.version.release')
                 self._android_version = self._android_version.join(
@@ -140,6 +141,7 @@ class Adb(QObject):
             if self._is_root:
                 res = self.su_cmd('id')
                 self._is_root = 'uid=0' in res
+
 
     def get_states_string(self):
         """ Prints check results
