@@ -342,7 +342,8 @@ QCheckBox:disabled {
 }
 
 QCheckBox::indicator,
-QGroupBox::indicator {
+QGroupBox::indicator,
+QTreeView::indicator {
     width: 13px;
     height: 13px;
     background: #fff;
@@ -350,7 +351,9 @@ QGroupBox::indicator {
     border-radius: 2px;
 }
 
-QCheckBox::indicator:checked {
+QCheckBox::indicator:checked,
+QGroupBox::indicator:checked,
+QTreeView::indicator:checked {
     image: url(assets/icons/x.svg)
 }
 
