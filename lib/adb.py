@@ -116,8 +116,9 @@ class Adb(QObject):
                         self._sdk_version.split())  # cleans '\r\n'
                 self._android_version = self._do_adb_command(
                     'adb shell getprop ro.build.version.release')
-                self._android_version = self._android_version.join(
-                    self._android_version.split())
+                if self._android_version is not None:
+                    self._android_version = self._android_version.join(
+                        self._android_version.split())
 
                 try:
                     self._oreo_plus = (int(
