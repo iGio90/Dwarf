@@ -33,6 +33,7 @@ class JavaFieldsWidget(DwarfListView):
         self._model = QStandardItemModel(0, 2)
         for i in range(len(headers)):
             self._model.setHeaderData(i, Qt.Horizontal, headers[i])
+        self.setModel(self._model)
 
     def add(self, name, value, handle=None, handle_class=None):
         if handle is not None:
@@ -60,6 +61,7 @@ class JavaMethodsWidget(DwarfListView):
         self._model.setHeaderData(0, Qt.Horizontal, 'Name')
         self._model.setHeaderData(1, Qt.Horizontal, 'Return')
         self._model.setHeaderData(2, Qt.Horizontal, 'Arguments')
+        self.setModel(self._model)
 
     def add(self, name, ref):
         overloads = ref['overloads']
