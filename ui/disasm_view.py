@@ -179,7 +179,8 @@ class DisassemblyView(QAbstractScrollArea):
         progress.show()
         QApplication.processEvents()
 
-        # self._lines.clear()
+        self._lines.clear()
+
         if len(self._history) == 0 or self._history[len(self._history) - 1] != dwarf_range.start_address:
             self._history.append(dwarf_range.start_address)
             if len(self._history) > 25:
