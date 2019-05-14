@@ -42,8 +42,8 @@ class JavaFieldsWidget(DwarfListView):
         self._model.appendRow([handle_item, QStandardItem(str(value))])
 
     def item_double_clicked(self, item):
-        if item.getData() is not None:
-            self.explorer_panel.set_handle(item.getData())
+        if item.data() is not None:
+            self.explorer_panel.set_handle(item.data())
         return False
 
 
