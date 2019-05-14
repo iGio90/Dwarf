@@ -325,11 +325,11 @@ class AppWindow(QMainWindow):
         elif elem == 'java-explorer':
             from ui.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
-            self.main_tabs.addTab(self.java_explorer_panel, 'JavaExplorer')
+            self.main_tabs.addTab(self.java_explorer_panel, 'JVM debugger')
         elif elem == 'java-inspector':
             from ui.panel_java_inspector import JavaInspector
             self.java_inspector_panel = JavaInspector(self)
-            self.main_tabs.addTab(self.java_inspector_panel, 'Java Inspector')
+            self.main_tabs.addTab(self.java_inspector_panel, 'JVM inspector')
         elif elem == 'console':
             from ui.panel_console import ConsolePanel
             self.console_dock = QDockWidget('Console', self)

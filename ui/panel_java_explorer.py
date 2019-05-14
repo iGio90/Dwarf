@@ -12,40 +12,38 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel, QHeaderView
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel
 
-from ui.widget_item_not_editable import NotEditableTableWidgetItem
-from ui.widget_table_base import TableBaseWidget
+from ui.list_view import DwarfListView
 
 
-class HandleWidget(NotEditableTableWidgetItem):
+class HandleWidget(QStandardItem):
     def __init__(self, handle, *__args):
         super().__init__(*__args)
         self.handle = handle
 
 
-class JavaFieldsWidget(TableBaseWidget):
+class JavaFieldsWidget(DwarfListView):
     def __init__(self, explorer_panel, headers, is_native, *__args):
-        super().__init__(explorer_panel.app, 0, 2)
+        super(JavaFieldsWidget, self).__init__(parent=explorer_panel.app)
         self.explorer_panel = explorer_panel
         self.is_native_fields_table = is_native
 
-        self.setHorizontalHeaderLabels(headers)
-        self.horizontalHeader().setStretchLastSection(True)
+        self._model = QStandardItemModel(0, 2)
+        for i in range(len(headers)):
+            self._model.setHeaderData(i, Qt.Horizontal, headers[i])
 
     def add(self, name, value, handle=None, handle_class=None):
-        row = self.rowCount()
-        self.insertRow(row)
         if handle is not None:
             handle = {
                 'handle': handle,
                 'handle_class': handle_class
             }
-            self.setItem(row, 0, HandleWidget(handle, name))
+            handle_item = HandleWidget(handle, name)
         else:
-            self.setItem(row, 0, NotEditableTableWidgetItem(name))
-        self.setItem(row, 1, NotEditableTableWidgetItem(str(value)))
+            handle_item = QStandardItem(name)
+        self._model.appendRow([handle_item, QStandardItem(str(value))])
 
     def item_double_clicked(self, item):
         if isinstance(item, HandleWidget) and item.handle is not None:
@@ -53,20 +51,17 @@ class JavaFieldsWidget(TableBaseWidget):
         return False
 
 
-class JavaMethodsWidget(TableBaseWidget):
+class JavaMethodsWidget(DwarfListView):
     def __init__(self, explorer_panel, *__args):
-        super().__init__(explorer_panel.app, 0, 3)
+        super(JavaMethodsWidget, self).__init__(parent=explorer_panel.app)
         self.explorer_panel = explorer_panel
 
-        self.setHorizontalHeaderLabels(['name', 'return', 'arguments'])
-        self.horizontalHeader().setStretchLastSection(True)
-        self.setColumnWidth(0, 200)
-        self.setColumnWidth(1, 150)
+        self._model = QStandardItemModel(0, 3)
+        self._model.setHeaderData(0, Qt.Horizontal, 'Name')
+        self._model.setHeaderData(1, Qt.Horizontal, 'Return')
+        self._model.setHeaderData(2, Qt.Horizontal, 'Arguments')
 
     def add(self, name, ref):
-        row = self.rowCount()
-        self.insertRow(row)
-        self.setItem(row, 0, NotEditableTableWidgetItem(name))
         overloads = ref['overloads']
         for i in range(0, len(overloads)):
             overload = overloads[i]
@@ -76,8 +71,11 @@ class JavaMethodsWidget(TableBaseWidget):
             args = []
             for arg in overload['args']:
                 args.append(arg['className'])
-            self.setItem(row, 1, NotEditableTableWidgetItem(overload['return']['className']))
-            self.setItem(row, 2, NotEditableTableWidgetItem('(%s)' % ', '.join(args)))
+            self._model.appendRow([
+                QStandardItem(name),
+                QStandardItem(overload['return']['className']),
+                QStandardItem('(%s)' % ', '.join(args)),
+            ])
 
 
 class JavaExplorerPanel(QWidget):
@@ -136,13 +134,12 @@ class JavaExplorerPanel(QWidget):
         self.setLayout(box)
 
     def _set_data(self, data):
-
         self.clazz.setText(data['class'])
         data = data['data']
 
-        self.methods.setRowCount(0)
-        self.fields.setRowCount(0)
-        self.native_fields.setRowCount(0)
+        self.methods.clear()
+        self.fields.clear()
+        self.native_fields.clear()
         for key in data:
             ref = data[key]
             if ref['type'] == 'function':
