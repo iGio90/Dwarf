@@ -18,12 +18,6 @@ from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel
 from ui.list_view import DwarfListView
 
 
-class HandleWidget(QStandardItem):
-    def __init__(self, handle, *__args):
-        super().__init__(*__args)
-        self.handle = handle
-
-
 class JavaFieldsWidget(DwarfListView):
     def __init__(self, explorer_panel, headers, is_native, *__args):
         super(JavaFieldsWidget, self).__init__(parent=explorer_panel.app)
@@ -41,14 +35,15 @@ class JavaFieldsWidget(DwarfListView):
                 'handle': handle,
                 'handle_class': handle_class
             }
-            handle_item = HandleWidget(handle, name)
+            handle_item = QStandardItem(name)
+            handle_item.setData(handle)
         else:
             handle_item = QStandardItem(name)
         self._model.appendRow([handle_item, QStandardItem(str(value))])
 
     def item_double_clicked(self, item):
-        if isinstance(item, HandleWidget) and item.handle is not None:
-            self.explorer_panel.set_handle(item.handle)
+        if item.getData() is not None:
+            self.explorer_panel.set_handle(item.getData())
         return False
 
 
