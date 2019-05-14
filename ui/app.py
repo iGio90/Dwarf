@@ -195,7 +195,6 @@ class AppWindow(QMainWindow):
         self.view_menu = QMenu('View', self)
         theme = QMenu('Theme', self.view_menu)
         theme.addAction('Black')
-        theme.addAction('Black2')
         theme.addAction('Dark')
         theme.addAction('Light')
         theme.triggered.connect(self._set_theme)
