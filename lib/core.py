@@ -676,8 +676,8 @@ class Dwarf(QObject):
             self._app_window.threads.add_context(context_data, library_onload=self.loading_library)
             if self.loading_library is None and context_data['reason'] == 0:
                 self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
-            # if len(self.contexts.keys()) > 1 and self._app_window.context_panel.have_context():
-            #    return
+            if context_data['is_java']:
+                self._app_window.show_main_tab('java-explorer')
         else:
             self._arch = context_data['arch']
             self._platform = context_data['platform']
