@@ -44,6 +44,10 @@ On Windows add d2j folder to %PATH% and change:
 in d2j_invoke.bat to
 'java -Xms512m -Xmx4096m -cp "%CP%" %*'
 ```
+
+----
+
+```
 Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
@@ -59,3 +63,4 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 ```
+
