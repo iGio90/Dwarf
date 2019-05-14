@@ -400,7 +400,7 @@ class AppWindow(QMainWindow):
         elif elem == 'java-trace':
             from ui.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
-            self.main_tabs.addTab(self.java_trace_panel, 'Java-Trace')
+            self.main_tabs.addTab(self.java_trace_panel, 'JVM tracer')
         elif elem == 'smali':
             from ui.panel_smali import SmaliPanel
             self.smali_panel = SmaliPanel()
