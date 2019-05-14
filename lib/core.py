@@ -15,17 +15,14 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
-import numbers
 import binascii
 import json
-from threading import Thread
 
-from frida.core import Session, Device, Script
+from frida.core import Session
 
 import frida
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from PyQt5.QtWidgets import QFileDialog, QApplication
-from ui.hex_edit import HighLight, HighlightExistsError
 
 from lib import utils
 from lib.context import Context
@@ -33,10 +30,8 @@ from lib.emulator import Emulator
 
 from lib.hook import Hook
 from lib.kernel import Kernel
-from lib.prefs import Prefs
 
 from ui.dialog_input import InputDialog
-from ui.panel_trace import TraceEvent
 
 
 class EmulatorThread(QThread):
@@ -343,6 +338,12 @@ class Dwarf(QObject):
                     self.dwarf_api('evaluateFunction', user_script)
 
             self.onScriptLoaded.emit()
+
+            # resume immediatly on android and ios
+            print(self._app_window.session_manager.session.session_type)
+            if self._app_window.session_manager.session.session_type == 'Android':
+                print('resuming proc')
+                self.resume_proc()
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
