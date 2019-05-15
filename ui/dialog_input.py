@@ -37,6 +37,17 @@ class InputDialogTextEdit(JsCodeEditor):
         self.setFixedHeight(row_height + 10)  # 10 == 2*5px padding
         self.setMinimumWidth(350)
 
+    def keyPressEvent(self, event):
+        # when codecompletion popup dont respond to enter
+        if self.completer and self.completer.popup() and self.completer.popup().isVisible():
+            event.ignore()
+            super(InputDialogTextEdit, self).keyPressEvent(event)
+        else:
+            if event.key() == QtCore.Qt.Key_Return:
+                self.dialog.accept()
+            else:
+                super(InputDialogTextEdit, self).keyPressEvent(event)
+
 
 class InputDialog(QDialog):
     def __init__(self, parent=None, hint=None, input_content='', placeholder='', options_callback=None):
