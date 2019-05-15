@@ -47,6 +47,9 @@ def process_args():
     parser.add_argument(
         "-sp", "--spawn", action='store_true', help="force spawn")
 
+    parser.add_argument(
+        "-ds", "--debug-script", action='store_true', help="debug outputs from frida script")
+
     args = parser.parse_args()
     return args
 

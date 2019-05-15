@@ -11,16 +11,13 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import QMenu, QAction, QFileDialog, QApplication
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMenu
 
 import frida
-from lib.core import Dwarf
 from lib.session import Session
 
 from ui.device_window import DeviceWindow
-from ui.dialog_list import ListDialog
-from ui.dialog_input import InputDialog
 
 
 class LocalSession(Session):

@@ -330,6 +330,10 @@ class Dwarf(QObject):
             self._script.on('destroyed', self._on_destroyed)
             self._script.load()
 
+            is_debug = self._app_window.dwarf_args.debug_script
+            if is_debug:
+                self._script.exports.debug(True)
+
             if script is not None:
                 if os.path.exists(script):
                     with open(script, 'r') as script_file:
