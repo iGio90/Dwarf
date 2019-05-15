@@ -326,8 +326,9 @@ class Dwarf(QObject):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
             with open('lib/core.js', 'r') as core_script:
-                sript_content = core_script.read()
-            self._script = self._process.create_script(sript_content)
+                script_content = core_script.read()
+
+            self._script = self._process.create_script(script_content)
             self._script.on('message', self._on_message)
             self._script.on('destroyed', self._on_destroyed)
             self._script.load()
@@ -345,7 +346,7 @@ class Dwarf(QObject):
 
             self.onScriptLoaded.emit()
 
-            # resume immediatly on android and ios
+            # resume immediately on android and ios
             if self._app_window.session_manager.session.session_type == 'Android':
                 self.resume_proc()
             return 0
@@ -376,7 +377,6 @@ class Dwarf(QObject):
 
         if self._process is not None:
             self.detach()
-
         try:
             self._pid = self.device.spawn(package)
             self._process = self.device.attach(self._pid)

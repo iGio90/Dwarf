@@ -187,8 +187,12 @@ class DisassemblyView(QAbstractScrollArea):
                 self._history.pop(0)
 
         self._longest_bytes = 0
-        capstone = Cs(self.capstone_arch, self.capstone_mode)
-        capstone.detail = True
+        try:
+            capstone = Cs(self.capstone_arch, self.capstone_mode)
+            capstone.detail = True
+        except CsError:
+            print('[DisasmView] failed to initialize capstone with %d, %d' % (self.capstone_arch, self.capstone_mode))
+            return
 
         self._range = dwarf_range
         self._max_instructions = num_instructions
