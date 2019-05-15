@@ -16,28 +16,26 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
 
+from ui.code_editor import JsCodeEditor
 
-class InputDialogTextEdit(QLineEdit):
+
+class InputDialogTextEdit(JsCodeEditor):
     def __init__(self, dialog, *__args):
         super().__init__(*__args)
         self.dialog = dialog
 
+        self.setStyleSheet('padding: 0; padding: 0 5px;')
+
         bar = QScrollBar()
         bar.setFixedHeight(0)
         bar.setFixedWidth(0)
-        #self.setHorizontalScrollBar(bar)
-        #self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        #self.setLineWrapMode(QTextEdit.NoWrap)
-        # self.setFixedHeight(28)
+        font_metric = QFontMetrics(self.font())
+        row_height = font_metric.lineSpacing()
+        self.setFixedHeight(row_height + 10)  # 10 == 2*5px padding
         self.setMinimumWidth(350)
-
-    def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Return:
-            self.dialog.accept()
-        else:
-            super(InputDialogTextEdit, self).keyPressEvent(event)
 
 
 class InputDialog(QDialog):
@@ -83,7 +81,7 @@ class InputDialog(QDialog):
         dialog = InputDialog(parent=parent, hint=hint, input_content=input_content,
                              placeholder=placeholder, options_callback=options_callback)
         result = dialog.exec_()
-        text = dialog.input_widget.text()
+        text = dialog.input_widget.toPlainText()
         return result == QDialog.Accepted, text
 
     @staticmethod
