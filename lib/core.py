@@ -101,6 +101,8 @@ class Dwarf(QObject):
     # emulator
     onEmulator = pyqtSignal(list, name='onEmulator')
 
+    onBackTrace = pyqtSignal(dict, name='onBackTrace')
+
     onMemoryScanResult = pyqtSignal(list, name='onMemoryScanResult')
 
     # ************************************************************************
@@ -563,10 +565,7 @@ class Dwarf(QObject):
 
         cmd = parts[0]
         if cmd == 'backtrace':
-            try:
-                self._app_window.backtrace_panel.set_backtrace(json.loads(parts[1]))
-            except:
-                pass
+            self.onBackTrace.emit(json.loads(parts[1]))
         elif cmd == 'emulator':
             self.onEmulator.emit(parts[1:])
         elif cmd == 'enumerate_java_classes_start':
