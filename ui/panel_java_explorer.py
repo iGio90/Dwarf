@@ -167,10 +167,10 @@ class JavaExplorerPanel(QWidget):
         self._set_data(data)
 
     def clear_panel(self):
-        self.handle_history.clear()
-        self.methods.setRowCount(0)
-        self.fields.setRowCount(0)
-        self.native_fields.setRowCount(0)
+        self.handle_history = []
+        self.methods._model.clear()
+        self.fields._model.clear()
+        self.native_fields._model.clear()
 
     def back(self):
         if len(self.handle_history) < 2:

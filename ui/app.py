@@ -762,13 +762,13 @@ class AppWindow(QMainWindow):
         if self.dwarf:
             if self.dwarf.context_tid == tid:
                 self.context_panel.clear()
-                #if self.backtrace_panel is not None:
-                #    self.backtrace_panel.clear()
+                if self.backtrace_panel is not None:
+                    self.backtrace_panel.clear()
                 # self.context_panel.setRowCount(0)
                 # self.backtrace_panel.setRowCount(0)
                 # self.memory_panel.clear_panel()
-                # if self.get_java_explorer_panel() is not None:
-                #    self.get_java_explorer_panel().clear_panel()
+                if self.java_explorer_panel is not None:
+                    self.java_explorer_panel.clear_panel()
 
             # self.contexts_list_panel.resume_tid(tid)
 
