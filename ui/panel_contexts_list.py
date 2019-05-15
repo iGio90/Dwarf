@@ -101,10 +101,6 @@ class ContextsListPanel(DwarfListView):
         self.resizeColumnToContents(1)
 
     def resume_tid(self, tid):
-        if self.dwarf._spawned and not self.dwarf._resumed:
-            self.dwarf.resume_proc()
-            return
-
         # todo: check why removing here and removing in on_proc_resume
         for i in range(self.threads_model.rowCount()):
             item = self.threads_model.item(i, 0)
