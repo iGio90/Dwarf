@@ -38,7 +38,7 @@ class DataPanel(QSplitter):
 
         self._key_list_model = QStandardItemModel(0, 1)
         self.key_lists = DwarfListView(parent=self.app)
-        self._key_list_model.setHorizontalHeaderLabels([''])
+        self.key_lists.setHeaderHidden(True)
         self.key_lists.setModel(self._key_list_model)
         self.key_lists.doubleClicked.connect(self.list_item_double_clicked)
 
