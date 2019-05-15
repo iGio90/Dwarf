@@ -580,7 +580,7 @@ class AppWindow(QMainWindow):
             elif elem == 'backtrace':
                 self.backtrace_panel.close()
                 self.backtrace_panel = None
-                self.removeDockWidget(self.watchers_dwidget)
+                self.removeDockWidget(self.backtrace_dock)
             elif elem == 'threads':
                 self.contexts_list_panel.close()
                 self.contexts_list_panel = None
@@ -762,8 +762,8 @@ class AppWindow(QMainWindow):
         if self.dwarf:
             if self.dwarf.context_tid == tid:
                 self.context_panel.clear()
-                if self.backtrace_panel is not None:
-                    self.backtrace_panel.clear()
+                #if self.backtrace_panel is not None:
+                #    self.backtrace_panel.clear()
                 # self.context_panel.setRowCount(0)
                 # self.backtrace_panel.setRowCount(0)
                 # self.memory_panel.clear_panel()

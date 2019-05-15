@@ -46,6 +46,9 @@ class BacktracePanel(DwarfListView):
         if 'type' not in bt:
             return
 
+        if 'bt' not in bt:
+            return
+
         self.clear()
 
         if bt['type'] == 'native':

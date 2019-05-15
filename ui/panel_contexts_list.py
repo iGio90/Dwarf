@@ -87,9 +87,10 @@ class ContextsListPanel(DwarfListView):
         symb_col = QStandardItem()
         if library_onload is None:
             if not is_java:
-                str_fmt = ('{0} - {1}'.format(
-                    data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
-                symb_col.setText(str_fmt)
+                if 'symbol' in data['context']['pc']:
+                    str_fmt = ('{0} - {1}'.format(
+                        data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
+                    symb_col.setText(str_fmt)
             else:
                 symb_col.setText('.'.join(parts[:len(parts) - 1]))
         else:
@@ -101,10 +102,6 @@ class ContextsListPanel(DwarfListView):
         self.resizeColumnToContents(1)
 
     def resume_tid(self, tid):
-        if self.dwarf._spawned and not self.dwarf._resumed:
-            self.dwarf.resume_proc()
-            return
-
         # todo: check why removing here and removing in on_proc_resume
         for i in range(self.threads_model.rowCount()):
             item = self.threads_model.item(i, 0)

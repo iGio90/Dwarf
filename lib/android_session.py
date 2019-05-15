@@ -41,14 +41,8 @@ class SmaliThread(QThread):
         super(SmaliThread, self).__init__(parent)
         self._adb = Adb()
         self._package_name = package_name
-        if not self._adb.available():
-            return
 
     def run(self):
-        if not self._adb.available():
-            self.onError.emit()
-            return
-
         if not self._package_name:
             self.onError.emit()
             return
@@ -93,6 +87,7 @@ class AndroidSession(Session):
         self._menu = [QMenu(self.session_type + ' Session')]
         #self._menu[0].addAction('Save Session', self._save_session)
         self._menu[0].addAction('Close Session', self.stop_session)
+        self._smali_thread = None
 
     @property
     def session_ui_sections(self):
@@ -225,15 +220,16 @@ class AndroidSession(Session):
         if device:
             self.dwarf.device = device
         if package_name:
+            # smalistuff
+            if self._smali_thread is None:
+                self._app_window.show_progress('Baksmali ' + package_name + ' ...')
+                self._smali_thread = SmaliThread(self, package_name)
+                self._smali_thread.onError.connect(self._app_window.hide_progress)
+                self._smali_thread.onFinished.connect(self._app_window.hide_progress)
+                self._smali_thread.start()
+
             if self.dwarf.spawn(package=package_name):
                 self.stop()
-
-            # smalistuff
-            self._app_window.show_progress('Baksmali ' + package_name + ' ...')
-            _smali_thread = SmaliThread(self, package_name)
-            _smali_thread.onError.connect(self._app_window.hide_progress)
-            _smali_thread.onFinished.connect(self._app_window.hide_progress)
-            _smali_thread.start()
 
             self._on_java_classes()
 
@@ -243,7 +239,7 @@ class AndroidSession(Session):
             self._app_window.context_panel.clear()
             if self._app_window.backtrace_panel is not None:
                 self._app_window.backtrace_panel.clear()
-            self._app_window.memory_panel.clear_panel()
+            #self._app_window.memory_panel.clear_panel()
             self.dwarf.contexts.clear()
 
         self.dwarf.dwarf_api('release', tid)
@@ -254,6 +250,7 @@ class AndroidSession(Session):
 
     def _on_detach(self):
         self.dwarf.detach()
+        self._smali_thread = None
 
     def _on_java_trace(self):
         should_request_classes = self._app_window.java_trace_panel is None
