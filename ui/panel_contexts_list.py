@@ -87,7 +87,8 @@ class ContextsListPanel(DwarfListView):
         symb_col = QStandardItem()
         if library_onload is None:
             if not is_java:
-                str_fmt = ('{0} - {1}'.format(data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
+                str_fmt = ('{0} - {1}'.format(
+                    data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
                 symb_col.setText(str_fmt)
             else:
                 symb_col.setText('.'.join(parts[:len(parts) - 1]))
@@ -122,20 +123,26 @@ class ContextsListPanel(DwarfListView):
             tid = int(self.get_item_text(index, 0))
             glbl_pt = self.mapToGlobal(pos)
             context_menu = QMenu()
-            context_menu.addAction('Emulator', self._on_cm_emulator)
+            context_menu.addAction('Step', lambda: self._on_cm_step(tid))
             if self.dwarf.native_trace_tid == tid:
-                context_menu.addAction('Stop Trace', self.dwarf.native_tracer_stop)
+                context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
             else:
-                context_menu.addAction('Trace', lambda: self._on_cm_starttrace(tid))
+                context_menu.addAction('Trace', lambda: self._on_cm_start_trace(tid))
+            context_menu.addAction('Emulator', lambda: self._on_cm_emulator())
             context_menu.addSeparator()
             context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
             context_menu.exec_(glbl_pt)
 
-    def _on_cm_starttrace(self, tid):
+    def _on_cm_start_trace(self, tid):
         self.dwarf.native_tracer_start(int(tid))
+
+    def _on_cm_stop_trace(self):
+        self.dwarf.native_tracer_stop()
 
     def _on_cm_emulator(self):
         if self._app_window.emulator_panel is None:
             self._app_window._create_ui_elem('emulator')
-
         self._app_window.show_main_tab('emulator')
+
+    def _on_cm_step(self, tid):
+        self.dwarf.single_step(tid)

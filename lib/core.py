@@ -539,6 +539,9 @@ class Dwarf(QObject):
         pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
         self.dwarf_api('memoryScanList', [json.dumps(ranges_list), pattern])
 
+    def single_step(self, tid):
+        return self.dwarf_api('singleStep', tid)
+
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************

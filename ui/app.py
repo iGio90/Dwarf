@@ -734,13 +734,11 @@ class AppWindow(QMainWindow):
             if is_java:
                 if self.java_explorer_panel is None:
                     self._create_ui_elem('java-explorer')
-                self.context_panel.set_context(context['ptr'], 1,
-                                               context['context'])
+                self.context_panel.set_context(context['ptr'], 1, context['context'])
                 self.java_explorer_panel.set_handle_arg(-1)
                 self.show_main_tab('java-explorer')
             else:
-                self.context_panel.set_context(context['ptr'], 0,
-                                               context['context'])
+                self.context_panel.set_context(context['ptr'], 0, context['context'])
 
     def _on_add_hook(self, hook):
         try:
