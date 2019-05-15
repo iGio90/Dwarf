@@ -679,7 +679,8 @@ class Dwarf(QObject):
             sym = ''
             if 'pc' in context_data['context']:
                 name = context_data['ptr']
-                if context_data['context']['pc']['symbol']['name'] is not None:
+                if 'sumbol' in context_data['context']['pc'] and \
+                        context_data['context']['pc']['symbol']['name'] is not None:
                     sym = context_data['context']['pc']['symbol']['moduleName']
                     sym += ' - '
                     sym += context_data['context']['pc']['symbol']['name']
