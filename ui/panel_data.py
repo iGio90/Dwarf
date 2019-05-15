@@ -16,8 +16,10 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import *
 
+from ui.list_view import DwarfListView
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 from lib.range import Range
@@ -34,8 +36,12 @@ class DataPanel(QSplitter):
         self.setOrientation(Qt.Horizontal)
         self.setHandleWidth(1)
 
-        self.key_lists = QListWidget()
-        self.key_lists.itemDoubleClicked.connect(self.list_item_double_clicked)
+        self._key_list_model = QStandardItemModel(0, 1)
+        self.key_lists = DwarfListView(parent=self.app)
+        self._key_list_model.setHorizontalHeaderLabels([''])
+        self.key_lists.setModel(self._key_list_model)
+        self.key_lists.doubleClicked.connect(self.list_item_double_clicked)
+
         self.addWidget(self.key_lists)
 
         self.editor = QPlainTextEdit()
@@ -48,16 +54,17 @@ class DataPanel(QSplitter):
         self.setStretchFactor(1, 4)
 
     def clear(self):
-        self.key_lists.clear()
+        self._key_list_model.clear()
         self.editor.setPlainText('')
         self.hex_view.clear_panel()
 
     def append_data(self, data_type, key, text_data):
         if key not in self.data:
-            self.key_lists.addItem(NotEditableListWidgetItem(key))
+            self._key_list_model.appendRow([QStandardItem(key)])
         self.data[key] = [data_type, text_data]
 
     def list_item_double_clicked(self, item):
+        item = self._key_list_model.itemFromIndex(item)
         if self.data[item.text()][0] == 'plain':
             self.hex_view.setVisible(False)
             self.editor.setVisible(True)

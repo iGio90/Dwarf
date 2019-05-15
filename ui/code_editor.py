@@ -32,7 +32,7 @@ class DwarfCompleter(QCompleter):
             'api.findExport(', 'api.addWatcher(', 'console', 'console.log(',
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
-            'hookAllJavaMethods', 'hookJava', 'hookNative'
+            'hookAllJavaMethods', 'hookJava', 'hookNative',
             'hookOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'removeWatcher', 'restart',
             'setData',
@@ -84,7 +84,7 @@ class JsHighlighter(QSyntaxHighlighter):
         self._known = [
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
-            'hookAllJavaMethods', 'hookJava', 'hookNative'
+            'hookAllJavaMethods', 'hookJava', 'hookNative',
             'hookOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'removeWatcher', 'restart',
             'setData', 'startNativeTracer', 'stopNativeTracer',
