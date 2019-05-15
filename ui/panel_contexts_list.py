@@ -87,9 +87,10 @@ class ContextsListPanel(DwarfListView):
         symb_col = QStandardItem()
         if library_onload is None:
             if not is_java:
-                str_fmt = ('{0} - {1}'.format(
-                    data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
-                symb_col.setText(str_fmt)
+                if 'symbol' in data['context']['pc']:
+                    str_fmt = ('{0} - {1}'.format(
+                        data['context']['pc']['symbol']['moduleName'], data['context']['pc']['symbol']['name']))
+                    symb_col.setText(str_fmt)
             else:
                 symb_col.setText('.'.join(parts[:len(parts) - 1]))
         else:
