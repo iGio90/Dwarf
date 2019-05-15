@@ -355,10 +355,15 @@ class HooksPanel(QWidget):
             else:
                 str_frmt = '0x{0:x}'.format(_ptr)
 
-        for item in range(self._hooks_model.rowCount()):
-            if str_frmt == self._hooks_model.item(item, 0).text():
+        for _item in range(self._hooks_model.rowCount()):
+            item = self._hooks_model.item(_item, 0)
+
+            if item is None:
+                continue
+
+            if str_frmt == item.text():
                 if additional is not None:
-                    if additional == self._hooks_model.item(item, 2).text():
-                        self._hooks_model.removeRow(item)
+                    if additional == self._hooks_model.item(_item, 2).text():
+                        self._hooks_model.removeRow(_item)
                 else:
-                    self._hooks_model.removeRow(item)
+                    self._hooks_model.removeRow(_item)

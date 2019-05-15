@@ -107,7 +107,10 @@ class ContextsListPanel(DwarfListView):
 
         # todo: check why removing here and removing in on_proc_resume
         for i in range(self.threads_model.rowCount()):
-            is_tid = self.threads_model.item(i, 0).text()
+            item = self.threads_model.item(i, 0)
+            if item is None:
+                continue
+            is_tid = item.text()
             if is_tid == str(tid):
                 self.threads_model.removeRow(i)
 
