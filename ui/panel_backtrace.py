@@ -29,6 +29,8 @@ class BacktracePanel(DwarfListView):
         super(BacktracePanel, self).__init__(parent=parent)
         self._app_window = parent
 
+        self._app_window.dwarf.onBackTrace.connect(self.set_backtrace)
+
         self._model = QStandardItemModel(0, 2)
         self._model.setHeaderData(0, Qt.Horizontal, 'Address')
         self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
@@ -71,9 +73,7 @@ class BacktracePanel(DwarfListView):
 
         elif bt['type'] == 'java':
             self._mode = 'java'
-            self.clear()
             self._model.setHeaderData(0, Qt.Horizontal, 'Method')
-            self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
             self._model.setHeaderData(1, Qt.Horizontal, 'Source')
 
             bt = bt['bt']
