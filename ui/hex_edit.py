@@ -1323,11 +1323,8 @@ class HexEditor(QAbstractScrollArea):
     def on_cm_hookaddress(self):
         """ ContextMenu HookAddress
         """
-        ptr = self.read_pointer()
-        if ptr is not None:
-            self.app.dwarf.hook_native(ptr)
-        else:
-            self.display_error('Unable to read pointer at location.')
+        ptr = self.base + self.caret.position
+        self.app.dwarf.hook_native(ptr)
 
     def on_cm_showasm(self):
         """ ContextMenu Disassemble
