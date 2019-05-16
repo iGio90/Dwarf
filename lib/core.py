@@ -385,9 +385,13 @@ class Dwarf(QObject):
         self.load_script(script)
 
     def resume_proc(self):
-        if self._spawned:
+        if self._spawned and not self._resumed:
             self._resumed = True
-            self.device.resume(self._pid)
+            try:
+                self.device.resume(self._pid)
+            except frida.InvalidOperationError:
+                # already resumed from other loc
+                pass
 
     def add_watcher(self, ptr=None):
         if ptr is None:
@@ -422,6 +426,9 @@ class Dwarf(QObject):
                 f.write(data)
 
     def dwarf_api(self, api, args=None, tid=0):
+        if api == 'release' and self._spawned and not self._resumed:
+            self.resume_proc()
+
         if self.pid == 0 or self.process is None:
             return
         if tid == 0:
