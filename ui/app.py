@@ -207,6 +207,7 @@ class AppWindow(QMainWindow):
         about_menu = QMenu('About', self)
         about_menu.addAction('Dwarf on GitHub', self._menu_github)
         about_menu.addAction('Documention', self._menu_documentation)
+        about_menu.addAction('Api', self._menu_api)
         about_menu.addAction('Slack', self._menu_slack)
         about_menu.addSeparator()
         about_menu.addAction('Info')
@@ -270,8 +271,12 @@ class AppWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl('https://github.com/iGio90/Dwarf'))
 
     @pyqtSlot(name='mainMenuDocumentation')
-    def _menu_documentation(self):
+    def _menu_api(self):
         QDesktopServices.openUrl(QUrl('https://igio90.github.io/Dwarf/'))
+
+    @pyqtSlot(name='mainMenuApi')
+    def _menu_documentation(self):
+        QDesktopServices.openUrl(QUrl('https://igio90.github.io/Dwarf/api'))
 
     @pyqtSlot(name='mainMenuSlack')
     def _menu_slack(self):
