@@ -120,15 +120,19 @@ class ContextsListPanel(DwarfListView):
     def _on_context_menu(self, pos):
         index = self.indexAt(pos).row()
         if index != -1:
-            tid = int(self.get_item_text(index, 0))
+            item = self.threads_model.item(index, 0)
+            tid = int(item.text())
+            data = item.data(Qt.UserRole + 1)
+            is_java = data['is_java']
             glbl_pt = self.mapToGlobal(pos)
             context_menu = QMenu()
-            if self.dwarf.native_trace_tid == tid:
-                context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
-            else:
-                context_menu.addAction('Trace', lambda: self._on_cm_start_trace(tid))
-            context_menu.addAction('Emulator', lambda: self._on_cm_emulator())
-            context_menu.addSeparator()
+            if not is_java:
+                if self.dwarf.native_trace_tid == tid:
+                    context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
+                else:
+                    context_menu.addAction('Trace', lambda: self._on_cm_start_trace(tid))
+                context_menu.addAction('Emulator', lambda: self._on_cm_emulator())
+                context_menu.addSeparator()
             context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
             context_menu.exec_(glbl_pt)
 
