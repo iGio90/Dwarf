@@ -648,6 +648,8 @@ class Dwarf(QObject):
                 self.onSetModules.emit(data['modules'])
             if 'ranges' in data:
                 self.onSetRanges.emit(data['ranges'])
+            if 'backtrace' in data:
+                self.onBackTrace.emit(data['backtrace'])
 
             self.onApplyContext.emit(data)
         elif cmd == 'set_data':

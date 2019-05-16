@@ -746,6 +746,7 @@ class AppWindow(QMainWindow):
     def _apply_context(self, context):
         if 'context' in context:
             is_java = context['is_java']
+
             if is_java:
                 if self.java_explorer_panel is None:
                     self._create_ui_elem('java-explorer')
@@ -754,6 +755,9 @@ class AppWindow(QMainWindow):
                 self.show_main_tab('java-explorer')
             else:
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
+
+        if 'backtrace' in context:
+            self.backtrace_panel.set_backtrace(context['backtrace'])
 
     def _on_add_hook(self, hook):
         try:
