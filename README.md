@@ -16,6 +16,8 @@ A frida server running anywhere.
 ```
 git clone https://github.com/iGio90/Dwarf
 
+cd Dwarf
+
 pip3 install -r requirements.txt
 
 python3 dwarf.py
