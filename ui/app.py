@@ -69,6 +69,8 @@ class AppWindow(QMainWindow):
         self.watchers_panel = None
         self.welcome_window = None
 
+        self._ui_elems = []
+
         self.setWindowTitle(
             'Dwarf - A debugger for reverse engineers, crackers and security analyst'
         )
@@ -280,6 +282,12 @@ class AppWindow(QMainWindow):
                  'WJlNDVjZDcwNGE'))
 
     def _create_ui_elem(self, elem):
+        if not isinstance(elem, str):
+            return
+
+        if elem not in self._ui_elems:
+            self._ui_elems.append(elem)
+
         if elem == 'watchers':
             from ui.panel_watchers import WatchersPanel
             self.watchers_dwidget = QDockWidget('Watchers', self)
@@ -546,7 +554,7 @@ class AppWindow(QMainWindow):
 
         self.main_tabs.clear()
 
-        for elem in self.session_manager.session.session_ui_sections:
+        for elem in self._ui_elems:
             if elem == 'watchers':
                 self.watchers_panel.clear_list()
                 self.watchers_panel.close()
@@ -588,6 +596,7 @@ class AppWindow(QMainWindow):
                 self.threads_dock = None
 
     def session_closed(self):
+        self._ui_elems = []
         self.hide()
         if self.welcome_window is not None:
             self.welcome_window.exec()
@@ -761,16 +770,26 @@ class AppWindow(QMainWindow):
     def on_tid_resumed(self, tid):
         if self.dwarf:
             if self.dwarf.context_tid == tid:
-                self.context_panel.clear()
-                if self.backtrace_panel is not None:
-                    self.backtrace_panel.clear()
-                # self.context_panel.setRowCount(0)
-                # self.backtrace_panel.setRowCount(0)
-                # self.memory_panel.clear_panel()
-                if self.java_explorer_panel is not None:
-                    self.java_explorer_panel.clear_panel()
 
-            # self.contexts_list_panel.resume_tid(tid)
+                # clear backtrace
+                if 'backtrace' in self._ui_elems:
+                    if self.backtrace_panel is not None:
+                        self.backtrace_panel.clear()
+
+                # remove thread
+                if 'threads' in self._ui_elems:
+                    if self.contexts_list_panel is not None:
+                        self.contexts_list_panel.resume_tid(tid)
+
+                # clear registers
+                if 'registers' in self._ui_elems:
+                    if self.context_panel is not None:
+                        self.context_panel.clear()
+
+                # clear jvm explorer
+                if 'java-explorer' in self._ui_elems:
+                    if self.java_explorer_panel is not None:
+                        self.java_explorer_panel.clear_panel()
 
     def _on_tracer_data(self, data):
         if not data:

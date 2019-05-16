@@ -18,6 +18,7 @@ import frida
 from lib.session import Session
 
 from ui.device_window import DeviceWindow
+from lib import utils
 
 
 class LocalSession(Session):
@@ -90,32 +91,38 @@ class LocalSession(Session):
             self.dwarf.device = frida.get_local_device()
             if not args.spawn:
                 print('* Trying to attach to {0}'.format(args.package))
-                ret_val = self.dwarf.attach(args.package, args.script, False)
-                if ret_val == 2:
-                    print('Failed to attach: use -sp to force spawn')
+                try:
+                    self.dwarf.attach(args.package, args.script, False)
+                except Exception as e: # pylint: disable=broad-except
+                    print('-failed-')
+                    print('Reason: ' + str(e))
+                    print('Help: you can use -sp to force spawn')
                     self.stop()
-                    exit()
+                    exit(0)
             else:
                 print('* Trying to spawn {0}'.format(args.package))
-                ret_val = self.dwarf.spawn(args.package, args.script)
-                if ret_val != 0:
+                try:
+                    self.dwarf.spawn(args.package, args.script)
+                except Exception as e: # pylint: disable=broad-except
                     print('-failed-')
-                    exit(ret_val)
+                    print('Reason: ' + str(e))
+                    self.stop()
+                    exit(0)
 
     def on_proc_selected(self, data):
         device, pid = data
         if device:
             self.dwarf.device = device
         if pid:
-            self.dwarf.attach(pid)
+            try:
+                self.dwarf.attach(pid)
+            except Exception as e:
+                utils.show_message_box('Failed attaching to {0}'.format(pid), str(e))
+                self.stop()
+                return
 
     def _on_proc_resume(self, tid=0):
         if tid == 0:
-            # self.dwarf.device.resume(self.dwarf.pid)
-            self._app_window.contexts_list_panel.clear()
-            self._app_window.context_panel.clear()
-            if self._app_window.backtrace_panel is not None:
-                self._app_window.backtrace_panel.clear()
             self.dwarf.contexts.clear()
 
         self.dwarf.dwarf_api('release', tid)

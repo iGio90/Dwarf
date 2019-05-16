@@ -272,11 +272,10 @@ class Dwarf(QObject):
                 process = self.device.get_process(pid)
                 pid = [process.pid, process.name]
             except frida.ProcessNotFoundError as error:
-                print(error)
-                return 2
+                raise Exception('Frida Error: ' + str(error))
 
         if not isinstance(pid, list):
-            return 1
+            raise Exception('Error pid!=list')
 
         try:
             self._process = self.device.attach(pid[0])
@@ -303,14 +302,10 @@ class Dwarf(QObject):
             was_error = True
 
         if was_error:
-            if print_debug_error:
-                utils.show_message_box('Failed to attach to ' + pid[1], error_msg)
-
-            return 2
+            raise Exception(error_msg)
 
         self.onAttached.emit([self.pid, pid[1]])
         self.load_script(script)
-        return 0
 
     def detach(self):
         if self._script is not None:
@@ -384,11 +379,10 @@ class Dwarf(QObject):
             self._process.enable_jit()
             self._spawned = True
         except Exception as e:
-            utils.show_message_box('Failed to spawn to %s' % package, str(e))
-            return 2
+            raise Exception('Frida Error: ' + str(e))
+
         self.onAttached.emit([self.pid, package])
         self.load_script(script)
-        return 0
 
     def resume_proc(self):
         if self._spawned:
