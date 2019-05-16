@@ -35,7 +35,6 @@ from ui.dialog_input import InputDialog
 
 
 class EmulatorThread(QThread):
-
     onCmdCompleted = pyqtSignal(str, name='onCmdCompleted')
     onError = pyqtSignal(str, name='onError')
 
@@ -436,6 +435,11 @@ class Dwarf(QObject):
         if self._script is None:
             return None
         try:
+            if tid == 0:
+                for context in self.contexts:
+                    self._script.post({"type": str(context['tid'])})
+            else:
+                self._script.post({"type": str(tid)})
             return self._script.exports.api(tid, api, args)
         except Exception as e:
             self.log(str(e))
@@ -484,7 +488,8 @@ class Dwarf(QObject):
         if self.native_traced_tid > 0:
             return
         if tid == 0:
-            accept, tid = InputDialog.input(self._app_window, hint='insert thread id to trace', placeholder=str(self.pid))
+            accept, tid = InputDialog.input(self._app_window, hint='insert thread id to trace',
+                                            placeholder=str(self.pid))
             if not accept:
                 return
             try:
@@ -538,11 +543,11 @@ class Dwarf(QObject):
         start = utils.parse_ptr(start)
         size = int(size)
         # convert to frida accepted pattern
-        pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
+        pattern = ' '.join([pattern[i:i + 2] for i in range(0, len(pattern), 2)])
         self.dwarf_api('memoryScan', [start, size, pattern])
 
     def search_list(self, ranges_list, pattern):
-        pattern = ' '.join([pattern[i:i+2] for i in range(0, len(pattern), 2)])
+        pattern = ' '.join([pattern[i:i + 2] for i in range(0, len(pattern), 2)])
         self.dwarf_api('memoryScanList', [json.dumps(ranges_list), pattern])
 
     def single_step(self, tid):
