@@ -123,7 +123,6 @@ class ContextsListPanel(DwarfListView):
             tid = int(self.get_item_text(index, 0))
             glbl_pt = self.mapToGlobal(pos)
             context_menu = QMenu()
-            context_menu.addAction('Step', lambda: self._on_cm_step(tid))
             if self.dwarf.native_trace_tid == tid:
                 context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
             else:
@@ -143,6 +142,3 @@ class ContextsListPanel(DwarfListView):
         if self._app_window.emulator_panel is None:
             self._app_window._create_ui_elem('emulator')
         self._app_window.show_main_tab('emulator')
-
-    def _on_cm_step(self, tid):
-        self.dwarf.single_step(tid)

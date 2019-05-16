@@ -87,6 +87,7 @@ class Dwarf(QObject):
     onLogToConsole = pyqtSignal(str, name='onLogToConsole')
     # thread+context
     onThreadResumed = pyqtSignal(int, name='onThreadResumed')
+    onRequestJsThreadResume = pyqtSignal(int, name='onRequestJsThreadResume')
     onApplyContext = pyqtSignal(dict, name='onApplyContext')
     # java
     onEnumerateJavaClassesStart = pyqtSignal(name='onEnumerateJavaClassesStart')
@@ -160,6 +161,7 @@ class Dwarf(QObject):
         # connect to self
         self.onApplyContext.connect(self._on_apply_context)
         self.onEmulator.connect(self._on_emulator)
+        self.onRequestJsThreadResume.connect(self._on_request_resume_from_js)
 
         self.keystone_installed = False
         try:
@@ -550,9 +552,6 @@ class Dwarf(QObject):
         pattern = ' '.join([pattern[i:i + 2] for i in range(0, len(pattern), 2)])
         self.dwarf_api('memoryScanList', [json.dumps(ranges_list), pattern])
 
-    def single_step(self, tid):
-        return self.dwarf_api('singleStep', tid)
-
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
@@ -634,6 +633,10 @@ class Dwarf(QObject):
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
             self.onThreadResumed.emit(int(parts[1]))
+        elif cmd == 'release_js':
+            # releasing the thread must be done by calling py funct dwarf_api('release')
+            # there are cases in which we want to release the thread from a js api so we need to call this
+            self.onRequestJsThreadResume.emit(int(parts[1]))
         elif cmd == 'set_context':
             data = json.loads(parts[1])
             if 'modules' in data:
@@ -740,6 +743,9 @@ class Dwarf(QObject):
         self.log(err_str)
         if self._emu_queue:
             self._emu_queue.clear()
+
+    def _on_request_resume_from_js(self, tid):
+        self.dwarf_api('release', tid, tid=tid)
 
     @loading_library.setter
     def loading_library(self, value):
