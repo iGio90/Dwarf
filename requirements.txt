@@ -1,6 +1,6 @@
 unicorn>=1.0.1
 capstone>=4.0.1
 requests>=2.18.4
-frida>=12.0.5
+frida>=12.5.1
 PyQt5>=5.11.3
 pyperclip>=1.7.0

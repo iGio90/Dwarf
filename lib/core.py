@@ -244,6 +244,10 @@ class Dwarf(QObject):
         except ValueError:
             self._device = None
 
+    @property
+    def resumed(self):
+        return self._resumed == True
+
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
@@ -272,15 +276,14 @@ class Dwarf(QObject):
                 process = self.device.get_process(pid)
                 pid = [process.pid, process.name]
             except frida.ProcessNotFoundError as error:
-                print(error)
-                return 2
+                raise Exception('Frida Error: ' + str(error))
 
         if not isinstance(pid, list):
-            return 1
+            raise Exception('Error pid!=list')
 
         try:
             self._process = self.device.attach(pid[0])
-            self._process.enable_jit()
+            #self._process.enable_jit()
             self._pid = pid[0]
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -303,14 +306,10 @@ class Dwarf(QObject):
             was_error = True
 
         if was_error:
-            if print_debug_error:
-                utils.show_message_box('Failed to attach to ' + pid[1], error_msg)
-
-            return 2
+            raise Exception(error_msg)
 
         self.onAttached.emit([self.pid, pid[1]])
         self.load_script(script)
-        return 0
 
     def detach(self):
         if self._script is not None:
@@ -329,7 +328,7 @@ class Dwarf(QObject):
             with open('lib/core.js', 'r') as core_script:
                 script_content = core_script.read()
 
-            self._script = self._process.create_script(script_content)
+            self._script = self._process.create_script(script_content, runtime='v8')
             self._script.on('message', self._on_message)
             self._script.on('destroyed', self._on_destroyed)
             self._script.load()
@@ -381,19 +380,22 @@ class Dwarf(QObject):
         try:
             self._pid = self.device.spawn(package)
             self._process = self.device.attach(self._pid)
-            self._process.enable_jit()
+            #self._process.enable_jit()
             self._spawned = True
         except Exception as e:
-            utils.show_message_box('Failed to spawn to %s' % package, str(e))
-            return 2
+            raise Exception('Frida Error: ' + str(e))
+
         self.onAttached.emit([self.pid, package])
         self.load_script(script)
-        return 0
 
     def resume_proc(self):
-        if self._spawned:
+        if self._spawned and not self._resumed:
             self._resumed = True
-            self.device.resume(self._pid)
+            try:
+                self.device.resume(self._pid)
+            except frida.InvalidOperationError:
+                # already resumed from other loc
+                pass
 
     def add_watcher(self, ptr=None):
         if ptr is None:
@@ -633,6 +635,9 @@ class Dwarf(QObject):
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
             self.onThreadResumed.emit(int(parts[1]))
+        elif cmd == 'resume':
+            if not self.resumed:
+                self.resume_proc()
         elif cmd == 'release_js':
             # releasing the thread must be done by calling py funct dwarf_api('release')
             # there are cases in which we want to release the thread from a js api so we need to call this

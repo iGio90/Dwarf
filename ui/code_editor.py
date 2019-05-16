@@ -29,7 +29,7 @@ class DwarfCompleter(QCompleter):
 
     def __init__(self, myKeywords=None, parent=None):
         myKeywords = [
-            'api.findExport(', 'api.addWatcher(', 'console', 'console.log(',
+            'api.findExport(', 'api.addWatcher(', 'api.resume()', 'console', 'console.log(',
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
             'hookAllJavaMethods', 'hookJava', 'hookNative',
@@ -86,7 +86,7 @@ class JsHighlighter(QSyntaxHighlighter):
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
             'hookAllJavaMethods', 'hookJava', 'hookNative',
             'hookOnLoad', 'javaBacktrace', 'isAddressWatched',
-            'nativeBacktrace', 'release', 'removeWatcher', 'restart',
+            'nativeBacktrace', 'release', 'resume', 'removeWatcher', 'restart',
             'setData', 'startNativeTracer', 'stopNativeTracer',
             "prototype",
             "create",

@@ -22,12 +22,6 @@ from lib.session import Session
 from lib.android import AndroidDecompileUtil
 from lib.adb import Adb
 
-from ui.dialog_list import ListDialog
-from ui.dialog_input import InputDialog
-
-from ui.widget_android_package import AndroidPackageWidget
-from ui.widget_item_not_editable import NotEditableListWidgetItem
-
 from ui.device_window import DeviceWindow
 from ui.apk_list import ApkListDialog
 from lib import utils
@@ -161,33 +155,28 @@ class AndroidSession(Session):
             self.dwarf.device = frida.get_usb_device()
             if not args.spawn:
                 print('* Trying to attach to {0}'.format(args.package))
-                ret_val = self.dwarf.attach(args.package, args.script, False)
-                if ret_val == 2:
-                    print('Failed to attach: use -sp to force spawn')
+                try:
+                    self.dwarf.attach(args.package, args.script, False)
+                except Exception as e: # pylint: disable=broad-except
+                    print('-failed-')
+                    print('Reason: ' + str(e))
+                    print('Help: you can use -sp to force spawn')
                     self.stop()
-                    exit()
+                    exit(0)
             else:
                 print('* Trying to spawn {0}'.format(args.package))
-                ret_val = self.dwarf.spawn(args.package, args.script)
-                if ret_val != 0:
+                try:
+                    self.dwarf.spawn(args.package, args.script)
+                except Exception as e: # pylint: disable=broad-except
                     print('-failed-')
-                    exit(ret_val)
+                    print('Reason: ' + str(e))
+                    self.stop()
+                    exit(0)
 
     def decompile_apk(self):
         apk_dlg = ApkListDialog(self._app_window)
         apk_dlg.onApkSelected.connect(self._decompile_package)
         apk_dlg.show()
-        """
-        packages = self.adb.list_packages()
-        if packages:
-            accept, items = ListDialog.build_and_show(
-                self.build_packages_list,
-                packages,
-                double_click_to_accept=True)
-            if accept:
-                if len(items) > 0:
-                    path = items[0].get_apk_path()
-                    AndroidDecompileUtil.decompile(self.adb, path)"""
 
     def _decompile_package(self, data):
         package, path = data
@@ -212,8 +201,12 @@ class AndroidSession(Session):
         if device:
             self.dwarf.device = device
         if pid:
-            if self.dwarf.attach(pid):
+            try:
+                self.dwarf.attach(pid)
+            except Exception as e:
+                utils.show_message_box('Failed attaching to {0}'.format(pid), str(e))
                 self.stop()
+                return
 
     def on_spawn_selected(self, data):
         device, package_name = data
@@ -228,18 +221,17 @@ class AndroidSession(Session):
                 self._smali_thread.onFinished.connect(self._app_window.hide_progress)
                 self._smali_thread.start()
 
-            if self.dwarf.spawn(package=package_name):
+            try:
+                self.dwarf.spawn(package=package_name)
+            except Exception as e:
+                utils.show_message_box('Failed spawning {0}'.format(package_name), str(e))
                 self.stop()
+                return
 
             self._on_java_classes()
 
     def _on_proc_resume(self, tid=0):
         if tid == 0:
-            self._app_window.contexts_list_panel.clear()
-            self._app_window.context_panel.clear()
-            if self._app_window.backtrace_panel is not None:
-                self._app_window.backtrace_panel.clear()
-            #self._app_window.memory_panel.clear_panel()
             self.dwarf.contexts.clear()
 
         self.dwarf.dwarf_api('release', tid)

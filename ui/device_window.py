@@ -427,10 +427,10 @@ class DeviceWindow(QDialog):
 
     def _pid_selected(self, pid):
         if pid:
-            self.onSelectedProcess.emit([self.device, pid])
             self.accept()
+            self.onSelectedProcess.emit([self.device, pid])
 
     def _spawn_selected(self, spawn):
         if spawn[1]:
-            self.onSpwanSelected.emit([self.device, spawn[1]])
             self.accept()
+            self.onSpwanSelected.emit([self.device, spawn[1]])
