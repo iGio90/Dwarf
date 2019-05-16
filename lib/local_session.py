@@ -122,6 +122,9 @@ class LocalSession(Session):
                 return
 
     def _on_proc_resume(self, tid=0):
+        if not self.dwarf.resumed:
+            self.dwarf.dwarf_api('resume')
+
         if tid == 0:
             self.dwarf.contexts.clear()
 

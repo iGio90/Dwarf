@@ -244,6 +244,10 @@ class Dwarf(QObject):
         except ValueError:
             self._device = None
 
+    @property
+    def resumed(self):
+        return self._resumed == True
+
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
@@ -426,9 +430,6 @@ class Dwarf(QObject):
                 f.write(data)
 
     def dwarf_api(self, api, args=None, tid=0):
-        if api == 'release' and self._spawned and not self._resumed:
-            self.resume_proc()
-
         if self.pid == 0 or self.process is None:
             return
         if tid == 0:
@@ -634,6 +635,9 @@ class Dwarf(QObject):
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
             self.onThreadResumed.emit(int(parts[1]))
+        elif cmd == 'resume':
+            if not self.resumed:
+                self.resume_proc()
         elif cmd == 'release_js':
             # releasing the thread must be done by calling py funct dwarf_api('release')
             # there are cases in which we want to release the thread from a js api so we need to call this
