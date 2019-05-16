@@ -14,10 +14,10 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadioButton, QPushButton, QProgressDialog, \
-    QSizePolicy, QApplication
+    QSizePolicy, QApplication, QHeaderView
 
 from ui.list_view import DwarfListView
 from lib import utils
@@ -47,11 +47,12 @@ class SearchThread(QThread):
             self.onError.emit('Ranges missing')
             return
 
-        _list = []
+        #_list = []
         for r in self.ranges:
-            _list.append({'start': r[0], 'size': int(r[1].replace(',', ''))})
+            self.dwarf.search(r[0], int(r[1].replace(',', '')), self.pattern)
+            #_list.append({'start': r[0], 'size': int(r[1].replace(',', ''))})
 
-        self.dwarf.search_list(_list, self.pattern)
+        #self.dwarf.search_list(_list, self.pattern)
         self.onCmdCompleted.emit('finished')
 
 
@@ -78,6 +79,8 @@ class SearchPanel(QWidget):
         self.progress = None
         self._pattern_length = 0
 
+        self._search_results = []
+
         box = QVBoxLayout()
 
         self.input = QLineEdit()
@@ -98,7 +101,9 @@ class SearchPanel(QWidget):
         box.addLayout(h_box)
 
         self.ranges = DwarfListView(self)
+        self.ranges.clicked.connect(self._on_show_results)
         self.results = DwarfListView(self)
+        self.results.setVisible(False)
 
         h_box = QHBoxLayout()
         h_box.addWidget(self.ranges)
@@ -113,46 +118,38 @@ class SearchPanel(QWidget):
     # **************************** Functions *********************************
     # ************************************************************************
     def _setup_models(self):
-        self._ranges_model = QStandardItemModel(0, 6)
+        self._ranges_model = QStandardItemModel(0, 7)
 
         # just replicate ranges panel model
-        self._ranges_model.setHeaderData(0, Qt.Horizontal, 'Address')
+        self._ranges_model.setHeaderData(0, Qt.Horizontal, 'x') # TODO: replace with checkbox in header - remove checkall btns
         self._ranges_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
-        self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Size')
+        self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Address')
         self._ranges_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
-        self._ranges_model.setHeaderData(2, Qt.Horizontal, 'Protection')
+        self._ranges_model.setHeaderData(2, Qt.Horizontal, 'Size')
         self._ranges_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
-        self._ranges_model.setHeaderData(3, Qt.Horizontal, 'FileOffset')
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, 'Protection')
         self._ranges_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
-        self._ranges_model.setHeaderData(4, Qt.Horizontal, 'FileSize')
+        self._ranges_model.setHeaderData(4, Qt.Horizontal, 'FileOffset')
         self._ranges_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
-        self._ranges_model.setHeaderData(5, Qt.Horizontal, 'FilePath')
-
-        # add all the ranges from the ranges panel
-        for i in range(self._app_window.ranges_panel._ranges_model.rowCount()):
-            addr = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 0).text())
-            addr.setCheckable(True)
-
-            size = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 1).text())
-            protection = QStandardItem(self._app_window.ranges_panel._ranges_model.item(i, 2).text())
-            file_addr = self._app_window.ranges_panel._ranges_model.item(i, 3)
-            if file_addr is not None:
-                file_addr = QStandardItem(file_addr.text())
-            file_size = self._app_window.ranges_panel._ranges_model.item(i, 4)
-            if file_size is not None:
-                file_size = QStandardItem(file_size.text())
-            file_path = self._app_window.ranges_panel._ranges_model.item(i, 5)
-            if file_path is not None:
-                file_path = QStandardItem(file_path.text())
-            self._ranges_model.appendRow(
-                [addr, size, protection, file_addr, file_size, file_path])
+        self._ranges_model.setHeaderData(5, Qt.Horizontal, 'FileSize')
+        self._ranges_model.setHeaderData(5, Qt.Horizontal, Qt.AlignCenter,
+                                         Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(6, Qt.Horizontal, 'FilePath')
 
         self.ranges.setModel(self._ranges_model)
+        self.ranges.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+
+        self.ranges.doubleClicked.connect(self._on_range_dblclick)
 
         # setup results model
         self._result_model = QStandardItemModel(0, 1)
@@ -160,9 +157,78 @@ class SearchPanel(QWidget):
         self.results.setModel(self._result_model)
         self.results.doubleClicked.connect(self._on_dblclicked)
 
+    def set_ranges(self, ranges):
+        """ Fills Rangelist with Data
+        """
+        self.ranges.header().setSectionResizeMode(0, QHeaderView.Fixed)
+        if isinstance(ranges, list):
+            self._ranges_model.removeRows(0, self._ranges_model.rowCount())
+            for range_entry in ranges:
+                if 'protection' in range_entry and isinstance(range_entry['protection'], str):
+                    if 'r' not in range_entry['protection']:
+                        # skip not readable range
+                        continue
+
+                else:
+                    continue
+                # create items to add
+                str_frmt = ''
+                if self.ranges._uppercase_hex:
+                    str_frmt = '0x{0:X}'
+                else:
+                    str_frmt = '0x{0:x}'
+
+                addr = QStandardItem()
+                addr.setTextAlignment(Qt.AlignCenter)
+                addr.setText(str_frmt.format(int(range_entry['base'], 16)))
+
+                size = QStandardItem()
+                size.setTextAlignment(Qt.AlignRight)
+                size.setText("{0:,d}".format(int(range_entry['size'])))
+
+                protection = QStandardItem()
+                protection.setTextAlignment(Qt.AlignCenter)
+                protection.setText(range_entry['protection'])
+
+                file_path = None
+                file_addr = None
+                file_size = None
+
+                if len(range_entry) > 3:
+                    if range_entry['file']['path']:
+                        file_path = QStandardItem()
+                        file_path.setText(range_entry['file']['path'])
+
+                    if range_entry['file']['offset']:
+                        file_addr = QStandardItem()
+                        file_addr.setTextAlignment(Qt.AlignCenter)
+                        file_addr.setText(
+                            str_frmt.format(range_entry['file']['offset']))
+
+                    if range_entry['file']['size']:
+                        file_size = QStandardItem()
+                        file_size.setTextAlignment(Qt.AlignRight)
+                        file_size.setText("{0:,d}".format(
+                            int(range_entry['file']['size'])))
+
+
+                checkbox = QStandardItem()
+                checkbox.setCheckable(True)
+
+                self._ranges_model.appendRow(
+                    [checkbox, addr, size, protection, file_addr, file_size, file_path])
+
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
+    def _on_range_dblclick(self, model_index):
+        item = self._ranges_model.itemFromIndex(model_index)
+        if item:
+            if self._ranges_model.item(model_index.row(), 0).checkState() != Qt.Checked:
+                self._ranges_model.item(model_index.row(), 0).setCheckState(Qt.Checked)
+            else:
+                self._ranges_model.item(model_index.row(), 0).setCheckState(Qt.Unchecked)
+
     def _on_click_check_all(self):
         for i in range(self._ranges_model.rowCount()):
             self._ranges_model.item(i, 0).setCheckState(Qt.Checked)
@@ -183,11 +249,13 @@ class SearchPanel(QWidget):
             return 1
 
         ranges = []
+        self._search_results = []
         for i in range(self._ranges_model.rowCount()):
             item = self._ranges_model.item(i, 0)
             if item.checkState() == Qt.Checked:
-                size = self._ranges_model.item(i, 1)
-                ranges.append([item.text(), size.text()])
+                addr = self._ranges_model.item(i, 1)
+                size = self._ranges_model.item(i, 2)
+                ranges.append([addr.text(), size.text()])
 
         if len(ranges) == 0:
             return 1
@@ -225,19 +293,7 @@ class SearchPanel(QWidget):
         search_thread.start()
 
     def _on_search_result(self, data):
-        if data is not None:
-            for o in data:
-                addr = o['address']
-                if self.results._uppercase_hex:
-                    addr = addr.upper().replace('0X', '0x')
-                self._result_model.appendRow(QStandardItem(addr))
-
-                if self._app_window.memory_panel:
-                    try:
-                        self._app_window.memory_panel.add_highlight(
-                            HighLight('search', utils.parse_ptr(addr), self._pattern_length))
-                    except HighlightExistsError:
-                        pass
+        self._search_results.append(data)
 
     def _on_search_complete(self):
         self.input.setEnabled(True)
@@ -245,9 +301,68 @@ class SearchPanel(QWidget):
         self.check_all_btn.setEnabled(True)
         self.uncheck_all_btn.setEnabled(True)
         self._app_window.hide_progress()
-        self._app_window.set_status_text('Search complete: {0} matches'.format(self._result_model.rowCount()))
         if self._blocking_search:
             self.progress.cancel()
 
+        self._ranges_model.removeColumns(4, 3)
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, 'Search Results')
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, None, Qt.TextAlignmentRole)
+
+        results_count = 0
+        is_selected = False
+        for i in range(self._ranges_model.rowCount()):
+            item = self._ranges_model.item(i, 0)
+            if item.checkState() == Qt.Checked:
+                item.setCheckState(Qt.Unchecked)
+                if not is_selected:
+                    is_selected = True
+                    self.ranges.setCurrentIndex(self._ranges_model.index(i, 0))
+            else:
+                self._search_results.insert(i, None)
+                self._ranges_model.item(i, 3).setText('')
+                self._ranges_model.item(i, 3).setTextAlignment(Qt.AlignLeft)
+                continue
+
+            if len(self._search_results[i]):
+                results_count += len(self._search_results[i])
+                self._ranges_model.item(i, 3).setText('Matches: {0}'.format(len(self._search_results[i])))
+                self._ranges_model.item(i, 3).setTextAlignment(Qt.AlignLeft)
+            else:
+                self._ranges_model.item(i, 3).setText('')
+                self._ranges_model.item(i, 3).setTextAlignment(Qt.AlignLeft)
+
+        self._app_window.set_status_text('Search complete: {0} matches'.format(results_count))
+        if results_count:
+            for i in self._search_results:
+                if i and len(i):
+                    self.results.setVisible(True)
+                    for result in i:
+                        self._result_model.appendRow(QStandardItem(result['address']))
+
+                    break
+
     def _on_search_error(self, msg):
         utils.show_message_box(msg)
+
+    def _on_show_results(self):
+        if self._search_results:
+            self.results.clear()
+            if self._app_window.memory_panel:
+                self._app_window.memory_panel.remove_highlights('search')
+            selected_index = self.ranges.selectionModel().currentIndex().row()
+            if selected_index is not None:
+                item_txt = self._ranges_model.item(selected_index, 3).text()
+                if item_txt == '':
+                    return
+
+                for result in self._search_results[selected_index]:
+                    self._result_model.appendRow(QStandardItem(result['address']))
+
+                    # TODO: fix hexview highlights performance
+                    """
+                    if self._app_window.memory_panel:
+                        try:
+                            self._app_window.memory_panel.add_highlight(
+                                HighLight('search', utils.parse_ptr(result['address']), self._pattern_length))
+                        except HighlightExistsError:
+                            pass"""
