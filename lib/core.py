@@ -283,7 +283,7 @@ class Dwarf(QObject):
 
         try:
             self._process = self.device.attach(pid[0])
-            self._process.enable_jit()
+            #self._process.enable_jit()
             self._pid = pid[0]
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -328,7 +328,7 @@ class Dwarf(QObject):
             with open('lib/core.js', 'r') as core_script:
                 script_content = core_script.read()
 
-            self._script = self._process.create_script(script_content)
+            self._script = self._process.create_script(script_content, runtime='v8')
             self._script.on('message', self._on_message)
             self._script.on('destroyed', self._on_destroyed)
             self._script.load()
@@ -380,7 +380,7 @@ class Dwarf(QObject):
         try:
             self._pid = self.device.spawn(package)
             self._process = self.device.attach(self._pid)
-            self._process.enable_jit()
+            #self._process.enable_jit()
             self._spawned = True
         except Exception as e:
             raise Exception('Frida Error: ' + str(e))
