@@ -1324,7 +1324,7 @@ class HexEditor(QAbstractScrollArea):
         """ ContextMenu HookAddress
         """
         ptr = self.base + self.caret.position
-        self.app.dwarf.hook_native(ptr)
+        self.app.dwarf.hook_native(input_=ptr)
 
     def on_cm_showasm(self):
         """ ContextMenu Disassemble
