@@ -759,6 +759,9 @@ class AppWindow(QMainWindow):
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
 
+        # update current context tid
+        self.dwarf.context_tid = context['tid']
+
     def _on_add_hook(self, hook):
         try:
             # set highlight

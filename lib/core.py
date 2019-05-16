@@ -714,7 +714,9 @@ class Dwarf(QObject):
             str_fmt = ('injected into := {0:d}'.format(self.pid))
             self.log(str_fmt)
 
+        # update current context tid
         self.context_tid = context_data['tid']
+
         if self._loading_library is not None:
             self._loading_library = None
 
