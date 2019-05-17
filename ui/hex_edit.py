@@ -1353,7 +1353,7 @@ class HexEditor(QAbstractScrollArea):
         # self.app.get_session_ui().disasm(_range=self.range)
 
     def on_cm_dump_to_file(self):
-        """ ContextMenu Disassemble
+        """ ContextMenu DumpToFile
         """
         accept, _input = InputDialog.input(hint='Length of bytes to dump', placeholder='1024')
         try:
