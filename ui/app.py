@@ -269,9 +269,10 @@ class AppWindow(QMainWindow):
 
         self.main_tabs.setCurrentIndex(index)
 
-    def jump_to_address(self, ptr):
+    def jump_to_address(self, ptr, show_panel=True):
         if self.memory_panel is not None:
-            self.show_main_tab('memory')
+            if show_panel:
+                self.show_main_tab('memory')
             self.memory_panel.read_memory(ptr)
 
     @pyqtSlot(name='mainMenuGitHub')
@@ -346,6 +347,7 @@ class AppWindow(QMainWindow):
             from ui.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
             self.main_tabs.addTab(self.java_explorer_panel, 'JVM debugger')
+            self.main_tabs.tabBar().moveTab(self.main_tabs.indexOf(self.java_explorer_panel), 1)
         elif elem == 'java-inspector':
             from ui.panel_java_inspector import JavaInspector
             self.java_inspector_panel = JavaInspector(self)
@@ -414,6 +416,7 @@ class AppWindow(QMainWindow):
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
+            self.main_tabs.tabBar().moveTab(self.main_tabs.indexOf(self.asm_panel), 1)
         elif elem == 'emulator':
             from ui.panel_emulator import EmulatorPanel
             self.emulator_panel = EmulatorPanel(self)
@@ -763,6 +766,17 @@ class AppWindow(QMainWindow):
                 self.show_main_tab('java-explorer')
             else:
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
+
+                # todo: windows jump to disasm pc
+                if 'pc' in context['context']:
+                    off = int(context['context']['pc']['value'], 16)
+                    should_jump_to_asm = True
+                    if self.asm_panel is not None and self.asm_panel._range is not None:
+                        if self.asm_panel._range.start_offset == off:
+                            should_jump_to_asm = False
+                    if should_jump_to_asm:
+                        self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
+                        self.memory_panel.on_cm_showasm()
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])

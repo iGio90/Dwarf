@@ -702,6 +702,7 @@ class Dwarf(QObject):
                     sym += context_data['context']['pc']['symbol']['name']
             else:
                 name = context_data['ptr']
+
             self._app_window.threads.add_context(context_data, library_onload=self.loading_library)
             if self.loading_library is None and context_data['reason'] == 0:
                 self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
