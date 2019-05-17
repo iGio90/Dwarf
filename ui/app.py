@@ -204,6 +204,11 @@ class AppWindow(QMainWindow):
         self.view_menu.addSeparator()
         self.menu.addMenu(self.view_menu)
 
+        if self.dwarf_args.debug_script:
+            debug_menu = QMenu('Debug', self)
+            debug_menu.addAction('Reload core', self._menu_reload_core)
+            self.menu.addMenu(debug_menu)
+
         about_menu = QMenu('About', self)
         about_menu.addAction('Dwarf on GitHub', self._menu_github)
         about_menu.addAction('Documention', self._menu_documentation)
@@ -230,6 +235,9 @@ class AppWindow(QMainWindow):
     def _set_theme(self, qaction):
         if qaction:
             self.set_theme(qaction.text())
+
+    def _menu_reload_core(self):
+        self.dwarf.load_script()
 
     def show_main_tab(self, name):
         index = 0
