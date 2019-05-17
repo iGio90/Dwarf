@@ -1256,6 +1256,8 @@ class HexEditor(QAbstractScrollArea):
 
             asm_view = context_menu.addAction("&Disassemble")
             menu_actions[asm_view] = self.on_cm_showasm
+            dump_to_file = context_menu.addAction("&Dump to file")
+            menu_actions[dump_to_file] = self.on_cm_dump_to_file
             context_menu.addSeparator()
 
         jump_to = context_menu.addAction("&Jump to")
@@ -1335,6 +1337,23 @@ class HexEditor(QAbstractScrollArea):
         self.range.set_start_offset(self.caret.position)
         self.onShowDisassembly.emit(self.range)
         # self.app.get_session_ui().disasm(_range=self.range)
+
+    def on_cm_dump_to_file(self):
+        """ ContextMenu Disassemble
+        """
+        accept, _input = InputDialog.input(hint='Length of bytes to dump', placeholder='1024')
+        try:
+            _len = int(_input)
+        except:
+            self.display_error('Invalid length provided')
+            _len = 0
+        if _len > 0:
+            data = self.app.dwarf.read_memory(self.base + self.caret.position, _len)
+            if data is not None:
+                from PyQt5.QtWidgets import QFileDialog
+                _file = QFileDialog.getSaveFileName(self.app)
+                with open(_file[0], 'wb') as f:
+                    f.write(data)
 
     def on_cm_copy(self):
         """ copy as plain ascii/hex
