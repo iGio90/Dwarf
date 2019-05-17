@@ -16,20 +16,44 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 
 
+SHT = {
+    0x0: 'SHT_NULL',
+    0x1: 'SHT_PROGBITS',
+    0x2: 'SHT_SYMTAB',
+    0x3: 'SHT_STRTAB',
+    0x4: 'SHT_RELA',
+    0x5: 'SHT_HASH',
+    0x6: 'SHT_DYNAMIC',
+    0x7: 'SHT_NOTE',
+    0x8: 'SHT_NOBITS',
+    0x9: 'SHT_REL',
+    0x0A: 'SHT_SHLIB',
+    0x0B: 'SHT_DYNSYM',
+    0x0E: 'SHT_INIT_ARRAY',
+    0x0F: 'SHT_FINI_ARRAY',
+    0x10: 'SHT_PREINIT_ARRAY',
+    0x11: 'SHT_GROUP',
+    0x12: 'SHT_SYMTAB_SHNDX',
+    0x13: 'SHT_NUM',
+    0x60000000: 'SHT_LOOS',
+}
+
+PT = {
+    0x00000000: 'PT_NULL',
+    0x00000001: 'PT_LOAD',
+    0x00000002: 'PT_DYNAMIC',
+    0x00000003: 'PT_INTERP',
+    0x00000004: 'PT_NOTE',
+    0x00000005: 'PT_SHLIB',
+    0x00000006: 'PT_PHDR',
+    0x60000000: 'PT_LOOS',
+    0x6FFFFFFF: 'PT_HIOS',
+    0x70000000: 'PT_LOPROC',
+    0x7FFFFFFF: 'PT_HIPROC',
+}
+
+
 class ProgramHeader:
-    PT = {
-        0x00000000: 'PT_NULL',
-        0x00000001: 'PT_LOAD',
-        0x00000002: 'PT_DYNAMIC',
-        0x00000003: 'PT_INTERP',
-        0x00000004: 'PT_NOTE',
-        0x00000005: 'PT_SHLIB',
-        0x00000006: 'PT_PHDR',
-        0x60000000: 'PT_LOOS',
-        0x6FFFFFFF: 'PT_HIOS',
-        0x70000000: 'PT_LOPROC',
-        0x7FFFFFFF: 'PT_HIPROC',
-    }
 
     def __init__(self, bits, data):
         self.type = self.parse_type(data)
@@ -55,35 +79,13 @@ class ProgramHeader:
 
     def parse_type(self, data):
         val = int.from_bytes(data[:4], 'little')
-        if val in self.PT:
-            return self.PT[val]
+        if val in PT:
+            return PT[val]
         else:
             return hex(val)
 
 
 class SectionHeader:
-    SHT = {
-        0x0: 'SHT_NULL',
-        0x1: 'SHT_PROGBITS',
-        0x2: 'SHT_SYMTAB',
-        0x3: 'SHT_STRTAB',
-        0x4: 'SHT_RELA',
-        0x5: 'SHT_HASH',
-        0x6: 'SHT_DYNAMIC',
-        0x7: 'SHT_NOTE',
-        0x8: 'SHT_NOBITS',
-        0x9: 'SHT_REL',
-        0x0A: 'SHT_SHLIB',
-        0x0B: 'SHT_DYNSYM',
-        0x0E: 'SHT_INIT_ARRAY',
-        0x0F: 'SHT_FINI_ARRAY',
-        0x10: 'SHT_PREINIT_ARRAY',
-        0x11: 'SHT_GROUP',
-        0x12: 'SHT_SYMTAB_SHNDX',
-        0x13: 'SHT_NUM',
-        0x60000000: 'SHT_LOOS',
-    }
-
     def __init__(self, bits, data):
         len_ = int(bits / 8)
 
@@ -107,8 +109,8 @@ class SectionHeader:
 
     def parse_type(self, data):
         val = int.from_bytes(data[0x4:0x8], 'little')
-        if val in self.SHT:
-            return self.SHT[val]
+        if val in SHT:
+            return SHT[val]
         else:
             return hex(val)
 
@@ -145,6 +147,12 @@ class ELF:
 
     @staticmethod
     def build(data):
-        if data[0] == 0x7f and data[1] == 0x45 and data[2] == 0x4c and data[3] == 0x46:
+        if ELF.is_valid_elf(data):
             return ELF(data)
         return None
+
+    @staticmethod
+    def is_valid_elf(data):
+        if len(data) >= 4 and data[0] == 0x7f and data[1] == 0x45 and data[2] == 0x4c and data[3] == 0x46:
+            return True
+        return False

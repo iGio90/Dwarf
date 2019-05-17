@@ -26,6 +26,7 @@ from PyQt5.QtGui import (QFont, QPainter, QColor, QPalette, QTextOption,
                          QCursor, QFontDatabase, QPolygon)
 from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
+from lib.elf import ELF
 from ui.dialog_input import InputDialog
 from lib import utils
 from lib.range import Range
@@ -1271,6 +1272,13 @@ class HexEditor(QAbstractScrollArea):
             menu_actions[follow_pointer] = self.on_cm_followpointer
             context_menu.addSeparator()
 
+            if self.caret.position + 4 < self.range.tail:
+                if ELF.is_valid_elf(self.range.data[self.caret.position:self.caret.position + 4]):
+                    read_elf = context_menu.addAction("&ELF")
+                    menu_actions[read_elf] = self.on_cm_read_elf
+                    context_menu.addSeparator()
+
+
         #write_string = context_menu.addAction("&Write string")
         #menu_actions[write_string] = self.on_cm_writestring
 
@@ -1322,6 +1330,12 @@ class HexEditor(QAbstractScrollArea):
         else:
             self.display_error('Unable to read pointer at location.')
 
+    def on_cm_read_elf(self):
+        """ ContextMenu ReadElf
+        """
+        _elf = ELF.build(self.range.data)
+        # todo ui here
+
     def on_cm_hookaddress(self):
         """ ContextMenu HookAddress
         """
@@ -1348,12 +1362,15 @@ class HexEditor(QAbstractScrollArea):
             self.display_error('Invalid length provided')
             _len = 0
         if _len > 0:
-            data = self.app.dwarf.read_memory(self.base + self.caret.position, _len)
-            if data is not None:
-                from PyQt5.QtWidgets import QFileDialog
-                _file = QFileDialog.getSaveFileName(self.app)
-                with open(_file[0], 'wb') as f:
-                    f.write(data)
+            if self.caret.position + _len > self.range.tail:
+                self.display_error('Length is higher than range size')
+            else:
+                data = self.range.data[self.caret.position:self.caret.position + _len]
+                if data is not None:
+                    from PyQt5.QtWidgets import QFileDialog
+                    _file = QFileDialog.getSaveFileName(self.app)
+                    with open(_file[0], 'wb') as f:
+                        f.write(data)
 
     def on_cm_copy(self):
         """ copy as plain ascii/hex
