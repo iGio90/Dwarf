@@ -68,7 +68,7 @@ class BookmarksPanel(QWidget):
         icon.addPixmap(QPixmap(utils.resource_path('assets/icons/plus.svg')))
         self.btn1 = QPushButton(icon, '')
         self.btn1.setFixedSize(20, 20)
-        self.btn1.clicked.connect(self._on_additem_clicked)
+        self.btn1.clicked.connect(self._create_bookmark)
         btn2 = QPushButton(
             QIcon(QPixmap(utils.resource_path('assets/icons/dash.svg'))), '')
         btn2.setFixedSize(20, 20)
@@ -94,7 +94,7 @@ class BookmarksPanel(QWidget):
 
         shortcut_addnative = QShortcut(
             QKeySequence(Qt.CTRL + Qt.Key_A), self._app_window,
-            self._on_additem_clicked)
+            self._create_bookmark)
         shortcut_addnative.setAutoRepeat(False)
 
     # ************************************************************************
@@ -123,8 +123,9 @@ class BookmarksPanel(QWidget):
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
-    def _on_dblclicked(self, model_index):
-        pass
+    def _on_dblclicked(self, index):
+        self._app_window.jump_to_address(
+            self._bookmarks_model.item(index, 0).text())
 
     def _on_contextmenu(self, pos):
         context_menu = QMenu(self)
@@ -141,25 +142,40 @@ class BookmarksPanel(QWidget):
 
             context_menu.addSeparator()
             context_menu.addAction(
-                'Edit', lambda: self._on_additem_clicked(index=index))
+                'Edit', lambda: self._create_bookmark(index=index))
             context_menu.addAction(
                 'Delete', lambda: self._on_delete_bookmark(index))
             context_menu.addSeparator()
         context_menu.addAction(
-            'New', lambda: self._on_additem_clicked())
+            'New', lambda: self._create_bookmark())
         global_pt = self._bookmarks_list.mapToGlobal(pos)
         context_menu.exec(global_pt)
 
     # + button
-    def _on_additem_clicked(self, index=-1):
-        ptr = ''
+    def _create_bookmark(self, index=-1, ptr=''):
         note = ''
-        if index >= 0:
-            ptr = self._bookmarks_model.item(index, 0).text()
-            note = self._bookmarks_model.item(index, 1).text()
 
-        ptr, input_ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
+        if ptr == '':
+            if isinstance(index, int) and index >= 0:
+                ptr = self._bookmarks_model.item(index, 0).text()
+                note = self._bookmarks_model.item(index, 1).text()
+
+            ptr, input_ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
+        else:
+            try:
+                ptr = int(ptr, 16)
+            except:
+                ptr = 0
+
         if ptr > 0:
+
+            index = self._bookmarks_model.findItems(hex(ptr), Qt.MatchExactly)
+            if len(index) > 0:
+                index = index[0].row()
+                note = self._bookmarks_model.item(index, 1).text()
+            else:
+                index = -1
+
             accept, note = InputDialog.input(hint='Insert notes for %s' % hex(ptr), input_content=note)
             if accept:
                 if index < 0:
@@ -175,5 +191,5 @@ class BookmarksPanel(QWidget):
 
     # shortcuts/menu
 
-    def _on_delete_bookmark(self, num_row):
-        self._bookmarks_model.removeRow(num_row)
+    def _on_delete_bookmark(self, index):
+        self._bookmarks_model.removeRow(index)
