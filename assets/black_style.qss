@@ -393,6 +393,7 @@ QDockWidget {
 }
 
 QDockWidget::title {
+   background-color: transparent;
    font-size: 110%;
    font-weight: bold;
    padding: 5px 0;
