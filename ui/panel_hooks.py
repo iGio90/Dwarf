@@ -255,6 +255,9 @@ class HooksPanel(QWidget):
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._hooks_model.item(index, 0).text()))
+            context_menu.addAction(
+                'Jump to address', lambda: self._app_window.jump_to_address(
+                    self._hooks_model.item(index, 0).text()))
             context_menu.addSeparator()
             context_menu.addAction(
                 'Modify Logic', lambda: self._on_modify_logic(index))

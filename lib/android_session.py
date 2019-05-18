@@ -86,7 +86,7 @@ class AndroidSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'threads', 'registers', 'memory', 'console',
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory', 'console',
                 'watchers', 'modules', 'jvm-inspector', 'jvm-explorer',
                 'ranges', 'backtrace', 'disassembly']
 

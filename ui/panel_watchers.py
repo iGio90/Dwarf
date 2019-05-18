@@ -394,7 +394,10 @@ class WatchersPanel(QWidget):
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self._watchers_model.item(index, 0).text()))
             context_menu.addAction(
-                'Delete address', lambda: self.remove_address(
+                'Jump to address', lambda: self._app_window.jump_to_address(
+                    self._watchers_model.item(index, 0).text()))
+            context_menu.addAction(
+                'Delete watcher', lambda: self.remove_address(
                     self._watchers_model.item(index, 0).text()))
         context_menu.exec_(glbl_pt)
 

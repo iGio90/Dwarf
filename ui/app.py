@@ -57,6 +57,7 @@ class AppWindow(QMainWindow):
         self.emulator_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
+        self.bookmarks_panel = None
         self.smali_panel = None
         self.java_inspector_panel = None
         self.java_explorer_panel = None
@@ -327,6 +328,14 @@ class AppWindow(QMainWindow):
             self.hooks_dwiget.setObjectName('HooksPanel')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.hooks_dwiget)
             self.view_menu.addAction(self.hooks_dwiget.toggleViewAction())
+        elif elem == 'bookmarks':
+            from ui.panel_bookmarks import BookmarksPanel
+            self.bookmarks_dwiget = QDockWidget('Boomarks', self)
+            self.bookmarks_panel = BookmarksPanel(self)
+            self.bookmarks_dwiget.setWidget(self.bookmarks_panel)
+            self.bookmarks_dwiget.setObjectName('BookmarksPanel')
+            self.addDockWidget(Qt.LeftDockWidgetArea, self.bookmarks_dwiget)
+            self.view_menu.addAction(self.bookmarks_dwiget.toggleViewAction())
         elif elem == 'registers':
             from ui.panel_context import ContextPanel
             self.registers_dock = QDockWidget('Context', self)
@@ -610,6 +619,11 @@ class AppWindow(QMainWindow):
                 self.contexts_list_panel = None
                 self.removeDockWidget(self.threads_dock)
                 self.threads_dock = None
+            elif elem == 'bookmarks':
+                self.bookmarks_panel.close()
+                self.bookmarks_panel = None
+                self.removeDockWidget(self.bookmarks_dwiget)
+                self.bookmarks_dwiget = None
 
     def session_closed(self):
         self._ui_elems = []
