@@ -346,17 +346,20 @@ class HooksPanel(QWidget):
             _val = _val.split('.')
             str_frmt = '.'.join(_val[:-1])
             additional = _val[-1]
+            item_index = 0
         elif _type == 'onload':
             str_frmt = _val
+            item_index = 2
         else:
             _ptr = utils.parse_ptr(_val)
             if self._hooks_list._uppercase_hex:
                 str_frmt = '0x{0:X}'.format(_ptr)
             else:
                 str_frmt = '0x{0:x}'.format(_ptr)
+            item_index = 0
 
         for _item in range(self._hooks_model.rowCount()):
-            item = self._hooks_model.item(_item, 0)
+            item = self._hooks_model.item(_item, item_index)
 
             if item is None:
                 continue
