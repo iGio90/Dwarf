@@ -87,7 +87,8 @@ class AndroidSession(Session):
     def session_ui_sections(self):
         # what sections we want in session_ui
         return ['hooks', 'threads', 'registers', 'memory', 'console',
-                'watchers', 'modules', 'java-inspector', 'backtrace']
+                'watchers', 'modules', 'jvm-inspector', 'jvm-explorer',
+                'ranges', 'backtrace', 'disassembly']
 
     @property
     def session_type(self):
@@ -256,9 +257,9 @@ class AndroidSession(Session):
     def _on_java_classes(self):
         #should_request_classes = self._app_window.java is None
         if self._app_window.java_inspector_panel is None:
-            self._app_window._create_ui_elem('java-inspector')
+            self._app_window._create_ui_elem('jvm-inspector')
 
-        self._app_window.show_main_tab('java-inspector')
+        self._app_window.show_main_tab('jvm-inspector')
         self.dwarf.dwarf_api('enumerateJavaClasses')
 
     def _on_devdlg_closed(self):
