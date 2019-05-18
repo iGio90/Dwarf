@@ -36,6 +36,7 @@ QListView, QTableView, QTreeView, QTabWidget::pane {
 QListView::item,
 QTableView::item,
 QTreeView::item {
+    background-color: #fff;
     border: 0;
     padding: 3px 5px;
 }
@@ -230,7 +231,7 @@ QTabBar::tab {
         color: #ef5350;
     }
 
-    QTabBar::tab:last {
+    QTabBar::tab:last, QTabBar::tab:only-one {
         border-right: 1px solid #ccc;
     }
 
@@ -286,7 +287,7 @@ QMenu {
         color: #444;
         font-weight: bold;
     }
-    
+
     QHeaderView::section:last, QHeaderView::section:only-one {
         border-right: 1px solid #fff;
     }
@@ -380,4 +381,12 @@ QProgressBar {
 
 QProgressBar::chunk:horizontal {
     background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #fff, stop: 0.5 #ef5350, stop: 1 #fff);
+}
+
+QDockWidget::title {
+   font-size: 110%;
+   font-weight: bold;
+   padding: 5px 0;
+   margin-left: 10px;
+   text-transform: uppercase;
 }

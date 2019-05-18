@@ -16,8 +16,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QRadioButton, QPushButton, QProgressDialog, \
-    QSizePolicy, QApplication, QHeaderView
+from PyQt5.QtWidgets import (QWidget, QLineEdit, QVBoxLayout, QHBoxLayout,
+                             QRadioButton, QPushButton, QProgressDialog,
+                             QSizePolicy, QApplication, QHeaderView)
 
 from ui.list_view import DwarfListView
 from lib import utils
@@ -70,7 +71,8 @@ class SearchPanel(QWidget):
             print('SearchPanel created before Dwarf exists')
             return
 
-        self._app_window.dwarf.onMemoryScanResult.connect(self._on_search_result)
+        self._app_window.dwarf.onMemoryScanResult.connect(
+            self._on_search_result)
 
         self._ranges_model = None
         self._result_model = None
@@ -81,11 +83,20 @@ class SearchPanel(QWidget):
 
         self._search_results = []
 
-        box = QVBoxLayout()
+        self.setContentsMargins(0, 0, 0, 0)
 
+        main_wrap = QVBoxLayout()
+        main_wrap.setContentsMargins(1, 1, 1, 1)
+
+        wrapping_wdgt = QWidget()
+        wrapping_wdgt.setContentsMargins(10, 10, 10, 10)
+        v_box = QVBoxLayout(wrapping_wdgt)
+        v_box.setContentsMargins(0, 0, 0, 0)
         self.input = QLineEdit()
-        self.input.setPlaceholderText('search for a sequence of bytes in hex format: deadbeef123456aabbccddeeff...')
-        box.addWidget(self.input)
+        self.input.setPlaceholderText(
+            'search for a sequence of bytes in hex format: deadbeef123456aabbccddeeff...'
+        )
+        v_box.addWidget(self.input)
 
         self.check_all_btn = QPushButton('check all')
         self.check_all_btn.clicked.connect(self._on_click_check_all)
@@ -98,7 +109,9 @@ class SearchPanel(QWidget):
         h_box.addWidget(self.check_all_btn)
         h_box.addWidget(self.uncheck_all_btn)
         h_box.addWidget(self.search_btn)
-        box.addLayout(h_box)
+        v_box.addLayout(h_box)
+
+        main_wrap.addWidget(wrapping_wdgt)
 
         self.ranges = DwarfListView(self)
         self.ranges.clicked.connect(self._on_show_results)
@@ -106,11 +119,14 @@ class SearchPanel(QWidget):
         self.results.setVisible(False)
 
         h_box = QHBoxLayout()
+        h_box.setContentsMargins(0, 0, 0, 0)
         h_box.addWidget(self.ranges)
         h_box.addWidget(self.results)
-        box.addLayout(h_box)
+        main_wrap.addLayout(h_box)
 
-        self.setLayout(box)
+        main_wrap.setSpacing(0)
+
+        self.setLayout(main_wrap)
 
         self._setup_models()
 
@@ -121,7 +137,9 @@ class SearchPanel(QWidget):
         self._ranges_model = QStandardItemModel(0, 7)
 
         # just replicate ranges panel model
-        self._ranges_model.setHeaderData(0, Qt.Horizontal, 'x') # TODO: replace with checkbox in header - remove checkall btns
+        self._ranges_model.setHeaderData(
+            0, Qt.Horizontal, 'x'
+        )  # TODO: replace with checkbox in header - remove checkall btns
         self._ranges_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
         self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Address')
@@ -142,12 +160,18 @@ class SearchPanel(QWidget):
         self._ranges_model.setHeaderData(6, Qt.Horizontal, 'FilePath')
 
         self.ranges.setModel(self._ranges_model)
-        self.ranges.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.ranges.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.ranges.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.ranges.header().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.ranges.header().setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        self.ranges.header().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(0,
+                                                  QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(1,
+                                                  QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(2,
+                                                  QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(3,
+                                                  QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(4,
+                                                  QHeaderView.ResizeToContents)
+        self.ranges.header().setSectionResizeMode(5,
+                                                  QHeaderView.ResizeToContents)
 
         self.ranges.doubleClicked.connect(self._on_range_dblclick)
 
@@ -164,7 +188,8 @@ class SearchPanel(QWidget):
         if isinstance(ranges, list):
             self._ranges_model.removeRows(0, self._ranges_model.rowCount())
             for range_entry in ranges:
-                if 'protection' in range_entry and isinstance(range_entry['protection'], str):
+                if 'protection' in range_entry and isinstance(
+                        range_entry['protection'], str):
                     if 'r' not in range_entry['protection']:
                         # skip not readable range
                         continue
@@ -211,12 +236,13 @@ class SearchPanel(QWidget):
                         file_size.setText("{0:,d}".format(
                             int(range_entry['file']['size'])))
 
-
                 checkbox = QStandardItem()
                 checkbox.setCheckable(True)
 
-                self._ranges_model.appendRow(
-                    [checkbox, addr, size, protection, file_addr, file_size, file_path])
+                self._ranges_model.appendRow([
+                    checkbox, addr, size, protection, file_addr, file_size,
+                    file_path
+                ])
 
     # ************************************************************************
     # **************************** Handlers **********************************
@@ -224,10 +250,13 @@ class SearchPanel(QWidget):
     def _on_range_dblclick(self, model_index):
         item = self._ranges_model.itemFromIndex(model_index)
         if item:
-            if self._ranges_model.item(model_index.row(), 0).checkState() != Qt.Checked:
-                self._ranges_model.item(model_index.row(), 0).setCheckState(Qt.Checked)
+            if self._ranges_model.item(model_index.row(),
+                                       0).checkState() != Qt.Checked:
+                self._ranges_model.item(model_index.row(),
+                                        0).setCheckState(Qt.Checked)
             else:
-                self._ranges_model.item(model_index.row(), 0).setCheckState(Qt.Unchecked)
+                self._ranges_model.item(model_index.row(),
+                                        0).setCheckState(Qt.Unchecked)
 
     def _on_click_check_all(self):
         for i in range(self._ranges_model.rowCount()):
@@ -306,7 +335,8 @@ class SearchPanel(QWidget):
 
         self._ranges_model.removeColumns(4, 3)
         self._ranges_model.setHeaderData(3, Qt.Horizontal, 'Search Results')
-        self._ranges_model.setHeaderData(3, Qt.Horizontal, None, Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(3, Qt.Horizontal, None,
+                                         Qt.TextAlignmentRole)
 
         results_count = 0
         is_selected = False
@@ -325,19 +355,22 @@ class SearchPanel(QWidget):
 
             if len(self._search_results[i]):
                 results_count += len(self._search_results[i])
-                self._ranges_model.item(i, 3).setText('Matches: {0}'.format(len(self._search_results[i])))
+                self._ranges_model.item(i, 3).setText('Matches: {0}'.format(
+                    len(self._search_results[i])))
                 self._ranges_model.item(i, 3).setTextAlignment(Qt.AlignLeft)
             else:
                 self._ranges_model.item(i, 3).setText('')
                 self._ranges_model.item(i, 3).setTextAlignment(Qt.AlignLeft)
 
-        self._app_window.set_status_text('Search complete: {0} matches'.format(results_count))
+        self._app_window.set_status_text(
+            'Search complete: {0} matches'.format(results_count))
         if results_count:
             for i in self._search_results:
                 if i and len(i):
                     self.results.setVisible(True)
                     for result in i:
-                        self._result_model.appendRow(QStandardItem(result['address']))
+                        self._result_model.appendRow(
+                            QStandardItem(result['address']))
 
                     break
 
@@ -356,7 +389,8 @@ class SearchPanel(QWidget):
                     return
 
                 for result in self._search_results[selected_index]:
-                    self._result_model.appendRow(QStandardItem(result['address']))
+                    self._result_model.appendRow(
+                        QStandardItem(result['address']))
 
                     # TODO: fix hexview highlights performance
                     """

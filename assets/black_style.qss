@@ -34,6 +34,7 @@ QTableView::item,
 QTreeView::item {
     border: 0;
     padding: 3px 5px;
+    background: #080808;
 }
 
 QListView::item:alternate,
@@ -392,7 +393,6 @@ QDockWidget {
 }
 
 QDockWidget::title {
-   background-color: transparent;
    font-size: 110%;
    font-weight: bold;
    padding: 5px 0;
