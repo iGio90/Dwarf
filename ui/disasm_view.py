@@ -576,17 +576,20 @@ class DisassemblyView(QAbstractScrollArea):
         loc_y = event.pos().y()
 
         index = self.pixel_to_line(loc_x, loc_y)
-        left_side = self._breakpoint_linewidth + self._jumps_width
-        addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
-        if loc_x > left_side:
-            if loc_x < left_side + addr_width:
-                if isinstance(self._lines[index + self.pos], Instruction):
-                    self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
-            if loc_x > left_side + addr_width:
-                if isinstance(self._lines[index + self.pos], Instruction):
-                    if self._follow_jumps and self._lines[index + self.pos].is_jump:
-                        new_pos = self._lines[index + self.pos].jump_address
-                        self.read_memory(new_pos)
+        if 0 <= index < self.visible_lines():
+            if index >= self.pos + index:
+                return
+            left_side = self._breakpoint_linewidth + self._jumps_width
+            addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
+            if loc_x > left_side:
+                if loc_x < left_side + addr_width:
+                    if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
+                        self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
+                if loc_x > left_side + addr_width:
+                    if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
+                        if self._follow_jumps and self._lines[index + self.pos].is_jump:
+                            new_pos = self._lines[index + self.pos].jump_address
+                            self.read_memory(new_pos)
 
     # pylint: disable=C0103
     def mouseMoveEvent(self, event):
