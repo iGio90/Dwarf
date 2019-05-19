@@ -37,8 +37,9 @@ class Instruction(object):
 
         self.reg_name = instruction.reg_name
 
-        self.thumb = dwarf.arch == 'arm' and (ARM_GRP_THUMB in self.groups or ARM_GRP_THUMB1ONLY in self.groups
-                                              or ARM_GRP_THUMB2 in self.groups or ARM_GRP_THUMB2DSP in self.groups)
+        self.thumb = dwarf.arch == 'arm' and (
+                ARM_GRP_THUMB in self.groups or ARM_GRP_THUMB1ONLY in self.groups or
+                ARM_GRP_THUMB2 in self.groups or ARM_GRP_THUMB2DSP in self.groups)
         self.is_jump = False
         if instruction.group(CS_GRP_JUMP) or instruction.group(CS_GRP_CALL):
             self.is_jump = True

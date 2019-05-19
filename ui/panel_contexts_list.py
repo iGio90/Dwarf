@@ -115,7 +115,8 @@ class ContextsListPanel(DwarfListView):
         row = self.threads_model.itemFromIndex(model_index).row()
         if row != -1:
             context_data = self.threads_model.item(row, 0).data(Qt.UserRole + 1)
-            self.onItemDoubleClicked.emit(context_data)
+            if self.dwarf.context_tid != context_data['tid']:
+                self.onItemDoubleClicked.emit(context_data)
 
     def _on_context_menu(self, pos):
         index = self.indexAt(pos).row()

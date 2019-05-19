@@ -126,12 +126,12 @@ class AppWindow(QMainWindow):
 
         # load font
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):
-            QFontDatabase.addApplicationFont('assets/Anton.ttf')
+            QFontDatabase.addApplicationFont(utils.resource_path('assets/Anton.ttf'))
         if os.path.exists(utils.resource_path('assets/OpenSans-Regular.ttf')):
-            QFontDatabase.addApplicationFont('assets/OpenSans-Regular.ttf')
+            QFontDatabase.addApplicationFont(utils.resource_path('assets/OpenSans-Regular.ttf'))
             _app.setFont(QFont("OpenSans", 9, QFont.Normal))
             if os.path.exists(utils.resource_path('assets/OpenSans-Bold.ttf')):
-                QFontDatabase.addApplicationFont('assets/OpenSans-Bold.ttf')
+                QFontDatabase.addApplicationFont(utils.resource_path('assets/OpenSans-Bold.ttf'))
 
         # mainwindow statusbar
         self.progressbar = QProgressBar()
@@ -769,6 +769,10 @@ class AppWindow(QMainWindow):
             self.show_main_tab('modules')
 
     def _apply_context(self, context):
+        # update current context tid
+        # this should be on top as any further api from js needs to be executed on that thread
+        self.dwarf.context_tid = context['tid']
+
         if 'context' in context:
             is_java = context['is_java']
 
@@ -786,17 +790,17 @@ class AppWindow(QMainWindow):
                     off = int(context['context']['pc']['value'], 16)
                     should_jump_to_asm = True
                     if self.asm_panel is not None and self.asm_panel._range is not None:
-                        if self.asm_panel._range.start_offset == off:
+                        if self.asm_panel._range.start_address == off:
                             should_jump_to_asm = False
                     if should_jump_to_asm:
                         self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
                         self.memory_panel.on_cm_showasm()
+                    else:
+                        self.show_main_tab('disassembly')
+
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
-
-        # update current context tid
-        self.dwarf.context_tid = context['tid']
 
     def _on_add_hook(self, hook):
         try:
@@ -819,7 +823,6 @@ class AppWindow(QMainWindow):
     def on_tid_resumed(self, tid):
         if self.dwarf:
             if self.dwarf.context_tid == tid:
-
                 # clear backtrace
                 if 'backtrace' in self._ui_elems:
                     if self.backtrace_panel is not None:
@@ -839,6 +842,9 @@ class AppWindow(QMainWindow):
                 if 'jvm-explorer' in self._ui_elems:
                     if self.java_explorer_panel is not None:
                         self.java_explorer_panel.clear_panel()
+
+                # invalidate dwarf context tid
+                self.dwarf.context_tid = 0
 
     def _on_tracer_data(self, data):
         if not data:

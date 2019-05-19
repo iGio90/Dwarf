@@ -131,6 +131,9 @@ class JavaExplorerPanel(QWidget):
         self.setLayout(box)
 
     def _set_data(self, data):
+        if 'class' not in data:
+            return
+
         self.clazz.setText(data['class'])
         data = data['data']
 
