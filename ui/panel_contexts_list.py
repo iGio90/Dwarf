@@ -133,7 +133,6 @@ class ContextsListPanel(DwarfListView):
                     context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
                 else:
                     context_menu.addAction('Trace', lambda: self._on_cm_start_trace(tid))
-                context_menu.addAction('Emulator', lambda: self._on_cm_emulator())
                 context_menu.addSeparator()
             context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
             context_menu.exec_(glbl_pt)
@@ -143,8 +142,3 @@ class ContextsListPanel(DwarfListView):
 
     def _on_cm_stop_trace(self):
         self.dwarf.native_tracer_stop()
-
-    def _on_cm_emulator(self):
-        if self._app_window.emulator_panel is None:
-            self._app_window._create_ui_elem('emulator')
-        self._app_window.show_main_tab('emulator')

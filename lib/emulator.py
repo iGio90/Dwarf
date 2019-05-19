@@ -141,6 +141,9 @@ class Emulator(QThread):
         if self.cs is not None:
             self.cs.detail = True
 
+        if not self.context.is_native_context:
+            raise self.EmulatorSetupFailedError('Cannot run emulator on non-native context')
+
         err = self.map_range(self.context.pc.value)
         if err:
             raise self.EmulatorSetupFailedError('Mapping failed')
@@ -344,6 +347,10 @@ class Emulator(QThread):
         try:
             self._setup()
         except self.EmulatorSetupFailedError:
+
+            # invalidate !important
+            self.context = None
+
             return False
 
         return True

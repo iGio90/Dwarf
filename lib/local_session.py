@@ -36,7 +36,7 @@ class LocalSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory', 'console', 'watchers', 'backtrace']
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory', 'console', 'watchers', 'backtrace', 'emulator']
 
     @property
     def session_type(self):

@@ -116,10 +116,10 @@ class EmulatorPanel(QWidget):
         ph = ''
         if self.until_address > 0:
             ph = hex(self.until_address)
-        address, inp = InputDialog.input_pointer(self.app, input_content=ph,
-                                                 hint='pointer to last instruction')
+        address, inp = InputDialog.input_pointer(self.app, input_content=ph, hint='pointer to last instruction')
         if address > 0:
             self.until_address = address
+            self.app.console_panel.show_console_tab('emulator')
             self.emulator.emulate(self.until_address)
             # if err > 0:
             #    self.until_address = 0
@@ -127,6 +127,8 @@ class EmulatorPanel(QWidget):
             #    return
 
     def handle_step(self):
+        self.app.console_panel.show_console_tab('emulator')
+
         try:
             result = self.emulator.emulate()
             if not result:
