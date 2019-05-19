@@ -191,17 +191,32 @@ class WelcomeDialog(QDialog):
         wrapper = QVBoxLayout()
         #wrapper.setGeometry(QRect(0, 0, 400, 200))
         head = QHBoxLayout()
+        head.setContentsMargins(0, 20, 0, 20)
         # dwarf icon
         icon = QLabel()
-        icon.setContentsMargins(100, 0, 20, 0)
-        icon.setPixmap(QPixmap(utils.resource_path('assets/dwarf.png')))
+        icon.setContentsMargins(40, 0, 0, 0)
+        dwarf_logo = QPixmap(utils.resource_path('assets/dwarf.png'))
+        icon.setPixmap(dwarf_logo)
         head.addWidget(icon)
 
         # main title
+        v_box = QVBoxLayout()
         title = QLabel('Dwarf')
-        title.setFont(QFont('Anton', 85, QFont.Bold))
+        title.setContentsMargins(0, 0, 50, 0)
+        title.setFont(QFont('Anton', 90, QFont.Bold))
         title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        head.addWidget(title)
+        title.setFixedHeight(110)
+        title.setAlignment(Qt.AlignCenter)
+        v_box.addWidget(title)
+
+        sub_title = QLabel('Duck warriors are rich as fuck')
+        sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
+        sub_title.setFixedHeight(20)
+        sub_title.setAlignment(Qt.AlignCenter)
+        sub_title.setContentsMargins(0, 0, 50, 0)
+        sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        v_box.addWidget(sub_title)
+        head.addLayout(v_box)
 
         wrapper.addLayout(head)
 
