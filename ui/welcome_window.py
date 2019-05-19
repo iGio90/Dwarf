@@ -1,10 +1,10 @@
-
 import random
 import json
 
 from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins
 from PyQt5.QtGui import QFont, QPixmap, QIcon
-from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp
+from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
+    QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp
 
 from lib import utils
 from lib.git import Git
@@ -106,7 +106,6 @@ class DwarfUpdateThread(QThread):
 
 
 class UpdateBar(QWidget):
-
     onUpdateNowClicked = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -141,7 +140,6 @@ class UpdateBar(QWidget):
 
 
 class WelcomeDialog(QDialog):
-
     onSessionSelected = pyqtSignal(str, name='onSessionSelected')
     onUpdateComplete = pyqtSignal(name='onUpdateComplete')
     onIsNewerVersion = pyqtSignal(name='onIsNewerVersion')
@@ -152,10 +150,11 @@ class WelcomeDialog(QDialog):
         self._prefs = parent.prefs
 
         self._sub_titles = [
-            'Duck warriors are rich as fuck',
-            'Dumb wardrobes are retarded french',
-            'Dutch waffles arent real falafel',
-            'Doctor whished again riffles fonzies'
+            ['duck', 'dumb', 'doctor', 'dutch'],
+            ['warrior', 'wardrobe', 'waffles', 'wish'],
+            ['are', 'aren\'t', 'ain\'t', 'appear to be'],
+            ['rich', 'real', 'riffle', 'retarded', 'rock'],
+            ['as fuck', 'fancy', 'fucked', 'front-ended', 'falafel', 'french fries'],
         ]
 
         self.recent_list = QListWidget(self)
@@ -174,7 +173,8 @@ class WelcomeDialog(QDialog):
         self.update_commits_thread.on_update_available.connect(self._on_dwarf_isupdate)
         self.update_commits_thread.start()
         # center
-        self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
+        self.setGeometry(
+            QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
 
         saved_sessions = self._prefs.get('dwarf_mru', '{}')
         saved_sessions = json.loads(saved_sessions)
@@ -197,7 +197,7 @@ class WelcomeDialog(QDialog):
         h_box = QHBoxLayout()
         h_box.setContentsMargins(15, 15, 15, 15)
         wrapper = QVBoxLayout()
-        #wrapper.setGeometry(QRect(0, 0, 400, 200))
+        # wrapper.setGeometry(QRect(0, 0, 400, 200))
         head = QHBoxLayout()
         head.setContentsMargins(0, 20, 0, 20)
         # dwarf icon
@@ -217,7 +217,13 @@ class WelcomeDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         v_box.addWidget(title)
 
-        sub_title = QLabel(self._sub_titles[random.randint(0, len(self._sub_titles)-1)])
+        sub_title_text = self._sub_titles[0][random.randint(0, len(self._sub_titles[0]) - 1)] + ' ' + \
+                         self._sub_titles[1][random.randint(0, len(self._sub_titles[1]) - 1)] + ' ' + \
+                         self._sub_titles[2][random.randint(0, len(self._sub_titles[2]) - 1)] + ' ' + \
+                         self._sub_titles[3][random.randint(0, len(self._sub_titles[3]) - 1)] + ' ' + \
+                         self._sub_titles[4][random.randint(0, len(self._sub_titles[4]) - 1)]
+        sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
+        sub_title = QLabel(sub_title_text)
         sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
         sub_title.setFixedHeight(25)
         sub_title.setAlignment(Qt.AlignCenter)
