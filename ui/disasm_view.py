@@ -256,24 +256,6 @@ class DisassemblyView(QAbstractScrollArea):
                  (self._ver_spacing + self._char_height)))
         return (data_x, data_y)
 
-    def _on_context_menu(self, event):
-        """ build and show contextmenu
-        """
-        context_menu = QMenu()
-        menu_actions = {}
-        copy_addr = None
-
-        if self.capstone_arch == CS_ARCH_ARM:
-            switch_mode = context_menu.addAction("&Switch to %s" % (
-                'THUMB' if self.capstone_mode == CS_MODE_ARM else 'ARM'))
-            menu_actions[switch_mode] = self._on_switch_mode
-
-        if len(menu_actions) > 0:
-            action = context_menu.exec_(QCursor.pos())
-            if action in menu_actions:
-                if action != copy_addr:
-                    menu_actions[action]()
-
     def read_memory(self, ptr, length=0):
         self._lines.clear()
 
@@ -615,7 +597,6 @@ class DisassemblyView(QAbstractScrollArea):
             if self._range is None:
                 return
             self._on_context_menu(event)
-            return
 
     def _on_context_menu(self, event):
         """ build and show contextmenu
