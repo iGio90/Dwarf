@@ -16,6 +16,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtWidgets import *
 
+from lib import prefs
 from lib.prefs import Prefs
 
 
@@ -69,6 +70,6 @@ class EmulatorConfigsDialog(QDialog):
 
         if result == QDialog.Accepted:
             try:
-                self._prefs.put(prefs.EMULATOR_INSTRUCTIONS_DELAY, float(dialog.instructions_delay.text()))
+                dialog._prefs.put(prefs.EMULATOR_INSTRUCTIONS_DELAY, float(dialog.instructions_delay.text()))
             except:
                 pass
