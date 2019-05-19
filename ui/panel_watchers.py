@@ -163,18 +163,13 @@ class WatchersPanel(QWidget):
 
         h_box = QHBoxLayout()
         h_box.setContentsMargins(5, 2, 5, 5)
-        icon = QIcon()
-        icon.addPixmap(QPixmap(utils.resource_path('assets/icons/plus.svg')))
-        btn1 = QPushButton(icon, '')
+        btn1 = QPushButton(QIcon(utils.resource_path('assets/icons/plus.svg')), '')
         btn1.setFixedSize(20, 20)
         btn1.clicked.connect(self._on_additem_clicked)
-        btn2 = QPushButton(
-            QIcon(QPixmap(utils.resource_path('assets/icons/dash.svg'))), '')
+        btn2 = QPushButton(QIcon(utils.resource_path('assets/icons/dash.svg')), '')
         btn2.setFixedSize(20, 20)
         btn2.clicked.connect(self.delete_items)
-        btn3 = QPushButton(
-            QIcon(QPixmap(utils.resource_path('assets/icons/trashcan.svg'))),
-            '')
+        btn3 = QPushButton(QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
         btn3.setFixedSize(20, 20)
         btn3.clicked.connect(self.clear_list)
         h_box.addWidget(btn1)
