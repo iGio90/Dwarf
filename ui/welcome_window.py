@@ -1,4 +1,5 @@
 
+import random
 import json
 
 from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins
@@ -150,6 +151,13 @@ class WelcomeDialog(QDialog):
 
         self._prefs = parent.prefs
 
+        self._sub_titles = [
+            'Duck warriors are rich as fuck',
+            'Dumb wardrobes are retarded french',
+            'Dutch waffles arent real falafel',
+            'Doctor whished again riffles fonzies'
+        ]
+
         self.recent_list = QListWidget(self)
         # setup size and remove/disable titlebuttons
         self.setFixedSize(800, 400)
@@ -209,9 +217,9 @@ class WelcomeDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         v_box.addWidget(title)
 
-        sub_title = QLabel('Duck warriors are rich as fuck')
+        sub_title = QLabel(self._sub_titles[random.randint(0, len(self._sub_titles)-1)])
         sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
-        sub_title.setFixedHeight(20)
+        sub_title.setFixedHeight(25)
         sub_title.setAlignment(Qt.AlignCenter)
         sub_title.setContentsMargins(0, 0, 50, 0)
         sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
