@@ -1261,12 +1261,12 @@ class HexEditor(QAbstractScrollArea):
             menu_actions[dump_to_file] = self.on_cm_dump_to_file
             context_menu.addSeparator()
 
-        jump_to = context_menu.addAction("&Jump to")
-        menu_actions[jump_to] = self.on_cm_jumpto
-
         if self.range is not None:
             hook_address = context_menu.addAction("&Hook address")
             menu_actions[hook_address] = self.on_cm_hookaddress
+
+            bookmark = context_menu.addAction("&Create bookmark")
+            menu_actions[bookmark] = self.on_cm_bookmark
 
             follow_pointer = context_menu.addAction("Follow &pointer")
             menu_actions[follow_pointer] = self.on_cm_followpointer
@@ -1278,6 +1278,9 @@ class HexEditor(QAbstractScrollArea):
                     menu_actions[read_elf] = self.on_cm_read_elf
                     context_menu.addSeparator()
 
+
+        jump_to = context_menu.addAction("&Jump to address")
+        menu_actions[jump_to] = self.on_cm_jumpto
 
         #write_string = context_menu.addAction("&Write string")
         #menu_actions[write_string] = self.on_cm_writestring
@@ -1317,6 +1320,12 @@ class HexEditor(QAbstractScrollArea):
         ptr, input_ = InputDialog.input_pointer(self.app)
         if ptr > 0:
             self.read_memory(ptr)
+
+    def on_cm_bookmark(self):
+        """ ContextMenu JumpTo
+        """
+        ptr = self.base + self.caret.position
+        self.app.on_add_bookmark(ptr)
 
     def on_cm_followpointer(self):
         """ ContextMenu FollowPointer

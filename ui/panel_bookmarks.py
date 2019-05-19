@@ -163,7 +163,6 @@ class BookmarksPanel(QWidget):
                 ptr = 0
 
         if ptr > 0:
-
             index = self._bookmarks_model.findItems(hex(ptr), Qt.MatchExactly)
             if len(index) > 0:
                 index = index[0].row()

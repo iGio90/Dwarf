@@ -898,3 +898,10 @@ class AppWindow(QMainWindow):
             pass
         else:
             utils.show_message_box('Failed to write Memory')
+
+    def on_add_bookmark(self, ptr):
+        """
+        provide ptr as int
+        """
+        if self.bookmarks_panel is not None:
+            self.bookmarks_panel._create_bookmark(ptr=hex(ptr))
