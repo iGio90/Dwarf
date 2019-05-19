@@ -15,7 +15,28 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5 import QtCore
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
+
+from ui.code_editor import JsCodeEditor
+
+
+class InputDialogTextEdit(JsCodeEditor):
+    def __init__(self, dialog, *__args):
+        super().__init__(show_linenumes=True)
+        self.dialog = dialog
+
+        self.setStyleSheet('padding: 0; padding: 0 5px;')
+
+        bar = QScrollBar()
+        bar.setFixedHeight(0)
+        bar.setFixedWidth(0)
+
+    def keyPressEvent(self, event):
+        # when code completion popup dont respond to enter
+        if self.completer and self.completer.popup() and self.completer.popup().isVisible():
+            event.ignore()
+        super(InputDialogTextEdit, self).keyPressEvent(event)
 
 
 class InputMultilineDialog(QDialog):
@@ -26,7 +47,7 @@ class InputMultilineDialog(QDialog):
 
         if hint:
             layout.addWidget(QLabel(hint))
-        self.input_widget = QTextEdit(self)
+        self.input_widget = InputDialogTextEdit(self)
         if min_width > 0:
             self.input_widget.setMinimumWidth(min_width)
 
@@ -34,10 +55,14 @@ class InputMultilineDialog(QDialog):
             self.input_widget.setText(input_content)
         layout.addWidget(self.input_widget)
 
-    def keyPressEvent(self, event):
-        super(InputMultilineDialog, self).keyPressEvent(event)
-        if event.key() == QtCore.Qt.Key_Escape:
-            self.accept()
+        buttons = QHBoxLayout()
+        ok = QPushButton('ok')
+        buttons.addWidget(ok)
+        ok.clicked.connect(self.accept)
+        cancel = QPushButton('cancel')
+        cancel.clicked.connect(self.close)
+        buttons.addWidget(cancel)
+        layout.addLayout(buttons)
 
     @staticmethod
     def input(hint=None, input_content='', min_width=0):

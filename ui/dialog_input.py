@@ -15,7 +15,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
 
@@ -38,7 +37,7 @@ class InputDialogTextEdit(JsCodeEditor):
         self.setMinimumWidth(350)
 
     def keyPressEvent(self, event):
-        # when codecompletion popup dont respond to enter
+        # when code completion popup dont respond to enter
         if self.completer and self.completer.popup() and self.completer.popup().isVisible():
             event.ignore()
             super(InputDialogTextEdit, self).keyPressEvent(event)

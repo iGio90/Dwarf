@@ -382,12 +382,12 @@ class JsCodeEditLineNums(QWidget):
 
 class JsCodeEditor(QPlainTextEdit):
     # todo: linehighlight
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, show_linenumes=False):
         super(JsCodeEditor, self).__init__(parent)
 
         self.setFont(get_os_monospace_font())
 
-        self._show_linenums = False
+        self._show_linenums = show_linenumes
 
         if self._show_linenums:
             self.ui_line_numbers = JsCodeEditLineNums(self)

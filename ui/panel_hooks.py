@@ -269,10 +269,10 @@ class HooksPanel(QWidget):
         data = item.data(Qt.UserRole + 2)
         if data is None:
             data = ''
+        ptr = self._hooks_model.item(num_row, 0).text()
         accept, input_ = InputMultilineDialog().input(
-            'insert logic', input_content=data)
+            'Insert logic for %s' % ptr, input_content=data)
         if accept:
-            ptr = self._hooks_model.item(num_row, 0).text()
             what = utils.parse_ptr(ptr)
             if what == 0:
                 what = self._hooks_model.item(num_row, 2).data(Qt.UserRole + 2)
@@ -288,10 +288,10 @@ class HooksPanel(QWidget):
         data = item.data(Qt.UserRole + 2)
         if data is None:
             data = ''
+        ptr = self._hooks_model.item(num_row, 0).text()
         accept, input_ = InputDialog().input(
-            self._app_window, 'insert condition', input_content=data)
+            self._app_window, 'Insert condition for %s' % ptr, input_content=data)
         if accept:
-            ptr = self._hooks_model.item(num_row, 0).text()
             what = utils.parse_ptr(ptr)
             if what == 0:
                 what = self._hooks_model.item(num_row, 2).data(Qt.UserRole + 2)
