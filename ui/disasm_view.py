@@ -577,7 +577,7 @@ class DisassemblyView(QAbstractScrollArea):
 
         index = self.pixel_to_line(loc_x, loc_y)
         if 0 <= index < self.visible_lines():
-            if index >= self.pos + index:
+            if index + self.pos >= len(self._lines):
                 return
             left_side = self._breakpoint_linewidth + self._jumps_width
             addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
