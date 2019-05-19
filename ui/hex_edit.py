@@ -1356,6 +1356,10 @@ class HexEditor(QAbstractScrollArea):
         """ ContextMenu DumpToFile
         """
         accept, _input = InputDialog.input(hint='Length of bytes to dump', placeholder='1024')
+
+        if not accept:
+            return
+
         try:
             _len = int(_input)
         except:
