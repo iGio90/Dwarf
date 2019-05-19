@@ -27,6 +27,8 @@ class DisassemblyView(QAbstractScrollArea):
 
         self.setAutoFillBackground(True)
 
+        self._app_window.dwarf.onApplyContext.connect(self.on_arch_changed)
+
         # setting font
         self.font = utils.get_os_monospace_font()
         self.font.setFixedPitch(True)
