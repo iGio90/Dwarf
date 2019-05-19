@@ -537,12 +537,6 @@ class DisassemblyView(QAbstractScrollArea):
             # dispatch those to super
             super().keyPressEvent(event)
 
-        if self.capstone_mode == CS_MODE_ARM:
-            self.capstone_mode = CS_MODE_THUMB
-        else:
-            self.capstone_mode = CS_MODE_ARM
-        self.disassemble(self._range)
-
     def on_arch_changed(self):
         if self._app_window.dwarf.arch == 'arm64':
             self.capstone_arch = CS_ARCH_ARM64
