@@ -19,9 +19,10 @@ from PyQt5.QtGui import (QStandardItemModel, QIcon, QPixmap, QStandardItem,
                          QPainter, QColor, QKeySequence)
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHeaderView, QHBoxLayout,
                              QPushButton, QSpacerItem, QSizePolicy, QMenu,
-                             QDialog, QLineEdit, QCheckBox, QLabel, QShortcut)
+                             QDialog, QCheckBox, QLabel, QShortcut)
 
 from lib import utils
+from ui.dialog_input import InputDialogTextEdit
 from ui.list_view import DwarfListView
 
 
@@ -43,9 +44,9 @@ class AddWatcherDialog(QDialog):
         label = QLabel('Please insert a Pointer')
         v_box.addWidget(label)
 
-        self.text_field = QLineEdit()
+        self.text_field = InputDialogTextEdit(self)
         self.text_field.setPlaceholderText(
-            'Module.findExportByName(\'target\', \'export\') or 0x123456')
+            'Module.findExportByName(\'target\', \'export\')')
         self.text_field.setMinimumWidth(350)
         if ptr:
             self.text_field.setText(ptr)
@@ -234,7 +235,7 @@ class WatchersPanel(QWidget):
             mem_x = watcher_dlg.acc_execute.isChecked()
             mem_s = watcher_dlg.singleshot.isChecked()
 
-            ptr = watcher_dlg.text_field.text()
+            ptr = watcher_dlg.text_field.toPlainText()
 
             if ptr:
                 if isinstance(ptr, str):
