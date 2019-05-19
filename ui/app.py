@@ -785,19 +785,23 @@ class AppWindow(QMainWindow):
             else:
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
 
-                # todo: windows jump to disasm pc
                 if 'pc' in context['context']:
                     off = int(context['context']['pc']['value'], 16)
                     should_jump_to_asm = True
-                    if self.asm_panel is not None and self.asm_panel._range is not None:
-                        if self.asm_panel._range.start_address == off:
+                    should_show_tab = True
+                    if self.asm_panel is not None:
+                        if self.asm_panel._range is not None and self.asm_panel._range.start_address == off:
                             should_jump_to_asm = False
+                            should_show_tab = True
+                        if self.asm_panel._running_disasm:
+                            should_jump_to_asm = False
+                            should_show_tab = False
+
                     if should_jump_to_asm:
                         self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
-                        self.memory_panel.on_cm_showasm()
-                    else:
+                        self._disassemble_range(self.memory_panel.range)
+                    if should_show_tab:
                         self.show_main_tab('disassembly')
-
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])

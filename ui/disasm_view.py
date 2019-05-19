@@ -46,6 +46,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._longest_bytes = 0
         self._longest_mnemonic = 0
 
+        self._running_disasm = False
         self.capstone_arch = 0
         self.capstone_mode = 0
         self.keystone_arch = 0
@@ -165,6 +166,8 @@ class DisassemblyView(QAbstractScrollArea):
         self.adjust()
 
     def disassemble(self, dwarf_range, num_instructions=256, stop_on_ret=True):
+        self._running_disasm = True
+
         progress = QProgressDialog()
         progress.setFixedSize(300, 50)
         progress.setAutoFillBackground(True)
@@ -194,6 +197,7 @@ class DisassemblyView(QAbstractScrollArea):
             capstone = Cs(self.capstone_arch, self.capstone_mode)
             capstone.detail = True
         except CsError:
+            self._running_disasm = False
             print('[DisasmView] failed to initialize capstone with %d, %d' % (self.capstone_arch, self.capstone_mode))
             return
 
@@ -216,6 +220,7 @@ class DisassemblyView(QAbstractScrollArea):
 
         self.adjust()
         progress.cancel()
+        self._running_disasm = False
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
