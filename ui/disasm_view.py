@@ -11,6 +11,7 @@ from lib import utils
 from lib.instruction import Instruction
 
 from lib.prefs import Prefs
+from ui.dialog_input import InputDialog
 
 
 class DisassemblyView(QAbstractScrollArea):
@@ -510,7 +511,7 @@ class DisassemblyView(QAbstractScrollArea):
                 self._history.pop(len(self._history) - 1)
                 self.read_memory(self._history[len(self._history) - 1])
         elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
-            self._on_jump_to()
+            self._on_cm_jump_to_address()
         elif event.key() == Qt.Key_M and event.modifiers() & Qt.ControlModifier:  # ctrl+m
             self._on_switch_mode()
         elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
@@ -608,6 +609,8 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu = QMenu()
 
+        context_menu.addAction('Jump to address', lambda: self._on_cm_jump_to_address())
+
         # allow modeswitch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
             mode_str = 'ARM'
@@ -622,7 +625,7 @@ class DisassemblyView(QAbstractScrollArea):
         if 0 <= index < self.visible_lines():
             if index + self.pos < len(self._lines):
                 if isinstance(self._lines[index + self.pos], Instruction):
-                    context_menu.addAction('Copy Address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
+                    context_menu.addAction('Copy address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
 
                     context_menu.addSeparator()
 
@@ -633,14 +636,14 @@ class DisassemblyView(QAbstractScrollArea):
                     addr_str = str_fmt.format(self._lines[index + self.pos].address)
                     if self._app_window.watchers_panel:
                         if self._app_window.dwarf.is_address_watched(self._lines[index + self.pos].address):
-                            context_menu.addAction('Remove Watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
+                            context_menu.addAction('Remove watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
                         else:
-                            context_menu.addAction('Watch Address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
+                            context_menu.addAction('Watch address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
                     if self._app_window.hooks_panel:
                         if self._lines[index + self.pos].address in self._app_window.dwarf.hooks:
-                            context_menu.addAction('Remove Hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
+                            context_menu.addAction('Remove hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
                         else:
-                            context_menu.addAction('Hook Address', lambda: self._app_window.dwarf.hook_native(addr_str))
+                            context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
@@ -657,3 +660,8 @@ class DisassemblyView(QAbstractScrollArea):
             else:
                 self.capstone_mode = CS_MODE_ARM
             self.disassemble(self._range)
+
+    def _on_cm_jump_to_address(self):
+        ptr, input_ = InputDialog.input_pointer(self.app)
+        if ptr > 0:
+            self.read_memory(ptr)
