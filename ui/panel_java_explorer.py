@@ -89,8 +89,9 @@ class JavaExplorerPanel(QWidget):
         font = QFont()
         font.setBold(True)
         font.setPixelSize(19)
-        self.clazz.setMaximumHeight(25)
+        self.clazz.setMaximumHeight(40)
         self.clazz.setFont(font)
+        self.clazz.setStyleSheet('margin: 5px 10px;')
         box.addWidget(self.clazz)
 
         splitter = QSplitter()

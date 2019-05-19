@@ -383,60 +383,69 @@ QProgressBar::chunk:horizontal {
     background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #fff, stop: 0.5 #ef5350, stop: 1 #fff);
 }
 
-
 QDockWidget {
     titlebar-close-icon: url('assets/icons/x.svg');
     titlebar-normal-icon: url('assets/icons/undock.svg');
     text-transform: uppercase;
     font-weight: bold;
+    border: 1px solid #ccc;
 }
 
 QDockWidget::title {
-    padding: 3px 0;
-    border: 1px solid #ccc;
+    border: none;
+    position: absolute;
+    left: 0;
+    padding: 3px;
     border-radius: 2px;
     border-bottom: none;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    background-color: rgba(0,0,0,.1);
+    background-color: rgba(0,0,0,.2);
+    text-align: left;
+    subcontrol-origin: margin;
+    subcontrol-position: center left;
 }
 
 QDockWidget::close-button {
+    border:none;
+    background: transparent;
+    icon-size: 14px;
+    subcontrol-position: center right;
+    subcontrol-origin: margin;
     position: absolute;
-    width: 14px;
-    height: 14px;
-    top: 5px;
-    right: 5px;
-    border-radius: 2px;
-    border: 1px solid #ccc;
+    top: 0px; left: 0px; right: 3px; bottom: 0px;
+    width: 18px;
+    height: 18px;
 }
 
 QDockWidget::close-button:hover {
-    border: 1px solid #aaa;
-    background-color: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.1);
+    border:none;
 }
 
 QDockWidget::close-button:pressed {
-    border: 1px solid #aaa;
-    background-color: rgba(0,0,0,.1);
+    background: rgba(0,0,0,.1);
+    border:none;
 }
 
 QDockWidget::float-button {
+    border:none;
+    background: transparent;
+    icon-size: 14px;
+    subcontrol-position: center right;
+    subcontrol-origin: margin;
     position: absolute;
-    width: 14px;
-    height: 14px;
-    top: 5px;
-    right: 26px;
-    border-radius: 2px;
-    border: 1px solid #ccc;
+    top: 0px; left: 0px; right: 20px; bottom: 0px;
+    width: 18px;
+    height: 18px;
 }
 
 QDockWidget::float-button:hover {
-    border: 1px solid #aaa;
-    background-color: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.1);
+    border:none;
 }
 
 QDockWidget::float-button:pressed {
-    border: 1px solid #aaa;
-    background-color: rgba(0,0,0,.1);
+    background: rgba(0,0,0,.1);
+    border:none;
 }

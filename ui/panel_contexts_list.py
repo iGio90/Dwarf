@@ -100,6 +100,7 @@ class ContextsListPanel(DwarfListView):
         self.threads_model.appendRow([tid, pc_col, symb_col])
         self.resizeColumnToContents(0)
         self.resizeColumnToContents(1)
+        self.setCurrentIndex(self.threads_model.index(self.threads_model.rowCount()-1, 0))
 
     def resume_tid(self, tid):
         # todo: check why removing here and removing in on_proc_resume
