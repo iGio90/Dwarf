@@ -113,7 +113,6 @@ class RangesPanel(DwarfListView):
             self._ranges_model.removeRows(0, self._ranges_model.rowCount())
             for range_entry in ranges:
                 # create items to add
-                str_frmt = ''
                 if self._uppercase_hex:
                     str_frmt = '0x{0:X}'
                 else:

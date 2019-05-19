@@ -751,7 +751,7 @@ class AppWindow(QMainWindow):
         # once we got ranges in place from our target we can create the search panel as well
         if self.search_panel is None:
             self._create_ui_elem('search')
-            self.search_panel.set_ranges(ranges)
+        self.search_panel.set_ranges(ranges)
 
         if self.ranges_panel is not None:
             self.show_main_tab('ranges')
