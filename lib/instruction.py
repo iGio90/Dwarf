@@ -44,7 +44,7 @@ class Instruction(object):
         if instruction.group(CS_GRP_JUMP) or instruction.group(CS_GRP_CALL):
             self.is_jump = True
         self.jump_address = 0
-        if len(instruction.operands) > 0:
+        if len(instruction.operands) > 0 and self.is_jump:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
                     # if len(instruction.operands) == 1:
