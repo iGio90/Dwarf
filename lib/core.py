@@ -761,3 +761,19 @@ class Dwarf(QObject):
     @loading_library.setter
     def loading_library(self, value):
         self._loading_library = value
+
+    def export_session(self):
+        hooks = None
+        onLoads = None
+        watchers = None
+        if self._script is not None:
+            hooks = json.loads(self._script.exports.hooks())
+            onLoads = json.loads(self._script.exports.onloads())
+            watchers = json.loads(self._script.exports.watchers())
+
+        # todo: bookmarks
+        session_object = {
+            'hooks': hooks,
+            'onLoads': onLoads,
+            'watchers': watchers
+        }
