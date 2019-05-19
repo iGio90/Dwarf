@@ -424,6 +424,8 @@ class DeviceWindow(QDialog):
         vbox.addWidget(self._dev_bar)
         vbox.addLayout(inner_hbox)
         self.setLayout(vbox)
+        # center
+        self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
 
     def _pid_selected(self, pid):
         if pid:

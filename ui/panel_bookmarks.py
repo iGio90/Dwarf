@@ -68,7 +68,7 @@ class BookmarksPanel(QWidget):
         icon.addPixmap(QPixmap(utils.resource_path('assets/icons/plus.svg')))
         self.btn1 = QPushButton(icon, '')
         self.btn1.setFixedSize(20, 20)
-        self.btn1.clicked.connect(self._create_bookmark)
+        self.btn1.clicked.connect(lambda: self._create_bookmark(-1))
         btn2 = QPushButton(
             QIcon(QPixmap(utils.resource_path('assets/icons/dash.svg'))), '')
         btn2.setFixedSize(20, 20)
