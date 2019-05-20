@@ -162,6 +162,7 @@ class AppWindow(QMainWindow):
                 'Welcome to Dwarf - A debugger for reverse engineers, crackers and security analyst'
             )
             self.welcome_window.onSessionSelected.connect(self._start_session)
+            self.welcome_window.onSessionRestore.connect(self._restore_session)
             # wait for welcome screen
             self.hide()
             self.welcome_window.show()
@@ -544,10 +545,15 @@ class AppWindow(QMainWindow):
     # **************************** Handlers **********************************
     # ************************************************************************
     # session handlers
-    def _start_session(self, session_type):
+    def _start_session(self, session_type, session_data=None):
         if self.welcome_window is not None:
             self.welcome_window.close()
-        self.session_manager.create_session(session_type)
+        self.session_manager.create_session(session_type, session_data=session_data)
+
+    def _restore_session(self, session_data):
+        if 'session' in session_data:
+            session_type = session_data['session']
+            self._start_session(session_type, session_data=session_data)
 
     def session_created(self):
         # session init done create ui for it
@@ -558,6 +564,8 @@ class AppWindow(QMainWindow):
             self._create_ui_elem(ui_elem)
 
         self.dwarf.onAttached.connect(self._on_attached)
+        self.dwarf.onScriptLoaded.connect(self._on_script_loaded)
+
         # hookup
         self.dwarf.onSetRanges.connect(self._on_setranges)
         self.dwarf.onSetModules.connect(self._on_setmodules)
@@ -899,6 +907,10 @@ class AppWindow(QMainWindow):
 
     def _on_attached(self, data):
         self.setWindowTitle('Dwarf - Attached to %s (%s)' % (data[1], data[0]))
+
+    def _on_script_loaded(self):
+        # restore the loaded session if any
+        self.session_manager.restore_session()
 
     def _on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos

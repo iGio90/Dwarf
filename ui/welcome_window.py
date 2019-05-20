@@ -2,10 +2,10 @@ import os
 import random
 import json
 
-from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins
+from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
-    QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
+    QPushButton, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView, QMenu
 
 from lib import utils, prefs
 from lib.git import Git
@@ -143,6 +143,7 @@ class UpdateBar(QWidget):
 
 class WelcomeDialog(QDialog):
     onSessionSelected = pyqtSignal(str, name='onSessionSelected')
+    onSessionRestore = pyqtSignal(dict, name='onSessionRestore')
     onUpdateComplete = pyqtSignal(name='onUpdateComplete')
     onIsNewerVersion = pyqtSignal(name='onIsNewerVersion')
 
@@ -187,6 +188,7 @@ class WelcomeDialog(QDialog):
 
         self._recent_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._recent_list.customContextMenuRequested.connect(self._on_recent_sessions_context_menu)
+        self._recent_list.doubleClicked.connect(self._on_recent_session_double_click)
 
         _section_width = self._recent_list.header().sectionSize(2)
         self._new_pixmap = QPixmap(_section_width, 20)
@@ -330,8 +332,11 @@ class WelcomeDialog(QDialog):
                 if have_user_script:
                     user_script_item.setIcon(self._dot_icon)
 
+                recent_session_file_item = QStandardItem(recent_session_file)
+                recent_session_file_item.setData(exported_session, Qt.UserRole + 2)
+
                 self._recent_list_model.insertRow(self._recent_list_model.rowCount(), [
-                    QStandardItem(recent_session_file),
+                    recent_session_file_item,
                     QStandardItem(exported_session['session']),
                     QStandardItem(hooks),
                     QStandardItem(watchers),
@@ -373,5 +378,26 @@ class WelcomeDialog(QDialog):
     def _pick_random_word(self, arr):
         return self._sub_titles[arr][random.randint(0, len(self._sub_titles[arr]) - 1)]
 
-    def _on_recent_sessions_context_menu(self):
-        pass
+    def _on_recent_sessions_context_menu(self, pos):
+        index = self.list_view.indexAt(pos).row()
+        glbl_pt = self.list_view.mapToGlobal(pos)
+        context_menu = QMenu(self)
+        if index != -1:
+            context_menu.addAction(
+                'Delete recent session', lambda: self._remove_recent_sessions(
+                    self._recent_list_model.item(index, 0).text()))
+        context_menu.exec_(glbl_pt)
+
+    def _remove_recent_session(self, session_file):
+        if os.path.exists(session_file):
+            os.remove(session_file)
+            session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
+            if session_file in session_history:
+                session_history.pop(session_history.index(session_file))
+                self._prefs.put(prefs.RECENT_SESSIONS, session_history)
+
+    def _on_recent_session_double_click(self, model_index):
+        row = self._recent_list_model.itemFromIndex(model_index).row()
+        recent_session_file = self._recent_list_model.item(row, 0)
+        recent_session_data = recent_session_file.data(Qt.UserRole + 2)
+        self.onSessionRestore.emit(recent_session_data)
