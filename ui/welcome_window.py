@@ -150,9 +150,9 @@ class WelcomeDialog(QDialog):
         self._prefs = parent.prefs
 
         self._sub_titles = [
-            ['duck', 'dumb', 'doctor', 'dutch'],
-            ['warrior', 'wardrobe', 'waffles', 'wish'],
-            ['are', 'aren\'t', 'ain\'t', 'appear to be'],
+            ['duck', 'dumb', 'doctor', 'dutch', 'dark', 'dirty'],
+            ['warriors', 'wardrobes', 'waffles', 'wishes'],
+            ['are', 'aren\'t', 'ain\'t', 'appears to be'],
             ['rich', 'real', 'riffle', 'retarded', 'rock'],
             ['as fuck', 'fancy', 'fucked', 'front-ended', 'falafel', 'french fries'],
         ]
@@ -217,11 +217,9 @@ class WelcomeDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         v_box.addWidget(title)
 
-        sub_title_text = self._sub_titles[0][random.randint(0, len(self._sub_titles[0]) - 1)] + ' ' + \
-                         self._sub_titles[1][random.randint(0, len(self._sub_titles[1]) - 1)] + ' ' + \
-                         self._sub_titles[2][random.randint(0, len(self._sub_titles[2]) - 1)] + ' ' + \
-                         self._sub_titles[3][random.randint(0, len(self._sub_titles[3]) - 1)] + ' ' + \
-                         self._sub_titles[4][random.randint(0, len(self._sub_titles[4]) - 1)]
+        sub_title_text = (self._pick_random_word(0) + ' ' + self._pick_random_word(1) + ' ' +
+                          self._pick_random_word(2) + ' ' + self._pick_random_word(3) + ' ' +
+                          self._pick_random_word(4))
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         sub_title = QLabel(sub_title_text)
         sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
@@ -300,3 +298,6 @@ class WelcomeDialog(QDialog):
     def _on_local_button(self):
         self.onSessionSelected.emit('Local')
         self.close()
+
+    def _pick_random_word(self, arr):
+        return self._sub_titles[arr][random.randint(0, len(self._sub_titles[arr]) - 1)]
