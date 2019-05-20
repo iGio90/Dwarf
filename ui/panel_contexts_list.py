@@ -53,7 +53,7 @@ class ContextsListPanel(DwarfListView):
 
         self.doubleClicked.connect(self._item_doubleclicked)
 
-    def add_context(self, data, library_onload=None):
+    def add_context(self, data):
         if self.dwarf.arch == 'ia32':
             self.threads_model.setHeaderData(1, Qt.Horizontal, 'EIP')
         elif self.dwarf.arch == 'x64':
@@ -85,7 +85,7 @@ class ContextsListPanel(DwarfListView):
             pc_col.setText(parts[len(parts) - 1])
 
         symb_col = QStandardItem()
-        if library_onload is None:
+        if True:
             if not is_java:
                 if 'symbol' in data['context']['pc']:
                     str_fmt = ('{0} - {1}'.format(
@@ -94,7 +94,8 @@ class ContextsListPanel(DwarfListView):
             else:
                 symb_col.setText('.'.join(parts[:len(parts) - 1]))
         else:
-            str_fmt = ('loading {0}'.format(library_onload))
+            str_fmt = ('loading {0}'.format(''))
+            # str_fmt = ('loading {0}'.format(library_onload))
             symb_col.setText(str_fmt)
 
         self.threads_model.appendRow([tid, pc_col, symb_col])

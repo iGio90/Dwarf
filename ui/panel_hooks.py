@@ -54,8 +54,8 @@ class HooksPanel(QWidget):
         # connect to dwarf
         self._app_window.dwarf.onAddJavaHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddNativeHook.connect(self._on_add_hook)
-        self._app_window.dwarf.onAddOnLoadHook.connect(self._on_add_hook)
-        self._app_window.dwarf.onHitOnLoad.connect(self._on_hit_onload)
+        self._app_window.dwarf.onAddNativeOnLoadHook.connect(self._on_add_hook)
+        self._app_window.dwarf.onHitNativeOnLoad.connect(self._on_hit_native_on_load)
         self._app_window.dwarf.onDeleteHook.connect(self._on_hook_deleted)
 
         self._hooks_list = DwarfListView()
@@ -130,16 +130,18 @@ class HooksPanel(QWidget):
             self._on_addjava)
         shortcut_addjava.setAutoRepeat(False)
 
-        shortcut_addonload = QShortcut(
+        shortcut_add_native_on_load = QShortcut(
             QKeySequence(Qt.CTRL + Qt.Key_O), self._app_window,
-            self._on_addonload)
-        shortcut_addonload.setAutoRepeat(False)
+            self._on_add_native_on_load)
+        shortcut_add_native_on_load.setAutoRepeat(False)
 
         # new menu
         self.new_menu = QMenu('New')
         self.new_menu.addAction('Native', self._on_addnative)
         self.new_menu.addAction('Java', self._on_addjava)
-        self.new_menu.addAction('Module loading', self._on_addonload)
+        self.new_menu.addAction('Module loading', self._on_add_native_on_load)
+        if self._app_window.dwarf.java_available:
+            self.new_menu.addAction('Java class loading', self._on_add_native_on_load)
 
     # ************************************************************************
     # **************************** Functions *********************************
@@ -173,13 +175,13 @@ class HooksPanel(QWidget):
         type_.setTextAlignment(Qt.AlignCenter)
         if hook.hook_type == Hook.HOOK_NATIVE:
             type_.setText('N')
-            type_.setToolTip('Native Hook')
+            type_.setToolTip('Native hook')
         elif hook.hook_type == Hook.HOOK_JAVA:
             type_.setText('J')
-            type_.setToolTip('Java Hook')
+            type_.setToolTip('Java hook')
         elif hook.hook_type == Hook.HOOK_ONLOAD:
             type_.setText('O')
-            type_.setToolTip('OnLoad Hook')
+            type_.setToolTip('On load hook')
         else:
             type_.setText('U')
             type_.setToolTip('Unknown Type')
@@ -226,7 +228,7 @@ class HooksPanel(QWidget):
 
         self._hooks_model.appendRow([addr, type_, inp, logic, condition])
 
-    def _on_hit_onload(self, data):
+    def _on_hit_native_on_load(self, data):
         items = self._hooks_model.findItems(data[0], Qt.MatchExactly, 2)
         if len(items) > 0:
             self._hooks_model.item(items[0].row(), 0).setText(data[1])
@@ -313,8 +315,8 @@ class HooksPanel(QWidget):
     def _on_addjava(self):
         self._app_window.dwarf.hook_java()
 
-    def _on_addonload(self):
-        self._app_window.dwarf.hook_onload()
+    def _on_add_native_on_load(self):
+        self._app_window.dwarf.hook_native_onload()
 
     def _on_deletehook(self, num_row):
         hook_type = self._hooks_model.item(num_row, 1).text()

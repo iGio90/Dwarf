@@ -33,7 +33,7 @@ class DwarfCompleter(QCompleter):
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
             'hookAllJavaMethods', 'hookJava', 'hookNative',
-            'hookOnLoad', 'javaBacktrace', 'isAddressWatched',
+            'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'removeWatcher', 'restart',
             'setData',
             # trace
@@ -85,7 +85,7 @@ class JsHighlighter(QSyntaxHighlighter):
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
             'hookAllJavaMethods', 'hookJava', 'hookNative',
-            'hookOnLoad', 'javaBacktrace', 'isAddressWatched',
+            'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'resume', 'removeWatcher', 'restart',
             'setData', 'startNativeTracer', 'stopNativeTracer',
             "prototype",

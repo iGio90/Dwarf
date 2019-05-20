@@ -309,15 +309,17 @@ class WelcomeDialog(QDialog):
                     exported_session = json.load(f)
                 hooks = '0'
                 watchers = '0'
-                onLoads = '0'
+                on_loads = 0
                 bookmarks = '0'
                 have_user_script = False
                 if 'hooks' in exported_session and exported_session['hooks'] is not None:
                     hooks = str(len(exported_session['hooks']))
                 if 'watchers' in exported_session and exported_session['watchers'] is not None:
                     watchers = str(len(exported_session['watchers']))
-                if 'onLoads' in exported_session and exported_session['onLoads'] is not None:
-                    onLoads = str(len(exported_session['onLoads']))
+                if 'nativeOnLoads' in exported_session and exported_session['nativeOnLoads'] is not None:
+                    on_loads += len(exported_session['nativeOnLoads'])
+                if 'javaOnLoads' in exported_session and exported_session['javaOnLoads'] is not None:
+                    on_loads += len(exported_session['javaOnLoads'])
                 if 'bookmarks' in exported_session and exported_session['bookmarks'] is not None:
                     bookmarks = str(len(exported_session['bookmarks']))
                 if 'user_script' in exported_session and exported_session['user_script']:
@@ -326,6 +328,8 @@ class WelcomeDialog(QDialog):
                 #user_script_item = QStandardItem()
                 #if have_user_script:
                 #user_script_item.setIcon(self._dot_icon)
+
+                on_loads = str(on_loads)
 
                 recent_session_file_item = QStandardItem(recent_session_file)
                 recent_session_file_item.setData(exported_session, Qt.UserRole + 2)
@@ -336,7 +340,7 @@ class WelcomeDialog(QDialog):
                 item_2.setTextAlignment(Qt.AlignCenter)
                 item_3 = QStandardItem(watchers)
                 item_3.setTextAlignment(Qt.AlignCenter)
-                item_4 = QStandardItem(onLoads)
+                item_4 = QStandardItem(on_loads)
                 item_4.setTextAlignment(Qt.AlignCenter)
                 item_5 = QStandardItem(bookmarks)
                 item_5.setTextAlignment(Qt.AlignCenter)

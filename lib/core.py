@@ -75,7 +75,7 @@ class Dwarf(QObject):
     # hook related
     onAddNativeHook = pyqtSignal(Hook, name='onAddNativeHook')
     onAddJavaHook = pyqtSignal(Hook, name='onAddJavaHook')
-    onAddOnLoadHook = pyqtSignal(Hook, name='onAddOnLoadHook')
+    onAddNativeOnLoadHook = pyqtSignal(Hook, name='onAddNativeOnLoadHook')
     onDeleteHook = pyqtSignal(list, name='onDeleteHook')
     # watcher related
     onWatcherAdded = pyqtSignal(str, int, name='onWatcherAdded')
@@ -83,7 +83,7 @@ class Dwarf(QObject):
     # ranges + modules
     onSetRanges = pyqtSignal(list, name='onSetRanges')
     onSetModules = pyqtSignal(list, name='onSetModules')
-    onHitOnLoad = pyqtSignal(list, name='onHitOnLoad')
+    onHitNativeOnLoad = pyqtSignal(list, name='onHitNativeOnLoad')
     onLogToConsole = pyqtSignal(str, name='onLogToConsole')
     # thread+context
     onThreadResumed = pyqtSignal(int, name='onThreadResumed')
@@ -114,7 +114,6 @@ class Dwarf(QObject):
         self._app_window = parent
 
         self.java_available = False
-        self._loading_library = False
 
         # frida device
         self._device = device
@@ -133,7 +132,8 @@ class Dwarf(QObject):
 
         # hooks
         self.hooks = {}
-        self.on_loads = {}
+        self.native_on_loads = {}
+        self.java_on_loads = {}
         self.java_hooks = {}
         self.temporary_input = ''
         self.native_pending_args = None
@@ -145,7 +145,6 @@ class Dwarf(QObject):
         self.contexts = {}
         self.context_tid = 0
         self._platform = ''
-        self.loading_library = None
 
         # tracers
         self._native_traced_tid = 0
@@ -172,8 +171,6 @@ class Dwarf(QObject):
 
     def _reinitialize(self):
         self.java_available = False
-        self._loading_library = False
-        self.loading_library = None
 
         # frida device
         self._device = None
@@ -184,7 +181,8 @@ class Dwarf(QObject):
 
         # hooks
         self.hooks = {}
-        self.on_loads = {}
+        self.native_on_loads = {}
+        self.java_on_loads = {}
         self.java_hooks = {}
         self.temporary_input = ''
         self.native_pending_args = None
@@ -203,10 +201,6 @@ class Dwarf(QObject):
     @property
     def emulator(self):
         return self._emulator
-
-    @property
-    def loading_library(self):
-        return self._loading_library
 
     @property
     def native_trace_tid(self):
@@ -473,7 +467,7 @@ class Dwarf(QObject):
             self.native_pending_args = pending_args
             self.dwarf_api('hookNative', ptr)
 
-    def hook_onload(self, input_=None):
+    def hook_native_onload(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(self._app_window, hint='insert module name', placeholder='libtarget.so')
             if not accept:
@@ -481,10 +475,10 @@ class Dwarf(QObject):
             if len(input_) == 0:
                 return
 
-        if input_ in self._app_window.dwarf.on_loads:
+        if input_ in self._app_window.dwarf.native_on_loads:
             return
 
-        self.dwarf_api('hookOnLoad', input_)
+        self.dwarf_api('hookNativeOnLoad', input_)
 
     def log(self, what):
         self.onLogToConsole.emit(str(what))
@@ -612,20 +606,20 @@ class Dwarf(QObject):
             self.native_pending_args = None
             self.hooks[h.get_ptr()] = h
             self.onAddNativeHook.emit(h)
-        elif cmd == 'hook_onload_callback':
+        elif cmd == 'hook_native_onload_callback':
             h = Hook(Hook.HOOK_ONLOAD)
             h.set_ptr(0)
             h.set_input(parts[1])
-            self.on_loads[parts[1]] = h
-            self.onAddOnLoadHook.emit(h)
-        elif cmd == 'onload_module_loading':
+            self.native_on_loads[parts[1]] = h
+            self.onAddNativeOnLoadHook.emit(h)
+        elif cmd == 'native_onload_module_loading':
             str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
             self.log(str_fmt)
         elif cmd == 'hook_deleted':
             if parts[1] == 'java':
                 self.java_hooks.pop(parts[2])
-            elif parts[1] == 'onload':
-                self.on_loads.pop(parts[2])
+            elif parts[1] == 'native_onload':
+                self.native_on_loads.pop(parts[2])
             else:
                 self.hooks.pop(utils.parse_ptr(parts[2]))
             self.onDeleteHook.emit(parts)
@@ -633,11 +627,10 @@ class Dwarf(QObject):
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':
             self.log(parts[1])
-        elif cmd == 'onload_callback':
-            self.loading_library = parts[1]
-            str_fmt = ('Hook onload {0} @thread := {1}'.format(parts[1], parts[3]))
+        elif cmd == 'native_onload_callback':
+            str_fmt = ('Hook native onload {0} @thread := {1}'.format(parts[1], parts[3]))
             self.log(str_fmt)
-            self.onHitOnLoad.emit([parts[1], parts[2]])
+            self.onHitNativeOnLoad.emit([parts[1], parts[2]])
         elif cmd == 'release':
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
@@ -709,8 +702,8 @@ class Dwarf(QObject):
             else:
                 name = context_data['ptr']
 
-            self._app_window.threads.add_context(context_data, library_onload=self.loading_library)
-            if self.loading_library is None and context_data['reason'] == 0:
+            self._app_window.threads.add_context(context_data)
+            if context_data['reason'] == 0:
                 self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
             if context_data['is_java']:
                 self._app_window.show_main_tab('jvm-explorer')
@@ -724,9 +717,6 @@ class Dwarf(QObject):
 
         # update current context tid
         self.context_tid = context_data['tid']
-
-        if self._loading_library is not None:
-            self._loading_library = None
 
     def _on_destroyed(self):
         self._reinitialize()
@@ -764,23 +754,22 @@ class Dwarf(QObject):
     def _on_request_resume_from_js(self, tid):
         self.dwarf_api('release', tid, tid=tid)
 
-    @loading_library.setter
-    def loading_library(self, value):
-        self._loading_library = value
-
     def save_session(self):
         hooks = None
-        onLoads = None
+        native_on_loads = None
+        java_on_loads = None
         watchers = None
         if self._script is not None:
             hooks = json.loads(self._script.exports.hooks())
-            onLoads = json.loads(self._script.exports.onloads())
+            native_on_loads = json.loads(self._script.exports.nativeonloads())
+            java_on_loads = json.loads(self._script.exports.javaonloads())
             watchers = json.loads(self._script.exports.watchers())
 
         session_object = {
             'session': self._app_window.session_manager.session.session_type,
             'hooks': hooks,
-            'onLoads': onLoads,
+            'nativeOnLoads': native_on_loads,
+            'javaOnLoads': java_on_loads,
             'watchers': watchers,
             'bookmarks': self._app_window.bookmarks_panel.bookmarks,
             'user_script': self._app_window.console_panel.get_js_console().function_content
