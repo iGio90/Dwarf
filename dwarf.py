@@ -17,6 +17,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 import sys
 import argparse
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from ui.app import AppWindow
@@ -64,6 +66,7 @@ def run_dwarf():
     args = process_args()
 
     qapp = QApplication([])
+    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
 
     app_window = AppWindow(args)
     app_window.onRestart.connect(_on_restart)

@@ -15,6 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
+import sys
 import shutil
 
 from lib import utils
@@ -183,7 +184,7 @@ class AppWindow(QMainWindow):
         dwarf_menu = QMenu('Dwarf', self)
         if self._is_newer_dwarf:
             dwarf_menu.addAction('Update', self._update_dwarf)
-        dwarf_menu.addAction('Exit', self.session_closed)
+        dwarf_menu.addAction('Close', self.session_closed)
         self.menu.addMenu(dwarf_menu)
 
         session = self.session_manager.session
@@ -440,6 +441,12 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.smali_panel, 'Smali')
         else:
             print('no handler for elem: ' + elem)
+
+        # TODO: remove add @2x
+        for item in self.findChildren(QDockWidget):
+            if item:
+                if 'darwin' in sys.platform:
+                    item.setStyleSheet('QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }')
 
     def set_theme(self, theme):
         if theme:
