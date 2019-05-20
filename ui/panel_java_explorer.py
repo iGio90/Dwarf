@@ -171,6 +171,7 @@ class JavaExplorerPanel(QWidget):
         self._set_data(data)
 
     def clear_panel(self):
+        self.clazz.setText('')
         self.handle_history = []
         self.methods._model.clear()
         self.fields._model.clear()

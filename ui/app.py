@@ -594,6 +594,10 @@ class AppWindow(QMainWindow):
 
         self.main_tabs.clear()
 
+        # actually we need to kill this. needs a refactor
+        if self.java_trace_panel is not None:
+            self.java_trace_panel = None
+
         for elem in self._ui_elems:
             if elem == 'watchers':
                 self.watchers_panel.clear_list()

@@ -573,6 +573,9 @@ class Dwarf(QObject):
         cmd = parts[0]
         if cmd == 'backtrace':
             self.onBackTrace.emit(json.loads(parts[1]))
+        elif cmd == 'class_loader_loading_class':
+            str_fmt = ('@thread {0} loading class := {1}'.format(parts[1], parts[2]))
+            self.log(str_fmt)
         elif cmd == 'emulator':
             self.onEmulator.emit(parts[1:])
         elif cmd == 'enumerate_java_classes_start':
@@ -615,6 +618,9 @@ class Dwarf(QObject):
             h.set_input(parts[1])
             self.on_loads[parts[1]] = h
             self.onAddOnLoadHook.emit(h)
+        elif cmd == 'onload_module_loading':
+            str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
+            self.log(str_fmt)
         elif cmd == 'hook_deleted':
             if parts[1] == 'java':
                 self.java_hooks.pop(parts[2])
