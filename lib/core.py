@@ -344,11 +344,11 @@ class Dwarf(QObject):
 
                     self.dwarf_api('evaluateFunction', user_script)
 
-            self.onScriptLoaded.emit()
-
             # resume immediately on android and ios
             if self._app_window.session_manager.session.session_type == 'Android':
                 self.resume_proc()
+
+            self.onScriptLoaded.emit()
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'

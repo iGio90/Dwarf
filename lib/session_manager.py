@@ -126,5 +126,4 @@ class SessionManager(QObject):
                             if ptr is not None and ptr > 0:
                                 self._app_window.dwarf.dwarf_api('hookNative', ptr)
 
-
         self._restored_session_data = None
