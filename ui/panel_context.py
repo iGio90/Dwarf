@@ -307,7 +307,7 @@ class ContextPanel(QTabWidget):
                 _class.setForeground(Qt.lightGray)
 
             _value = QStandardItem()
-            if 'arg' not in context[arg] or context[arg]['arg'] is not None:
+            if 'arg' not in context[arg] or context[arg]['arg'] is None:
                 _value.setText('null')
                 _value.setForeground(Qt.gray)
             else:
