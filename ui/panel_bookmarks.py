@@ -39,6 +39,8 @@ class BookmarksPanel(QWidget):
             print('BookmarksPanel created before Dwarf exists')
             return
 
+        self.bookmarks = {}
+
         self._bookmarks_list = DwarfListView()
         self._bookmarks_list.doubleClicked.connect(self._on_dblclicked)
         self._bookmarks_list.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -183,7 +185,12 @@ class BookmarksPanel(QWidget):
                     item = self._bookmarks_model.item(index, 1)
                     item.setText(note)
 
+                self.bookmarks[hex(ptr)] = note
+
     # shortcuts/menu
 
     def _on_delete_bookmark(self, index):
+        ptr = self._bookmarks_model.item(index, 0).text()
+        del self.bookmarks[ptr]
+
         self._bookmarks_model.removeRow(index)

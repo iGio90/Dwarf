@@ -771,9 +771,12 @@ class Dwarf(QObject):
             onLoads = json.loads(self._script.exports.onloads())
             watchers = json.loads(self._script.exports.watchers())
 
-        # todo: bookmarks
         session_object = {
+            'session': self._app_window.session_manager.session.session_type,
             'hooks': hooks,
             'onLoads': onLoads,
-            'watchers': watchers
+            'watchers': watchers,
+            'bookmarks': self._app_window.bookmarks_panel.bookmarks,
+            'user_script': self._app_window.console_panel.get_js_console().function_content
         }
+
