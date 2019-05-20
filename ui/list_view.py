@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSortFilterProxyModel
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtWidgets import QTreeView, QHeaderView
 
@@ -41,6 +41,9 @@ class DwarfListView(QTreeView):
         self.setHeaderHidden(False)
         self.setAutoFillBackground(True)
         self.setRootIsDecorated(False)
+        # TODO: use filter
+        self._proxy_model = QSortFilterProxyModel(self)
+        self._proxy_model.setSourceModel(self.model())
         # self.setSortingEnabled(True)
 
     def keyPressEvent(self, event):
@@ -223,11 +226,19 @@ class DwarfListView(QTreeView):
         if accept:
             self._current_search = input
             have_result, search_results = self.contains_text(input, stop_at_match=False)
-            rows = {}
-            for x in search_results:
-                rows[str(x[0])] = x
+
+            if not have_result:
+                return
+            #rows = {}
+            #for x in search_results:
+            #    rows[str(x[0])] = x
 
             for row in range(self.model().rowCount()):
                 item = self.model().item(row, 0)
-                # todo hide items
-                #self.setRowHidden(row, item.index(), True)
+                hide = True
+                for sr in search_results:
+                    if sr[0] == row:
+                        hide = False
+                        break
+
+                self.setRowHidden(row, self.model().invisibleRootItem().index(), hide)
