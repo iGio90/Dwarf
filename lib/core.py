@@ -762,7 +762,7 @@ class Dwarf(QObject):
     def loading_library(self, value):
         self._loading_library = value
 
-    def export_session(self):
+    def save_session(self):
         hooks = None
         onLoads = None
         watchers = None
@@ -780,3 +780,6 @@ class Dwarf(QObject):
             'user_script': self._app_window.console_panel.get_js_console().function_content
         }
 
+        _file = QFileDialog.getSaveFileName(self._app_window)
+        with open(_file[0], 'w') as f:
+            f.write(json.dumps(session_object, indent=2))

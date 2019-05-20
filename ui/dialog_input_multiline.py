@@ -52,7 +52,7 @@ class InputMultilineDialog(QDialog):
             self.input_widget.setMinimumWidth(min_width)
 
         if len(input_content) > 0:
-            self.input_widget.setText(input_content)
+            self.input_widget.setPlainText(input_content)
         layout.addWidget(self.input_widget)
 
         buttons = QHBoxLayout()

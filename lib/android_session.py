@@ -79,7 +79,7 @@ class AndroidSession(Session):
 
         # main menu every session needs
         self._menu = [QMenu(self.session_type + ' Session')]
-        #self._menu[0].addAction('Save Session', self._save_session)
+        self._menu[0].addAction('Save Session', self.dwarf.save_session)
         self._menu[0].addAction('Close Session', self.stop_session)
         self._smali_thread = None
 
