@@ -24,7 +24,7 @@ import frida
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from PyQt5.QtWidgets import QFileDialog, QApplication
 
-from lib import utils
+from lib import utils, prefs
 from lib.context import Context
 from lib.emulator import Emulator
 
@@ -781,5 +781,15 @@ class Dwarf(QObject):
         }
 
         _file = QFileDialog.getSaveFileName(self._app_window)
-        with open(_file[0], 'w') as f:
-            f.write(json.dumps(session_object, indent=2))
+        if len(_file) > 0:
+            _file = _file[0]
+            with open(_file, 'w') as f:
+                f.write(json.dumps(session_object, indent=2))
+
+            history = self._app_window.prefs.get(prefs.RECENT_SESSIONS, default=[])
+            if _file in history:
+                history.pop(history.index(_file))
+            history.insert(0, _file)
+            if len(history) > 20:
+                history.pop(len(history) - 1)
+            self._app_window.prefs.put(prefs.RECENT_SESSIONS, history)

@@ -1,13 +1,15 @@
+import os
 import random
 import json
 
 from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins
-from PyQt5.QtGui import QFont, QPixmap, QIcon
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QListWidget, QListWidgetItem, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
-    QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp
+    QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView
 
-from lib import utils
+from lib import utils, prefs
 from lib.git import Git
+from ui.list_view import DwarfListView
 
 
 class DwarfCommitsThread(QThread):
@@ -157,7 +159,40 @@ class WelcomeDialog(QDialog):
             ['as fuck', 'fancy', 'fucked', 'front-ended', 'falafel', 'french fries'],
         ]
 
-        self.recent_list = QListWidget(self)
+        self._recent_list_model = QStandardItemModel(0, 7)
+        self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Path')
+        self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Session')
+        self._recent_list_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(2, Qt.Horizontal, 'Hooks')
+        self._recent_list_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(3, Qt.Horizontal, 'Watchers')
+        self._recent_list_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(4, Qt.Horizontal, 'OnLoads')
+        self._recent_list_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(5, Qt.Horizontal, 'Bookmarks')
+        self._recent_list_model.setHeaderData(5, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(6, Qt.Horizontal, 'Custom script')
+        self._recent_list_model.setHeaderData(6, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+
+        self._recent_list = DwarfListView()
+        self._recent_list.setModel(self._recent_list_model)
+
+        self._recent_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents | QHeaderView.Interactive)
+        self._recent_list.header().setSectionResizeMode(1, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(2, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(3, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(4, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(5, QHeaderView.Stretch)
+        self._recent_list.header().setSectionResizeMode(6, QHeaderView.Stretch)
+
+        self._recent_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self._recent_list.customContextMenuRequested.connect(self._on_recent_sessions_context_menu)
+
+        _section_width = self._recent_list.header().sectionSize(2)
+        self._new_pixmap = QPixmap(_section_width, 20)
+        self._new_pixmap.fill(Qt.transparent)
+        self._dot_icon = QIcon(self._new_pixmap)
+
         # setup size and remove/disable titlebuttons
         self.setFixedSize(800, 400)
         self.setSizeGripEnabled(False)
@@ -175,11 +210,6 @@ class WelcomeDialog(QDialog):
         # center
         self.setGeometry(
             QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
-
-        saved_sessions = self._prefs.get('dwarf_mru', '{}')
-        saved_sessions = json.loads(saved_sessions)
-        for saved in saved_sessions:
-            self.recent_list.addItem(QListWidgetItem(saved['path']))
 
     def setup_ui(self):
         """ Setup Ui
@@ -238,7 +268,7 @@ class WelcomeDialog(QDialog):
         font.setPointSize(10)
         recent.setFont(font)
         wrapper.addWidget(recent)
-        wrapper.addWidget(self.recent_list)
+        wrapper.addWidget(self._recent_list)
         h_box.addLayout(wrapper, stretch=False)
         buttonSpacer = QSpacerItem(15, 100, QSizePolicy.Fixed, QSizePolicy.Minimum)
         h_box.addItem(buttonSpacer)
@@ -274,6 +304,47 @@ class WelcomeDialog(QDialog):
         btn.setToolTip('New Remote Session')
         wrapper.addWidget(btn)
 
+        session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
+        invalid_session_files = []
+        for recent_session_file in session_history:
+            if os.path.exists(recent_session_file):
+                with open(recent_session_file, 'r') as f:
+                    exported_session = json.load(f)
+                hooks = '0'
+                watchers = '0'
+                onLoads = '0'
+                bookmarks = '0'
+                have_user_script = False
+                if 'hooks' in exported_session and exported_session['hooks'] is not None:
+                    hooks = str(len(exported_session['hooks']))
+                if 'watchers' in exported_session and exported_session['watchers'] is not None:
+                    watchers = str(len(exported_session['watchers']))
+                if 'onLoads' in exported_session and exported_session['onLoads'] is not None:
+                    onLoads = str(len(exported_session['onLoads']))
+                if 'bookmarks' in exported_session and exported_session['bookmarks'] is not None:
+                    bookmarks = str(len(exported_session['bookmarks']))
+                if 'user_script' in exported_session and exported_session['user_script']:
+                    have_user_script = exported_session['user_script'] != ''
+
+                user_script_item = QStandardItem()
+                if have_user_script:
+                    user_script_item.setIcon(self._dot_icon)
+
+                self._recent_list_model.insertRow(self._recent_list_model.rowCount(), [
+                    QStandardItem(recent_session_file),
+                    QStandardItem(exported_session['session']),
+                    QStandardItem(hooks),
+                    QStandardItem(watchers),
+                    QStandardItem(onLoads),
+                    QStandardItem(bookmarks),
+                    QStandardItem(user_script_item),
+                ])
+            else:
+                invalid_session_files.append(recent_session_file)
+        for invalid in invalid_session_files:
+            session_history.pop(session_history.index(invalid))
+        self._prefs.put(prefs.RECENT_SESSIONS, session_history)
+
         h_box.addLayout(wrapper, stretch=False)
         main_wrap.addLayout(h_box)
         self.setLayout(main_wrap)
@@ -301,3 +372,6 @@ class WelcomeDialog(QDialog):
 
     def _pick_random_word(self, arr):
         return self._sub_titles[arr][random.randint(0, len(self._sub_titles[arr]) - 1)]
+
+    def _on_recent_sessions_context_menu(self):
+        pass
