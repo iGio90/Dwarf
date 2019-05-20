@@ -25,8 +25,11 @@ class DwarfListView(QTreeView):
     """ Using QTreeView as ListView because it allows ListView+QHeaderView
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, search_enabled=True):
         super(DwarfListView, self).__init__(parent=parent)
+
+        self._search_enabled = search_enabled
+        self._current_search = ''
 
         self._uppercase_hex = True
 
@@ -39,6 +42,16 @@ class DwarfListView(QTreeView):
         self.setAutoFillBackground(True)
         self.setRootIsDecorated(False)
         # self.setSortingEnabled(True)
+
+    def keyPressEvent(self, event):
+        """ onkeydown
+        """
+        key = event.key()
+        mod = event.modifiers()
+        if key == Qt.Key_F and mod & Qt.ControlModifier and self._search_enabled:  # CTRL + F
+            self._on_cm_search()
+        else:
+            super(DwarfListView, self).keyPressEvent(event)
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -114,7 +127,7 @@ class DwarfListView(QTreeView):
 
         return None
 
-    def contains_text(self, text, case_sensitive=False, stop_at_match=True):
+    def contains_text(self, text, case_sensitive=False, stop_at_match=True, match_exactly=False):
         """ looks in all fields for text
             returns true, [[row, col]] if text exists
         """
@@ -124,15 +137,22 @@ class DwarfListView(QTreeView):
             for i in range(self.model().rowCount()):
                 for j in range(self.model().columnCount()):
                     item_text = self.get_item_text(i, j)
-                    if case_sensitive and (item_text == text):
-                        ret_res.append([i, j])
-                        if stop_at_match:
-                            break
-                    elif not case_sensitive and (item_text.lower() == text.lower()):
-                        ret_res.append([i, j])
-                        if stop_at_match:
-                            break
 
+                    if match_exactly:
+                        if not case_sensitive:
+                            _eval = item_text.lower() == text.lower()
+                        else:
+                            _eval = item_text == text
+                    else:
+                        if not case_sensitive:
+                            _eval = text.lower() in item_text.lower()
+                        else:
+                            _eval = item_text in text
+
+                    if _eval:
+                        ret_res.append([i, j])
+                        if stop_at_match:
+                            break
         if ret_res:
             ret_val = True
 
@@ -195,3 +215,19 @@ class DwarfListView(QTreeView):
                     width = header.sectionSize(col)
                     header.setSectionResizeMode(col, QHeaderView.Interactive)
                     header.resizeSection(col, width)
+
+    def _on_cm_search(self):
+        from ui.dialog_input import InputDialog
+        accept, input = InputDialog.input(
+            self, hint='Search something in this list', placeholder='search...', input_content=self._current_search)
+        if accept:
+            self._current_search = input
+            have_result, search_results = self.contains_text(input, stop_at_match=False)
+            rows = {}
+            for x in search_results:
+                rows[str(x[0])] = x
+
+            for row in range(self.model().rowCount()):
+                item = self.model().item(row, 0)
+                # todo hide items
+                #self.setRowHidden(row, item.index(), True)
