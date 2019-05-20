@@ -307,9 +307,11 @@ class ContextPanel(QTabWidget):
                 _class.setForeground(Qt.lightGray)
 
             _value = QStandardItem()
-            if context[arg] is not None:
+            if 'arg' not in context[arg] or context[arg]['arg'] is not None:
                 _value.setText('null')
                 _value.setForeground(Qt.gray)
+            else:
+                _value.setText(context[arg]['arg'])
 
             self._javactx_model.appendRow([_arg, _class, _value])
             self._javactx_list.resizeColumnToContents(0)
