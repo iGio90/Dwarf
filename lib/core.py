@@ -76,14 +76,16 @@ class Dwarf(QObject):
     onAddNativeHook = pyqtSignal(Hook, name='onAddNativeHook')
     onAddJavaHook = pyqtSignal(Hook, name='onAddJavaHook')
     onAddNativeOnLoadHook = pyqtSignal(Hook, name='onAddNativeOnLoadHook')
+    onAddJavaOnLoadHook = pyqtSignal(Hook, name='onAddJavaOnLoadHook')
     onDeleteHook = pyqtSignal(list, name='onDeleteHook')
+    onHitNativeOnLoad = pyqtSignal(list, name='onHitNativeOnLoad')
+    onHitJavaOnLoad = pyqtSignal(str, name='onHitJavaOnLoad')
     # watcher related
     onWatcherAdded = pyqtSignal(str, int, name='onWatcherAdded')
     onWatcherRemoved = pyqtSignal(str, name='onWatcherRemoved')
     # ranges + modules
     onSetRanges = pyqtSignal(list, name='onSetRanges')
     onSetModules = pyqtSignal(list, name='onSetModules')
-    onHitNativeOnLoad = pyqtSignal(list, name='onHitNativeOnLoad')
     onLogToConsole = pyqtSignal(str, name='onLogToConsole')
     # thread+context
     onThreadResumed = pyqtSignal(int, name='onThreadResumed')
@@ -467,7 +469,7 @@ class Dwarf(QObject):
             self.native_pending_args = pending_args
             self.dwarf_api('hookNative', ptr)
 
-    def hook_native_onload(self, input_=None):
+    def hook_native_on_load(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(self._app_window, hint='insert module name', placeholder='libtarget.so')
             if not accept:
@@ -479,6 +481,20 @@ class Dwarf(QObject):
             return
 
         self.dwarf_api('hookNativeOnLoad', input_)
+
+    def hook_java_on_load(self, input_=None):
+        if input_ is None or not isinstance(input_, str):
+            accept, input_ = InputDialog.input(
+                self._app_window, hint='insert class name', placeholder='com.android.mytargetclass')
+            if not accept:
+                return
+            if len(input_) == 0:
+                return
+
+        if input_ in self._app_window.dwarf.native_on_loads:
+            return
+
+        self.dwarf_api('hookJavaOnLoad', input_)
 
     def log(self, what):
         self.onLogToConsole.emit(str(what))
@@ -595,6 +611,12 @@ class Dwarf(QObject):
                 self.java_pending_args = None
             self.java_hooks[h.get_input()] = h
             self.onAddJavaHook.emit(h)
+        elif cmd == 'hook_java_on_load_callback':
+            h = Hook(Hook.HOOK_JAVA)
+            h.set_ptr(0)
+            h.set_input(parts[1])
+            self.java_on_loads[parts[1]] = h
+            self.onAddJavaOnLoadHook.emit(h)
         elif cmd == 'hook_native_callback':
             h = Hook(Hook.HOOK_NATIVE)
             h.set_ptr(int(parts[1], 16))
@@ -606,31 +628,37 @@ class Dwarf(QObject):
             self.native_pending_args = None
             self.hooks[h.get_ptr()] = h
             self.onAddNativeHook.emit(h)
-        elif cmd == 'hook_native_onload_callback':
+        elif cmd == 'hook_native_on_load_callback':
             h = Hook(Hook.HOOK_ONLOAD)
             h.set_ptr(0)
             h.set_input(parts[1])
             self.native_on_loads[parts[1]] = h
             self.onAddNativeOnLoadHook.emit(h)
-        elif cmd == 'native_onload_module_loading':
-            str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
-            self.log(str_fmt)
         elif cmd == 'hook_deleted':
             if parts[1] == 'java':
                 self.java_hooks.pop(parts[2])
-            elif parts[1] == 'native_onload':
+            elif parts[1] == 'native_on_load':
                 self.native_on_loads.pop(parts[2])
+            elif parts[1] == 'java_on_load':
+                self.java_on_loads.pop(parts[2])
             else:
                 self.hooks.pop(utils.parse_ptr(parts[2]))
             self.onDeleteHook.emit(parts)
+        elif cmd == 'java_on_load_callback':
+            str_fmt = ('Hook java onload {0} @thread := {1}'.format(parts[1], parts[2]))
+            self.log(str_fmt)
+            self.onHitJavaOnLoad.emit(parts[1])
         elif cmd == 'java_trace':
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':
             self.log(parts[1])
-        elif cmd == 'native_onload_callback':
+        elif cmd == 'native_on_load_callback':
             str_fmt = ('Hook native onload {0} @thread := {1}'.format(parts[1], parts[3]))
             self.log(str_fmt)
             self.onHitNativeOnLoad.emit([parts[1], parts[2]])
+        elif cmd == 'native_on_load_module_loading':
+            str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
+            self.log(str_fmt)
         elif cmd == 'release':
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
@@ -714,6 +742,11 @@ class Dwarf(QObject):
             self.java_available = context_data['java']
             str_fmt = ('injected into := {0:d}'.format(self.pid))
             self.log(str_fmt)
+
+            # unlock java on loads
+            if self.java_available:
+                self._app_window.hooks_panel.new_menu.addAction(
+                    'Java class loading', self._app_window.hooks_panel._on_add_java_on_load)
 
         # update current context tid
         self.context_tid = context_data['tid']

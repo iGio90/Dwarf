@@ -55,7 +55,9 @@ class HooksPanel(QWidget):
         self._app_window.dwarf.onAddJavaHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddNativeHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddNativeOnLoadHook.connect(self._on_add_hook)
+        self._app_window.dwarf.onAddJavaOnLoadHook.connect(self._on_add_hook)
         self._app_window.dwarf.onHitNativeOnLoad.connect(self._on_hit_native_on_load)
+        self._app_window.dwarf.onHitJavaOnLoad.connect(self._on_hit_java_on_load)
         self._app_window.dwarf.onDeleteHook.connect(self._on_hook_deleted)
 
         self._hooks_list = DwarfListView()
@@ -140,8 +142,6 @@ class HooksPanel(QWidget):
         self.new_menu.addAction('Native', self._on_addnative)
         self.new_menu.addAction('Java', self._on_addjava)
         self.new_menu.addAction('Module loading', self._on_add_native_on_load)
-        if self._app_window.dwarf.java_available:
-            self.new_menu.addAction('Java class loading', self._on_add_native_on_load)
 
     # ************************************************************************
     # **************************** Functions *********************************
@@ -151,7 +151,7 @@ class HooksPanel(QWidget):
         """
         index = self._hooks_list.selectionModel().currentIndex().row()
         if index != -1:
-            self._on_deletehook(index)
+            self._on_delete_hook(index)
             self._hooks_model.removeRow(index)
 
     def clear_list(self):
@@ -160,7 +160,7 @@ class HooksPanel(QWidget):
         # go through all items and tell it gets removed
         for item in range(self._hooks_model.rowCount()):
             if item:
-                self._on_deletehook(item)
+                self._on_delete_hook(item)
 
         if self._hooks_model.rowCount() > 0:
             # something was wrong it should be empty
@@ -233,6 +233,11 @@ class HooksPanel(QWidget):
         if len(items) > 0:
             self._hooks_model.item(items[0].row(), 0).setText(data[1])
 
+    def _on_hit_java_on_load(self, data):
+        items = self._hooks_model.findItems(data[0], Qt.MatchExactly, 2)
+        if len(items) > 0:
+            pass
+
     def _on_dblclicked(self, model_index):
         item = self._hooks_model.itemFromIndex(model_index)
         if model_index.column() == 3 and item.text() == 'ƒ':
@@ -246,6 +251,7 @@ class HooksPanel(QWidget):
     def _on_contextmenu(self, pos):
         context_menu = QMenu(self)
         context_menu.addMenu(self.new_menu)
+
         context_menu.addSeparator()
         index = self._hooks_list.indexAt(pos).row()
         if index != -1:
@@ -262,7 +268,7 @@ class HooksPanel(QWidget):
                 'Modify Condition', lambda: self._on_modify_condition(index))
             context_menu.addSeparator()
             context_menu.addAction(
-                'Delete Hook', lambda: self._on_deletehook(index))
+                'Delete Hook', lambda: self._on_delete_hook(index))
         global_pt = self._hooks_list.mapToGlobal(pos)
         context_menu.exec(global_pt)
 
@@ -316,9 +322,12 @@ class HooksPanel(QWidget):
         self._app_window.dwarf.hook_java()
 
     def _on_add_native_on_load(self):
-        self._app_window.dwarf.hook_native_onload()
+        self._app_window.dwarf.hook_native_on_load()
 
-    def _on_deletehook(self, num_row):
+    def _on_add_java_on_load(self):
+        self._app_window.dwarf.hook_java_on_load()
+
+    def _on_delete_hook(self, num_row):
         hook_type = self._hooks_model.item(num_row, 1).text()
         if hook_type == 'N':
             ptr = self._hooks_model.item(num_row, 0).text()
