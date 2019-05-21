@@ -794,6 +794,10 @@ class Dwarf(QObject):
         watchers = None
         if self._script is not None:
             hooks = json.loads(self._script.exports.hooks())
+            for hook_key in list(hooks.keys()):
+                hook = hooks[hook_key]
+                if 'internalHook' in hook and hook['internalHook']:
+                    del hooks[hook_key]
             native_on_loads = json.loads(self._script.exports.nativeonloads())
             java_on_loads = json.loads(self._script.exports.javaonloads())
             watchers = json.loads(self._script.exports.watchers())

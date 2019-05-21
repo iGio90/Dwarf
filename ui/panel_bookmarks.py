@@ -159,10 +159,14 @@ class BookmarksPanel(QWidget):
 
             ptr, input_ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
         else:
-            try:
-                ptr = int(ptr, 16)
-            except:
-                ptr = 0
+            if not isinstance(ptr, int):
+                try:
+                    if ptr.startswith('0x'):
+                        ptr = int(ptr, 16)
+                    else:
+                        ptr = int(ptr)
+                except:
+                    ptr = 0
 
         if ptr > 0:
             index = self._bookmarks_model.findItems(hex(ptr), Qt.MatchExactly)
@@ -175,10 +179,7 @@ class BookmarksPanel(QWidget):
             accept, note = InputDialog.input(hint='Insert notes for %s' % hex(ptr), input_content=note)
             if accept:
                 if index < 0:
-                    self._bookmarks_model.appendRow([
-                        QStandardItem(hex(ptr)),
-                        QStandardItem(note)
-                    ])
+                    self.insert_bookmark(hex(ptr), note)
                 else:
                     item = self._bookmarks_model.item(index, 0)
                     item.setText(hex(ptr))
@@ -187,8 +188,13 @@ class BookmarksPanel(QWidget):
 
                 self.bookmarks[hex(ptr)] = note
 
-    # shortcuts/menu
+    def insert_bookmark(self, ptr_as_hex, note):
+        self._bookmarks_model.appendRow([
+            QStandardItem(ptr_as_hex),
+            QStandardItem(note)
+        ])
 
+    # shortcuts/menu
     def _on_delete_bookmark(self, index):
         ptr = self._bookmarks_model.item(index, 0).text()
         del self.bookmarks[ptr]
