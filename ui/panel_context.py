@@ -264,8 +264,7 @@ class ContextPanel(QTabWidget):
 
         context = context.__dict__
 
-        for register in sorted(context):
-            # todo: ???
+        for register in context:
             if register.startswith('_'):
                 continue
 
