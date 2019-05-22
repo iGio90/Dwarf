@@ -231,8 +231,12 @@ class ContextPanel(QTabWidget):
                     if 'telescope' in context[register] and context[register][
                             'telescope'] is not None:
                         telescope = QStandardItem()
-                        telescope.setText(
-                            str(context[register]['telescope'][1]).replace('\n', ' '))
+
+                        telescope_value = str(context[register]['telescope'][1]).replace('\n', ' ')
+                        if len(telescope_value) > 25:
+                            telescope_value = telescope_value[:25] + '...'
+
+                        telescope.setText(telescope_value)
                         if context[register]['telescope'][0] == 2:
                             telescope.setData(
                                 context[register]['telescope'][1],
