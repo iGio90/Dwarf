@@ -235,7 +235,6 @@ class EmulatorPanel(QWidget):
     def on_emulator_memory_range_mapped(self, data):
         address, size = data
         _address = QStandardItem()
-        str_frmt = ''
         if self.ranges_list.uppercase_hex:
             if self.app.dwarf.pointer_size > 4:
                 str_frmt = '0x{0:016X}'.format(address)

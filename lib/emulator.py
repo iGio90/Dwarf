@@ -55,8 +55,15 @@ class Emulator(QThread):
     onEmulatorMemoryHook = pyqtSignal(list, name='onEmulatorMemoryHook')
     onEmulatorMemoryRangeMapped = pyqtSignal(
         list, name='onEmulatorMemoryRangeMapped')
-
     onEmulatorLog = pyqtSignal(str, name='onEmulatorLog')
+
+    # generic errors
+    ERR_EMULATOR_ALREADY_RUNNING = 1
+
+    # setup errors
+    ERR_INVALID_TID = 1
+    ERR_INVALID_CONTEXT = 2
+    ERR_SETUP_FAILED = 3
 
     def __init__(self, dwarf):
         super(Emulator, self).__init__()
@@ -188,19 +195,21 @@ class Emulator(QThread):
         if cmd == 'clean':
             return self.clean()
         elif cmd == 'setup':
-            return self.setup(parts[1])
+            err = self.setup(parts[1])
+            if err > 0:
+                self.context = None
+            return err
         elif cmd == 'start':
             return self.emulate(parts[1])
 
     def clean(self):
         if self.isRunning():
-            return False
+            return self.ERR_EMULATOR_ALREADY_RUNNING
 
         self.stepping = [False, False]
         self._current_instruction = 0
         self._current_cpu_mode = 0
-
-        return self._setup()
+        return 0
 
     def hook_code(self, uc, address, size, user_data):
         # QApplication.processEvents()
@@ -331,29 +340,24 @@ class Emulator(QThread):
             try:
                 tid = int(tid)
             except ValueError:
-                return False
+                return self.ERR_INVALID_TID
 
         if not isinstance(tid, int):
-            return False
+            return self.ERR_INVALID_TID
 
         self.context = None
-
         if str(tid) in self.dwarf.contexts:
             self.context = self.dwarf.contexts[str(tid)]
 
-        if self.context is None:
-            return False
+        if tid == 0 or self.context is None or not self.context.is_native_context:
+            # prevent emulation if out-of-context
+            return self.ERR_INVALID_CONTEXT
 
         try:
             self._setup()
         except self.EmulatorSetupFailedError:
-
-            # invalidate !important
-            self.context = None
-
-            return False
-
-        return True
+            return self.ERR_SETUP_FAILED
+        return 0
 
     def start(self, priority=QThread.HighPriority):
         # dont call this func
@@ -378,8 +382,17 @@ class Emulator(QThread):
                 raise self.EmulatorSetupFailedError('Invalid EndPtr')
 
         if self.context is None:
-            if not self.setup():
-                raise self.EmulatorSetupFailedError('Setup failed')
+            err = self.setup()
+            if err > 0:
+                # make sure context is None if setup failed for any reason. we want a clean setup later
+                self.context = None
+
+                err_msg = 'unhandled error'
+                if err == self.ERR_INVALID_TID:
+                    err_msg = 'invalid thread id'
+                elif err == self.ERR_INVALID_CONTEXT:
+                    err_msg = 'invalid context'
+                raise self.EmulatorSetupFailedError('Setup failed: %s' % err_msg)
 
         # calculate the start address
         address = self._current_instruction
