@@ -232,7 +232,7 @@ class ContextPanel(QTabWidget):
                             'telescope'] is not None:
                         telescope = QStandardItem()
                         telescope.setText(
-                            str(context[register]['telescope'][1]))
+                            str(context[register]['telescope'][1]).replace('\n', ' '))
                         if context[register]['telescope'][0] == 2:
                             telescope.setData(
                                 context[register]['telescope'][1],
