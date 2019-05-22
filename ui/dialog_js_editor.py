@@ -58,6 +58,7 @@ class JsEditorDialog(QDialog):
             self.editor_font.setPointSize(11)
 
         self.input_widget = JsCodeEditor()
+        self.input_widget.setFixedSize(800, 450)
         self.input_widget.line_numbers = True
         self.input_widget.setFont(self.editor_font)
         self.input_widget.setPlainText(def_text)
