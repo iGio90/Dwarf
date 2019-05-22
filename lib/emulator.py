@@ -57,9 +57,6 @@ class Emulator(QThread):
         list, name='onEmulatorMemoryRangeMapped')
     onEmulatorLog = pyqtSignal(str, name='onEmulatorLog')
 
-    # generic errors
-    ERR_EMULATOR_ALREADY_RUNNING = 1
-
     # setup errors
     ERR_INVALID_TID = 1
     ERR_INVALID_CONTEXT = 2
@@ -169,7 +166,7 @@ class Emulator(QThread):
             unicorn.UC_HOOK_MEM_WRITE_UNMAPPED |
             unicorn.UC_HOOK_MEM_READ_UNMAPPED, self.hook_unmapped)
         self.current_context.set_context(self.uc)
-        return True
+        return 0
 
     def run(self):
         # dont call this func
@@ -204,7 +201,7 @@ class Emulator(QThread):
 
     def clean(self):
         if self.isRunning():
-            return self.ERR_EMULATOR_ALREADY_RUNNING
+            raise self.EmulatorAlreadyRunningError()
 
         self.stepping = [False, False]
         self._current_instruction = 0
@@ -222,6 +219,7 @@ class Emulator(QThread):
             # we should never be here or it is looping
             self.log_to_ui('Error: Emulator stopped - looping')
             self.stop()
+            return
 
         self._current_instruction = address
 

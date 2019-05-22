@@ -130,9 +130,7 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            result = self.emulator.emulate()
-            if not result:
-                self.console.log('Emulation failed')
+            self.emulator.emulate()
         except self.emulator.EmulatorAlreadyRunningError:
             self.console.log('Emulator already runnging')
         except self.emulator.EmulatorSetupFailedError as error:
