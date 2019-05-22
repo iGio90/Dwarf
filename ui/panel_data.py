@@ -41,7 +41,8 @@ class DataPanel(QSplitter):
         self.key_lists.setHeaderHidden(True)
         self.key_lists.setModel(self._key_list_model)
         self.key_lists.doubleClicked.connect(self.list_item_double_clicked)
-
+        self.key_lists.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.key_lists.customContextMenuRequested.connect(self._on_context_menu)
         self.addWidget(self.key_lists)
 
         self.editor = QPlainTextEdit()
@@ -74,3 +75,13 @@ class DataPanel(QSplitter):
             self.hex_view.setVisible(True)
             self.hex_view.bytes_per_line = 16
             self.hex_view.set_data(self.data[item.text()][1])
+
+    def _on_context_menu(self, pos):
+        context_menu = QMenu(self)
+
+        index = self.key_lists.indexAt(pos).row()
+        if index != -1:
+            context_menu.addAction(
+                'Clear', lambda: self.clear())
+        global_pt = self.key_lists.mapToGlobal(pos)
+        context_menu.exec(global_pt)

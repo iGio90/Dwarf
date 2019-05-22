@@ -64,7 +64,7 @@ class HooksPanel(QWidget):
         self._hooks_list.doubleClicked.connect(self._on_dblclicked)
         self._hooks_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._hooks_list.customContextMenuRequested.connect(
-            self._on_contextmenu)
+            self._on_context_menu)
         self._hooks_model = QStandardItemModel(0, 5)
 
         self._hooks_model.setHeaderData(0, Qt.Horizontal, 'Address')
@@ -248,7 +248,7 @@ class HooksPanel(QWidget):
             self.onShowMemoryRequest.emit(
                 self._hooks_model.item(model_index.row(), 0).text())
 
-    def _on_contextmenu(self, pos):
+    def _on_context_menu(self, pos):
         context_menu = QMenu(self)
         context_menu.addMenu(self.new_menu)
 
