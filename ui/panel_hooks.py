@@ -351,12 +351,12 @@ class HooksPanel(QWidget):
 
         additional = None
 
-        if _type == 'java':
+        if _type == 'java' or _type == 'java_on_load':
             _val = _val.split('.')
             str_frmt = '.'.join(_val[:-1])
             additional = _val[-1]
             item_index = 0
-        elif _type == 'onload':
+        elif _type == 'native_on_load':
             str_frmt = _val
             item_index = 2
         else:
