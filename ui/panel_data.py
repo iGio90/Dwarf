@@ -82,6 +82,6 @@ class DataPanel(QSplitter):
         index = self.key_lists.indexAt(pos).row()
         if index != -1:
             context_menu.addAction(
-                'Clear', lambda: self.clear())
-        global_pt = self.key_lists.mapToGlobal(pos)
-        context_menu.exec(global_pt)
+                'Clear', self.clear)
+            global_pt = self.key_lists.mapToGlobal(pos)
+            context_menu.exec(global_pt)
