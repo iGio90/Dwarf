@@ -302,6 +302,7 @@ class WelcomeDialog(QDialog):
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New iOS Session')
+        btn.clicked.connect(self._on_ios_button)
         wrapper.addWidget(btn)
 
         btn = QPushButton()
@@ -317,6 +318,7 @@ class WelcomeDialog(QDialog):
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New Remote Session')
+        btn.clicked.connect(self._on_remote_button)
         wrapper.addWidget(btn)
 
         session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
@@ -398,6 +400,14 @@ class WelcomeDialog(QDialog):
 
     def _on_local_button(self):
         self.onSessionSelected.emit('Local')
+        self.close()
+
+    def _on_ios_button(self):
+        self.onSessionSelected.emit('Ios')
+        self.close()
+
+    def _on_remote_button(self):
+        self.onSessionSelected.emit('Remote')
         self.close()
 
     def _pick_random_word(self, arr):

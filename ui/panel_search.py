@@ -14,6 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import binascii
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QWidget, QLineEdit, QVBoxLayout, QHBoxLayout,
@@ -273,9 +274,18 @@ class SearchPanel(QWidget):
                 self._result_model.item(model_index.row(), 0).text())
 
     def _on_click_search(self):
-        pattern = self.input.text().replace(' ', '')
+        pattern = self.input.text()
         if pattern == '':
             return 1
+
+        # check if we already provide a hex string as input
+        try:
+            test = pattern.replace(' ', '')
+            int(test, 16)
+            pattern = test
+        except ValueError:
+            # search for string
+            pattern = binascii.hexlify(pattern.encode('utf8')).decode('utf8')
 
         ranges = []
         self._search_results = []
