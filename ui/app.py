@@ -147,7 +147,7 @@ class AppWindow(QMainWindow):
         dwarf_menu = QMenu('Dwarf', self)
         if self._is_newer_dwarf:
             dwarf_menu.addAction('Update', self._update_dwarf)
-        dwarf_menu.addAction('Close', self.session_closed)
+        dwarf_menu.addAction('Close', self.session_manager.session.stop)
         self.menu.addMenu(dwarf_menu)
 
         session = self.session_manager.session
