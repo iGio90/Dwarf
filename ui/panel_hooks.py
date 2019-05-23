@@ -63,8 +63,7 @@ class HooksPanel(QWidget):
         self._hooks_list = DwarfListView()
         self._hooks_list.doubleClicked.connect(self._on_dblclicked)
         self._hooks_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._hooks_list.customContextMenuRequested.connect(
-            self._on_context_menu)
+        self._hooks_list.customContextMenuRequested.connect(self._on_context_menu)
         self._hooks_model = QStandardItemModel(0, 5)
 
         self._hooks_model.setHeaderData(0, Qt.Horizontal, 'Address')
@@ -270,9 +269,9 @@ class HooksPanel(QWidget):
             context_menu.addAction(
                 'Delete Hook', lambda: self._on_delete_hook(index))
 
-            # show context menu
-            global_pt = self._hooks_list.mapToGlobal(pos)
-            context_menu.exec(global_pt)
+        # show context menu
+        global_pt = self._hooks_list.mapToGlobal(pos)
+        context_menu.exec(global_pt)
 
     def _on_modify_logic(self, num_row):
         item = self._hooks_model.item(num_row, 3)
