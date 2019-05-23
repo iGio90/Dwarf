@@ -95,6 +95,14 @@ class Emulator(QThread):
         self._start_address = 0
         self._end_address = 0
 
+        # prevent emulator loop for any reason
+        # i.e through custom callback
+        # we don't want any UI freeze, so we just setup a n00b way to check if we are looping
+        # inside the same instruction for N times.
+        # notice that when an unmapped memory region is required during emulation, this will be taken from target proc
+        # and mapped into unicorn context. Later, the code fallback to execute the same instruction once again
+        self._anti_loop = [0, 0]
+
     def setup_arm(self):
         self.thumb = self.context.pc.thumb
         if self.thumb:
@@ -215,11 +223,17 @@ class Emulator(QThread):
             self.stop()
             return
 
-        if self._current_instruction == address:
-            # we should never be here or it is looping
-            self.log_to_ui('Error: Emulator stopped - looping')
-            self.stop()
-            return
+        # anti loop checks
+        if self._anti_loop[0] == address:
+            if self._anti_loop[1] == 3:
+                self.log_to_ui('Error: Emulator stopped - looping')
+                self.stop()
+                return
+            else:
+                self._anti_loop[1] += 1
+        else:
+            self._anti_loop[0] = address
+            self._anti_loop[1] = 0
 
         self._current_instruction = address
 
@@ -257,14 +271,19 @@ class Emulator(QThread):
 
         try:
             try:
-                assembly = self.cs.disasm(bytes(uc.mem_read(address, size)), address)
+                data = bytes(uc.mem_read(address, size))
+                assembly = self.cs.disasm(data, address)
             except:
                 self.log_to_ui('Error: Emulator stopped - disasm')
                 self.stop()
+                return
 
             for i in assembly:
                 # QApplication.processEvents()
+
+                # this needs optimizations as it's a bit slow
                 instruction = Instruction(self.dwarf, i)
+
                 self.onEmulatorHook.emit(instruction)
                 if self.callbacks is not None:
                     try:
@@ -285,8 +304,7 @@ class Emulator(QThread):
         self.onEmulatorMemoryHook.emit([uc, access, address, v])
         if self.callbacks is not None:
             try:
-                self.callbacks.hook_memory_access(self, access, address, size,
-                                                  v)
+                self.callbacks.hook_memory_access(self, access, address, size, v)
             except:
                 # hook code not implemented in callbacks
                 pass
