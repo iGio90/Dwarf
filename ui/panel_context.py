@@ -261,7 +261,6 @@ class ContextPanel(QTabWidget):
             self.show_context_tab('Emulator')
 
         context_ptr = ptr
-
         context = context.__dict__
 
         for register in context:
@@ -284,9 +283,7 @@ class ContextPanel(QTabWidget):
                     str_fmt = '0x{0:x}'
                     if self._emulatorctx_list.uppercase_hex:
                         str_fmt = '0x{0:X}'
-
                     value_x.setText(str_fmt.format(context[register]))
-
                     value_dec.setText('{0:d}'.format(context[register]))
 
             self._emulatorctx_model.appendRow([reg_name, value_x, value_dec])

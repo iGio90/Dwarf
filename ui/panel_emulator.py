@@ -41,7 +41,7 @@ class EmulatorPanel(QWidget):
         self._toolbar.addAction('Start', self.handle_start)
         self._toolbar.addAction('Step', self.handle_step)
         self._toolbar.addAction('Stop', self.handle_stop)
-        self._toolbar.addAction('Clean', self.handle_clean)
+        self._toolbar.addAction('Clear', self.handle_clear)
         self._toolbar.addAction('Options', self.handle_options)
 
         layout.addWidget(self._toolbar)
@@ -100,7 +100,7 @@ class EmulatorPanel(QWidget):
         self._access_list.setFixedHeight((self.height() / 100) * 25)
         return super().resizeEvent(event)
 
-    def handle_clean(self):
+    def handle_clear(self):
         self.ranges_list.clear()
         self._access_list.clear()
         self.assembly._lines.clear()
@@ -130,11 +130,9 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            result = self.emulator.emulate()
-            if not result:
-                self.console.log('Emulation failed')
+            self.emulator.emulate()
         except self.emulator.EmulatorAlreadyRunningError:
-            self.console.log('Emulator already runnging')
+            self.console.log('Emulator already running')
         except self.emulator.EmulatorSetupFailedError as error:
             self.until_address = 0
             self.console.log(error)
@@ -143,12 +141,14 @@ class EmulatorPanel(QWidget):
         self.emulator.stop()
 
     def on_emulator_hook(self, instruction):
+        # this take ages (arm64 - lot of registers)
         self.app.context_panel.set_context(0, 2, self.emulator.current_context)
+
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
             row = 1
-            res = '%s = %s' % (self._require_register_result[1],
-                               hex(self.emulator.uc.reg_read(self._require_register_result[0])))
+            res = '%s = %s' % (
+                self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
             if len(self.assembly._lines) > 1:
                 if self.assembly._lines[len(self.assembly._lines) - row] is None:
                     row = 2
@@ -185,7 +185,6 @@ class EmulatorPanel(QWidget):
     def on_emulator_memory_hook(self, data):
         uc, access, address, value = data
         _address = QStandardItem()
-        str_frmt = ''
         if self.ranges_list.uppercase_hex:
             if self.app.dwarf.pointer_size > 4:
                 str_frmt = '0x{0:016X}'.format(address)
@@ -229,13 +228,11 @@ class EmulatorPanel(QWidget):
             if res is not None:
                 # invalidate
                 self._require_register_result = None
-
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
 
     def on_emulator_memory_range_mapped(self, data):
         address, size = data
         _address = QStandardItem()
-        str_frmt = ''
         if self.ranges_list.uppercase_hex:
             if self.app.dwarf.pointer_size > 4:
                 str_frmt = '0x{0:016X}'.format(address)

@@ -51,9 +51,11 @@ class Instruction(object):
                     #    self.is_jump = True
                     self.jump_address = op.value.imm
 
-        # resolve jump symbol
+        # resolve jump symbol and string
         self.symbol_name = None
         self.symbol_module = None
+        self.string = None
+
         if self.jump_address != 0:
             sym = dwarf.dwarf_api('getSymbolByAddress', self.jump_address)
             if sym is not None:
@@ -61,9 +63,7 @@ class Instruction(object):
                 self.symbol_module = '-'
                 if 'moduleName' in sym:
                     self.symbol_module = sym['moduleName']
-
-        self.string = None
-        if len(instruction.operands) > 0:
+        elif len(instruction.operands) > 0:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
                     self.string = dwarf.dwarf_api('readString', op.value.imm)

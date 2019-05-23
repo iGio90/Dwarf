@@ -55,8 +55,12 @@ class Emulator(QThread):
     onEmulatorMemoryHook = pyqtSignal(list, name='onEmulatorMemoryHook')
     onEmulatorMemoryRangeMapped = pyqtSignal(
         list, name='onEmulatorMemoryRangeMapped')
-
     onEmulatorLog = pyqtSignal(str, name='onEmulatorLog')
+
+    # setup errors
+    ERR_INVALID_TID = 1
+    ERR_INVALID_CONTEXT = 2
+    ERR_SETUP_FAILED = 3
 
     def __init__(self, dwarf):
         super(Emulator, self).__init__()
@@ -90,6 +94,14 @@ class Emulator(QThread):
 
         self._start_address = 0
         self._end_address = 0
+
+        # prevent emulator loop for any reason
+        # i.e through custom callback
+        # we don't want any UI freeze, so we just setup a n00b way to check if we are looping
+        # inside the same instruction for N times.
+        # notice that when an unmapped memory region is required during emulation, this will be taken from target proc
+        # and mapped into unicorn context. Later, the code fallback to execute the same instruction once again
+        self._anti_loop = [0, 0]
 
     def setup_arm(self):
         self.thumb = self.context.pc.thumb
@@ -162,7 +174,7 @@ class Emulator(QThread):
             unicorn.UC_HOOK_MEM_WRITE_UNMAPPED |
             unicorn.UC_HOOK_MEM_READ_UNMAPPED, self.hook_unmapped)
         self.current_context.set_context(self.uc)
-        return True
+        return 0
 
     def run(self):
         # dont call this func
@@ -188,19 +200,21 @@ class Emulator(QThread):
         if cmd == 'clean':
             return self.clean()
         elif cmd == 'setup':
-            return self.setup(parts[1])
+            err = self.setup(parts[1])
+            if err > 0:
+                self.context = None
+            return err
         elif cmd == 'start':
             return self.emulate(parts[1])
 
     def clean(self):
         if self.isRunning():
-            return False
+            raise self.EmulatorAlreadyRunningError()
 
         self.stepping = [False, False]
         self._current_instruction = 0
         self._current_cpu_mode = 0
-
-        return self._setup()
+        return 0
 
     def hook_code(self, uc, address, size, user_data):
         # QApplication.processEvents()
@@ -209,10 +223,17 @@ class Emulator(QThread):
             self.stop()
             return
 
-        if self._current_instruction == address:
-            # we should never be here or it is looping
-            self.log_to_ui('Error: Emulator stopped - looping')
-            self.stop()
+        # anti loop checks
+        if self._anti_loop[0] == address:
+            if self._anti_loop[1] == 3:
+                self.log_to_ui('Error: Emulator stopped - looping')
+                self.stop()
+                return
+            else:
+                self._anti_loop[1] += 1
+        else:
+            self._anti_loop[0] = address
+            self._anti_loop[1] = 0
 
         self._current_instruction = address
 
@@ -250,14 +271,18 @@ class Emulator(QThread):
 
         try:
             try:
-                assembly = self.cs.disasm(bytes(uc.mem_read(address, size)), address)
+                data = bytes(uc.mem_read(address, size))
+                assembly = self.cs.disasm(data, address)
             except:
                 self.log_to_ui('Error: Emulator stopped - disasm')
                 self.stop()
+                return
 
             for i in assembly:
                 # QApplication.processEvents()
+
                 instruction = Instruction(self.dwarf, i)
+
                 self.onEmulatorHook.emit(instruction)
                 if self.callbacks is not None:
                     try:
@@ -278,8 +303,7 @@ class Emulator(QThread):
         self.onEmulatorMemoryHook.emit([uc, access, address, v])
         if self.callbacks is not None:
             try:
-                self.callbacks.hook_memory_access(self, access, address, size,
-                                                  v)
+                self.callbacks.hook_memory_access(self, access, address, size, v)
             except:
                 # hook code not implemented in callbacks
                 pass
@@ -331,29 +355,24 @@ class Emulator(QThread):
             try:
                 tid = int(tid)
             except ValueError:
-                return False
+                return self.ERR_INVALID_TID
 
         if not isinstance(tid, int):
-            return False
+            return self.ERR_INVALID_TID
 
         self.context = None
-
         if str(tid) in self.dwarf.contexts:
             self.context = self.dwarf.contexts[str(tid)]
 
-        if self.context is None:
-            return False
+        if tid == 0 or self.context is None or not self.context.is_native_context:
+            # prevent emulation if out-of-context
+            return self.ERR_INVALID_CONTEXT
 
         try:
             self._setup()
         except self.EmulatorSetupFailedError:
-
-            # invalidate !important
-            self.context = None
-
-            return False
-
-        return True
+            return self.ERR_SETUP_FAILED
+        return 0
 
     def start(self, priority=QThread.HighPriority):
         # dont call this func
@@ -378,8 +397,17 @@ class Emulator(QThread):
                 raise self.EmulatorSetupFailedError('Invalid EndPtr')
 
         if self.context is None:
-            if not self.setup():
-                raise self.EmulatorSetupFailedError('Setup failed')
+            err = self.setup()
+            if err > 0:
+                # make sure context is None if setup failed for any reason. we want a clean setup later
+                self.context = None
+
+                err_msg = 'unhandled error'
+                if err == self.ERR_INVALID_TID:
+                    err_msg = 'invalid thread id'
+                elif err == self.ERR_INVALID_CONTEXT:
+                    err_msg = 'invalid context'
+                raise self.EmulatorSetupFailedError('Setup failed: %s' % err_msg)
 
         # calculate the start address
         address = self._current_instruction
