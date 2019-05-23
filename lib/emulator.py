@@ -281,7 +281,6 @@ class Emulator(QThread):
             for i in assembly:
                 # QApplication.processEvents()
 
-                # this needs optimizations as it's a bit slow
                 instruction = Instruction(self.dwarf, i)
 
                 self.onEmulatorHook.emit(instruction)
