@@ -142,12 +142,11 @@ class UpdateBar(QWidget):
                               'href="https://github.com/iGio90/Dwarf">Dwarf on GitHub</a> for more informations')
         update_label.setOpenExternalLinks(True)
         update_label.setTextFormat(Qt.RichText)
-        update_label.setFixedHeight(35)
         update_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
         update_button = QPushButton('Update now!', update_label)
         update_button.setStyleSheet('padding: 0; border-color: white;')
-        update_button.setGeometry(update_label.width() + 50, 5, 155, 25)
+        update_button.setGeometry(self.parent().width() - 10 - update_label.width() * .2, 5, update_label.width() * .2, 25)
         update_button.clicked.connect(self.update_now_clicked)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
@@ -209,7 +208,7 @@ class WelcomeDialog(QDialog):
 
         # setup size and remove/disable titlebuttons
         self.desktop_geom = qApp.desktop().availableGeometry()
-        self.setFixedSize(self.desktop_geom.width() * .4, self.desktop_geom.height() * .35)
+        self.setFixedSize(self.desktop_geom.width() * .45, self.desktop_geom.height() * .38)
         self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
