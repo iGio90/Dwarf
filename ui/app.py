@@ -14,6 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+
 import os
 import sys
 import shutil
@@ -85,45 +86,6 @@ class AppWindow(QMainWindow):
         # themes
         self.prefs = Prefs()
         self.set_theme(self.prefs.get('dwarf_ui_theme', 'black'))
-
-        # set icon
-        if os.name == 'nt':
-            # windows stuff
-            import ctypes
-            try:
-                # write ini to show folder with dwarficon
-                folder_stuff = "[.ShellClassInfo]\nIconResource=assets\dwarf.ico,0\n[ViewState]\nMode=\nVid=\nFolderType=Generic\n"
-                try:
-                    with open('desktop.ini', 'w') as ini:
-                        ini.writelines(folder_stuff)
-
-                    FILE_ATTRIBUTE_HIDDEN = 0x02
-                    FILE_ATTRIBUTE_SYSTEM = 0x04
-
-                    # set fileattributes to hidden + systemfile
-                    ctypes.windll.kernel32.SetFileAttributesW(
-                        r'desktop.ini',
-                        FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)
-                except PermissionError:
-                    # its hidden+system already
-                    pass
-
-                # fix for showing dwarf icon in windows taskbar instead of pythonicon
-                _appid = u'iGio90.dwarf.debugger'
-                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                    _appid)
-
-                if os.path.exists(utils.resource_path('assets/dwarf.png')):
-                    _icon = QIcon(utils.resource_path('assets/dwarf.png'))
-                    _app.setWindowIcon(_icon)
-                    self.setWindowIcon(_icon)
-            except:
-                pass
-        else:
-            if os.path.exists(utils.resource_path('assets/dwarf.png')):
-                _icon = QIcon(utils.resource_path('assets/dwarf.png'))
-                _app.setWindowIcon(_icon)
-                self.setWindowIcon(_icon)
 
         # load font
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):

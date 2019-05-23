@@ -1,3 +1,20 @@
+"""
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>
+"""
+
 import os
 import random
 import json
@@ -191,7 +208,9 @@ class WelcomeDialog(QDialog):
         self._recent_list.doubleClicked.connect(self._on_recent_session_double_click)
 
         # setup size and remove/disable titlebuttons
-        self.setFixedSize(860, 420)
+        self.desktop_geom = qApp.desktop().availableGeometry()
+        self.setFixedSize(self.desktop_geom.width() * .4, self.desktop_geom.height() * .35)
+        self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -226,11 +245,11 @@ class WelcomeDialog(QDialog):
         wrapper = QVBoxLayout()
         # wrapper.setGeometry(QRect(0, 0, 400, 200))
         head = QHBoxLayout()
-        head.setContentsMargins(0, 20, 0, 20)
+        head.setContentsMargins(0, 10, 0, 10)
         # dwarf icon
         icon = QLabel()
         icon.setContentsMargins(40, 0, 0, 0)
-        dwarf_logo = QPixmap(utils.resource_path('assets/dwarf.png'))
+        dwarf_logo = QPixmap(utils.resource_path('assets/dwarf.svg'))
         icon.setPixmap(dwarf_logo)
         head.addWidget(icon)
 
@@ -240,7 +259,7 @@ class WelcomeDialog(QDialog):
         title.setContentsMargins(0, 0, 50, 0)
         title.setFont(QFont('Anton', 90, QFont.Bold))
         title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        title.setFixedHeight(110)
+        title.setFixedHeight(self.height() * .35)
         title.setAlignment(Qt.AlignCenter)
         v_box.addWidget(title)
 
@@ -250,7 +269,7 @@ class WelcomeDialog(QDialog):
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         sub_title = QLabel(sub_title_text)
         sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
-        sub_title.setFixedHeight(25)
+        sub_title.setFixedHeight(title.height() * .25)
         sub_title.setAlignment(Qt.AlignCenter)
         sub_title.setContentsMargins(0, 0, 50, 0)
         sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -262,7 +281,7 @@ class WelcomeDialog(QDialog):
         recent = QLabel('Last saved Sessions')
         font = recent.font()
         font.setBold(True)
-        font.setPointSize(10)
+        #font.setPointSize(10)
         recent.setFont(font)
         wrapper.addWidget(recent)
         wrapper.addWidget(self._recent_list)
@@ -272,7 +291,7 @@ class WelcomeDialog(QDialog):
         wrapper = QVBoxLayout()
 
         btn = QPushButton()
-        ico = QIcon(QPixmap(utils.resource_path('assets/android.png')))
+        ico = QIcon(QPixmap(utils.resource_path('assets/android.svg')))
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New Android Session')
@@ -280,14 +299,14 @@ class WelcomeDialog(QDialog):
 
         wrapper.addWidget(btn)
         btn = QPushButton()
-        ico = QIcon(QPixmap(utils.resource_path('assets/apple.png')))
+        ico = QIcon(QPixmap(utils.resource_path('assets/apple.svg')))
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New iOS Session')
         wrapper.addWidget(btn)
 
         btn = QPushButton()
-        ico = QIcon(QPixmap(utils.resource_path('assets/local.png')))
+        ico = QIcon(QPixmap(utils.resource_path('assets/local.svg')))
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New Local Session')
@@ -295,7 +314,7 @@ class WelcomeDialog(QDialog):
         wrapper.addWidget(btn)
 
         btn = QPushButton()
-        ico = QIcon(QPixmap(utils.resource_path('assets/remote.png')))
+        ico = QIcon(QPixmap(utils.resource_path('assets/remote.svg')))
         btn.setIconSize(QSize(75, 75))
         btn.setIcon(ico)
         btn.setToolTip('New Remote Session')
@@ -311,7 +330,7 @@ class WelcomeDialog(QDialog):
                 watchers = '0'
                 on_loads = 0
                 bookmarks = '0'
-                have_user_script = False
+                #have_user_script = False
                 if 'hooks' in exported_session and exported_session['hooks'] is not None:
                     hooks = str(len(exported_session['hooks']))
                 if 'watchers' in exported_session and exported_session['watchers'] is not None:
@@ -333,7 +352,7 @@ class WelcomeDialog(QDialog):
 
                 recent_session_file_item = QStandardItem(recent_session_file)
                 recent_session_file_item.setData(exported_session, Qt.UserRole + 2)
-                
+
                 item_1 = QStandardItem(exported_session['session'])
                 item_1.setTextAlignment(Qt.AlignCenter)
                 item_2 = QStandardItem(hooks)
@@ -393,7 +412,8 @@ class WelcomeDialog(QDialog):
             context_menu.addAction(
                 'Delete recent session', lambda: self._remove_recent_sessions(
                     self._recent_list_model.item(index, 0).text()))
-        context_menu.exec_(glbl_pt)
+
+            context_menu.exec_(glbl_pt)
 
     def _remove_recent_session(self, session_file):
         if os.path.exists(session_file):

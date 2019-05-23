@@ -402,7 +402,6 @@ class ModulesPanel(QWidget):
         """
         index = self.imports_list.indexAt(pos).row()
         if index != -1:
-            glbl_pt = self.imports_list.mapToGlobal(pos)
             context_menu = QMenu(self)
             func_name = self.imports_model.item(index, 0).text()
             addr = self.imports_model.item(index, 1).text()
@@ -419,6 +418,9 @@ class ModulesPanel(QWidget):
             context_menu.addAction(
                 'Copy ModuleName', lambda: utils.copy_str_to_clipboard(
                     self.imports_model.item(index, 2).text()))
+
+            # show context menu
+            glbl_pt = self.imports_list.mapToGlobal(pos)
             context_menu.exec_(glbl_pt)
 
     def _on_exports_contextmenu(self, pos):
@@ -426,7 +428,6 @@ class ModulesPanel(QWidget):
         """
         index = self.exports_list.indexAt(pos).row()
         if index != -1:
-            glbl_pt = self.exports_list.mapToGlobal(pos)
             context_menu = QMenu(self)
             func_name = self.exports_model.item(index, 0).text()
             addr = self.exports_model.item(index, 1).text()
@@ -440,6 +441,9 @@ class ModulesPanel(QWidget):
             context_menu.addAction(
                 'Copy FunctionName', lambda: utils.copy_str_to_clipboard(
                     func_name))
+
+            # show contextmenu
+            glbl_pt = self.exports_list.mapToGlobal(pos)
             context_menu.exec_(glbl_pt)
 
     def _on_dumpmodule(self, ptr, size):

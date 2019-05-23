@@ -269,8 +269,10 @@ class HooksPanel(QWidget):
             context_menu.addSeparator()
             context_menu.addAction(
                 'Delete Hook', lambda: self._on_delete_hook(index))
-        global_pt = self._hooks_list.mapToGlobal(pos)
-        context_menu.exec(global_pt)
+
+            # show context menu
+            global_pt = self._hooks_list.mapToGlobal(pos)
+            context_menu.exec(global_pt)
 
     def _on_modify_logic(self, num_row):
         item = self._hooks_model.item(num_row, 3)

@@ -157,6 +157,7 @@ class SpawnsList(QWidget):
                 sel_name = model.data(model_index, Qt.UserRole + 2)
             else:
                 sel_name = self.spawn_list.get_item_text(index, 1)
+
             self.onProcessSelected.emit([sel_pid, sel_name])
 
     def _on_add_proc(self, item):

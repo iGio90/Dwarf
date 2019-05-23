@@ -19,8 +19,10 @@ import sys
 import argparse
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
+from lib import utils
 from ui.app import AppWindow
 
 
@@ -68,7 +70,45 @@ def run_dwarf():
     qapp = QApplication([])
     qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
 
+    # set icon
+    if os.name == 'nt':
+        # windows stuff
+        import ctypes
+        try:
+            # write ini to show folder with dwarficon
+            folder_stuff = "[.ShellClassInfo]\nIconResource=assets\dwarf.ico,0\n[ViewState]\nMode=\nVid=\nFolderType=Generic\n"
+            try:
+                with open('desktop.ini', 'w') as ini:
+                    ini.writelines(folder_stuff)
+
+                FILE_ATTRIBUTE_HIDDEN = 0x02
+                FILE_ATTRIBUTE_SYSTEM = 0x04
+
+                # set fileattributes to hidden + systemfile
+                ctypes.windll.kernel32.SetFileAttributesW(
+                    r'desktop.ini',
+                    FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)
+            except PermissionError:
+                # its hidden+system already
+                pass
+
+            # fix for showing dwarf icon in windows taskbar instead of pythonicon
+            _appid = u'iGio90.dwarf.debugger'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                _appid)
+
+            if os.path.exists(utils.resource_path('assets/dwarf.png')):
+                _icon = QIcon(utils.resource_path('assets/dwarf.png'))
+                qapp.setWindowIcon(_icon)
+        except:
+            pass
+    else:
+        if os.path.exists(utils.resource_path('assets/dwarf.png')):
+            _icon = QIcon(utils.resource_path('assets/dwarf.png'))
+            qapp.setWindowIcon(_icon)
+
     app_window = AppWindow(args)
+    app_window.setWindowIcon(_icon)
     app_window.onRestart.connect(_on_restart)
 
     try:
