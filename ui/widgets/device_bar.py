@@ -119,7 +119,6 @@ class DevicesUpdateThread(QThread):
         devices = frida.enumerate_devices()
 
         for device in devices:
-            print(device)
             self.onAddDevice.emit({'id': device.id, 'name': device.name, 'type': device.type})
 
         self.onDevicesUpdated.emit()
