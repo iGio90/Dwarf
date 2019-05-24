@@ -31,12 +31,16 @@ class SmaliThread(QThread):
     onFinished = pyqtSignal(name='onFinished')
     onError = pyqtSignal(name='onError')
 
-    def __init__(self, parent=None, package_name=None):
+    def __init__(self, parent=None, device_id=None, package_name=None):
         super(SmaliThread, self).__init__(parent)
         self._adb = Adb()
+        self._adb.device = device_id
         self._package_name = package_name
 
     def run(self):
+        if self._adb.device is None:
+            return
+
         if not self._package_name:
             self.onError.emit()
             return
@@ -72,7 +76,7 @@ class AndroidSession(Session):
 
         self.adb = Adb()
 
-        if not self.adb.is_adb_available():
+        if not self.adb.min_required:
             utils.show_message_box(self.adb.get_states_string())
 
         self._device_window = DeviceWindow(self._app_window, 'usb')
@@ -153,7 +157,11 @@ class AndroidSession(Session):
             self._device_window.onClosed.connect(self._on_devdlg_closed)
             self._device_window.show()
         else:
-            self.dwarf.device = frida.get_usb_device()
+            if not args.device:
+                self.dwarf.device = frida.get_usb_device()
+            else:
+                self.adb.device = args.device
+                self.dwarf.device = frida.get_device(id=args.device)
             if not args.spawn:
                 print('* Trying to attach to {0}'.format(args.package))
                 try:
@@ -200,6 +208,7 @@ class AndroidSession(Session):
     def on_proc_selected(self, data):
         device, pid = data
         if device:
+            self.adb.device = device.id
             self.dwarf.device = device
         if pid:
             try:
@@ -212,12 +221,13 @@ class AndroidSession(Session):
     def on_spawn_selected(self, data):
         device, package_name = data
         if device:
+            self.adb.device = device.id
             self.dwarf.device = device
         if package_name:
             # smalistuff
             if self._smali_thread is None:
                 self._app_window.show_progress('Baksmali ' + package_name + ' ...')
-                self._smali_thread = SmaliThread(self, package_name)
+                self._smali_thread = SmaliThread(self, device.id, package_name)
                 self._smali_thread.onError.connect(self._app_window.hide_progress)
                 self._smali_thread.onFinished.connect(self._app_window.hide_progress)
                 self._smali_thread.start()

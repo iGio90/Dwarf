@@ -32,20 +32,41 @@ class Adb(QObject):
         self._is_su = False
 
         self._have_pidof = False
+        self._device_serial = None
 
         self._android_version = ''
         self._sdk_version = ''
         self._oreo_plus = False
 
-        self._check_requirements()
+        self._check_min_required()
 
-    def _check_requirements(self):  # pylint: disable=too-many-branches, too-many-statements
-        """ Checks for adb and root on device
+    # ************************************************************************
+    # **************************** Properties ********************************
+    # ************************************************************************
+    @property
+    def device(self):
+        return self._device_serial
+
+    @device.setter
+    def device(self, value):
+        try:
+            if isinstance(value, str):
+                self._device_serial = value
+                self._check_requirements()
+        except ValueError:
+            self._device = None
+
+    @property
+    def min_required(self):
+        return self._adb_available
+
+    # ************************************************************************
+    # **************************** Functions *********************************
+    # ************************************************************************
+    def _check_min_required(self):
+        """ Checks if adb is available
         """
         self._adb_available = False
-        self._dev_emu = False
-        self._is_root = False
-        self._is_su = False
         try:
             adb_version = utils.do_shell_command('adb --version')
             if adb_version is not None:
@@ -61,10 +82,21 @@ class Adb(QObject):
             if io_error.errno == 2:
                 self._adb_available = False
 
+
+
+    def _check_requirements(self):  # pylint: disable=too-many-branches, too-many-statements
+        """ Checks root on device
+        """
+        self._dev_emu = False
+        self._is_root = False
+        self._is_su = False
+
+        if not self._device_serial:
+            return
+
         if self._adb_available:
             # try some su command
-            res = utils.do_shell_command(
-                'adb shell su -c \'mount -o ro,remount /system\'')
+            res = self._do_adb_command('shell su -c \'mount -o ro,remount /system\'')
             if res is not None:
                 # adb not authorized
                 if res and 'device unauthorized' in res:
@@ -93,8 +125,8 @@ class Adb(QObject):
                 # no su -> try if the user is already root
                 # on some emulators user is root
                 if not self._is_su and self._dev_emu:
-                    res = utils.do_shell_command(
-                        'adb shell mount -o ro,remount /system')
+                    res = self._do_adb_command(
+                        'shell mount -o ro,remount /system')
                     if res is not None:
                         if res and 'not user mountable' in res:
                             # no root user
@@ -109,13 +141,11 @@ class Adb(QObject):
 
             if self._dev_emu:
                 # get some infos about the device and keep for later
-                self._sdk_version = self._do_adb_command(
-                    'adb shell getprop ro.build.version.sdk')
+                self._sdk_version = self._do_adb_command('shell getprop ro.build.version.sdk')
                 if self._sdk_version is not None:
                     self._sdk_version = self._sdk_version.join(
                         self._sdk_version.split())  # cleans '\r\n'
-                self._android_version = self._do_adb_command(
-                    'adb shell getprop ro.build.version.release')
+                self._android_version = self._do_adb_command('shell getprop ro.build.version.release')
                 if self._android_version is not None:
                     self._android_version = self._android_version.join(
                         self._android_version.split())
@@ -135,7 +165,7 @@ class Adb(QObject):
 
             # check if we have pidof
             if self._oreo_plus:
-                res = self._do_adb_command('adb shell pidof')
+                res = self._do_adb_command('shell pidof')
                 self._have_pidof = 'not found' not in res
 
             # check for root
@@ -160,7 +190,8 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        res = utils.do_shell_command(cmd, timeout=timeout)
+        # TODO: for android sdk emulator its using -e
+        res = utils.do_shell_command('adb -s ' + self._device_serial + ' ' +  cmd, timeout=timeout)
         if res is not None and 'no device' in res:
             return None
 
@@ -177,7 +208,7 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        return self._do_adb_command('adb shell getprop ro.product.cpu.abi')
+        return self._do_adb_command('shell getprop ro.product.cpu.abi')
 
     def kill_frida(self):
         """ Kills frida on device
@@ -185,20 +216,20 @@ class Adb(QObject):
         if not self.available():
             return False
 
-        if self._oreo_plus:
-            if self._have_pidof:
-                procs = ['frida', 'frida-helper-32', 'frida-helper-64']
-                for proc in procs:
-                    pid = self.su_cmd('pidof %s' % proc)
-                    self.su_cmd('kill -9 %s' % pid)
-            else:
+        if self._have_pidof:
+            procs = ['frida'] #, 'frida-helper-32', 'frida-helper-64']
+            for proc in procs:
+                pid = self.su_cmd('pidof %s' % proc)
+                self.su_cmd('kill -9 %s' % pid)
+        else:
+            if self._oreo_plus:
                 self.su_cmd(
                     'kill -9 $(ps -A | grep \'frida\' | awk \'{ print $1 }\')')
-        else:
-            self.su_cmd(
-                'kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
+            else:
+                self.su_cmd(
+                    'kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
 
-        return True
+        return self.is_frida_running == False
 
     def start_frida(self, daemonize=True, restart=False):
         """ Starts/Restarts frida on device
@@ -274,7 +305,7 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        return self._do_adb_command("adb shell am force-stop " + package)
+        return self._do_adb_command("shell am force-stop " + package)
 
     def list_packages(self):
         """ List packages on device
@@ -282,7 +313,7 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        packages = self._do_adb_command('adb shell pm list packages -f')
+        packages = self._do_adb_command('shell pm list packages -f')
         if packages:
             packages = packages.split('\n')
         else:
@@ -306,7 +337,7 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        _path = self._do_adb_command('adb shell pm path ' + package_name)
+        _path = self._do_adb_command('shell pm path ' + package_name)
         if _path:
             try:
                 _path = _path.join(_path.split())  # remove \r\n
@@ -337,7 +368,7 @@ class Adb(QObject):
             return None
 
         if path:
-            return self._do_adb_command('adb install %s' % path)
+            return self._do_adb_command('install %s' % path)
 
         return None
 
@@ -348,7 +379,7 @@ class Adb(QObject):
             return None
 
         if path and dest:
-            return self._do_adb_command('adb pull %s %s' % (path, dest))
+            return self._do_adb_command('pull %s %s' % (path, dest))
 
         return None
 
@@ -358,7 +389,7 @@ class Adb(QObject):
         if not self.is_adb_available():
             return None
 
-        return self._do_adb_command('adb push %s %s' % (path, dest))
+        return self._do_adb_command('push %s %s' % (path, dest))
 
     def su_cmd(self, cmd, timeout=60):
         """ Helper for calling root/su cmds
@@ -369,8 +400,8 @@ class Adb(QObject):
         ret_val = None
         if self._is_su:
             ret_val = self._do_adb_command(
-                'adb shell su -c "' + cmd + '"', timeout=timeout)
+                'shell su -c "' + cmd + '"', timeout=timeout)
         elif self._is_root:
-            ret_val = self._do_adb_command('adb shell ' + cmd, timeout=timeout)
+            ret_val = self._do_adb_command('shell ' + cmd, timeout=timeout)
 
         return ret_val

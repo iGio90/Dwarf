@@ -162,7 +162,7 @@ class DwarfListView(QTreeView):
         if ret_val:
             return ret_val, ret_res
         else:
-            return ret_val, ret_res
+            return ret_val, []
 
     def number_of_items(self):
         """ returns number of rows

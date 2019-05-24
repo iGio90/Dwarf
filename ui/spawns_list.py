@@ -176,6 +176,9 @@ class SpawnsList(QWidget):
         if not self._device:
             return
 
+        if self.spaw_update_thread.isRunning():
+            self.spaw_update_thread.terminate()
+
         if not self.spaw_update_thread.isRunning():
             self.clear()
             self.refresh_button.setEnabled(False)

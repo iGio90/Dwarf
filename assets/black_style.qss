@@ -454,3 +454,5 @@ QDockWidget::float-button:pressed {
     background: rgba(0,0,0,.1);
     border:none;
 }
+
+QComboBox::drop-down { border: none; }

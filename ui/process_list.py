@@ -181,6 +181,9 @@ class ProcessList(QWidget):
         if not self._device:
             return
 
+        if self.procs_update_thread.isRunning():
+            self.procs_update_thread.terminate()
+
         if not self.procs_update_thread.isRunning():
             self.clear()
             self.refresh_button.setEnabled(False)

@@ -457,3 +457,17 @@ QDockWidget::float-button:pressed {
     background: rgba(0,0,0,.1);
     border:none;
 }
+
+
+QToolBar {
+    border-bottom: #181818;
+    padding: 2px;
+    font-weight: bold;
+}
+QToolButton {
+    background-color: #212121;
+    border: 1px solid #333;
+}
+
+
+QComboBox::drop-down { border: none; }

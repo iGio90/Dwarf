@@ -46,7 +46,7 @@ class ApkListDialog(QDialog):
             h_box.addWidget(self.install_button)
             v_box.addLayout(h_box)
 
-        self.apklist = ApkList(self, show_paths)
+        self.apklist = ApkList(parent, show_paths)
         self.apklist.retrieve_thread.onFinished.connect(self._on_finished)
         self.apklist.onApkSelected.connect(self._on_apkselected)
         self.refresh_button = QPushButton('Refresh')
@@ -118,6 +118,7 @@ class ApkList(DwarfListView):
         super(ApkList, self).__init__(parent=parent)
 
         self.adb = Adb()
+        self.adb.device = parent.dwarf.device.id
 
         if not self.adb.available():
             return
