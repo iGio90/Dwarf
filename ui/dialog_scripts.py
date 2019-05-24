@@ -140,8 +140,8 @@ class ScriptsDialog(QDialog):
     def _item_selected(self, script_name):
         script_url = self._script_manager.get_script(script_name)['script']
         script = self._git.get_script(script_url)
-        self.dialog.script = script
-        self.dialog.accept()
+        self.script = script
+        self.accept()
 
     @staticmethod
     def pick(app):

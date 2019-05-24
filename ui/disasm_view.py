@@ -22,6 +22,8 @@ from PyQt5.QtWidgets import *
 
 from capstone import *
 from capstone.x86_const import *
+from capstone.arm64_const import *
+from capstone.arm_const import *
 from lib.range import Range
 from lib import utils
 from lib.instruction import Instruction
@@ -231,8 +233,11 @@ class DisassemblyView(QAbstractScrollArea):
 
             _counter += 1
 
-            if stop_on_ret and cap_inst.group(CS_GRP_RET):
-                break
+            if stop_on_ret:
+                if cap_inst.group(CS_GRP_RET):
+                    break
+                if cap_inst.group(ARM64_GRP_RET):
+                    break
 
         self.adjust()
         progress.cancel()
@@ -431,7 +436,7 @@ class DisassemblyView(QAbstractScrollArea):
                 painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('#009688'))
 
         drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + self._char_width + 1 + self._char_width
-        drawing_pos_x += ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
+        drawing_pos_x += (len(str_fmt.format(line.address)) * self._char_width)
 
         painter.setPen(QColor('#444'))
         drawing_pos_x += self._char_width

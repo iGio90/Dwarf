@@ -71,28 +71,27 @@ class FridaUpdateThread(QThread):
                 self.onError.emit('Failed to extract frida.xz')
                 return
 
-            if not res:
-                self.on_status_text.emit('Mounting devices filesystem')
-                # mount system rw
-                res = self.adb.mount_system()
-                if res is None or not res:
-                    self.on_status_text.emit('Pushing to device')
-                    # push file to device
-                    self.adb.push('frida', '/sdcard/')
-                    self.on_status_text.emit('Setting up and starting frida')
-                    # kill frida
-                    self.adb.kill_frida()
-                    # copy file note: mv give sometimes a invalid id error
-                    self.adb.su_cmd('cp /sdcard/frida /system/xbin/frida')
-                    # remove file
-                    self.adb.su_cmd('rm /sdcard/frida')
-                    # make it executable
-                    self.adb.su_cmd('chmod 755 /system/xbin/frida')
-                    # start it
-                    if not self.adb.start_frida():
-                        self.on_status_text('Failed to start frida')
+            self.on_status_text.emit('Mounting devices filesystem')
+            # mount system rw
+            res = self.adb.mount_system()
+            if res is None or not res:
+                self.on_status_text.emit('Pushing to device')
+                # push file to device
+                self.adb.push('frida', '/sdcard/')
+                self.on_status_text.emit('Setting up and starting frida')
+                # kill frida
+                self.adb.kill_frida()
+                # copy file note: mv give sometimes a invalid id error
+                self.adb.su_cmd('cp /sdcard/frida /system/xbin/frida')
+                # remove file
+                self.adb.su_cmd('rm /sdcard/frida')
+                # make it executable
+                self.adb.su_cmd('chmod 755 /system/xbin/frida')
+                # start it
+                if not self.adb.start_frida():
+                    self.on_status_text('Failed to start frida')
 
-                os.remove('frida')
+            os.remove('frida')
         else:
             self.onError.emit('Failed to download latest frida')
 
