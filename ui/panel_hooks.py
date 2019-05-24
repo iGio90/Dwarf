@@ -18,8 +18,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon, QPixmap,
                          QFont, QKeySequence, QCursor)
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
-                             QPushButton, QSizePolicy, QSpacerItem, QShortcut,
-                             QMenu)
+                             QPushButton, QSizePolicy, QSpacerItem, QShortcut, QMenu)
 
 from ui.list_view import DwarfListView
 from ui.dialog_input import InputDialog
@@ -158,8 +157,7 @@ class HooksPanel(QWidget):
         """
         # go through all items and tell it gets removed
         for item in range(self._hooks_model.rowCount()):
-            if item:
-                self._on_delete_hook(item)
+            self._on_delete_hook(item)
 
         if self._hooks_model.rowCount() > 0:
             # something was wrong it should be empty
