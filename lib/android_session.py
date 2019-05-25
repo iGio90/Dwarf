@@ -242,9 +242,6 @@ class AndroidSession(Session):
             self._on_java_classes()
 
     def _on_proc_resume(self, tid=0):
-        if tid == 0:
-            self.dwarf.contexts.clear()
-
         self.dwarf.dwarf_api('release', tid)
 
     def _on_proc_restart(self):

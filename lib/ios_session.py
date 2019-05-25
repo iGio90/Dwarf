@@ -130,9 +130,6 @@ class IosSession(Session):
         if not self.dwarf.resumed:
             self.dwarf.dwarf_api('resume')
 
-        if tid == 0:
-            self.dwarf.contexts.clear()
-
         self.dwarf.dwarf_api('release', tid)
 
     def _on_proc_restart(self):

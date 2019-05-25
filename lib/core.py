@@ -429,8 +429,15 @@ class Dwarf(QObject):
     def dwarf_api(self, api, args=None, tid=0):
         if self.pid == 0 or self.process is None:
             return
-        if tid == 0:
+
+        # when tid is 0 we want to execute the api in the current hooked thread
+        # however, when we release from menu, what we want to do is to release multiple contexts at once
+        # so that we pass 0 as tid.
+        # we check here and setup special rules for release api
+        is_releasing = api == 'release'
+        if not is_releasing and tid == 0:
             tid = self.context_tid
+
         if args is not None and not isinstance(args, list):
             args = [args]
         if self._script is None:
@@ -439,8 +446,14 @@ class Dwarf(QObject):
             if tid == 0:
                 for context in self.contexts:
                     self._script.post({"type": str(context['tid'])})
+                    if is_releasing:
+                        self._script.exports.api(tid, api, args)
+
+                if is_releasing:
+                    return None
             else:
                 self._script.post({"type": str(tid)})
+
             return self._script.exports.api(tid, api, args)
         except Exception as e:
             self.log(str(e))
