@@ -778,6 +778,13 @@ class AppWindow(QMainWindow):
                 if 'pc' in context['context']:
                     should_disasm = self.asm_panel is not None and self.asm_panel._range is None \
                                     and not self.asm_panel._running_disasm
+                    if should_disasm:
+                        off = int(context['context']['pc']['value'], 16)
+                        if self.asm_panel._range.start_address == off:
+                            should_disasm = False
+                            # we set this to false as well to prevent disasm. be careful to use 'manual' later
+                            manual = False
+
                     if should_disasm or manual:
                         self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
                         self._disassemble_range(self.memory_panel.range)
