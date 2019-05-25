@@ -762,7 +762,8 @@ class AppWindow(QMainWindow):
         self.dwarf.context_tid = context['tid']
 
         if 'context' in context:
-            self.threads.add_context(context)
+            if not manual:
+                self.threads.add_context(context)
 
             is_java = context['is_java']
             if is_java:
