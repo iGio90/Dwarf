@@ -51,7 +51,7 @@ class ContextsListPanel(DwarfListView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._on_context_menu)
 
-        self.doubleClicked.connect(self._item_doubleclicked)
+        self.doubleClicked.connect(self._item_double_clicked)
 
     def add_context(self, data):
         if self.dwarf.arch == 'ia32':
@@ -113,7 +113,7 @@ class ContextsListPanel(DwarfListView):
             if is_tid == str(tid):
                 self.threads_model.removeRow(i)
 
-    def _item_doubleclicked(self, model_index):
+    def _item_double_clicked(self, model_index):
         row = self.threads_model.itemFromIndex(model_index).row()
         if row != -1:
             context_data = self.threads_model.item(row, 0).data(Qt.UserRole + 1)

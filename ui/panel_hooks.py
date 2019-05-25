@@ -260,9 +260,9 @@ class HooksPanel(QWidget):
                     self._hooks_model.item(index, 0).text()))
             context_menu.addSeparator()
             context_menu.addAction(
-                'Modify Logic', lambda: self._on_modify_logic(index))
+                'Edit Logic', lambda: self._on_modify_logic(index))
             context_menu.addAction(
-                'Modify Condition', lambda: self._on_modify_condition(index))
+                'Edit Condition', lambda: self._on_modify_condition(index))
             context_menu.addSeparator()
             context_menu.addAction(
                 'Delete Hook', lambda: self._on_delete_hook(index))

@@ -348,7 +348,7 @@ class AppWindow(QMainWindow):
             self.threads_dock = QDockWidget('Threads', self)
             self.contexts_list_panel = ContextsListPanel(self)
             self.dwarf.onThreadResumed.connect(self.contexts_list_panel.resume_tid)
-            self.contexts_list_panel.onItemDoubleClicked.connect(self._apply_context)
+            self.contexts_list_panel.onItemDoubleClicked.connect(self._manually_apply_context)
             self.threads_dock.setWidget(self.contexts_list_panel)
             self.threads_dock.setObjectName('ThreadPanel')
             self.addDockWidget(Qt.RightDockWidgetArea, self.threads_dock)
@@ -409,7 +409,8 @@ class AppWindow(QMainWindow):
         for item in self.findChildren(QDockWidget):
             if item:
                 if 'darwin' in sys.platform:
-                    item.setStyleSheet('QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }')
+                    item.setStyleSheet(
+                        'QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }')
 
     def set_theme(self, theme):
         if theme:
@@ -428,7 +429,7 @@ class AppWindow(QMainWindow):
                                        + stylesheet.read())
             except Exception as e:
                 pass
-                #err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
+                # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
     def set_status_text(self, txt):
         self.statusbar.showMessage(txt)
@@ -749,14 +750,21 @@ class AppWindow(QMainWindow):
         if self.modules_panel is not None:
             self.show_main_tab('modules')
 
-    def _apply_context(self, context):
+    def _manually_apply_context(self, context):
+        """
+        perform additional operation if the context has been manually applied from the context list
+        """
+        self._apply_context(context, manual=True)
+
+    def _apply_context(self, context, manual=False):
         # update current context tid
         # this should be on top as any further api from js needs to be executed on that thread
         self.dwarf.context_tid = context['tid']
 
         if 'context' in context:
-            is_java = context['is_java']
+            self.threads.add_context(context)
 
+            is_java = context['is_java']
             if is_java:
                 if self.java_explorer_panel is None:
                     self._create_ui_elem('jvm-explorer')
@@ -767,21 +775,11 @@ class AppWindow(QMainWindow):
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
 
                 if 'pc' in context['context']:
-                    off = int(context['context']['pc']['value'], 16)
-                    should_jump_to_asm = True
-                    should_show_tab = True
-                    if self.asm_panel is not None:
-                        if self.asm_panel._range is not None and self.asm_panel._range.start_address == off:
-                            should_jump_to_asm = False
-                            should_show_tab = True
-                        if self.asm_panel._running_disasm:
-                            should_jump_to_asm = False
-                            should_show_tab = False
-
-                    if should_jump_to_asm:
+                    should_disasm = self.asm_panel is not None and self.asm_panel._range is None \
+                                    and not self.asm_panel._running_disasm
+                    if should_disasm or manual:
                         self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
                         self._disassemble_range(self.memory_panel.range)
-                    if should_show_tab:
                         self.show_main_tab('disassembly')
 
         if 'backtrace' in context:

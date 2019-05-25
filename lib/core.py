@@ -444,16 +444,14 @@ class Dwarf(QObject):
             return None
         try:
             if tid == 0:
-                for context in self.contexts:
-                    self._script.post({"type": str(context['tid'])})
+                for tid in list(self.contexts.keys()):
+                    self._script.post({"type": tid})
                     if is_releasing:
-                        self._script.exports.api(tid, api, args)
-
+                        self._script.exports.api(int(tid), api, [int(tid)])
                 if is_releasing:
                     return None
             else:
                 self._script.post({"type": str(tid)})
-
             return self._script.exports.api(tid, api, args)
         except Exception as e:
             self.log(str(e))
@@ -743,11 +741,8 @@ class Dwarf(QObject):
             else:
                 name = context_data['ptr']
 
-            self._app_window.threads.add_context(context_data)
             if context_data['reason'] == 0:
                 self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
-            if context_data['is_java']:
-                self._app_window.show_main_tab('jvm-explorer')
         else:
             self._arch = context_data['arch']
             self._platform = context_data['platform']

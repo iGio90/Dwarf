@@ -63,9 +63,9 @@ class Instruction(object):
                 self.symbol_module = '-'
                 if 'moduleName' in sym:
                     self.symbol_module = sym['moduleName']
-        elif len(instruction.operands) > 0:
-            for op in instruction.operands:
-                if op.type == CS_OP_IMM:
-                    self.string = dwarf.dwarf_api('readString', op.value.imm)
-                    # if len([x for x in self.string if not x.isprintable()]) > 0:
-                    #self.string = None
+        # elif len(instruction.operands) > 0:
+        #    for op in instruction.operands:
+        #        if op.type == CS_OP_IMM:
+        #            self.string = dwarf.dwarf_api('readString', op.value.imm)
+        #            # if len([x for x in self.string if not x.isprintable()]) > 0:
+        #            #self.string = None
