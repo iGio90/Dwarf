@@ -756,8 +756,8 @@ class Dwarf(QObject):
                 self._app_window.hooks_panel.new_menu.addAction(
                     'Java class loading', self._app_window.hooks_panel._on_add_java_on_load)
 
-        # update current context tid
-        self.context_tid = context_data['tid']
+        if self.context_tid == 0:
+            self.context_tid = context_data['tid']
 
     def _on_destroyed(self):
         self._reinitialize()

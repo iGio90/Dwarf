@@ -759,7 +759,8 @@ class AppWindow(QMainWindow):
     def _apply_context(self, context, manual=False):
         # update current context tid
         # this should be on top as any further api from js needs to be executed on that thread
-        self.dwarf.context_tid = context['tid']
+        if manual or self.dwarf.context_tid == 0:
+            self.dwarf.context_tid = context['tid']
 
         if 'context' in context:
             if not manual:
@@ -779,11 +780,12 @@ class AppWindow(QMainWindow):
                     should_disasm = self.asm_panel is not None and self.asm_panel._range is None \
                                     and not self.asm_panel._running_disasm
                     if should_disasm:
-                        off = int(context['context']['pc']['value'], 16)
-                        if self.asm_panel._range is not None and self.asm_panel._range.start_address == off:
-                            should_disasm = False
-                            # we set this to false as well to prevent disasm. be careful to use 'manual' later
-                            manual = False
+                        if self.asm_panel._range is not None:
+                            off = int(context['context']['pc']['value'], 16)
+                            if self.asm_panel._range.start_address == off:
+                                should_disasm = False
+                                # we set this to false as well to prevent disasm. be careful to use 'manual' later
+                                manual = False
 
                     if should_disasm or manual:
                         self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)

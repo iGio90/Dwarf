@@ -141,8 +141,10 @@ class EmulatorPanel(QWidget):
         self.emulator.stop()
 
     def on_emulator_hook(self, instruction):
-        # this take ages (arm64 - lot of registers)
-        self.app.context_panel.set_context(0, 2, self.emulator.current_context)
+        # @PinkiePonkie why setting context here (which is triggered each instruction) and later, set it again
+        # in emulator_stop? step = double hit in set_context, running emulation on more than 1 instruction
+        # doesn't need spam of set_context
+        # self.app.context_panel.set_context(0, 2, self.emulator.current_context)
 
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
