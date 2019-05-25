@@ -780,7 +780,7 @@ class AppWindow(QMainWindow):
                                     and not self.asm_panel._running_disasm
                     if should_disasm:
                         off = int(context['context']['pc']['value'], 16)
-                        if self.asm_panel._range.start_address == off:
+                        if self.asm_panel._range is not None and self.asm_panel._range.start_address == off:
                             should_disasm = False
                             # we set this to false as well to prevent disasm. be careful to use 'manual' later
                             manual = False
