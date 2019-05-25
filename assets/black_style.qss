@@ -15,19 +15,19 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>
     */
 * {
-    color: #666;
+    color: #777;
 }
 
 QObject, QWidget, QFrame , QMenuBar, QScrollArea, QMainWindow::separator, QHeaderView::section  {
     background-color: #111;
-    color: #666;
+    color: #777;
     border: none;
     border-image: none;
 }
 
 QWidget, QMainWindow {
     border-color: #222;
-    color: #666;
+    color: #777;
 }
 
 QListWidget, QTableWidget, QLineEdit, QListView, QTreeView {
@@ -165,7 +165,7 @@ QPushButton {
     QPushButton:hover {
         background-color: #080808;
         border-color: #333;
-        color: #888;
+        color: #777;
     }
 
 /* Splitter */
@@ -306,7 +306,7 @@ QHeaderView::section {
     border-right: none;
     text-align: left;
     text-transform: uppercase;
-    color: #666;
+    color: #777;
     font-weight: bold;
 }
 
@@ -340,13 +340,13 @@ QTabBar:close-button:hover {
 
 HexEditor {
     qproperty-background: #080808;
-    qproperty-foreground: #666;
+    qproperty-foreground: #777;
     qproperty-header: #111;
     qproperty-divider: #222;
     qproperty-selfg: #bbb;
     qproperty-selbg: #ef5350;
     qproperty-line: #111;
-    qproperty-byte: #666;
+    qproperty-byte: #777;
     qproperty-bytealt: #444;
 }
 
@@ -357,12 +357,12 @@ QHeaderView::section:first, QHeaderView::section:only-one {
 QCheckBox {
     spacing: 5px;
     outline: none;
-    color: #666;
+    color: #777;
     margin-bottom: 2px;
 }
 
 QCheckBox:disabled {
-    color: #666;
+    color: #777;
 }
 
 QCheckBox::indicator,
@@ -387,7 +387,7 @@ QGroupBox::indicator {
 
 DisassemblyView {
     qproperty-background: #080808;
-    qproperty-foreground: #666;
+    qproperty-foreground: #777;
     qproperty-jump_arrows: #333;
     qproperty-jump_arrows_hover: #ef5350;
     qproperty-divider: #222;
