@@ -110,8 +110,7 @@ class BookmarksPanel(QWidget):
         """
         # go through all items and tell it gets removed
         for item in range(self._bookmarks_model.rowCount()):
-            if item:
-                self._on_delete_bookmark(item)
+            self._on_delete_bookmark(item)
 
         if self._bookmarks_model.rowCount() > 0:
             # something was wrong it should be empty
