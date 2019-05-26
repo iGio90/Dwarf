@@ -147,8 +147,9 @@ class JavaExplorerPanel(QWidget):
                 if not key.startswith('$'):
                     self.methods.add(key, ref)
             elif ref['type'] == 'object':
-                if not key.startswith('$'):
-                    self.fields.add(key, ref['value'], ref['handle'], ref['handle_class'])
+                if ref['handle'] is not None:
+                    if not key.startswith('$'):
+                        self.fields.add(key, ref['value'], ref['handle'], ref['handle_class'])
             else:
                 if not key.startswith('$'):
                     self.native_fields.add(key, ref['value'])
