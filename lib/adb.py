@@ -45,19 +45,26 @@ class Adb(QObject):
     # ************************************************************************
     @property
     def device(self):
+        """ return device_serial
+        """
         return self._device_serial
 
     @device.setter
     def device(self, value):
+        """ set serial and check for root
+        """
         try:
             if isinstance(value, str):
                 self._device_serial = value
                 self._check_requirements()
         except ValueError:
-            self._device = None
+            self._device_serial = None
 
     @property
     def min_required(self):
+        """ return if adb cmd is available
+            checked in init
+        """
         return self._adb_available
 
     # ************************************************************************
@@ -82,8 +89,6 @@ class Adb(QObject):
             if io_error.errno == 2:
                 self._adb_available = False
 
-
-
     def _check_requirements(self):  # pylint: disable=too-many-branches, too-many-statements
         """ Checks root on device
         """
@@ -96,7 +101,8 @@ class Adb(QObject):
 
         if self._adb_available:
             # try some su command
-            res = self._do_adb_command('shell su -c \'mount -o ro,remount /system\'')
+            res = self._do_adb_command(
+                'shell su -c \'mount -o ro,remount /system\'')
             if res is not None:
                 # adb not authorized
                 if res and 'device unauthorized' in res:
@@ -141,11 +147,13 @@ class Adb(QObject):
 
             if self._dev_emu:
                 # get some infos about the device and keep for later
-                self._sdk_version = self._do_adb_command('shell getprop ro.build.version.sdk')
+                self._sdk_version = self._do_adb_command(
+                    'shell getprop ro.build.version.sdk')
                 if self._sdk_version is not None:
                     self._sdk_version = self._sdk_version.join(
                         self._sdk_version.split())  # cleans '\r\n'
-                self._android_version = self._do_adb_command('shell getprop ro.build.version.release')
+                self._android_version = self._do_adb_command(
+                    'shell getprop ro.build.version.release')
                 if self._android_version is not None:
                     self._android_version = self._android_version.join(
                         self._android_version.split())
@@ -173,7 +181,6 @@ class Adb(QObject):
                 res = self.su_cmd('id')
                 self._is_root = 'uid=0' in res
 
-
     def get_states_string(self):
         """ Prints check results
         """
@@ -191,7 +198,8 @@ class Adb(QObject):
             return None
 
         # TODO: for android sdk emulator its using -e
-        res = utils.do_shell_command('adb -s ' + self._device_serial + ' ' +  cmd, timeout=timeout)
+        res = utils.do_shell_command(
+            'adb -s ' + self._device_serial + ' ' + cmd, timeout=timeout)
         if res is not None and 'no device' in res:
             return None
 
@@ -200,7 +208,8 @@ class Adb(QObject):
     def available(self):
         """ Returns True if adb and dev/emu and (su or root) is True
         """
-        return self._adb_available and self._dev_emu and (self._is_root or self._is_su)
+        return self._adb_available and self._dev_emu and (self._is_root
+                                                          or self._is_su)
 
     def get_device_arch(self):
         """ Returns value from ro.product.cpu.abi
@@ -217,7 +226,7 @@ class Adb(QObject):
             return False
 
         if self._have_pidof:
-            procs = ['frida'] #, 'frida-helper-32', 'frida-helper-64']
+            procs = ['frida']  #, 'frida-helper-32', 'frida-helper-64']
             for proc in procs:
                 pid = self.su_cmd('pidof %s' % proc)
                 self.su_cmd('kill -9 %s' % pid)
@@ -229,7 +238,7 @@ class Adb(QObject):
                 self.su_cmd(
                     'kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
 
-        return self.is_frida_running == False
+        return not self.is_frida_running()
 
     def start_frida(self, daemonize=True, restart=False):
         """ Starts/Restarts frida on device
@@ -275,7 +284,7 @@ class Adb(QObject):
         if 'frida' in result:
             # in frida 12.5.0 there was no frida-helper on my tested devs TODO: Recheck
             # for res in result:
-                # if 'frida-helper' in res:
+            # if 'frida-helper' in res:
             found = True
 
         return found
