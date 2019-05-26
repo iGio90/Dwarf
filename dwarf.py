@@ -54,7 +54,10 @@ def process_args():
         "-sp", "--spawn", action='store_true', help="force spawn")
 
     parser.add_argument(
-        "-ds", "--debug-script", action='store_true', help="debug outputs from frida script")
+        "-ds",
+        "--debug-script",
+        action='store_true',
+        help="debug outputs from frida script")
 
     args = parser.parse_args()
     return args
@@ -68,9 +71,19 @@ def run_dwarf():
     """ fire it up
     """
     args = process_args()
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
     qapp = QApplication([])
+    qapp.setDesktopSettingsAware(True)
     qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
+    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    qapp.setLayoutDirection(Qt.LeftToRight)
+
+    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
+    qapp.setApplicationName("dwarf")
+    qapp.setApplicationDisplayName(
+        "Dwarf - A debugger for reverse engineers, crackers and security analyst"
+    )
 
     # set icon
     if os.name == 'nt':
@@ -78,18 +91,20 @@ def run_dwarf():
         import ctypes
         try:
             # write ini to show folder with dwarficon
-            folder_stuff = "[.ShellClassInfo]\nIconResource=assets\dwarf.ico,0\n[ViewState]\nMode=\nVid=\nFolderType=Generic\n"
+            folder_stuff = "[.ShellClassInfo]\n"
+            folder_stuff += "IconResource=assets\\dwarf.ico,0\n"
+            folder_stuff += "[ViewState]\n"
+            folder_stuff += "Mode=\n"
+            folder_stuff += "Vid=\n"
+            folder_stuff += "FolderType=Generic\n"
             try:
                 with open('desktop.ini', 'w') as ini:
                     ini.writelines(folder_stuff)
 
-                FILE_ATTRIBUTE_HIDDEN = 0x02
-                FILE_ATTRIBUTE_SYSTEM = 0x04
-
                 # set fileattributes to hidden + systemfile
                 ctypes.windll.kernel32.SetFileAttributesW(
                     r'desktop.ini',
-                    FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)
+                    0x02 | 0x04) # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
             except PermissionError:
                 # its hidden+system already
                 pass
@@ -99,10 +114,10 @@ def run_dwarf():
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 _appid)
 
-            if os.path.exists(utils.resource_path('assets/dwarf.png')):
-                _icon = QIcon(utils.resource_path('assets/dwarf.png'))
+            if os.path.exists(utils.resource_path('assets/dwarf.ico')):
+                _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
                 qapp.setWindowIcon(_icon)
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
     else:
         if os.path.exists(utils.resource_path('assets/dwarf.png')):
