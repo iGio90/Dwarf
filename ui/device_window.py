@@ -82,6 +82,8 @@ class DeviceWindow(QDialog):
             self.spawn_list.device = self.device
         except frida.TimedOutError:
             self.device = None
+        except frida.InvalidArgumentError:
+            self.device = None
 
     def setup_ui(self):
         self.setFixedSize(800, 400)

@@ -172,6 +172,7 @@ class DeviceBar(QWidget):
         self._update_thread.onError.connect(self._on_download_error)
         self.updated_frida_version = ''
         self.updated_frida_assets_url = {}
+        self._device_id = None
         self._devices = []
         remote_frida = self._git.get_frida_version()
         if remote_frida is None:
