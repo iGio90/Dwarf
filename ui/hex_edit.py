@@ -22,11 +22,10 @@ import pyperclip
 # pylint: disable=unused-import #temp selection code is missing
 from PyQt5.QtCore import (Qt, QObject, pyqtSignal, QRect, QRectF, QTimer,
                           QPoint, pyqtProperty)
-from PyQt5.QtGui import (QFont, QPainter, QColor, QPalette, QTextOption,
-                         QCursor, QFontDatabase, QPolygon)
+from PyQt5.QtGui import (QPainter, QColor, QTextOption,
+                         QCursor, QPolygon)
 from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
-from lib.elf import ELF
 from ui.dialog_input import InputDialog
 from lib import utils
 from lib.range import Range
@@ -1272,13 +1271,6 @@ class HexEditor(QAbstractScrollArea):
             menu_actions[follow_pointer] = self.on_cm_followpointer
             context_menu.addSeparator()
 
-            if self.caret.position + 4 < self.range.tail:
-                if ELF.is_valid_elf(self.range.data[self.caret.position:self.caret.position + 4]):
-                    read_elf = context_menu.addAction("&ELF")
-                    menu_actions[read_elf] = self.on_cm_read_elf
-                    context_menu.addSeparator()
-
-
         jump_to = context_menu.addAction("&Jump to address")
         menu_actions[jump_to] = self.on_cm_jumpto
 
@@ -1338,12 +1330,6 @@ class HexEditor(QAbstractScrollArea):
             self.read_memory(ptr)
         else:
             self.display_error('Unable to read pointer at location.')
-
-    def on_cm_read_elf(self):
-        """ ContextMenu ReadElf
-        """
-        _elf = ELF.build(self.range.data)
-        # todo ui here
 
     def on_cm_hookaddress(self):
         """ ContextMenu HookAddress
