@@ -691,6 +691,20 @@ class Dwarf(QObject):
                 self.onBackTrace.emit(data['backtrace'])
 
             self.onApplyContext.emit(data)
+        elif cmd == 'set_context_value':
+            context_property = parts[1]
+            value = parts[2]
+            if value.startswith('0x'):
+                try:
+                    value = int(value, 16)
+                except:
+                    pass
+            try:
+                value = int(value)
+            except:
+                pass
+
+            # signal prop + value
         elif cmd == 'set_data':
             if data:
                 self.onSetData.emit(['raw', parts[1], data])
