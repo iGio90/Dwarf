@@ -37,6 +37,8 @@ class ContextPanel(QTabWidget):
         self._app_window = parent
         self.setAutoFillBackground(True)
 
+        self._app_window.dwarf.onContextChanged.connect(self._on_context_changed)
+
         self._nativectx_model = QStandardItemModel(0, 4)
         self._nativectx_model.setHeaderData(0, Qt.Horizontal, 'Reg')
         self._nativectx_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
@@ -349,3 +351,20 @@ class ContextPanel(QTabWidget):
         if index != -1:
             # show contextmenu
             context_menu.exec_(glbl_pt)
+
+    def _on_context_changed(self, reg_name, reg_val):
+        was_found, find_result = self._nativectx_list.contains_text(reg_name, True, True, True)
+        if was_found:
+            if len(find_result) == 1:
+                find_result = find_result[0]
+                if self._nativectx_model.item(find_result[0], 0).text() == reg_name:
+                    str_fmt = '0x{0:x}'
+                    if self._nativectx_list.uppercase_hex:
+                        str_fmt = '0x{0:X}'
+
+                    value_x = str_fmt.format(int(reg_val, 16))
+
+                    value_dec = '{0:d}'.format(int(reg_val, 16))
+                    self._nativectx_model.item(find_result[0], 1).setText(value_x)
+                    self._nativectx_model.item(find_result[0], 2).setText(value_dec)
+                    self._nativectx_model.item(find_result[0], 3).setText("")
