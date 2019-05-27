@@ -19,10 +19,11 @@ import os
 import random
 import json
 
-from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread, QRect
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QPainter, QColor
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, \
-    QPushButton, QSpacerItem, QSizePolicy, QStyle, qApp, QHeaderView, QMenu
+from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
+                             QHBoxLayout, QPushButton, QSpacerItem,
+                             QSizePolicy, QStyle, qApp, QHeaderView, QMenu)
 
 from lib import utils, prefs
 from lib.git import Git
@@ -54,7 +55,8 @@ class DwarfCommitsThread(QThread):
         except IOError as io_error:
             if io_error.errno == 2:
                 # git command not available
-                self.on_status_text.emit('error: git not available on your system')
+                self.on_status_text.emit(
+                    'error: git not available on your system')
                 return
         _git = Git()
         data = _git.get_dwarf_commits()
@@ -63,7 +65,8 @@ class DwarfCommitsThread(QThread):
             return
 
         most_recent_remote_commit = ''
-        most_recent_local_commit = utils.do_shell_command('git log -1 master --pretty=format:%H')
+        most_recent_local_commit = utils.do_shell_command(
+            'git log -1 master --pretty=format:%H')
         most_recent_date = ''
         for commit in data:
             if most_recent_remote_commit == '':
@@ -79,11 +82,14 @@ class DwarfCommitsThread(QThread):
                 self.on_add_commit.emit(date[0], True)
                 most_recent_date = date[0]
 
-            s = ('{0} - {1} ({2})'.format(date[1][:-1], commit['message'], commit['author']['name']))
+            s = ('{0} - {1} ({2})'.format(date[1][:-1], commit['message'],
+                                          commit['author']['name']))
             self.on_add_commit.emit(s, False)
 
         if most_recent_remote_commit != most_recent_local_commit:
-            self.on_finished.emit('There is an newer Version available... You can use the UpdateButton in Menu')
+            self.on_finished.emit(
+                'There is an newer Version available... You can use the UpdateButton in Menu'
+            )
         else:
             # keep: it clears status text
             self.on_finished.emit('')
@@ -110,11 +116,14 @@ class DwarfUpdateThread(QThread):
         except IOError as io_error:
             if io_error.errno == 2:
                 # git command not available
-                self.on_status_text.emit('error while updating: git not available on your system')
-                self.on_finished.emit('error while updating: git not available on your system')
+                self.on_status_text.emit(
+                    'error while updating: git not available on your system')
+                self.on_finished.emit(
+                    'error while updating: git not available on your system')
                 return
 
-        utils.do_shell_command('git fetch -q https://github.com/iGio90/Dwarf.git')
+        utils.do_shell_command(
+            'git fetch -q https://github.com/iGio90/Dwarf.git')
         utils.do_shell_command('git checkout -f -q master')
         utils.do_shell_command('git reset --hard FETCH_HEAD')
         sha = utils.do_shell_command('git log -1 master --pretty=format:%H')
@@ -130,7 +139,9 @@ class UpdateBar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setAutoFillBackground(True)
-        self.setStyleSheet('background-color: crimson; color: white; font-weight: bold; margin: 0; padding: 10px;')
+        self.setStyleSheet(
+            'background-color: crimson; color: white; font-weight: bold; margin: 0; padding: 10px;'
+        )
         self.setup()
 
     def setup(self):
@@ -138,15 +149,19 @@ class UpdateBar(QWidget):
         """
         h_box = QHBoxLayout()
         h_box.setContentsMargins(0, 0, 0, 0)
-        update_label = QLabel('A newer Version of Dwarf is available. Checkout <a style="color:white;" '
-                              'href="https://github.com/iGio90/Dwarf">Dwarf on GitHub</a> for more informations')
+        update_label = QLabel(
+            'A newer Version of Dwarf is available. Checkout <a style="color:white;" '
+            'href="https://github.com/iGio90/Dwarf">Dwarf on GitHub</a> for more informations'
+        )
         update_label.setOpenExternalLinks(True)
         update_label.setTextFormat(Qt.RichText)
         update_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
         update_button = QPushButton('Update now!', update_label)
         update_button.setStyleSheet('padding: 0; border-color: white;')
-        update_button.setGeometry(self.parent().width() - 10 - update_label.width() * .2, 5, update_label.width() * .2, 25)
+        update_button.setGeometry(
+            self.parent().width() - 10 - update_label.width() * .2, 5,
+            update_label.width() * .2, 25)
         update_button.clicked.connect(self.update_now_clicked)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
@@ -173,28 +188,39 @@ class WelcomeDialog(QDialog):
             ['warriors', 'wardrobes', 'waffles', 'wishes'],
             ['are', 'aren\'t', 'ain\'t', 'appears to be'],
             ['rich', 'real', 'riffle', 'retarded', 'rock'],
-            ['as fuck', 'fancy', 'fucked', 'front-ended', 'falafel', 'french fries'],
+            [
+                'as fuck', 'fancy', 'fucked', 'front-ended', 'falafel',
+                'french fries'
+            ],
         ]
+
+        self._update_thread = None
 
         self._recent_list_model = QStandardItemModel(0, 6)
         self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Path')
         self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Session')
-        self._recent_list_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
+                                              Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(2, Qt.Horizontal, 'Hooks')
-        self._recent_list_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
+                                              Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(3, Qt.Horizontal, 'Watchers')
-        self._recent_list_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter,
+                                              Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(4, Qt.Horizontal, 'OnLoads')
-        self._recent_list_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter,
+                                              Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(5, Qt.Horizontal, 'Bookmarks')
-        self._recent_list_model.setHeaderData(5, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._recent_list_model.setHeaderData(5, Qt.Horizontal, Qt.AlignCenter,
+                                              Qt.TextAlignmentRole)
         #self._recent_list_model.setHeaderData(6, Qt.Horizontal, 'Custom script')
         #self._recent_list_model.setHeaderData(6, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
 
         self._recent_list = DwarfListView(self)
         self._recent_list.setModel(self._recent_list_model)
 
-        self._recent_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents | QHeaderView.Interactive)
+        self._recent_list.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents | QHeaderView.Interactive)
         self._recent_list.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self._recent_list.header().setSectionResizeMode(2, QHeaderView.Stretch)
         self._recent_list.header().setSectionResizeMode(3, QHeaderView.Stretch)
@@ -203,13 +229,18 @@ class WelcomeDialog(QDialog):
         #self._recent_list.header().setSectionResizeMode(6, QHeaderView.Stretch)
 
         self._recent_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._recent_list.customContextMenuRequested.connect(self._on_recent_sessions_context_menu)
-        self._recent_list.doubleClicked.connect(self._on_recent_session_double_click)
+        self._recent_list.customContextMenuRequested.connect(
+            self._on_recent_sessions_context_menu)
+        self._recent_list.doubleClicked.connect(
+            self._on_recent_session_double_click)
 
         # setup size and remove/disable titlebuttons
         self.desktop_geom = qApp.desktop().availableGeometry()
-        self.setFixedSize(self.desktop_geom.width() * .45, self.desktop_geom.height() * .38)
-        self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
+        self.setFixedSize(self.desktop_geom.width() * .45,
+                          self.desktop_geom.height() * .4)
+        self.setGeometry(
+            QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),
+                               qApp.desktop().availableGeometry()))
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -219,12 +250,16 @@ class WelcomeDialog(QDialog):
         # setup ui elements
         self.setup_ui()
 
+        random.seed(a=None, version=2)
+
         self.update_commits_thread = DwarfCommitsThread(parent)
-        self.update_commits_thread.on_update_available.connect(self._on_dwarf_isupdate)
+        self.update_commits_thread.on_update_available.connect(
+            self._on_dwarf_isupdate)
         self.update_commits_thread.start()
         # center
         self.setGeometry(
-            QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
+            QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),
+                               qApp.desktop().availableGeometry()))
 
     def setup_ui(self):
         """ Setup Ui
@@ -242,50 +277,52 @@ class WelcomeDialog(QDialog):
         h_box = QHBoxLayout()
         h_box.setContentsMargins(15, 15, 15, 15)
         wrapper = QVBoxLayout()
-        # wrapper.setGeometry(QRect(0, 0, 400, 200))
         head = QHBoxLayout()
-        head.setContentsMargins(0, 10, 0, 10)
+        head.setContentsMargins(50, 10, 0, 10)
         # dwarf icon
         icon = QLabel()
-        icon.setContentsMargins(40, 0, 0, 0)
-        dwarf_logo = QPixmap(utils.resource_path('assets/dwarf.svg'))
-        icon.setPixmap(dwarf_logo)
+        icon.setPixmap(QPixmap(utils.resource_path('assets/dwarf.svg')))
+        icon.setAlignment(Qt.AlignCenter)
+        icon.setMinimumSize(QSize(125, 125))
+        icon.setMaximumSize(QSize(125, 125))
         head.addWidget(icon)
 
         # main title
         v_box = QVBoxLayout()
         title = QLabel('Dwarf')
-        title.setContentsMargins(0, 0, 50, 0)
-        title.setFont(QFont('Anton', 90, QFont.Bold))
-        title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        title.setFixedHeight(self.height() * .35)
+        title.setContentsMargins(0, 0, 0, 0)
+        title.setFont(QFont('Anton', 100, QFont.Bold))
+        title.setMaximumHeight(125)
+        title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         title.setAlignment(Qt.AlignCenter)
-        v_box.addWidget(title)
+        head.addWidget(title)
 
-        sub_title_text = (self._pick_random_word(0) + ' ' + self._pick_random_word(1) + ' ' +
-                          self._pick_random_word(2) + ' ' + self._pick_random_word(3) + ' ' +
-                          self._pick_random_word(4))
+        sub_title_text = (
+            self._pick_random_word(0) + ' ' + self._pick_random_word(1) + ' ' +
+            self._pick_random_word(2) + ' ' + self._pick_random_word(3) + ' ' +
+            self._pick_random_word(4))
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         sub_title = QLabel(sub_title_text)
         sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
-        sub_title.setFixedHeight(title.height() * .25)
         sub_title.setAlignment(Qt.AlignCenter)
-        sub_title.setContentsMargins(0, 0, 50, 0)
-        sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sub_title.setContentsMargins(175, 0, 0, 20)
+        sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        v_box.addLayout(head)
         v_box.addWidget(sub_title)
-        head.addLayout(v_box)
 
-        wrapper.addLayout(head)
+        wrapper.addLayout(v_box)
 
         recent = QLabel('Last saved Sessions')
         font = recent.font()
+        font.setPointSize(11)
         font.setBold(True)
         #font.setPointSize(10)
         recent.setFont(font)
         wrapper.addWidget(recent)
         wrapper.addWidget(self._recent_list)
         h_box.addLayout(wrapper, stretch=False)
-        buttonSpacer = QSpacerItem(15, 100, QSizePolicy.Fixed, QSizePolicy.Minimum)
+        buttonSpacer = QSpacerItem(15, 100, QSizePolicy.Fixed,
+                                   QSizePolicy.Minimum)
         h_box.addItem(buttonSpacer)
         wrapper = QVBoxLayout()
 
@@ -295,8 +332,8 @@ class WelcomeDialog(QDialog):
         btn.setIcon(ico)
         btn.setToolTip('New Android Session')
         btn.clicked.connect(self._on_android_button)
-
         wrapper.addWidget(btn)
+
         btn = QPushButton()
         ico = QIcon(QPixmap(utils.resource_path('assets/apple.svg')))
         btn.setIconSize(QSize(75, 75))
@@ -332,17 +369,23 @@ class WelcomeDialog(QDialog):
                 on_loads = 0
                 bookmarks = '0'
                 #have_user_script = False
-                if 'hooks' in exported_session and exported_session['hooks'] is not None:
+                if 'hooks' in exported_session and exported_session[
+                        'hooks'] is not None:
                     hooks = str(len(exported_session['hooks']))
-                if 'watchers' in exported_session and exported_session['watchers'] is not None:
+                if 'watchers' in exported_session and exported_session[
+                        'watchers'] is not None:
                     watchers = str(len(exported_session['watchers']))
-                if 'nativeOnLoads' in exported_session and exported_session['nativeOnLoads'] is not None:
+                if 'nativeOnLoads' in exported_session and exported_session[
+                        'nativeOnLoads'] is not None:
                     on_loads += len(exported_session['nativeOnLoads'])
-                if 'javaOnLoads' in exported_session and exported_session['javaOnLoads'] is not None:
+                if 'javaOnLoads' in exported_session and exported_session[
+                        'javaOnLoads'] is not None:
                     on_loads += len(exported_session['javaOnLoads'])
-                if 'bookmarks' in exported_session and exported_session['bookmarks'] is not None:
+                if 'bookmarks' in exported_session and exported_session[
+                        'bookmarks'] is not None:
                     bookmarks = str(len(exported_session['bookmarks']))
-                if 'user_script' in exported_session and exported_session['user_script']:
+                if 'user_script' in exported_session and exported_session[
+                        'user_script']:
                     have_user_script = exported_session['user_script'] != ''
 
                 #user_script_item = QStandardItem()
@@ -352,7 +395,8 @@ class WelcomeDialog(QDialog):
                 on_loads = str(on_loads)
 
                 recent_session_file_item = QStandardItem(recent_session_file)
-                recent_session_file_item.setData(exported_session, Qt.UserRole + 2)
+                recent_session_file_item.setData(exported_session,
+                                                 Qt.UserRole + 2)
 
                 item_1 = QStandardItem(exported_session['session'])
                 item_1.setTextAlignment(Qt.AlignCenter)
@@ -367,10 +411,11 @@ class WelcomeDialog(QDialog):
                 #item_6 = QStandardItem(user_script_item)
                 #item_6.setTextAlignment(Qt.AlignCenter)
 
-                self._recent_list_model.insertRow(self._recent_list_model.rowCount(), [
-                    recent_session_file_item,
-                    item_1, item_2, item_3, item_4, item_5
-                ])
+                self._recent_list_model.insertRow(
+                    self._recent_list_model.rowCount(), [
+                        recent_session_file_item, item_1, item_2, item_3,
+                        item_4, item_5
+                    ])
             else:
                 invalid_session_files.append(recent_session_file)
         for invalid in invalid_session_files:
@@ -411,7 +456,9 @@ class WelcomeDialog(QDialog):
         self.close()
 
     def _pick_random_word(self, arr):
-        return self._sub_titles[arr][random.randint(0, len(self._sub_titles[arr]) - 1)]
+        return self._sub_titles[arr][random.randint(
+            0,
+            len(self._sub_titles[arr]) - 1)]
 
     def _on_recent_sessions_context_menu(self, pos):
         index = self.list_view.indexAt(pos).row()
@@ -427,7 +474,8 @@ class WelcomeDialog(QDialog):
     def _remove_recent_session(self, session_file):
         if os.path.exists(session_file):
             os.remove(session_file)
-            session_history = self._prefs.get(prefs.RECENT_SESSIONS, default=[])
+            session_history = self._prefs.get(
+                prefs.RECENT_SESSIONS, default=[])
             if session_file in session_history:
                 session_history.pop(session_history.index(session_file))
                 self._prefs.put(prefs.RECENT_SESSIONS, session_history)
