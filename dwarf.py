@@ -73,19 +73,6 @@ def run_dwarf():
     args = process_args()
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
-    qapp = QApplication([])
-    qapp.setDesktopSettingsAware(True)
-    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
-    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    qapp.setLayoutDirection(Qt.LeftToRight)
-
-    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
-    qapp.setApplicationName("dwarf")
-    qapp.setApplicationDisplayName(
-        "Dwarf - A debugger for reverse engineers, crackers and security analyst"
-    )
-
-    # set icon
     if os.name == 'nt':
         # windows stuff
         import ctypes
@@ -103,8 +90,8 @@ def run_dwarf():
 
                 # set fileattributes to hidden + systemfile
                 ctypes.windll.kernel32.SetFileAttributesW(
-                    r'desktop.ini',
-                    0x02 | 0x04) # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
+                    r'desktop.ini', 0x02 | 0x04
+                )  # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
             except PermissionError:
                 # its hidden+system already
                 pass
@@ -114,11 +101,26 @@ def run_dwarf():
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 _appid)
 
-            if os.path.exists(utils.resource_path('assets/dwarf.ico')):
-                _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
-                qapp.setWindowIcon(_icon)
+            ctypes.windll.user32.SetProcessDPIAware()
+
         except Exception:  # pylint: disable=broad-except
             pass
+
+    qapp = QApplication([])
+
+    qapp.setDesktopSettingsAware(True)
+    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
+    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    qapp.setLayoutDirection(Qt.LeftToRight)
+
+    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
+    qapp.setApplicationName("dwarf")
+
+    # set icon
+    if os.name == "nt" and os.path.exists(
+            utils.resource_path('assets/dwarf.ico')):
+        _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
+        qapp.setWindowIcon(_icon)
     else:
         if os.path.exists(utils.resource_path('assets/dwarf.png')):
             _icon = QIcon(utils.resource_path('assets/dwarf.png'))
