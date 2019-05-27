@@ -107,6 +107,8 @@ class Dwarf(QObject):
 
     onMemoryScanResult = pyqtSignal(list, name='onMemoryScanResult')
 
+    onContextChanged = pyqtSignal(str, str, name='onContextChanged')
+
     # ************************************************************************
     # **************************** Init **************************************
     # ************************************************************************
@@ -704,7 +706,7 @@ class Dwarf(QObject):
             except:
                 pass
 
-            # signal prop + value
+            self.onContextChanged.emit(str(context_property), str(value))
         elif cmd == 'set_data':
             if data:
                 self.onSetData.emit(['raw', parts[1], data])
