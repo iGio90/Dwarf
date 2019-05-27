@@ -303,7 +303,7 @@ class WelcomeDialog(QDialog):
             self._pick_random_word(4))
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         sub_title = QLabel(sub_title_text)
-        sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
+        sub_title.setFont(QFont('OpenSans', 16, QFont.Bold))
         sub_title.setAlignment(Qt.AlignCenter)
         sub_title.setContentsMargins(175, 0, 0, 20)
         sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -428,6 +428,7 @@ class WelcomeDialog(QDialog):
 
     def _on_dwarf_isupdate(self):
         self.update_bar.setVisible(True)
+        self.setFixedHeight(self.height() + self.update_bar.height())
         self.onIsNewerVersion.emit()
 
     def _update_dwarf(self):
