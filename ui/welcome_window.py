@@ -20,7 +20,7 @@ import random
 import json
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QFontMetrics
 from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
                              QHBoxLayout, QPushButton, QSpacerItem,
                              QSizePolicy, QStyle, qApp, QHeaderView, QMenu)
@@ -302,13 +302,15 @@ class WelcomeDialog(QDialog):
             self._pick_random_word(2) + ' ' + self._pick_random_word(3) + ' ' +
             self._pick_random_word(4))
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
-        sub_title = QLabel(sub_title_text)
-        sub_title.setFont(QFont('OpenSans', 16, QFont.Bold))
-        sub_title.setAlignment(Qt.AlignCenter)
-        sub_title.setContentsMargins(175, 0, 0, 20)
-        sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._sub_title = QLabel(sub_title_text)
+        self._sub_title.setFont(QFont('OpenSans', 16, QFont.Bold))
+        font_metric = QFontMetrics(self._sub_title.font())
+        self._char_width = font_metric.widthChar('#')
+        self._sub_title.setAlignment(Qt.AlignCenter)
+        self._sub_title.setContentsMargins(175, 0, 0, 20)
+        self._sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         v_box.addLayout(head)
-        v_box.addWidget(sub_title)
+        v_box.addWidget(self._sub_title)
 
         wrapper.addLayout(v_box)
 
@@ -486,3 +488,10 @@ class WelcomeDialog(QDialog):
         recent_session_file = self._recent_list_model.item(row, 0)
         recent_session_data = recent_session_file.data(Qt.UserRole + 2)
         self.onSessionRestore.emit(recent_session_data)
+
+    def showEvent(self, QShowEvent):
+        """ override to change font size when subtitle is cutted
+        """
+        if len(self._sub_title.text()) * self._char_width > (self._sub_title.width() - 155):
+            self._sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
+        return super().showEvent(QShowEvent)
