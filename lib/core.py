@@ -706,7 +706,7 @@ class Dwarf(QObject):
             except:
                 pass
 
-            self.onContextChanged.emit(str(context_property), str(value))
+            self.onContextChanged.emit(str(context_property), hex(value))
         elif cmd == 'set_data':
             if data:
                 self.onSetData.emit(['raw', parts[1], data])
