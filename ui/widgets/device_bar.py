@@ -73,8 +73,7 @@ class FridaUpdateThread(QThread):
 
             self.on_status_text.emit('Mounting devices filesystem')
             # mount system rw
-            res = self.adb.mount_system()
-            if res is None or not res:
+            if self.adb.mount_system():
                 self.on_status_text.emit('Pushing to device')
                 # push file to device
                 self.adb.push('frida', '/sdcard/')
@@ -90,6 +89,8 @@ class FridaUpdateThread(QThread):
                 # start it
                 if not self.adb.start_frida():
                     self.on_status_text('Failed to start frida')
+            else:
+                print('failed to mount /system on device')
 
             os.remove('frida')
         else:
@@ -259,6 +260,7 @@ class DeviceBar(QWidget):
         self._start_btn.setVisible(False)
         self._restart_btn.setVisible(False)
         self._adb.device = frida_device.id
+        self._device_id = frida_device.id
         if self._adb.available():
             # try getting frida version
             device_frida = self._adb.get_frida_version()
@@ -378,7 +380,8 @@ class DeviceBar(QWidget):
         if self._adb.available():
             self._start_btn.setVisible(False)
             if self._adb.start_frida():
-                self.onDeviceUpdated.emit(self._device_id)
+                #self.onDeviceUpdated.emit(self._device_id)
+                self._on_devices_finished()
             else:
                 self._start_btn.setVisible(True)
 
@@ -387,5 +390,6 @@ class DeviceBar(QWidget):
             self._restart_btn.setVisible(False)
             if self._adb.start_frida(restart=True):
                 self._restart_btn.setVisible(True)
-                self.onDeviceUpdated.emit(self._device_id)
+                #self.onDeviceUpdated.emit(self._device_id)
+                self._on_devices_finished()
 
