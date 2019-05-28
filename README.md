@@ -11,6 +11,10 @@ Checkout the [website](https://igio90.github.io/Dwarf/) for features, api and ex
 ### Pre requisites
 A frida server running anywhere.
 
+#### Android Session:
+  + make sure you can use 'adb' command in console or [Read here](https://www.xda-developers.com/adb-fastboot-any-directory-windows-linux/)
+  + root on the device/emulator is required!
+
 ### Setup and run
 
 ```
