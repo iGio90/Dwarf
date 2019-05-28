@@ -19,7 +19,7 @@ from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
 
 from ui.code_editor import JsCodeEditor
-
+from ui.dialogs.dwarf_dialog import DwarfDialog
 
 class InputDialogTextEdit(JsCodeEditor):
     def __init__(self, dialog, *__args):
@@ -34,7 +34,7 @@ class InputDialogTextEdit(JsCodeEditor):
         font_metric = QFontMetrics(self.font())
         row_height = font_metric.lineSpacing()
         self.setFixedHeight(row_height + 10)  # 10 == 2*5px padding
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(400)
 
     def keyPressEvent(self, event):
         # when code completion popup dont respond to enter
@@ -48,7 +48,7 @@ class InputDialogTextEdit(JsCodeEditor):
                 super(InputDialogTextEdit, self).keyPressEvent(event)
 
 
-class InputDialog(QDialog):
+class InputDialog(DwarfDialog):
     def __init__(self, parent=None, hint=None, input_content='', placeholder='', options_callback=None):
         super(InputDialog, self).__init__(parent)
 
@@ -90,6 +90,7 @@ class InputDialog(QDialog):
     def input(parent=None, hint=None, input_content='', placeholder='', options_callback=None):
         dialog = InputDialog(parent=parent, hint=hint, input_content=input_content,
                              placeholder=placeholder, options_callback=options_callback)
+        dialog.title = hint
         result = dialog.exec_()
         text = dialog.input_widget.toPlainText()
         return result == QDialog.Accepted, text

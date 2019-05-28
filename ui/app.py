@@ -19,19 +19,20 @@ import os
 import sys
 import shutil
 
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl
+from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar,
+                             QStatusBar, QDockWidget, QTabWidget, QMenu)
+
 from lib import utils
 from lib.prefs import Prefs
-
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *  # QIcon, QFontDatabase
-from PyQt5.QtWidgets import *
-
 from lib.session_manager import SessionManager
 
 from ui.welcome_window import WelcomeDialog
 from ui.hex_edit import HighLight, HighlightExistsError
 from ui.panel_trace import TraceEvent
 
+from ui.dialogs.about_dlg import AboutDialog
 
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
@@ -89,12 +90,15 @@ class AppWindow(QMainWindow):
 
         # load font
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):
-            QFontDatabase.addApplicationFont(utils.resource_path('assets/Anton.ttf'))
+            QFontDatabase.addApplicationFont(
+                utils.resource_path('assets/Anton.ttf'))
         if os.path.exists(utils.resource_path('assets/OpenSans-Regular.ttf')):
-            QFontDatabase.addApplicationFont(utils.resource_path('assets/OpenSans-Regular.ttf'))
+            QFontDatabase.addApplicationFont(
+                utils.resource_path('assets/OpenSans-Regular.ttf'))
             _app.setFont(QFont("OpenSans", 9, QFont.Normal))
             if os.path.exists(utils.resource_path('assets/OpenSans-Bold.ttf')):
-                QFontDatabase.addApplicationFont(utils.resource_path('assets/OpenSans-Bold.ttf'))
+                QFontDatabase.addApplicationFont(
+                    utils.resource_path('assets/OpenSans-Bold.ttf'))
 
         # mainwindow statusbar
         self.progressbar = QProgressBar()
@@ -118,8 +122,10 @@ class AppWindow(QMainWindow):
         if self.dwarf_args.package is None:
             self.welcome_window = WelcomeDialog(self)
             self.welcome_window.setModal(True)
-            self.welcome_window.onIsNewerVersion.connect(self._enable_update_menu)
-            self.welcome_window.onUpdateComplete.connect(self._on_dwarf_updated)
+            self.welcome_window.onIsNewerVersion.connect(
+                self._enable_update_menu)
+            self.welcome_window.onUpdateComplete.connect(
+                self._on_dwarf_updated)
             self.welcome_window.setWindowTitle(
                 'Welcome to Dwarf - A debugger for reverse engineers, crackers and security analyst'
             )
@@ -180,7 +186,7 @@ class AppWindow(QMainWindow):
         about_menu.addAction('Api', self._menu_api)
         about_menu.addAction('Slack', self._menu_slack)
         about_menu.addSeparator()
-        about_menu.addAction('Info')
+        about_menu.addAction('Info', self._show_about_dlg)
         self.menu.addMenu(about_menu)
 
     def _enable_update_menu(self):
@@ -205,6 +211,10 @@ class AppWindow(QMainWindow):
         self.dwarf.load_script()
 
     def show_main_tab(self, name):
+        # elem doesnt exists? create it
+        if name not in self._ui_elems:
+            self._create_ui_elem(name)
+
         index = 0
         name = name.join(name.split()).lower()
         if name == 'memory':
@@ -260,6 +270,10 @@ class AppWindow(QMainWindow):
                  'Q1NzBiN2ZhYjQwYmY0ZmRhODQ0NDE3NmRmZjFiMmE1MDYwN'
                  'WJlNDVjZDcwNGE'))
 
+    def _show_about_dlg(self):
+        about_dlg = AboutDialog(self)
+        about_dlg.show()
+
     def _create_ui_elem(self, elem):
         if not isinstance(elem, str):
             return
@@ -276,8 +290,7 @@ class AppWindow(QMainWindow):
             #    self._on_watcher_clicked)
             self.watchers_panel.onItemRemoved.connect(
                 self._on_watcher_removeditem)
-            self.watchers_panel.onItemAdded.connect(
-                self._on_watcher_added)
+            self.watchers_panel.onItemAdded.connect(self._on_watcher_added)
             self.watchers_dwidget.setWidget(self.watchers_panel)
             self.watchers_dwidget.setObjectName('WatchersPanel')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.watchers_dwidget)
@@ -286,7 +299,8 @@ class AppWindow(QMainWindow):
             from ui.panel_hooks import HooksPanel
             self.hooks_dwiget = QDockWidget('Hooks', self)
             self.hooks_panel = HooksPanel(self)
-            self.hooks_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
+            self.hooks_panel.onShowMemoryRequest.connect(
+                self._on_watcher_clicked)
             self.hooks_panel.onHookRemoved.connect(self._on_hook_removed)
             self.hooks_dwiget.setWidget(self.hooks_panel)
             self.hooks_dwiget.setObjectName('HooksPanel')
@@ -320,7 +334,8 @@ class AppWindow(QMainWindow):
             from ui.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
             self.main_tabs.addTab(self.java_explorer_panel, 'JVM debugger')
-            self.main_tabs.tabBar().moveTab(self.main_tabs.indexOf(self.java_explorer_panel), 1)
+            self.main_tabs.tabBar().moveTab(
+                self.main_tabs.indexOf(self.java_explorer_panel), 1)
         elif elem == 'jvm-inspector':
             from ui.panel_java_inspector import JavaInspector
             self.java_inspector_panel = JavaInspector(self)
@@ -340,15 +355,18 @@ class AppWindow(QMainWindow):
             self.backtrace_panel = BacktracePanel(self)
             self.backtrace_dock.setWidget(self.backtrace_panel)
             self.backtrace_dock.setObjectName('BacktracePanel')
-            self.backtrace_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
+            self.backtrace_panel.onShowMemoryRequest.connect(
+                self._on_watcher_clicked)
             self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
             self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
         elif elem == 'threads':
             from ui.panel_contexts_list import ContextsListPanel
             self.threads_dock = QDockWidget('Threads', self)
             self.contexts_list_panel = ContextsListPanel(self)
-            self.dwarf.onThreadResumed.connect(self.contexts_list_panel.resume_tid)
-            self.contexts_list_panel.onItemDoubleClicked.connect(self._manually_apply_context)
+            self.dwarf.onThreadResumed.connect(
+                self.contexts_list_panel.resume_tid)
+            self.contexts_list_panel.onItemDoubleClicked.connect(
+                self._manually_apply_context)
             self.threads_dock.setWidget(self.contexts_list_panel)
             self.threads_dock.setObjectName('ThreadPanel')
             self.addDockWidget(Qt.RightDockWidgetArea, self.threads_dock)
@@ -366,15 +384,18 @@ class AppWindow(QMainWindow):
         elif elem == 'ranges':
             from ui.panel_ranges import RangesPanel
             self.ranges_panel = RangesPanel(self)
-            self.ranges_panel.onItemDoubleClicked.connect(self._range_dblclicked)
+            self.ranges_panel.onItemDoubleClicked.connect(
+                self._range_dblclicked)
             self.ranges_panel.onDumpBinary.connect(self._on_dumpmodule)
             # connect to watcherpanel func
-            self.ranges_panel.onAddWatcher.connect(self.watchers_panel.do_addwatcher_dlg)
+            self.ranges_panel.onAddWatcher.connect(
+                self.watchers_panel.do_addwatcher_dlg)
             self.main_tabs.addTab(self.ranges_panel, 'Ranges')
         elif elem == 'search':
             from ui.panel_search import SearchPanel
             self.search_panel = SearchPanel(self)
-            self.search_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
+            self.search_panel.onShowMemoryRequest.connect(
+                self._on_watcher_clicked)
             self.main_tabs.addTab(self.search_panel, 'Search')
         elif elem == 'data':
             from ui.panel_data import DataPanel
@@ -389,7 +410,8 @@ class AppWindow(QMainWindow):
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
-            self.main_tabs.tabBar().moveTab(self.main_tabs.indexOf(self.asm_panel), 1)
+            self.main_tabs.tabBar().moveTab(
+                self.main_tabs.indexOf(self.asm_panel), 1)
         elif elem == 'emulator':
             from ui.panel_emulator import EmulatorPanel
             self.emulator_panel = EmulatorPanel(self)
@@ -410,7 +432,8 @@ class AppWindow(QMainWindow):
             if item:
                 if 'darwin' in sys.platform:
                     item.setStyleSheet(
-                        'QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }')
+                        'QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }'
+                    )
 
     def set_theme(self, theme):
         if theme:
@@ -425,8 +448,8 @@ class AppWindow(QMainWindow):
             try:
                 _app = QApplication.instance()
                 with open(theme_style) as stylesheet:
-                    _app.setStyleSheet(_app.styleSheet() + '\n'
-                                       + stylesheet.read())
+                    _app.setStyleSheet(_app.styleSheet() + '\n' +
+                                       stylesheet.read())
             except Exception as e:
                 pass
                 # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
@@ -511,7 +534,8 @@ class AppWindow(QMainWindow):
     def _start_session(self, session_type, session_data=None):
         if self.welcome_window is not None:
             self.welcome_window.close()
-        self.session_manager.create_session(session_type, session_data=session_data)
+        self.session_manager.create_session(
+            session_type, session_data=session_data)
 
     def _restore_session(self, session_data):
         if 'session' in session_data:
@@ -654,7 +678,8 @@ class AppWindow(QMainWindow):
             adds temphighlight for bytes from current instruction
         """
         self.memory_panel.read_memory(ptr)
-        self.memory_panel.add_highlight(HighLight('attention', utils.parse_ptr(ptr), length))
+        self.memory_panel.add_highlight(
+            HighLight('attention', utils.parse_ptr(ptr), length))
         self.show_main_tab('memory')
 
     def _on_watcher_added(self, ptr):
@@ -770,14 +795,16 @@ class AppWindow(QMainWindow):
             if is_java:
                 if self.java_explorer_panel is None:
                     self._create_ui_elem('jvm-explorer')
-                self.context_panel.set_context(context['ptr'], 1, context['context'])
+                self.context_panel.set_context(context['ptr'], 1,
+                                               context['context'])
                 self.java_explorer_panel.set_handle_arg(-1)
                 self.show_main_tab('jvm-explorer')
             else:
-                self.context_panel.set_context(context['ptr'], 0, context['context'])
+                self.context_panel.set_context(context['ptr'], 0,
+                                               context['context'])
 
                 if 'pc' in context['context']:
-                    should_disasm = self.asm_panel is not None and self.asm_panel._range is None \
+                    should_disasm = self.asm_panel is not None and self.asm_panel._range is not None \
                                     and not self.asm_panel._running_disasm
                     if should_disasm:
                         if self.asm_panel._range is not None:
@@ -788,7 +815,9 @@ class AppWindow(QMainWindow):
                                 manual = False
 
                     if should_disasm or manual:
-                        self.jump_to_address(int(context['context']['pc']['value'], 16), show_panel=False)
+                        self.jump_to_address(
+                            int(context['context']['pc']['value'], 16),
+                            show_panel=False)
                         self._disassemble_range(self.memory_panel.range)
                         self.show_main_tab('disassembly')
 
@@ -853,11 +882,8 @@ class AppWindow(QMainWindow):
             trace_events_parts = data[1].split(',')
             while trace_events_parts:
                 trace_event = TraceEvent(
-                    trace_events_parts.pop(0),
-                    trace_events_parts.pop(0),
-                    trace_events_parts.pop(0),
-                    trace_events_parts.pop(0)
-                )
+                    trace_events_parts.pop(0), trace_events_parts.pop(0),
+                    trace_events_parts.pop(0), trace_events_parts.pop(0))
                 self.trace_panel.event_queue.append(trace_event)
 
     def _on_set_data(self, data):

@@ -17,6 +17,7 @@ tools
 desktop.ini
 dwarf_window_pos.ini
 linter.py
+profiler.py
 venv
 venv3
 env
