@@ -252,6 +252,7 @@ class DeviceBar(QWidget):
             if device:
                 self._device_id = device.id
                 self._check_device(device)
+                self.onDeviceChanged.emit(self._device_id)
 
     def _check_device(self, frida_device):
         self.update_label.setStyleSheet('background-color: crimson;')
@@ -286,6 +287,7 @@ class DeviceBar(QWidget):
 
     def _on_devices_finished(self):
         if len(self._devices) > 1:
+            self._devices_combobox.clear()
             self._devices_combobox.setVisible(True)
             self.update_label.setText('Please select the Device: ')
             for device in self._devices:
@@ -372,9 +374,9 @@ class DeviceBar(QWidget):
         self.update_label.setText(text)
 
     def _frida_updated(self):
-        self._timer_step = 3
-        self.is_waiting = True
-        self._on_timer()
+        #self._timer_step = 3
+        #self.is_waiting = True
+        self._on_devices_finished()
 
     def _on_start_btn(self):
         if self._adb.available():

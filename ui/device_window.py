@@ -75,16 +75,6 @@ class DeviceWindow(QDialog):
         super(DeviceWindow, self).closeEvent(event)
         self.onClosed.emit()
 
-    def _update_device(self, device_id):
-        try:
-            self.device = frida.get_device(device_id)
-            self.proc_list.device = self.device
-            self.spawn_list.device = self.device
-        except frida.TimedOutError:
-            self.device = None
-        except frida.InvalidArgumentError:
-            self.device = None
-
     def setup_ui(self):
         self.setFixedSize(800, 400)
 
@@ -93,6 +83,7 @@ class DeviceWindow(QDialog):
 
         self._dev_bar = DeviceBar(self, self.device_type)
         self._dev_bar.onDeviceUpdated.connect(self._update_device)
+        self._dev_bar.onDeviceChanged.connect(self._changed_device)
         # not needed on local
         #if self.device and self.device.type == 'local':
             #self._dev_bar.setVisible(False)
@@ -144,6 +135,20 @@ class DeviceWindow(QDialog):
         #self.setLayout(vbox)
         # center
         self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
+
+    def _update_device(self, device_id):
+        try:
+            self.device = frida.get_device(device_id)
+            self.proc_list.device = self.device
+            self.spawn_list.device = self.device
+        except frida.TimedOutError:
+            self.device = None
+        except frida.InvalidArgumentError:
+            self.device = None
+
+    def _changed_device(self, device_id):
+        self.proc_list.clear()
+        self.spawn_list.clear()
 
     def _pid_selected(self, pid):
         if pid:

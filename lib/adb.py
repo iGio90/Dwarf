@@ -230,8 +230,9 @@ class Adb(QObject):
             procs = ['frida']  #, 'frida-helper-32', 'frida-helper-64']
             for proc in procs:
                 pid = self.su_cmd('pidof %s' % proc)
-                pid = pid.join(pid.split())
-                self.su_cmd('kill -9 %s' % pid)
+                if pid:
+                    pid = pid.join(pid.split())
+                    self.su_cmd('kill -9 %s' % pid)
         else:
             if self._oreo_plus:
                 self.su_cmd(
