@@ -263,6 +263,7 @@ class DeviceBar(QWidget):
         self._adb.device = frida_device.id
         self._device_id = frida_device.id
         if self._adb.available():
+            self.update_label.setText('Device: ' + frida_device.name)
             # try getting frida version
             device_frida = self._adb.get_frida_version()
             # frida not found show install button
@@ -270,7 +271,6 @@ class DeviceBar(QWidget):
                 self._install_btn.setVisible(True)
             else:
                 self.update_label.setStyleSheet('background-color: yellowgreen;')
-                self.update_label.setText('Device: ' + frida_device.name)
                 # frida is old show update button
                 if self.updated_frida_version != device_frida:
                     self._update_btn.setVisible(True)
