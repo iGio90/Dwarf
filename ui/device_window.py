@@ -76,10 +76,12 @@ class DeviceWindow(QDialog):
         self.onClosed.emit()
 
     def setup_ui(self):
-        self.setFixedSize(800, 400)
-
         main_wrap = QVBoxLayout(self)
         main_wrap.setContentsMargins(0, 0, 0, 0)
+
+        self.desktop_geom = qApp.desktop().availableGeometry()
+        self.setFixedSize(self.desktop_geom.width() * .6,
+                          self.desktop_geom.height() * .5)
 
         self._dev_bar = DeviceBar(self, self.device_type)
         self._dev_bar.onDeviceUpdated.connect(self._update_device)
@@ -132,9 +134,9 @@ class DeviceWindow(QDialog):
         #vbox.addWidget(self._dev_bar)
         main_wrap.addLayout(inner_hbox)
 
-        #self.setLayout(vbox)
         # center
         self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
+
 
     def _update_device(self, device_id):
         try:

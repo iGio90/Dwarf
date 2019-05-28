@@ -157,12 +157,12 @@ class UpdateBar(QWidget):
         update_label.setTextFormat(Qt.RichText)
         update_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
-        update_button = QPushButton('Update now!', update_label)
-        update_button.setStyleSheet('padding: 0; border-color: white;')
-        update_button.setGeometry(
+        self.update_button = QPushButton('Update now!', update_label)
+        self.update_button.setStyleSheet('padding: 0; border-color: white;')
+        self.update_button.setGeometry(
             self.parent().width() - 10 - update_label.width() * .2, 5,
             update_label.width() * .2, 25)
-        update_button.clicked.connect(self.update_now_clicked)
+        self.update_button.clicked.connect(self.update_now_clicked)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
 
@@ -170,6 +170,14 @@ class UpdateBar(QWidget):
         """ Update Button clicked
         """
         self.onUpdateNowClicked.emit()
+
+    def showEvent(self, QShowEvent):
+        h_center = self.update_button.parent().rect().center(
+        ) - self.update_button.rect().center()
+        self.update_button.move(
+            self.update_button.parent().width() - self.update_button.width() -
+            10, h_center.y())
+        return super().showEvent(QShowEvent)
 
 
 class WelcomeDialog(QDialog):
@@ -308,7 +316,8 @@ class WelcomeDialog(QDialog):
         self._char_width = font_metric.widthChar('#')
         self._sub_title.setAlignment(Qt.AlignCenter)
         self._sub_title.setContentsMargins(175, 0, 0, 20)
-        self._sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._sub_title.setSizePolicy(QSizePolicy.Expanding,
+                                      QSizePolicy.Minimum)
         v_box.addLayout(head)
         v_box.addWidget(self._sub_title)
 
@@ -492,6 +501,7 @@ class WelcomeDialog(QDialog):
     def showEvent(self, QShowEvent):
         """ override to change font size when subtitle is cutted
         """
-        if len(self._sub_title.text()) * self._char_width > (self._sub_title.width() - 155):
+        if len(self._sub_title.text()) * self._char_width > (
+                self._sub_title.width() - 155):
             self._sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
         return super().showEvent(QShowEvent)
