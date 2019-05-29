@@ -36,9 +36,7 @@ class RemoteSession(Session):
 
     @property
     def session_ui_sections(self):
-        # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory',
-                'console', 'watchers', 'backtrace', 'search', 'emulator']
+        return self.default_session()
 
     @property
     def session_type(self):
@@ -73,7 +71,7 @@ class RemoteSession(Session):
         self._menu.append(process_menu)
 
         # additional menus
-        #device_menu = QMenu('&Device')
+        # device_menu = QMenu('&Device')
         # self._menu.append(device_menu)
 
     def stop(self):
@@ -95,7 +93,7 @@ class RemoteSession(Session):
                 print('* Trying to attach to {0}'.format(args.package))
                 try:
                     self.dwarf.attach(args.package, args.script, False)
-                except Exception as e: # pylint: disable=broad-except
+                except Exception as e:  # pylint: disable=broad-except
                     print('-failed-')
                     print('Reason: ' + str(e))
                     print('Help: you can use -sp to force spawn')
@@ -105,7 +103,7 @@ class RemoteSession(Session):
                 print('* Trying to spawn {0}'.format(args.package))
                 try:
                     self.dwarf.spawn(args.package, args.script)
-                except Exception as e: # pylint: disable=broad-except
+                except Exception as e:  # pylint: disable=broad-except
                     print('-failed-')
                     print('Reason: ' + str(e))
                     self.stop()

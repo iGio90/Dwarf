@@ -22,7 +22,6 @@ class SessionUINotReadyException(Exception):
 
 
 class Session(QObject):
-
     onCreated = pyqtSignal(name='onCreated')
     onStopped = pyqtSignal(name='onStopped')
     onClosed = pyqtSignal(name='onClosed')
@@ -32,6 +31,15 @@ class Session(QObject):
         self._dwarf = Dwarf(self, parent)
         self._dwarf.onScriptDestroyed.connect(self.stop)
         self._session_type = session_type
+
+    @staticmethod
+    def default_session():
+        return [
+            # columns widgets
+            'hooks', 'bookmarks', 'threads', 'registers', 'console', 'watchers', 'backtrace',
+
+            # tabs
+            'memory', 'disassembly', 'jvm-explorer', 'ranges', 'modules', 'jvm-inspector', 'search', 'emulator']
 
     # ************************************************************************
     # **************************** Properties ********************************

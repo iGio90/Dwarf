@@ -36,12 +36,7 @@ class IosSession(Session):
 
     @property
     def session_ui_sections(self):
-        # what sections we want in session_ui
-        return []
-        """
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory',
-                'console', 'watchers', 'backtrace', 'search', 'emulator']
-        """
+        return self.default_session()
 
     @property
     def session_type(self):

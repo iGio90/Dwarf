@@ -89,10 +89,7 @@ class AndroidSession(Session):
 
     @property
     def session_ui_sections(self):
-        # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory', 'console',
-                'watchers', 'modules', 'jvm-inspector', 'jvm-explorer',
-                'ranges', 'backtrace', 'disassembly', 'search', 'emulator']
+        return self.default_session()
 
     @property
     def session_type(self):
@@ -166,7 +163,7 @@ class AndroidSession(Session):
                 print('* Trying to attach to {0}'.format(args.package))
                 try:
                     self.dwarf.attach(args.package, args.script, False)
-                except Exception as e: # pylint: disable=broad-except
+                except Exception as e:  # pylint: disable=broad-except
                     print('-failed-')
                     print('Reason: ' + str(e))
                     print('Help: you can use -sp to force spawn')
@@ -176,7 +173,7 @@ class AndroidSession(Session):
                 print('* Trying to spawn {0}'.format(args.package))
                 try:
                     self.dwarf.spawn(args.package, args.script)
-                except Exception as e: # pylint: disable=broad-except
+                except Exception as e:  # pylint: disable=broad-except
                     print('-failed-')
                     print('Reason: ' + str(e))
                     self.stop()
@@ -201,7 +198,8 @@ class AndroidSession(Session):
     def _save_package(self, data):
         package, path = data
         if path is not None:
-            result = QFileDialog.getSaveFileName(caption='Location to save ' + package, directory='./' + package + '.apk', filter='*.apk')
+            result = QFileDialog.getSaveFileName(caption='Location to save ' + package,
+                                                 directory='./' + package + '.apk', filter='*.apk')
             if result and result[0]:
                 self.adb.pull(path, result[0])
 
@@ -262,7 +260,7 @@ class AndroidSession(Session):
             self.dwarf.dwarf_api('enumerateJavaClasses')
 
     def _on_java_classes(self):
-        #should_request_classes = self._app_window.java is None
+        # should_request_classes = self._app_window.java is None
         if self._app_window.java_inspector_panel is None:
             self._app_window._create_ui_elem('jvm-inspector')
 
