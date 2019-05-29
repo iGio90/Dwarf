@@ -37,6 +37,7 @@ class Adb(QObject):
         self._android_version = ''
         self._sdk_version = ''
         self._oreo_plus = False
+        self._alternate_su_binary = False
 
         self._check_min_required()
 
@@ -100,9 +101,12 @@ class Adb(QObject):
             return
 
         if self._adb_available:
-            # try some su command
-            res = self._do_adb_command(
-                'shell su -c \'mount -o ro,remount /system\'')
+            res = self._do_adb_command('shell su -c date')
+            if 'invalid uid' in res:
+                res = self._do_adb_command('shell su 0 date')
+                if res and not 'invalid uid/gid' in res:
+                    self._alternate_su_binary = True
+
             if res is not None:
                 # adb not authorized
                 if res and 'device unauthorized' in res:
@@ -391,12 +395,14 @@ class Adb(QObject):
         if '/system' and '/proc/mounts' in res:
             res = self._do_adb_command('shell mount | grep system')
             if res is '':
-                res = self._do_adb_command('shell su -c \'mount -o rw,remount /\'')
+                res = self.su_cmd('mount -o rw,remount /')
                 if res == '':
                     if self._check_mounted_system():
                         is_mounted = True
                     else:
                         # try if androidsdk emu
+                        # adb root on real dev -> 'is not allowed to run as root in production builds'
+                        res = self._do_adb_command('root')
                         res = self._do_adb_command('remount')
                         if res == 'remount succeeded':
                             is_mounted = self._check_mounted_system()
@@ -447,8 +453,10 @@ class Adb(QObject):
 
         ret_val = None
         if self._is_su:
-            ret_val = self._do_adb_command(
-                'shell su -c "' + cmd + '"', timeout=timeout)
+            if self._alternate_su_binary:
+                ret_val = self._do_adb_command('shell su 0 "' + cmd + '"', timeout=timeout)
+            else:
+                ret_val = self._do_adb_command('shell su -c "' + cmd + '"', timeout=timeout)
         elif self._is_root:
             ret_val = self._do_adb_command('shell ' + cmd, timeout=timeout)
 
