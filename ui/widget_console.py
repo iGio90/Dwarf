@@ -139,7 +139,7 @@ class QConsoleWidget(QWidget):
         what = str(what)
 
         # color up stuff
-        if 'error' in what.lower():
+        if 'error:' in what.lower():
             html_text = '<font color="crimson">' + what + '</font>'
         else:
             html_text = what

@@ -73,8 +73,7 @@ class FridaUpdateThread(QThread):
 
             self.on_status_text.emit('Mounting devices filesystem')
             # mount system rw
-            res = self.adb.mount_system()
-            if res is None or not res:
+            if self.adb.mount_system():
                 self.on_status_text.emit('Pushing to device')
                 # push file to device
                 self.adb.push('frida', '/sdcard/')
@@ -90,6 +89,8 @@ class FridaUpdateThread(QThread):
                 # start it
                 if not self.adb.start_frida():
                     self.on_status_text('Failed to start frida')
+            else:
+                print('failed to mount /system on device')
 
             os.remove('frida')
         else:
@@ -251,6 +252,7 @@ class DeviceBar(QWidget):
             if device:
                 self._device_id = device.id
                 self._check_device(device)
+                self.onDeviceChanged.emit(self._device_id)
 
     def _check_device(self, frida_device):
         self.update_label.setStyleSheet('background-color: crimson;')
@@ -259,7 +261,9 @@ class DeviceBar(QWidget):
         self._start_btn.setVisible(False)
         self._restart_btn.setVisible(False)
         self._adb.device = frida_device.id
+        self._device_id = frida_device.id
         if self._adb.available():
+            self.update_label.setText('Device: ' + frida_device.name)
             # try getting frida version
             device_frida = self._adb.get_frida_version()
             # frida not found show install button
@@ -267,7 +271,6 @@ class DeviceBar(QWidget):
                 self._install_btn.setVisible(True)
             else:
                 self.update_label.setStyleSheet('background-color: yellowgreen;')
-                self.update_label.setText('Device: ' + frida_device.name)
                 # frida is old show update button
                 if self.updated_frida_version != device_frida:
                     self._update_btn.setVisible(True)
@@ -284,6 +287,7 @@ class DeviceBar(QWidget):
 
     def _on_devices_finished(self):
         if len(self._devices) > 1:
+            self._devices_combobox.clear()
             self._devices_combobox.setVisible(True)
             self.update_label.setText('Please select the Device: ')
             for device in self._devices:
@@ -370,15 +374,16 @@ class DeviceBar(QWidget):
         self.update_label.setText(text)
 
     def _frida_updated(self):
-        self._timer_step = 3
-        self.is_waiting = True
-        self._on_timer()
+        #self._timer_step = 3
+        #self.is_waiting = True
+        self._on_devices_finished()
 
     def _on_start_btn(self):
         if self._adb.available():
             self._start_btn.setVisible(False)
             if self._adb.start_frida():
-                self.onDeviceUpdated.emit(self._device_id)
+                #self.onDeviceUpdated.emit(self._device_id)
+                self._on_devices_finished()
             else:
                 self._start_btn.setVisible(True)
 
@@ -387,5 +392,6 @@ class DeviceBar(QWidget):
             self._restart_btn.setVisible(False)
             if self._adb.start_frida(restart=True):
                 self._restart_btn.setVisible(True)
-                self.onDeviceUpdated.emit(self._device_id)
+                #self.onDeviceUpdated.emit(self._device_id)
+                self._on_devices_finished()
 

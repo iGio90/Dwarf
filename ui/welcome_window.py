@@ -313,7 +313,8 @@ class WelcomeDialog(QDialog):
         self._char_width = font_metric.widthChar('#')
         self._sub_title.setAlignment(Qt.AlignCenter)
         self._sub_title.setContentsMargins(175, 0, 0, 20)
-        self._sub_title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._sub_title.setSizePolicy(QSizePolicy.Expanding,
+                                      QSizePolicy.Minimum)
         v_box.addLayout(head)
         v_box.addWidget(self._sub_title)
 
@@ -497,6 +498,7 @@ class WelcomeDialog(QDialog):
     def showEvent(self, QShowEvent):
         """ override to change font size when subtitle is cutted
         """
-        if len(self._sub_title.text()) * self._char_width > (self._sub_title.width() - 155):
+        if len(self._sub_title.text()) * self._char_width > (
+                self._sub_title.width() - 155):
             self._sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
         return super().showEvent(QShowEvent)

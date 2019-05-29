@@ -200,6 +200,7 @@ class Adb(QObject):
         # TODO: for android sdk emulator its using -e
         res = utils.do_shell_command(
             'adb -s ' + self._device_serial + ' ' + cmd, timeout=timeout)
+
         if res is not None and 'no device' in res:
             return None
 
@@ -229,7 +230,9 @@ class Adb(QObject):
             procs = ['frida']  #, 'frida-helper-32', 'frida-helper-64']
             for proc in procs:
                 pid = self.su_cmd('pidof %s' % proc)
-                self.su_cmd('kill -9 %s' % pid)
+                if pid:
+                    pid = pid.join(pid.split())
+                    self.su_cmd('kill -9 %s' % pid)
         else:
             if self._oreo_plus:
                 self.su_cmd(
@@ -362,13 +365,49 @@ class Adb(QObject):
 
         return None
 
+    def _check_mounted_system(self):
+        """ check if we can write to /system
+        """
+        res = self._do_adb_command('shell touch /system/.dwarf_check')
+        if res == '':
+            res = self._do_adb_command('shell ls -la /system')
+            if '.dwarf_check' in res:
+                res = self._do_adb_command('shell rm /system/.dwarf_check')
+                if res == '':
+                    return True
+        elif res == 'Read-only file system':
+            return False
+
+        return False
+
     def mount_system(self):
         """ Mount System rw
         """
+        is_mounted = False
         if not self.available():
             return None
 
-        return self.su_cmd('mount -o rw,remount /system')
+        res = self.su_cmd('mount -o rw,remount /system')
+        if '/system' and '/proc/mounts' in res:
+            res = self._do_adb_command('shell mount | grep system')
+            if res is '':
+                res = self._do_adb_command('shell su -c \'mount -o rw,remount /\'')
+                if res == '':
+                    if self._check_mounted_system():
+                        is_mounted = True
+                    else:
+                        # try if androidsdk emu
+                        res = self._do_adb_command('remount')
+                        if res == 'remount succeeded':
+                            is_mounted = self._check_mounted_system()
+                        else:
+                            is_mounted = False
+
+        elif res == '':
+            is_mounted = self._check_mounted_system()
+
+        return is_mounted
+
 
     def install(self, path):
         """ Install apk
