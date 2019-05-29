@@ -195,6 +195,8 @@ class Dwarf(QObject):
         # tracers
         self._native_traced_tid = 0
 
+        self.context_tid = 0
+
     # ************************************************************************
     # **************************** Properties ********************************
     # ************************************************************************
@@ -342,9 +344,8 @@ class Dwarf(QObject):
 
                     self.dwarf_api('evaluateFunction', user_script)
 
-            # resume immediately on android and ios
-            if self._app_window.session_manager.session.session_type == 'Android':
-                self.resume_proc()
+            # resume immediately
+            self.resume_proc()
 
             self.onScriptLoaded.emit()
             return 0

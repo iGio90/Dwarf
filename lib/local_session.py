@@ -124,9 +124,6 @@ class LocalSession(Session):
                 return
 
     def _on_proc_resume(self, tid=0):
-        if not self.dwarf.resumed:
-            self.dwarf.dwarf_api('resume')
-
         self.dwarf.dwarf_api('release', tid)
 
     def _on_proc_restart(self):
