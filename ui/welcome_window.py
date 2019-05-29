@@ -189,8 +189,8 @@ class WelcomeDialog(QDialog):
         self._prefs = parent.prefs
 
         self._sub_titles = [
-            ['duck', 'dumb', 'doctor', 'dutch', 'dark', 'dirty'],
-            ['warriors', 'wardrobes', 'waffles', 'wishes'],
+            ['duck', 'dumb', 'doctor', 'dutch', 'dark', 'dirty', 'debugging'],
+            ['warriors', 'wardrobes', 'waffles', 'wishes', 'worcestershire'],
             ['are', 'aren\'t', 'ain\'t', 'appears to be'],
             ['rich', 'real', 'riffle', 'retarded', 'rock'],
             [
