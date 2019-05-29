@@ -157,12 +157,12 @@ class UpdateBar(QWidget):
         update_label.setTextFormat(Qt.RichText)
         update_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
-        update_button = QPushButton('Update now!', update_label)
-        update_button.setStyleSheet('padding: 0; border-color: white;')
-        update_button.setGeometry(
+        self.update_button = QPushButton('Update now!', update_label)
+        self.update_button.setStyleSheet('padding: 0; border-color: white;')
+        self.update_button.setGeometry(
             self.parent().width() - 10 - update_label.width() * .2, 5,
             update_label.width() * .2, 25)
-        update_button.clicked.connect(self.update_now_clicked)
+        self.update_button.clicked.connect(self.update_now_clicked)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
 
@@ -170,6 +170,11 @@ class UpdateBar(QWidget):
         """ Update Button clicked
         """
         self.onUpdateNowClicked.emit()
+
+    def showEvent(self, QShowEvent):
+        h_center = self.update_button.parent().rect().center() - self.update_button.rect().center()
+        self.update_button.move(self.update_button.parent().width() - self.update_button.width() - 10, h_center.y())
+        return super().showEvent(QShowEvent)
 
 
 class WelcomeDialog(QDialog):

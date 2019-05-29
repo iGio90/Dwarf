@@ -696,17 +696,7 @@ class Dwarf(QObject):
         elif cmd == 'set_context_value':
             context_property = parts[1]
             value = parts[2]
-            if value.startswith('0x'):
-                try:
-                    value = int(value, 16)
-                except:
-                    pass
-            try:
-                value = int(value)
-            except:
-                pass
-
-            self.onContextChanged.emit(str(context_property), str(value))
+            self.onContextChanged.emit(str(context_property), value)
         elif cmd == 'set_data':
             if data:
                 self.onSetData.emit(['raw', parts[1], data])
