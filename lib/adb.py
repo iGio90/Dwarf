@@ -104,7 +104,7 @@ class Adb(QObject):
             res = self._do_adb_command('shell su -c date')
             if 'invalid uid' in res:
                 res = self._do_adb_command('shell su 0 date')
-                if res and not 'invalid uid/gid' in res:
+                if res and not 'invalid uid' in res:
                     self._alternate_su_binary = True
 
             if res is not None:
