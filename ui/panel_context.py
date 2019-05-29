@@ -353,6 +353,28 @@ class ContextPanel(QTabWidget):
             context_menu.exec_(glbl_pt)
 
     def _on_context_changed(self, reg_name, reg_val):
+        x_in = 0
+        for c in reg_val:
+            if c.lower() not in '1234567890abcdef':
+                if c.lower() == 'x' and x_in == 0:
+                    x_in += 1
+                    continue
+
+                self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+                return
+
+        if isinstance(reg_val, str) and reg_val.startswith('0x'):
+            try:
+                reg_val = int(reg_val, 16)
+            except ValueError:
+                self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+        try:
+            reg_val = int(reg_val)
+        except ValueError:
+            self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+            return
+
+        reg_val = hex(reg_val)
         was_found, find_result = self._nativectx_list.contains_text(reg_name, True, True, True)
         if was_found:
             if len(find_result) == 1:
