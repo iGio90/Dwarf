@@ -172,11 +172,8 @@ class UpdateBar(QWidget):
         self.onUpdateNowClicked.emit()
 
     def showEvent(self, QShowEvent):
-        h_center = self.update_button.parent().rect().center(
-        ) - self.update_button.rect().center()
-        self.update_button.move(
-            self.update_button.parent().width() - self.update_button.width() -
-            10, h_center.y())
+        h_center = self.update_button.parent().rect().center() - self.update_button.rect().center()
+        self.update_button.move(self.update_button.parent().width() - self.update_button.width() - 10, h_center.y())
         return super().showEvent(QShowEvent)
 
 
@@ -192,8 +189,8 @@ class WelcomeDialog(QDialog):
         self._prefs = parent.prefs
 
         self._sub_titles = [
-            ['duck', 'dumb', 'doctor', 'dutch', 'dark', 'dirty'],
-            ['warriors', 'wardrobes', 'waffles', 'wishes'],
+            ['duck', 'dumb', 'doctor', 'dutch', 'dark', 'dirty', 'debugging'],
+            ['warriors', 'wardrobes', 'waffles', 'wishes', 'worcestershire'],
             ['are', 'aren\'t', 'ain\'t', 'appears to be'],
             ['rich', 'real', 'riffle', 'retarded', 'rock'],
             [
