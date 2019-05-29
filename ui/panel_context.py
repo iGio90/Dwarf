@@ -368,6 +368,7 @@ class ContextPanel(QTabWidget):
                 reg_val = int(reg_val, 16)
             except ValueError:
                 self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+                return
         try:
             reg_val = int(reg_val)
         except ValueError:
