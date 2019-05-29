@@ -96,41 +96,59 @@ class Adb(QObject):
         self._dev_emu = False
         self._is_root = False
         self._is_su = False
+        self._alternate_su_binary = False
 
         if not self._device_serial:
             return
 
         if self._adb_available:
+            # try some command
+            date_res = self._do_adb_command('shell date')
+            # adb not authorized
+            if date_res and 'device unauthorized' in date_res:
+                # kill adb daemon
+                utils.do_shell_command('adb kill-server')
+                utils.show_message_box(
+                    'device not authorized! allow access from this computer on the device'
+                )
+
+            if date_res and 'no devices/emulators' in date_res:
+                self._dev_emu = False
+                return
+            elif date_res and 'device not found' in date_res:
+                self._dev_emu = False
+                return
+            else:
+                self._dev_emu = True
+
+            if self._dev_emu and date_res:
+                try:
+                    date_res = date_res.split(' ')
+                except ValueError:
+                    pass
+
+            # try some su command
             res = self._do_adb_command('shell su -c date')
-            if 'invalid uid' in res:
+            if res and 'Permission denied' in res:
+                self._is_su = False
+            elif res and 'su: not found' in res:
+                self._is_su = False
+            elif res and 'invalid' in res:
                 res = self._do_adb_command('shell su 0 date')
-                if res and not 'invalid uid' in res:
+                if res:
                     self._alternate_su_binary = True
 
             if res is not None:
-                # adb not authorized
-                if res and 'device unauthorized' in res:
-                    # kill adb daemon
-                    utils.do_shell_command('adb kill-server')
-                    utils.show_message_box(
-                        'device not authorized! allow access from this computer on the device'
-                    )
+                try:
+                    res = res.split(' ')
+                except ValueError:
+                    pass
 
-                if res and 'no devices/emulators' in res:
-                    self._dev_emu = False
-                elif res and 'device not found' in res:
-                    self._dev_emu = False
-                else:
-                    self._dev_emu = True
-
-                # user can run su?
-                if res and 'Permission denied' in res:
-                    self._is_su = False
-                elif res and 'su: not found' in res:
-                    self._is_su = False
-                else:
-                    if self._dev_emu:
-                        self._is_su = True
+                # check if 'same' results otherwise its no valid result from su -c date
+                if len(res) == len(date_res):
+                    if res[len(res) - 1] == date_res[len(date_res) - 1]:
+                        if res[len(res) - 2] == date_res[len(date_res) - 2]:
+                            self._is_su = True
 
                 # no su -> try if the user is already root
                 # on some emulators user is root
@@ -414,7 +432,6 @@ class Adb(QObject):
 
         return is_mounted
 
-
     def install(self, path):
         """ Install apk
         """
@@ -454,9 +471,11 @@ class Adb(QObject):
         ret_val = None
         if self._is_su:
             if self._alternate_su_binary:
-                ret_val = self._do_adb_command('shell su 0 "' + cmd + '"', timeout=timeout)
+                ret_val = self._do_adb_command(
+                    'shell su 0 "' + cmd + '"', timeout=timeout)
             else:
-                ret_val = self._do_adb_command('shell su -c "' + cmd + '"', timeout=timeout)
+                ret_val = self._do_adb_command(
+                    'shell su -c "' + cmd + '"', timeout=timeout)
         elif self._is_root:
             ret_val = self._do_adb_command('shell ' + cmd, timeout=timeout)
 
