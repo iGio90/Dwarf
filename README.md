@@ -8,6 +8,20 @@ Checkout the [website](https://igio90.github.io/Dwarf/) for features, api and ex
 
 ![DWARF](https://i.imgur.com/rbOwjh5.png)
 
+### Something you can do with Dwarf
+* breakpoints
+* watchpoints without hardware support
+* visual emulation with auto map from target, reporting memory accesses
+* breaks module loading cycle, java classes
+* set breaks conditions and custom logics
+* inject code on each breakpointed thread
+* exchange data with your target and display it in UI
+* digging through memory, disassembly and jvm fields/functions
+* backtrace both native and java
+* takes your whole frida agent in script editor, convert hooks to breakpoints etc 
+* more... 
+* all of this can be done through scripting to build custom debugging logic
+
 ### Pre requisites
 A frida server running anywhere.
 
