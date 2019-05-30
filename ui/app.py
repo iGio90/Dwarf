@@ -297,7 +297,7 @@ class AppWindow(QMainWindow):
             self.view_menu.addAction(self.watchers_dwidget.toggleViewAction())
         elif elem == 'hooks':
             from ui.panel_hooks import HooksPanel
-            self.hooks_dwiget = QDockWidget('Hooks', self)
+            self.hooks_dwiget = QDockWidget('Breakpoints', self)
             self.hooks_panel = HooksPanel(self)
             self.hooks_panel.onShowMemoryRequest.connect(
                 self._on_watcher_clicked)

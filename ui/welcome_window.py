@@ -206,7 +206,7 @@ class WelcomeDialog(QDialog):
         self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Session')
         self._recent_list_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
                                               Qt.TextAlignmentRole)
-        self._recent_list_model.setHeaderData(2, Qt.Horizontal, 'Hooks')
+        self._recent_list_model.setHeaderData(2, Qt.Horizontal, 'Breakpoints')
         self._recent_list_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
                                               Qt.TextAlignmentRole)
         self._recent_list_model.setHeaderData(3, Qt.Horizontal, 'Watchers')
