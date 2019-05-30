@@ -804,8 +804,11 @@ class AppWindow(QMainWindow):
                                                context['context'])
 
                 if 'pc' in context['context']:
-                    should_disasm = self.asm_panel is not None and self.asm_panel._range is not None \
-                                    and not self.asm_panel._running_disasm
+                    should_disasm = self.asm_panel is not None and self.asm_panel._range is None
+
+                    if self.asm_panel._running_disasm:
+                        should_disasm = False
+
                     if should_disasm:
                         if self.asm_panel._range is not None:
                             off = int(context['context']['pc']['value'], 16)
