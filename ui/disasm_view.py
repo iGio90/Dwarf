@@ -243,6 +243,7 @@ class DisassemblyView(QAbstractScrollArea):
         progress.cancel()
         self._running_disasm = False
 
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.adjust()
