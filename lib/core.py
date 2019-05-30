@@ -320,7 +320,7 @@ class Dwarf(QObject):
             if self._spawned:
                 self.device.kill(self.pid)
 
-    def load_script(self, script=None):
+    def load_script(self, script=None, spawned=False):
         try:
             if not os.path.exists('lib/core.js'):
                 raise self.CoreScriptNotFoundError('core.js not found!')
@@ -334,8 +334,7 @@ class Dwarf(QObject):
             self._script.load()
 
             is_debug = self._app_window.dwarf_args.debug_script
-            if is_debug:
-                self._script.exports.debug(True)
+            self._script.exports.init(is_debug, spawned)
 
             if script is not None:
                 if os.path.exists(script):
