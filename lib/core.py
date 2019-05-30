@@ -384,7 +384,7 @@ class Dwarf(QObject):
             raise Exception('Frida Error: ' + str(e))
 
         self.onAttached.emit([self.pid, package])
-        self.load_script(script)
+        self.load_script(script, spawned=True)
 
     def resume_proc(self):
         if self._spawned and not self._resumed:
