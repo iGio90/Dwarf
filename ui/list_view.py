@@ -134,12 +134,17 @@ class DwarfListView(QTreeView):
         """ looks in all fields for text
             returns true, [[row, col]] if text exists
         """
+        if not text:
+            return
+
         ret_val = False
         ret_res = []
         if self.model() is not None:
             for i in range(self.model().rowCount()):
                 for j in range(self.model().columnCount()):
                     item_text = self.get_item_text(i, j)
+                    if item_text is None:
+                        continue
 
                     if match_exactly:
                         if not case_sensitive:

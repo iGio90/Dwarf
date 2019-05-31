@@ -30,6 +30,9 @@ from lib.hook import Hook
 
 
 class BookmarksPanel(QWidget):
+
+    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
+
     def __init__(self, parent=None):  # pylint: disable=too-many-statements
         super(BookmarksPanel, self).__init__(parent=parent)
 
@@ -120,8 +123,11 @@ class BookmarksPanel(QWidget):
     # **************************** Handlers **********************************
     # ************************************************************************
     def _on_dblclicked(self, index):
-        self._app_window.jump_to_address(
-            self._bookmarks_model.item(index, 0).text())
+        index = self._bookmarks_list.selectionModel().currentIndex().row()
+        if index != -1:
+            addr = self._bookmarks_model.item(index, 0).text()
+            if addr:
+                self.onShowMemoryRequest.emit(addr)
 
     def _on_contextmenu(self, pos):
         context_menu = QMenu(self)

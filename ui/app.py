@@ -310,6 +310,7 @@ class AppWindow(QMainWindow):
             from ui.panel_bookmarks import BookmarksPanel
             self.bookmarks_dwiget = QDockWidget('Boomarks', self)
             self.bookmarks_panel = BookmarksPanel(self)
+            self.bookmarks_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
             self.bookmarks_dwiget.setWidget(self.bookmarks_panel)
             self.bookmarks_dwiget.setObjectName('BookmarksPanel')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.bookmarks_dwiget)
