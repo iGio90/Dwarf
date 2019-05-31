@@ -302,15 +302,30 @@ class Adb(QObject):
 
         found = False
 
-        result = self.su_cmd('ps | grep \'frida\'')
+        if self._have_pidof:
+            pid = self.su_cmd('pidof frida')
+            if pid:
+                try:
+                    pid = int(pid.join(pid.split())) # remove \r\n
+                except ValueError:
+                    # no integer
+                    return False
+
+                return True
+
+        if self._oreo_plus:
+            result = self.su_cmd('ps -A | grep \'frida\'')
+        else:
+            result = self.su_cmd('ps | grep \'frida\'')
+
         if result is not None:
             result = result.split()
 
-        if 'frida' in result:
-            # in frida 12.5.0 there was no frida-helper on my tested devs TODO: Recheck
-            # for res in result:
-            # if 'frida-helper' in res:
-            found = True
+            if 'frida' in result:
+                # in frida 12.5.0 there was no frida-helper on my tested devs TODO: Recheck
+                # for res in result:
+                # if 'frida-helper' in res:
+                found = True
 
         return found
 
