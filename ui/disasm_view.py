@@ -31,6 +31,44 @@ from lib.instruction import Instruction
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
 
+# TODO: dont diasm again when jump in same range
+
+class DisassembleThread(QThread):
+    onFinished = pyqtSignal(list, name='onFinished')
+    onError = pyqtSignal(str, name='onError')
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self._dwarf = None
+        self._range = None
+        self._capstone = None
+        self._max_instructions = 256
+        self._stop_on_ret = True
+
+    def run(self):
+        if self._range is None:
+            self.onError.emit('No Range set')
+            self.onFinished.emit([])
+
+        _counter = 0
+        _instructions = []
+        for cap_inst in self._capstone.disasm(self._range.data[self._range.start_offset:], self._range.start_address):
+            if _counter > self._max_instructions:
+                break
+
+            dwarf_instruction = Instruction(self._dwarf, cap_inst)
+            _instructions.append(dwarf_instruction)
+
+            _counter += 1
+
+            if self._stop_on_ret:
+                if cap_inst.group(CS_GRP_RET):
+                    break
+                if cap_inst.group(ARM64_GRP_RET):
+                    break
+
+        self.onFinished.emit(_instructions)
+
 
 class DisassemblyView(QAbstractScrollArea):
 
@@ -184,26 +222,14 @@ class DisassemblyView(QAbstractScrollArea):
         self.adjust()
 
     def disassemble(self, dwarf_range, num_instructions=256, stop_on_ret=True):
-        self._running_disasm = True
+        if self._running_disasm:
+            return
 
-        progress = QProgressDialog()
-        progress.setFixedSize(300, 50)
-        progress.setAutoFillBackground(True)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setWindowTitle('Please wait')
-        progress.setLabelText('Disassembling...')
-        progress.setSizeGripEnabled(False)
-        progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
-        # progress.setModal(True)
-        progress.setCancelButton(None)
-        progress.setRange(0, 0)
-        progress.setMinimumDuration(0)
-        progress.show()
-        QApplication.processEvents()
+        self._running_disasm = True
+        self._app_window.show_progress('Disassembling...')
 
         self._lines.clear()
+        self.viewport().update()
 
         if len(self._history) == 0 or self._history[len(self._history) - 1] != dwarf_range.start_address:
             self._history.append(dwarf_range.start_address)
@@ -221,27 +247,22 @@ class DisassemblyView(QAbstractScrollArea):
 
         self._range = dwarf_range
         self._max_instructions = num_instructions
-        _counter = 0
+        self.disasm_thread = DisassembleThread(self._app_window)
+        self.disasm_thread._max_instructions = self._max_instructions
+        self.disasm_thread._range = self._range
+        self.disasm_thread._dwarf = self._app_window.dwarf
+        self.disasm_thread._stop_on_ret = stop_on_ret
+        self.disasm_thread._capstone = capstone
+        self.disasm_thread.onFinished.connect(self._on_disasm_finished)
+        self.disasm_thread.start(QThread.HighestPriority)
 
-        for cap_inst in capstone.disasm(dwarf_range.data[dwarf_range.start_offset:], dwarf_range.start_address):
-            QApplication.processEvents()
-            if _counter > self._max_instructions:
-                break
+    def _on_disasm_finished(self, instructions):
+        if isinstance(instructions, list):
+            self._lines = instructions
+            self.adjust()
 
-            dwarf_instruction = Instruction(self._app_window.dwarf, cap_inst)
-            self.add_instruction(dwarf_instruction)
-
-            _counter += 1
-
-            if stop_on_ret:
-                if cap_inst.group(CS_GRP_RET):
-                    break
-                if cap_inst.group(ARM64_GRP_RET):
-                    break
-
-        self.adjust()
-        progress.cancel()
         self._running_disasm = False
+        self._app_window.hide_progress()
 
 
     def resizeEvent(self, event):
@@ -302,6 +323,7 @@ class DisassemblyView(QAbstractScrollArea):
     # **************************** Drawing ***********************************
     # ************************************************************************
     def paint_jumps(self, painter):
+        # TODO: order by distance
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump]
         jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.address in jump_list]
@@ -426,7 +448,7 @@ class DisassemblyView(QAbstractScrollArea):
                 if is_hooked:
                     y_pos -= (self._char_height * 0.5)
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('#4fc3f7'))
+                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('greenyellow'))
             if is_hooked:
                 height = self._char_height
                 y_pos = drawing_pos_y
@@ -434,7 +456,7 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos += (self._char_height * 0.5)
                 if is_watched:
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('#009688'))
+                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('crimson'))
 
         drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + self._char_width + 1 + self._char_width
         drawing_pos_x += (len(str_fmt.format(line.address)) * self._char_width)
@@ -495,12 +517,43 @@ class DisassemblyView(QAbstractScrollArea):
             painter.setPen(QColor('#aaa'))
             painter.drawText(drawing_pos_x, drawing_pos_y, ' ; "' + line.string + '"')
 
+    def paint_wait(self, painter):
+        """ paint wait popup
+        """
+        brdr_col = QColor('#444')
+        back_col = QColor('#222')
+        painter.setPen(QColor('#888'))
+        back_rect = self.viewport().rect()
+        back_rect.setWidth(back_rect.width() * .2)
+        back_rect.setHeight(back_rect.height() * .1)
+        screen_x = self.viewport().width() * .5
+        screen_x -= back_rect.width() * .5
+        screen_y = self.viewport().height() * .5
+        screen_y -= back_rect.height() * .5
+        painter.fillRect(screen_x - 1, screen_y - 1,
+                         back_rect.width() + 2,
+                         back_rect.height() + 2, brdr_col)
+        painter.fillRect(screen_x, screen_y, back_rect.width(),
+                         back_rect.height(), back_col)
+        qtext_align = QTextOption(Qt.AlignVCenter | Qt.AlignHCenter)
+        text_rect = QRectF(screen_x + 10, screen_y + 10,
+                           back_rect.width() - 20,
+                           back_rect.height() - 20)
+        painter.drawText(text_rect, "Disassembling...", option=qtext_align)
+
     def paintEvent(self, event):
         if not self.isVisible():
             return
 
-        self.pos = self.verticalScrollBar().value()
         painter = QPainter(self.viewport())
+
+        if self._running_disasm:
+            return self.paint_wait(painter)
+
+        if not self._lines:
+            return
+
+        self.pos = self.verticalScrollBar().value()
 
         # fill background
         painter.fillRect(0, 0, self.viewport().width(), self.viewport().height(), self._ctrl_colors['background'])
@@ -624,7 +677,7 @@ class DisassemblyView(QAbstractScrollArea):
     def mousePressEvent(self, event):
         # context menu
         if event.button() == Qt.RightButton:
-            if self._range is None:
+            if self._running_disasm or self._range is None:
                 return
             self._on_context_menu(event)
 
@@ -689,6 +742,6 @@ class DisassemblyView(QAbstractScrollArea):
             self.disassemble(self._range)
 
     def _on_cm_jump_to_address(self):
-        ptr, input_ = InputDialog.input_pointer(self.app)
+        ptr, input_ = InputDialog.input_pointer(self._app_window)
         if ptr > 0:
             self.read_memory(ptr)

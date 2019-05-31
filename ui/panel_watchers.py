@@ -47,9 +47,8 @@ class AddWatcherDialog(QDialog):
         self.text_field = InputDialogTextEdit(self)
         self.text_field.setPlaceholderText(
             'Module.findExportByName(\'target\', \'export\')')
-        self.text_field.setMinimumWidth(350)
         if ptr:
-            self.text_field.setText(ptr)
+            self.text_field.setPlainText(ptr)
         v_box.addWidget(self.text_field)
 
         self.acc_read = QCheckBox('Read')
