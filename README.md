@@ -28,7 +28,7 @@ A frida server running anywhere.
 #### Android Session:
   + make sure you can use 'adb' command in console or [Read here](https://www.xda-developers.com/adb-fastboot-any-directory-windows-linux/)
   + root on the device/emulator is required!
-  + make sure frida is in /system/bin|xbin with a+x permissions
+  + make sure frida is in /system/bin|xbin with a+x permissions or eventually use Dwarf to automatically install latest frida server 
 
 ### Setup and run
 
