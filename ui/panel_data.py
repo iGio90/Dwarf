@@ -23,7 +23,7 @@ from ui.widgets.list_view import DwarfListView
 from ui.widget_item_not_editable import NotEditableListWidgetItem
 
 from lib.range import Range
-from ui.hex_edit import HexEditor
+from ui.widgets.hex_edit import HexEditor
 
 
 class DataPanel(QSplitter):
