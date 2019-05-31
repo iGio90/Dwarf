@@ -18,11 +18,14 @@ import os
 import sys
 import argparse
 
+import frida
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
 from lib import utils
+from lib.git import Git
+from lib.prefs import Prefs
 from ui.app import AppWindow
 
 
@@ -64,12 +67,31 @@ def process_args():
 
 
 def _on_restart():
+    print('restarting dwarf...')
     os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
 
 
 def run_dwarf():
     """ fire it up
     """
+    _prefs = Prefs()
+    local_update_disabled = _prefs.get('disable_local_frida_update', False)
+
+    if not local_update_disabled:
+        _git = Git()
+        remote_frida = _git.get_frida_version()
+        local_frida = frida.__version__
+
+        if remote_frida and local_frida != remote_frida[0]['tag_name']:
+            print('Updating local frida version to ' + remote_frida[0]['tag_name'])
+            try:
+                from pip import _internal
+                _internal.main(["install", "--upgrade", "--user", "frida"])
+                _on_restart()
+            except Exception as e: # pylint: disable=broad-except, invalid-name
+                print('failed to update local frida')
+                print(str(e))
+
     args = process_args()
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
