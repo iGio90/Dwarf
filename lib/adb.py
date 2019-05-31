@@ -194,9 +194,8 @@ class Adb(QObject):
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
 
             # check if we have pidof
-            if self._oreo_plus:
-                res = self._do_adb_command('shell pidof')
-                self._have_pidof = 'not found' not in res
+            res = self._do_adb_command('shell pidof')
+            self._have_pidof = 'not found' not in res
 
             # check for root
             if self._is_root:
@@ -405,11 +404,11 @@ class Adb(QObject):
     def _check_mounted_system(self):
         """ check if we can write to /system
         """
-        res = self._do_adb_command('shell touch /system/.dwarf_check')
+        res = self.su_cmd('touch /system/.dwarf_check')
         if res == '':
             res = self._do_adb_command('shell ls -la /system')
             if '.dwarf_check' in res:
-                res = self._do_adb_command('shell rm /system/.dwarf_check')
+                res = self.su_cmd('rm /system/.dwarf_check')
                 if res == '':
                     return True
         elif res == 'Read-only file system':
