@@ -27,13 +27,15 @@ from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout,
 from ui.dialog_js_editor import JsEditorDialog
 from ui.list_pick import PickList
 
+from ui.dialogs.dwarf_dialog import DwarfDialog
 from ui.widgets.device_bar import DeviceBar
-from ui.process_list import ProcessList
-from ui.spawns_list import SpawnsList
+from ui.widgets.process_list import ProcessList
+from ui.widgets.spawns_list import SpawnsList
 
 from lib import utils
 
-class DeviceWindow(QDialog):
+
+class DeviceWindow(DwarfDialog):
 
     onSelectedProcess = pyqtSignal(list, name='onSelectedProcess')
     onSpwanSelected = pyqtSignal(list, name='onSpawnSelected')
@@ -52,11 +54,13 @@ class DeviceWindow(QDialog):
         try:
             if device == 'local':
                 self.device = frida.get_local_device()
-                self.setWindowTitle('Dwarf - Local Session')
-            elif device == 'usb':
-                self.setWindowTitle('Dwarf - USB Session')
-                #self.device = frida.get_usb_device()
+                self.title = 'Local Session'
+            elif device == 'usb': # TODO: change
+                self.title = 'Android Session'
                 self.device = None
+            elif device == 'ios':
+                self.title = 'IOS Session'
+                self.device = frida.get_usb_device()
             else:
                 self.device = frida.get_local_device()
         except frida.TimedOutError:
@@ -83,14 +87,11 @@ class DeviceWindow(QDialog):
         self.setFixedSize(self.desktop_geom.width() * .6,
                           self.desktop_geom.height() * .5)
 
-        self._dev_bar = DeviceBar(self, self.device_type)
-        self._dev_bar.onDeviceUpdated.connect(self._update_device)
-        self._dev_bar.onDeviceChanged.connect(self._changed_device)
-        # not needed on local
-        #if self.device and self.device.type == 'local':
-            #self._dev_bar.setVisible(False)
-
-        main_wrap.addWidget(self._dev_bar)
+        if self.device is None:
+            self._dev_bar = DeviceBar(self, self.device_type)
+            self._dev_bar.onDeviceUpdated.connect(self._update_device)
+            self._dev_bar.onDeviceChanged.connect(self._changed_device)
+            main_wrap.addWidget(self._dev_bar)
 
         """frm_lyt = QFormLayout()
         frm_lyt.setContentsMargins(10, 10, 10, 10)

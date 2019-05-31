@@ -22,7 +22,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
                              QMenu)
 from lib import utils
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class ModulesPanel(QWidget):

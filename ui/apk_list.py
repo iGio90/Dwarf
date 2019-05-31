@@ -22,10 +22,11 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFileDialog, QLineEdit, QHeaderView)
 
 from lib.adb import Adb
-from ui.list_view import DwarfListView
+from ui.dialogs.dwarf_dialog import DwarfDialog
+from ui.widgets.list_view import DwarfListView
 
 
-class ApkListDialog(QDialog):
+class ApkListDialog(DwarfDialog):
     """ Dialog that shows installed apks and allows install
     """
 
@@ -33,7 +34,7 @@ class ApkListDialog(QDialog):
 
     def __init__(self, parent=None, show_paths=True, show_install=False):
         super(ApkListDialog, self).__init__(parent=parent)
-        self.setWindowTitle('Packages')
+        self.title = 'Packages'
 
         v_box = QVBoxLayout()
         if show_install:

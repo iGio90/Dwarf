@@ -22,8 +22,8 @@ from ui.panel_memory import MemoryPanel
 from capstone import CS_OP_REG
 from unicorn.unicorn_const import UC_MEM_READ, UC_MEM_FETCH, UC_MEM_WRITE
 
-from ui.list_view import DwarfListView
-from ui.disasm_view import DisassemblyView
+from ui.widgets.list_view import DwarfListView
+from ui.widgets.disasm_view import DisassemblyView
 
 
 class EmulatorPanel(QWidget):

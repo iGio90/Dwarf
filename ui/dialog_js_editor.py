@@ -21,15 +21,15 @@ from PyQt5.QtCore import QFile, QRegExp, Qt, QRegularExpression, QRect, QSize, Q
 
 from ui.dialog_scripts import ScriptsDialog
 
+from ui.dialogs.dwarf_dialog import DwarfDialog
+from ui.widgets.code_editor import JsCodeEditor
 
-from ui.code_editor import JsCodeEditor
 
-
-class JsEditorDialog(QDialog):
+class JsEditorDialog(DwarfDialog):
     def __init__(self, app_window, def_text='', placeholder_text='', flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
-        self.setWindowTitle('CodeEditor')
+        self.title = 'CodeEditor'
         self._app_window = app_window
 
         font_size_pref = self._app_window.prefs.get('dwarf_ui_theme_editor_fs')

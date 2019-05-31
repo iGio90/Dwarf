@@ -20,7 +20,7 @@ from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon, QPixmap,
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
                              QPushButton, QSizePolicy, QSpacerItem, QShortcut, QMenu)
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 from ui.dialog_input import InputDialog
 from ui.dialog_input_multiline import InputMultilineDialog
 

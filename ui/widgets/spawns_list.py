@@ -20,7 +20,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QHeaderView, QVBoxLayout, QPushButton
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class SpawnsThread(QThread):

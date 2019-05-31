@@ -15,7 +15,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class JavaFieldsWidget(DwarfListView):

@@ -23,11 +23,15 @@ from lib import utils
 
 class IosSession(Session):
 
+    def _is_frida_running(self):
+        # untested
+        utils.do_shell_command('ssh -p2222 mobile@127.0.0.1 ps -A | grep \'frida\'')
+
     def __init__(self, app_window):
         super(IosSession, self).__init__(app_window)
 
         self._app_window = app_window
-        self._device_window = DeviceWindow(self._app_window, 'usb')
+        self._device_window = DeviceWindow(self._app_window, 'ios')
 
         # main menu every session needs
         self._menu = [QMenu(self.session_type + ' Session')]
@@ -36,7 +40,9 @@ class IosSession(Session):
 
     @property
     def session_ui_sections(self):
-        return self.default_session()
+        # what sections we want in session_ui
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory',
+                'console', 'watchers', 'backtrace']
 
     @property
     def session_type(self):

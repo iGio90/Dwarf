@@ -732,7 +732,21 @@ class Dwarf(QObject):
             print('unknown message: ' + what)
 
     def _on_apply_context(self, context_data):
-        if 'context' in context_data:
+        reason = context_data['reason']
+        if reason == -1:
+            # set initial context
+            self._arch = context_data['arch']
+            self._platform = context_data['platform']
+            self._pointer_size = context_data['pointerSize']
+            self.java_available = context_data['java']
+            str_fmt = ('injected into := {0:d}'.format(self.pid))
+            self.log(str_fmt)
+
+            # unlock java on loads
+            if self.java_available:
+                self._app_window.hooks_panel.new_menu.addAction(
+                    'Java class loading', self._app_window.hooks_panel._on_add_java_on_load)
+        elif 'context' in context_data:
             context = Context(context_data['context'])
             self.contexts[str(context_data['tid'])] = context
 
@@ -749,20 +763,8 @@ class Dwarf(QObject):
 
             if context_data['reason'] == 0:
                 self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
-        else:
-            self._arch = context_data['arch']
-            self._platform = context_data['platform']
-            self._pointer_size = context_data['pointerSize']
-            self.java_available = context_data['java']
-            str_fmt = ('injected into := {0:d}'.format(self.pid))
-            self.log(str_fmt)
 
-            # unlock java on loads
-            if self.java_available:
-                self._app_window.hooks_panel.new_menu.addAction(
-                    'Java class loading', self._app_window.hooks_panel._on_add_java_on_load)
-
-        if self.context_tid == 0:
+        if not reason == -1 and self.context_tid == 0:
             self.context_tid = context_data['tid']
 
     def _on_destroyed(self):

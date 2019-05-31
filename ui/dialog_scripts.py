@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHeaderView
 
 from lib.git import Git
 from lib.scripts_manager import ScriptsManager
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class ScriptsTable(DwarfListView):

@@ -21,9 +21,9 @@ from PyQt5.QtWidgets import (QWidget, QLineEdit, QVBoxLayout, QHBoxLayout,
                              QRadioButton, QPushButton, QProgressDialog,
                              QSizePolicy, QApplication, QHeaderView)
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 from lib import utils
-from ui.hex_edit import HighLight, HighlightExistsError
+from ui.widgets.hex_edit import HighLight, HighlightExistsError
 
 
 class SearchThread(QThread):

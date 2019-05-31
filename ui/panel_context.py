@@ -20,7 +20,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor
 from PyQt5.QtWidgets import QHeaderView, QTabWidget, QMenu
 
 from lib import utils
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class ContextPanel(QTabWidget):

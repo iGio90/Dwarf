@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
 
 from lib import utils, prefs
 from lib.git import Git
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class DwarfCommitsThread(QThread):

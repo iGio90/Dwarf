@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QHeaderView, QMenu
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 from lib import utils
 

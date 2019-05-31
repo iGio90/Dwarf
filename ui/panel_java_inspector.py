@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QHeaderView, QHBoxLayout, QMenu
 
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class JavaInspector(QWidget):

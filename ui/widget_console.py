@@ -21,17 +21,17 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QVBoxLayout,
                              QPlainTextEdit, QSizePolicy)
 
 from ui.dialog_js_editor import JsEditorDialog
-from ui.code_editor import JsCodeEditor
+from ui.widgets.code_editor import JsCodeEditor
 
 
-class QConsoleInputWidget(JsCodeEditor):
+class DwarfConsoleInput(JsCodeEditor):
     """
     """
 
     onEnterKeyPressed = pyqtSignal(str, name='onEnterKeyPressed')
 
     def __init__(self, parent=None):
-        super(QConsoleInputWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.cmds = []
         self.cmd_index = 0
         self.setStyleSheet('padding: 0; padding: 0 5px;')
@@ -84,12 +84,12 @@ class QConsoleInputWidget(JsCodeEditor):
         self.cmds.clear()
 
 
-class QConsoleWidget(QWidget):
+class DwarfConsoleWidget(QWidget):
 
     onCommandExecute = pyqtSignal(str, name='onCommandExecute')
 
     def __init__(self, parent=None, input_placeholder='', function_box=False, has_input=True):
-        super(QConsoleWidget, self).__init__(parent=parent)
+        super().__init__(parent=parent)
 
         self.app_window = parent
 
@@ -111,7 +111,7 @@ class QConsoleWidget(QWidget):
             box = QHBoxLayout()
             box.setContentsMargins(QMargins(3, 3, 3, 3))
 
-            self.input = QConsoleInputWidget(self)
+            self.input = DwarfConsoleInput(self)
             self.input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             self.input.setPlaceholderText(input_placeholder)
             self.input.onEnterKeyPressed.connect(self._enter_pressed)
@@ -130,7 +130,10 @@ class QConsoleWidget(QWidget):
         self.setLayout(layout)
 
     def _enter_pressed(self, cmd):
-        self.onCommandExecute.emit(cmd)
+        if cmd == 'clear':
+            self.clear()
+        else:
+            self.onCommandExecute.emit(cmd)
 
     def log(self, what, clear=False):
         if clear:

@@ -32,15 +32,6 @@ class Session(QObject):
         self._dwarf.onScriptDestroyed.connect(self.stop)
         self._session_type = session_type
 
-    @staticmethod
-    def default_session():
-        return [
-            # columns widgets
-            'hooks', 'bookmarks', 'threads', 'registers', 'console', 'watchers', 'backtrace',
-
-            # tabs
-            'memory', 'disassembly', 'jvm-explorer', 'ranges', 'modules', 'jvm-inspector', 'search', 'emulator']
-
     # ************************************************************************
     # **************************** Properties ********************************
     # ************************************************************************

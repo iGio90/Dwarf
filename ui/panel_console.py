@@ -16,7 +16,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtWidgets import QTabWidget
 
-from ui.widget_console import QConsoleWidget
+from ui.widget_console import DwarfConsoleWidget
 
 
 class ConsolePanel(QTabWidget):
@@ -24,13 +24,13 @@ class ConsolePanel(QTabWidget):
         super(ConsolePanel, self).__init__(parent=parent)
         self.parent = parent
 
-        self.js_console = QConsoleWidget(parent, input_placeholder='$>', function_box=True)
+        self.js_console = DwarfConsoleWidget(parent, input_placeholder='$>', function_box=True)
         self.js_console.onCommandExecute.connect(self.js_callback)
 
-        self.py_console = QConsoleWidget(parent, input_placeholder='>>>')
+        self.py_console = DwarfConsoleWidget(parent, input_placeholder='>>>')
         self.py_console.onCommandExecute.connect(self.py_callback)
 
-        self.emu_console = QConsoleWidget(parent, has_input=False)
+        self.emu_console = DwarfConsoleWidget(parent, has_input=False)
 
         self.addTab(self.js_console, 'javascript')
         self.addTab(self.py_console, 'python')

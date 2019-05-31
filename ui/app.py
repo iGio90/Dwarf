@@ -18,6 +18,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 import sys
 import shutil
+import json
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl
 from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices
@@ -29,7 +30,7 @@ from lib.prefs import Prefs
 from lib.session_manager import SessionManager
 
 from ui.welcome_window import WelcomeDialog
-from ui.hex_edit import HighLight, HighlightExistsError
+from ui.widgets.hex_edit import HighLight, HighlightExistsError
 from ui.panel_trace import TraceEvent
 
 from ui.dialogs.about_dlg import AboutDialog
@@ -151,6 +152,13 @@ class AppWindow(QMainWindow):
     def _setup_main_menu(self):
         self.menu = self.menuBar()
         dwarf_menu = QMenu('Dwarf', self)
+        theme = QMenu('Theme', dwarf_menu)
+        theme.addAction('Black')
+        theme.addAction('Dark')
+        theme.addAction('Light')
+        theme.triggered.connect(self._set_theme)
+        dwarf_menu.addMenu(theme)
+        dwarf_menu.addSeparator()
         if self._is_newer_dwarf:
             dwarf_menu.addAction('Update', self._update_dwarf)
         dwarf_menu.addAction('Close', self.session_manager.session.stop)
@@ -166,18 +174,13 @@ class AppWindow(QMainWindow):
                 self.menu.addMenu(session_menu)
 
         self.view_menu = QMenu('View', self)
-        theme = QMenu('Theme', self.view_menu)
-        theme.addAction('Black')
-        theme.addAction('Dark')
-        theme.addAction('Light')
-        theme.triggered.connect(self._set_theme)
-        self.view_menu.addMenu(theme)
         self.view_menu.addSeparator()
         self.menu.addMenu(self.view_menu)
 
         if self.dwarf_args.debug_script:
             debug_menu = QMenu('Debug', self)
             debug_menu.addAction('Reload core', self._menu_reload_core)
+            debug_menu.addAction('Debug dwarf js core', self._menu_debug_dwarf_js)
             self.menu.addMenu(debug_menu)
 
         about_menu = QMenu('About', self)
@@ -209,6 +212,10 @@ class AppWindow(QMainWindow):
 
     def _menu_reload_core(self):
         self.dwarf.load_script()
+
+    def _menu_debug_dwarf_js(self):
+        you_know_what_to_do = json.loads(self.dwarf._script.exports.debugdwarfjs())
+        return you_know_what_to_do
 
     def show_main_tab(self, name):
         # elem doesnt exists? create it
@@ -407,7 +414,7 @@ class AppWindow(QMainWindow):
             self.trace_panel = TracePanel(self)
             self.main_tabs.addTab(self.trace_panel, 'Trace')
         elif elem == 'disassembly':
-            from ui.disasm_view import DisassemblyView
+            from ui.widgets.disasm_view import DisassemblyView
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
@@ -785,7 +792,8 @@ class AppWindow(QMainWindow):
     def _apply_context(self, context, manual=False):
         # update current context tid
         # this should be on top as any further api from js needs to be executed on that thread
-        if manual or self.dwarf.context_tid == 0:
+        is_initial_hook = context['reason'] >= 0
+        if manual or (self.dwarf.context_tid and not is_initial_hook):
             self.dwarf.context_tid = context['tid']
 
         if 'context' in context:
@@ -805,7 +813,13 @@ class AppWindow(QMainWindow):
                                                context['context'])
 
                 if 'pc' in context['context']:
-                    should_disasm = self.asm_panel is not None and self.asm_panel._range is None
+                    if not 'disassembly' in self._ui_elems:
+                        from lib.range import Range
+                        _range = Range(Range.SOURCE_TARGET, self.dwarf)
+                        _range.init_with_address(int(context['context']['pc']['value'], 16))
+
+                        self._disassemble_range(_range)
+                    """should_disasm = self.asm_panel is not None and self.asm_panel._range is None
 
                     if self.asm_panel._running_disasm:
                         should_disasm = False
@@ -823,7 +837,7 @@ class AppWindow(QMainWindow):
                             int(context['context']['pc']['value'], 16),
                             show_panel=False)
                         self._disassemble_range(self.memory_panel.range)
-                        self.show_main_tab('disassembly')
+                        self.show_main_tab('disassembly')"""
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])

@@ -18,7 +18,7 @@ from PyQt5 import QtCore
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
 
-from ui.code_editor import JsCodeEditor
+from ui.widgets.code_editor import JsCodeEditor
 from ui.dialogs.dwarf_dialog import DwarfDialog
 
 class InputDialogTextEdit(JsCodeEditor):

@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHeaderView, QHBoxLayout,
 
 from lib import utils
 from ui.dialog_input import InputDialogTextEdit
-from ui.list_view import DwarfListView
+from ui.widgets.list_view import DwarfListView
 
 
 class AddWatcherDialog(QDialog):

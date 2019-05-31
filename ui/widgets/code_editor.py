@@ -45,6 +45,8 @@ class DwarfCompleter(QCompleter):
             'emulator.start(',
             'emulator.step()',
             'emulator.stop()',
+
+            'JSON.stringify('
         ]
         QCompleter.__init__(self, myKeywords, parent)
         self.setCompletionMode(QCompleter.PopupCompletion)

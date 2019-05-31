@@ -17,10 +17,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidget, QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 
-from ui.list_view import DwarfListView
+from ui.dialogs.dwarf_dialog import DwarfDialog
+from ui.widgets.list_view import DwarfListView
 
 
-class ListDialog(QDialog):
+class ListDialog(DwarfDialog):
     def __init__(self, parent=None, setup_list_cb=None, setup_list_cb_args=None,
                  double_click_to_accept=False, checkable=False):
         super(ListDialog, self).__init__(parent)
