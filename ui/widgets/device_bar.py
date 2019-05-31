@@ -19,10 +19,11 @@ import lzma
 import frida
 import requests
 
-from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer
+from PyQt5.QtCore import (Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer)
 from PyQt5.QtGui import QFont, QPixmap, QIcon
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QComboBox
+from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QComboBox)
 
+from lib import utils
 from lib.adb import Adb
 from lib.git import Git
 
@@ -30,74 +31,150 @@ from lib.git import Git
 class FridaUpdateThread(QThread):
     """ FridaServer Update Thread
         signals:
-            on_status_text(str)
-            on_finished()
+            onStatusUpdate(str)
+            onFinished()
+            onError(str)
     """
-    on_status_text = pyqtSignal(str)
-    on_finished = pyqtSignal()
+    # ************************************************************************
+    # **************************** Signals ***********************************
+    # ************************************************************************
+    onStatusUpdate = pyqtSignal(str, name='onStatusUpdate')
+    onFinished = pyqtSignal(name='onFinished')
     onError = pyqtSignal(str, name='onError')
 
+    # ************************************************************************
+    # **************************** Properties ********************************
+    # ************************************************************************
+    @property
+    def adb(self):
+        return self._adb
+
+    @adb.setter
+    def adb(self, value):
+        if isinstance(value, Adb):
+            self._adb = value
+
+    @property
+    def frida_update_url(self):
+        return self._frida_update_url
+
+    @frida_update_url.setter
+    def frida_update_url(self, value):
+        if isinstance(value, str) and value.startswith('http'):
+            self._frida_update_url = value
+
+    # ************************************************************************
+    # **************************** Functions *********************************
+    # ************************************************************************
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.frida_url = ''
-        self.adb = None
+        self._frida_update_url = None
+        self._adb = None
 
     def run(self):
         """Runs the UpdateThread
         """
+        if self._adb is None:
+            self.onError.emit('ADB not set')
+            return
 
-        self.on_status_text.emit('Downloading latest frida')
+        if not self._adb.min_required:
+            self.onError.emit('ADB MinRequired')
+            return
+
+        if not utils.is_connected():
+            self.onError.emit('Not connected')
+            return
+
+        if self._frida_update_url is None or self._frida_update_url == '':
+            self.onError.emit('Missing frida download url')
+            return
+
+        self.onStatusUpdate.emit('Downloading latest frida')
 
         try:
-            request = requests.get(self.frida_url, stream=True)
+            if utils.is_connected():
+                request = requests.get(self._frida_update_url, stream=True)
+            else:
+                self.onError.emit('Not connected')
+                return
         except requests.ConnectionError:
             self.onError.emit('Failed to download latest frida')
             return
 
+        # reset url
+        self._frida_update_url = None
+
         if request is not None and request.status_code == 200:
-            with open('frida.xz', 'wb') as frida_archive:
-                for chunk in request.iter_content(chunk_size=1024):
-                    if chunk:
-                        frida_archive.write(chunk)
-
-            self.on_status_text.emit('Extracting latest frida')
-
+            # write data to local file
             try:
-                with lzma.open('frida.xz') as frida_archive:
-                    with open('frida', 'wb') as frida_binary:
-                        frida_binary.write(frida_archive.read())
-                os.remove('frida.xz')
-            except:
-                self.onError.emit('Failed to extract frida.xz')
+                with open('frida.xz', 'wb') as frida_archive:
+                    for chunk in request.iter_content(chunk_size=1024):
+                        if chunk:
+                            frida_archive.write(chunk)
+            except EnvironmentError:
+                self.onError.emit('Failed to write frida.xz')
                 return
 
-            self.on_status_text.emit('Mounting devices filesystem')
+            # start extraction
+            if os.path.exists('frida.xz'):
+                self.onStatusUpdate.emit('Extracting latest frida')
+                try:
+                    with lzma.open('frida.xz') as frida_archive:
+                        with open('frida', 'wb') as frida_binary:
+                            frida_binary.write(frida_archive.read())
+
+                    # remove downloaded archive
+                    os.remove('frida.xz')
+                except lzma.LZMAError:
+                    self.onError.emit('Failed to extract frida.xz')
+                    return
+                except EnvironmentError:
+                    self.onError.emit('Failed to write frida')
+                    return
+            else:
+                self.onError.emit('Failed to open frida.xz')
+                return
+
+
+            self.onStatusUpdate.emit('Mounting devices filesystem')
             # mount system rw
-            if self.adb.mount_system():
-                self.on_status_text.emit('Pushing to device')
+            if self._adb.mount_system():
+                self.onStatusUpdate.emit('Pushing to device')
                 # push file to device
-                self.adb.push('frida', '/sdcard/')
-                self.on_status_text.emit('Setting up and starting frida')
+                self._adb.push('frida', '/sdcard/')
+                self.onStatusUpdate.emit('Setting up and starting frida')
                 # kill frida
-                self.adb.kill_frida()
+                self._adb.kill_frida()
+
+                _device_path = '/system/xbin'
+                res = self._adb.su_cmd('ls ' + _device_path)
+                if 'No such file or directory' in res:
+                    # use /system/bin
+                    _device_path = _device_path.replace('x', '')
+
                 # copy file note: mv give sometimes a invalid id error
-                self.adb.su_cmd('cp /sdcard/frida /system/xbin/frida')
+                self._adb.su_cmd('cp /sdcard/frida ' + _device_path + '/frida')
                 # remove file
-                self.adb.su_cmd('rm /sdcard/frida')
+                self._adb.su_cmd('rm /sdcard/frida')
+                # just to make sure
+                self._adb.su_cmd('chown root:root ' + _device_path + '/frida')
                 # make it executable
-                self.adb.su_cmd('chmod 755 /system/xbin/frida')
+                self._adb.su_cmd('chmod 06755 ' + _device_path + '/frida')
                 # start it
-                if not self.adb.start_frida():
-                    self.on_status_text('Failed to start frida')
+                if not self._adb.start_frida():
+                    self.onError.emit('Failed to start fridaserver on Device')
             else:
                 print('failed to mount /system on device')
 
-            os.remove('frida')
+            # delete extracted file
+            if os.path.exists('frida'):
+                os.remove('frida')
         else:
-            self.onError.emit('Failed to download latest frida')
+            self.onError.emit('Failed to download latest frida! Error: %d' % request.status_code)
+            return
 
-        self.on_finished.emit()
-        self.frida_url = ''
+        self.onFinished.emit()
 
 
 
@@ -168,8 +245,9 @@ class DeviceBar(QWidget):
         self.devices_thread.onAddDevice.connect(self.on_add_deviceitem)
         self.devices_thread.onDevicesUpdated.connect(self._on_devices_finished)
         self._update_thread = FridaUpdateThread(self)
-        self._update_thread.on_status_text.connect(self._update_statuslbl)
-        self._update_thread.on_finished.connect(self._frida_updated)
+        self._update_thread._adb = self._adb
+        self._update_thread.onStatusUpdate.connect(self._update_statuslbl)
+        self._update_thread.onFinished.connect(self._frida_updated)
         self._update_thread.onError.connect(self._on_download_error)
         self.updated_frida_version = ''
         self.updated_frida_assets_url = {}
@@ -270,18 +348,19 @@ class DeviceBar(QWidget):
             if device_frida is None:
                 self._install_btn.setVisible(True)
             else:
-                self.update_label.setStyleSheet('background-color: yellowgreen;')
                 # frida is old show update button
                 if self.updated_frida_version != device_frida:
                     self._update_btn.setVisible(True)
                     # old frida is running allow use of this version
                     if self._adb.is_frida_running():
+                        self.update_label.setStyleSheet('background-color: yellowgreen;')
                         self.onDeviceUpdated.emit(frida_device.id)
                 # frida not running show start button
                 elif device_frida and not self._adb.is_frida_running():
                     self._start_btn.setVisible(True)
                 # frida is running with last version show restart button
                 elif device_frida and self._adb.is_frida_running():
+                    self.update_label.setStyleSheet('background-color: yellowgreen;')
                     self._restart_btn.setVisible(True)
                     self.onDeviceUpdated.emit(frida_device.id)
 
@@ -359,7 +438,7 @@ class DeviceBar(QWidget):
 
                     if self._update_thread is not None:
                         if not self._update_thread.isRunning():
-                            self._update_thread.frida_url = request_url
+                            self._update_thread.frida_update_url = request_url
                             self._update_thread.adb = self._adb
                             self._update_thread.start()
 

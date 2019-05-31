@@ -113,6 +113,7 @@ class DeviceWindow(QDialog):
         spawns_vbox.addWidget(spawns_label)
         self.spawn_list = SpawnsList(device=self.device)
         self.spawn_list.onProcessSelected.connect(self._spawn_selected)
+        self.spawn_list.onRefreshError.connect(self._on_spawn_error)
         spawns_vbox.addWidget(self.spawn_list)
 
         procs_vbox = QVBoxLayout()
@@ -122,6 +123,7 @@ class DeviceWindow(QDialog):
 
         self.proc_list = ProcessList(device=self.device)
         self.proc_list.onProcessSelected.connect(self._pid_selected)
+        self.proc_list.onRefreshError.connect(self._on_proc_error)
         procs_vbox.addWidget(self.proc_list)
 
         inner_hbox = QHBoxLayout()
@@ -161,3 +163,9 @@ class DeviceWindow(QDialog):
         if spawn[1]:
             self.accept()
             self.onSpwanSelected.emit([self.device, spawn[1]])
+
+    def _on_spawn_error(self, error_str):
+        utils.show_message_box('Failed to refresh Spawnlist', error_str)
+
+    def _on_proc_error(self, error_str):
+        utils.show_message_box('Failed to refresh Proclist', error_str)
