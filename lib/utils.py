@@ -110,7 +110,7 @@ def get_os_monospace_font():
     if 'linux' in platform:
         return QFont('Monospace', 10)
     elif 'darwin' in platform:
-        return QFont('Monaco', 12)
+        return QFont('Monaco', 11)
     elif 'freebsd' in platform:
         return QFont('Bitstream Vera Sans Mono', 10)
     else:
