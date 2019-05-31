@@ -56,11 +56,10 @@ class SpawnsThread(QThread):
                 self.is_error.emit('unable to connect to remote frida server: closed')
             except frida.TimedOutError:
                 self.is_error.emit('unable to connect to remote frida server: timedout')
-            except Exception:  # pylint: disable=broad-except
-                self.is_error.emit('something was wrong...')
+            except Exception as e:  # pylint: disable=broad-except
+                self.is_error.emit('something was wrong...\n' + str(e))
 
         self.is_finished.emit()
-
 
 class SpawnsList(QWidget):
     """ ProcessListWidget wich shows running Processes on Device

@@ -63,8 +63,8 @@ class ProcsThread(QThread):
                     self.is_error.emit('Frida TransportError: Server closed')
                 except frida.TimedOutError:
                     self.is_error.emit('Frida TimedOutError: Server timedout')
-                except Exception:  # pylint: disable=broad-except
-                    self.is_error.emit('something was wrong...')
+                except Exception as e:  # pylint: disable=broad-except
+                    self.is_error.emit('something was wrong...\n' + e)
 
         self.is_finished.emit()
 
