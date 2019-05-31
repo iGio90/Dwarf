@@ -27,6 +27,7 @@ class Hook(object):
         self.input = ''
         self.condition = ''
         self.logic = ''
+        self.internalHook = False
 
         # hold the original bytes of address + (pointer size * 2)
         # to be used from Range class when dumping memory and avoid showing frida asm trampolines

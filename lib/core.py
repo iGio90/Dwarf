@@ -638,9 +638,11 @@ class Dwarf(QObject):
             self.temporary_input = ''
             h.set_condition(parts[4])
             h.set_logic(parts[3])
+            h.internalHook = parts[5] == 'true'
             self.native_pending_args = None
-            self.hooks[h.get_ptr()] = h
-            self.onAddNativeHook.emit(h)
+            if not h.internalHook:
+                self.hooks[h.get_ptr()] = h
+                self.onAddNativeHook.emit(h)
         elif cmd == 'hook_native_on_load_callback':
             h = Hook(Hook.HOOK_ONLOAD)
             h.set_ptr(0)

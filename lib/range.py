@@ -14,6 +14,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import json
+
 from lib import utils
 from lib.hook import Hook
 
@@ -77,14 +79,15 @@ class Range(object):
             self.data = self.dwarf.read_memory(self.base, self.size)
 
             # check if we have hooks in range and patch data
-            for key in self.dwarf.hooks.keys():
-                hook = self.dwarf.hooks[key]
-                if hook.hook_type == Hook.HOOK_NATIVE:
-                    hook_address = hook.get_ptr()
+            hooks = json.loads(self.dwarf._script.exports.hooks())
+            for key in list(hooks.keys()):
+                hook = hooks[key]
+                if utils.parse_ptr(hook['nativePtr']) != 1 and hook['bytes']:
+                    hook_address = utils.parse_ptr(hook['nativePtr'])
                     if self.base < hook_address < self.tail:
                         offset = hook_address - self.base
                         # patch bytes
-                        self.patch_bytes(hook.get_bytes(), offset)
+                        self.patch_bytes(hook['bytes'], offset)
         elif self.source == Range.SOURCE_EMULATOR:
             uc = self.dwarf.get_emulator().uc
             if uc is not None:
@@ -107,7 +110,8 @@ class Range(object):
 
     def patch_bytes(self, _bytes, offset):
         data_bt = bytearray(self.data)
-        data_bt[offset:offset+len(_bytes)] = bytearray(_bytes)
+        org_bytes = bytes.fromhex(_bytes)
+        data_bt[offset:offset+len(org_bytes)] = org_bytes
         self.data = bytes(data_bt)
 
     def set_start_offset(self, offset):
