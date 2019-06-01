@@ -64,7 +64,7 @@ class ProcsThread(QThread):
                 except frida.TimedOutError:
                     self.is_error.emit('Frida TimedOutError: Server timedout')
                 except Exception as e:  # pylint: disable=broad-except
-                    self.is_error.emit('something was wrong...\n' + e)
+                    self.is_error.emit('something was wrong...\n' + str(e))
 
         self.is_finished.emit()
 
