@@ -355,7 +355,8 @@ class DeviceBar(QWidget):
                     # old frida is running allow use of this version
                     if self._adb.is_frida_running():
                         self._start_btn.setVisible(False)
-                        self._update_btn.setVisible(True)
+                        if self.updated_frida_assets_url:
+                            self._update_btn.setVisible(True)
                         self.update_label.setStyleSheet('background-color: yellowgreen;')
                         self.onDeviceUpdated.emit(frida_device.id)
                 # frida not running show start button
