@@ -87,7 +87,7 @@ def run_dwarf():
             try:
                 from pip import _internal
                 _internal.main(["install", "--upgrade", "--user", "frida"])
-                _on_restart()
+                #_on_restart()
             except Exception as e: # pylint: disable=broad-except, invalid-name
                 print('failed to update local frida')
                 print(str(e))
