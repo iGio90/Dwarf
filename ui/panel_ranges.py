@@ -187,6 +187,12 @@ class RangesPanel(DwarfListView):
                     self._ranges_model.item(index, 0).text()))
             context_menu.addSeparator()
 
+            if self._ranges_model.item(index, 5):
+                file_path = self._ranges_model.item(index, 5).text()
+                if file_path:
+                    context_menu.addAction('Copy Path', lambda: utils.copy_str_to_clipboard(file_path))
+                    context_menu.addSeparator()
+
         context_menu.addAction('Refresh', self.update_ranges)
         context_menu.exec_(glbl_pt)
 
