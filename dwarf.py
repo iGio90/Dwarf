@@ -17,6 +17,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 import sys
 import argparse
+import shutil
 
 import frida
 from PyQt5.QtCore import Qt
@@ -85,9 +86,17 @@ def run_dwarf():
         if remote_frida and local_frida != remote_frida[0]['tag_name']:
             print('Updating local frida version to ' + remote_frida[0]['tag_name'])
             try:
-                from pip import _internal
-                _internal.main(["install", "--upgrade", "--user", "frida"])
-                #_on_restart()
+                res = utils.do_shell_command('pip3 install frida --upgrade --user')
+                #from pip import _internal
+                #ret = _internal.main(["install", "--upgrade", "--user", "frida"])
+                if 'Successfully installed frida-' + remote_frida[0]['tag_name'] in res:
+                    _on_restart()
+                elif 'Requirement already up-to-date' in res:
+                    if os.path.exists('.git_cache'):
+                        shutil.rmtree('.git_cache', ignore_errors=True)
+                else:
+                    print('failed to update local frida')
+                    print(res)
             except Exception as e: # pylint: disable=broad-except, invalid-name
                 print('failed to update local frida')
                 print(str(e))
