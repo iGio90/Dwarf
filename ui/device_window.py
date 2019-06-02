@@ -14,18 +14,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import os
-import lzma
 import frida
-import requests
 
-from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer
-from PyQt5.QtGui import QFont, QPixmap, QIcon
-from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, 
-    QSpacerItem, QSizePolicy, QStyle, qApp, QComboBox, QFormLayout, QLineEdit)
-
-from ui.dialog_js_editor import JsEditorDialog
-from ui.list_pick import PickList
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QStyle, qApp)
 
 from ui.dialogs.dwarf_dialog import DwarfDialog
 from ui.widgets.device_bar import DeviceBar

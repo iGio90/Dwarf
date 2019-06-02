@@ -19,14 +19,13 @@ import json
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
+from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QHeaderView, QSplitter,
                              QMenu)
 from lib import utils
 from ui.widgets.list_view import DwarfListView
 
 
-# TODO: add splitters
-class ModulesPanel(QWidget):
+class ModulesPanel(QSplitter):
     """ ModulesPanel
 
         Signals:
@@ -53,6 +52,8 @@ class ModulesPanel(QWidget):
         self._app_window.dwarf.onSetModules.connect(self.set_modules)
 
         self._uppercase_hex = True
+        self._sized = False
+        self.setContentsMargins(0, 0, 0, 0)
 
         # setup models
         self.modules_list = None
@@ -87,16 +88,13 @@ class ModulesPanel(QWidget):
 
         self.symbols_list = None
         self.symbols_model = QStandardItemModel(0, 3, self)
-        self.symbols_model.setHeaderData(0, Qt.Horizontal, 'Export')
+        self.symbols_model.setHeaderData(0, Qt.Horizontal, 'Symbol')
         self.symbols_model.setHeaderData(1, Qt.Horizontal, 'Address')
         self.symbols_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
                                          Qt.TextAlignmentRole)
         self.symbols_model.setHeaderData(2, Qt.Horizontal, 'Type')
 
         # setup ui
-        main_wrapper = QVBoxLayout()
-        main_wrapper.setContentsMargins(0, 0, 0, 0)
-        h_box = QHBoxLayout()
         self.modules_list = DwarfListView()
         self.modules_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.modules_list.customContextMenuRequested.connect(
@@ -111,11 +109,12 @@ class ModulesPanel(QWidget):
             1, QHeaderView.ResizeToContents)
         self.modules_list.header().setSectionResizeMode(
             2, QHeaderView.ResizeToContents)
-        h_box.addWidget(self.modules_list)
         self.modules_list.selectionModel().selectionChanged.connect(
             self._module_clicked)
 
-        hv_box = QVBoxLayout()
+        self.addWidget(self.modules_list)
+
+        v_splitter = QSplitter(Qt.Vertical)
         self.imports_list = DwarfListView()
         self.imports_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.imports_list.customContextMenuRequested.connect(
@@ -155,12 +154,11 @@ class ModulesPanel(QWidget):
         self.symbols_list.header().setSectionResizeMode(
             2, QHeaderView.ResizeToContents)
         self.symbols_list.setVisible(False)
-        hv_box.addWidget(self.imports_list)
-        hv_box.addWidget(self.exports_list)
-        hv_box.addWidget(self.symbols_list)
-        h_box.addLayout(hv_box)
-        main_wrapper.addLayout(h_box)
-        self.setLayout(main_wrapper)
+        v_splitter.addWidget(self.imports_list)
+        v_splitter.addWidget(self.exports_list)
+        v_splitter.addWidget(self.symbols_list)
+        v_splitter.setSizes([100, 100, 100])
+        self.addWidget(v_splitter)
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -315,7 +313,7 @@ class ModulesPanel(QWidget):
 
         imports = self._app_window.dwarf.dwarf_api('enumerateImports',
                                                    module.text())
-        if imports and (imports is not None):
+        if imports:
             imports = json.loads(imports)
             if imports:
                 self.set_imports(imports)
@@ -328,7 +326,7 @@ class ModulesPanel(QWidget):
 
         exports = self._app_window.dwarf.dwarf_api('enumerateExports',
                                                    module.text())
-        if exports and exports is not None:
+        if exports:
             exports = json.loads(exports)
             if exports:
                 self.set_exports(exports)
@@ -340,7 +338,7 @@ class ModulesPanel(QWidget):
 
         symbols = self._app_window.dwarf.dwarf_api('enumerateSymbols',
                                                    module.text())
-        if symbols and symbols is not None:
+        if symbols:
             symbols = json.loads(symbols)
             if symbols:
                 self.set_symbols(symbols)
@@ -349,6 +347,10 @@ class ModulesPanel(QWidget):
                 self.symbols_list.resizeColumnToContents(1)
             else:
                 self.symbols_list.setVisible(False)
+
+        if not self._sized:
+            self.setSizes([100, 100])
+            self._sized = True
 
     def _module_dblclicked(self):
         """ Module DoubleClicked

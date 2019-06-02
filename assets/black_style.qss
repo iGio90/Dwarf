@@ -181,6 +181,7 @@ QSplitter::handle:horizontal {
 QSplitter::handle:vertical {
     height: 1px;
     background-color: #111;
+    image: url(assets/icons/divider_v.svg);
 }
 
 /* Scrollbar */

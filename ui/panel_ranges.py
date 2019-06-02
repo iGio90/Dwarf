@@ -154,6 +154,13 @@ class RangesPanel(DwarfListView):
                 self._ranges_model.appendRow(
                     [addr, size, protection, file_addr, file_size, file_path])
 
+            self.resizeColumnToContents(0)
+            self.resizeColumnToContents(1)
+            self.resizeColumnToContents(2)
+            self.resizeColumnToContents(3)
+            self.resizeColumnToContents(4)
+            self.resizeColumnToContents(5)
+
     def update_ranges(self):
         """ DwarfApiCall updateRanges
         """
