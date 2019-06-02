@@ -191,7 +191,8 @@ class ModulesPanel(QSplitter):
         for module in modules:
             name = QStandardItem()
             name.setTextAlignment(Qt.AlignLeft)
-            name.setText(module['name'])
+            if 'name' in module:
+                name.setText(module['name'])
 
             base = QStandardItem()
             base.setTextAlignment(Qt.AlignCenter)
@@ -200,15 +201,18 @@ class ModulesPanel(QSplitter):
             if not self.uppercase_hex:
                 str_fmt = '0x{0:x}'
 
-            base.setText(str_fmt.format(int(module['base'], 16)))
+            if 'base' in module:
+                base.setText(str_fmt.format(int(module['base'], 16)))
 
             size = QStandardItem()
             size.setTextAlignment(Qt.AlignRight)
-            size.setText("{0:,d}".format(int(module['size'])))
+            if 'size' in module:
+                size.setText("{0:,d}".format(int(module['size'])))
 
             path = QStandardItem()
             path.setTextAlignment(Qt.AlignLeft)
-            path.setText(module['path'])
+            if 'path' in module:
+                path.setText(module['path'])
 
             self.modules_model.appendRow([name, base, size, path])
 
@@ -227,7 +231,8 @@ class ModulesPanel(QSplitter):
         for import_ in imports:
             name = QStandardItem()
             name.setTextAlignment(Qt.AlignLeft)
-            name.setText(import_['name'])
+            if 'name' in import_:
+                name.setText(import_['name'])
 
             address = QStandardItem()
             address.setTextAlignment(Qt.AlignCenter)
@@ -235,8 +240,8 @@ class ModulesPanel(QSplitter):
             str_fmt = '0x{0:X}'
             if not self.uppercase_hex:
                 str_fmt = '0x{0:x}'
-
-            address.setText(str_fmt.format(int(import_['address'], 16)))
+            if 'address' in import_:
+                address.setText(str_fmt.format(int(import_['address'], 16)))
 
             module = QStandardItem()
             if 'module' in import_:
@@ -260,18 +265,22 @@ class ModulesPanel(QSplitter):
         for export in exports:
             name = QStandardItem()
             name.setTextAlignment(Qt.AlignLeft)
-            name.setText(export['name'])
+            if 'name' in export:
+                name.setText(export['name'])
 
             address = QStandardItem()
             address.setTextAlignment(Qt.AlignCenter)
             str_fmt = '0x{0:X}'
             if not self.uppercase_hex:
                 str_fmt = '0x{0:x}'
-            address.setText(str_fmt.format(int(export['address'], 16)))
+
+            if 'address' in export:
+                address.setText(str_fmt.format(int(export['address'], 16)))
 
             type_ = QStandardItem()
             type_.setTextAlignment(Qt.AlignLeft)
-            type_.setText(export['type'])
+            if 'type' in export:
+                type_.setText(export['type'])
 
             self.exports_model.appendRow([name, address, type_])
 
@@ -285,18 +294,22 @@ class ModulesPanel(QSplitter):
         for symbol in symbols:
             name = QStandardItem()
             name.setTextAlignment(Qt.AlignLeft)
-            name.setText(symbol['name'])
+            if 'name' in symbol:
+                name.setText(symbol['name'])
 
             address = QStandardItem()
             address.setTextAlignment(Qt.AlignCenter)
             str_fmt = '0x{0:X}'
             if not self.uppercase_hex:
                 str_fmt = '0x{0:x}'
-            address.setText(str_fmt.format(int(symbol['address'], 16)))
+
+            if 'address' in symbol:
+                address.setText(str_fmt.format(int(symbol['address'], 16)))
 
             type_ = QStandardItem()
             type_.setTextAlignment(Qt.AlignLeft)
-            type_.setText(symbol['type'])
+            if 'type' in symbol:
+                type_.setText(symbol['type'])
 
             self.symbols_model.appendRow([name, address, type_])
 
