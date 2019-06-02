@@ -117,7 +117,6 @@ class ElfInfo(DwarfDialog):
                                     va = va.upper().replace('0X', '0x')
                                     fo = fo.upper().replace('0X', '0x')
                                 data_item.appendRow([QStandardItem(va), QStandardItem('FileOffset: ' + fo)])
-                                #self.parent().bookmarks_panel.insert_bookmark(hex(int(base, 16) + int(ptr)), 'init_array')
                     else:
                         header_item.appendRow([QStandardItem(d), QStandardItem(hex(header[d]))])
 
