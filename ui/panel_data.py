@@ -14,15 +14,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QSplitter, QPlainTextEdit, QMenu
 
 from ui.widgets.list_view import DwarfListView
-from ui.widget_item_not_editable import NotEditableListWidgetItem
-
-from lib.range import Range
 from ui.widgets.hex_edit import HexEditor
 
 

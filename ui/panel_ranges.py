@@ -159,7 +159,6 @@ class RangesPanel(DwarfListView):
             self.resizeColumnToContents(2)
             self.resizeColumnToContents(3)
             self.resizeColumnToContents(4)
-            self.resizeColumnToContents(5)
 
     def update_ranges(self):
         """ DwarfApiCall updateRanges
