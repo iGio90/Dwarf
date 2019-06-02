@@ -26,10 +26,14 @@ class JavaFieldsWidget(DwarfListView):
 
         self.doubleClicked.connect(self.item_double_clicked)
 
-        self._model = QStandardItemModel(0, 2)
-        for i in range(len(headers)):
-            self._model.setHeaderData(i, Qt.Horizontal, headers[i])
-        self.setModel(self._model)
+        self._fields_model = QStandardItemModel(0, 2)
+        if headers and len(headers) == 2:
+            self._fields_model.setHeaderData(0, Qt.Horizontal, headers[0])
+            self._fields_model.setHeaderData(1, Qt.Horizontal, headers[1])
+        else:
+            self._fields_model.setHeaderData(0, Qt.Horizontal, 'Name')
+            self._fields_model.setHeaderData(1, Qt.Horizontal, 'Value')
+        self.setModel(self._fields_model)
 
     def add(self, name, value, handle=None, handle_class=None):
         if handle is not None:
@@ -41,7 +45,7 @@ class JavaFieldsWidget(DwarfListView):
             handle_item.setData(handle, Qt.UserRole + 1)
         else:
             handle_item = QStandardItem(name)
-        self._model.appendRow([handle_item, QStandardItem(str(value))])
+        self._fields_model.appendRow([handle_item, QStandardItem(str(value))])
 
     def item_double_clicked(self, item):
         data = item.data(Qt.UserRole + 1)
@@ -55,11 +59,11 @@ class JavaMethodsWidget(DwarfListView):
         super(JavaMethodsWidget, self).__init__(parent=explorer_panel.app)
         self.explorer_panel = explorer_panel
 
-        self._model = QStandardItemModel(0, 3)
-        self._model.setHeaderData(0, Qt.Horizontal, 'Name')
-        self._model.setHeaderData(1, Qt.Horizontal, 'Return')
-        self._model.setHeaderData(2, Qt.Horizontal, 'Arguments')
-        self.setModel(self._model)
+        self._methods_model = QStandardItemModel(0, 3)
+        self._methods_model.setHeaderData(0, Qt.Horizontal, 'Name')
+        self._methods_model.setHeaderData(1, Qt.Horizontal, 'Return')
+        self._methods_model.setHeaderData(2, Qt.Horizontal, 'Arguments')
+        self.setModel(self._methods_model)
 
     def add(self, name, ref):
         overloads = ref['overloads']
@@ -68,7 +72,7 @@ class JavaMethodsWidget(DwarfListView):
             args = []
             for arg in overload['args']:
                 args.append(arg['className'])
-            self._model.appendRow([
+            self._methods_model.appendRow([
                 QStandardItem(name),
                 QStandardItem(overload['return']['className']),
                 QStandardItem('(%s)' % ', '.join(args)),
@@ -203,9 +207,9 @@ class JavaExplorerPanel(QWidget):
     def clear_panel(self):
         self.clazz.setText('')
         self.handle_history = []
-        self.methods._model.clear()
-        self.fields._model.clear()
-        self.native_fields._model.clear()
+        self.methods.clear()
+        self.fields.clear()
+        self.native_fields.clear()
 
     def back(self):
         if len(self.handle_history) < 2:
