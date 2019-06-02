@@ -56,6 +56,10 @@ class Session(QObject):
     def session_ui_sections(self):
         return None
 
+    @property
+    def non_closable(self):
+        return None
+
     def set_config(self, config):
         pass
 

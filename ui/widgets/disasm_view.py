@@ -91,7 +91,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.font.setFixedPitch(True)
         self.setFont(self.font)
 
-        self._char_width = self.fontMetrics().width("2")
+        self._char_width = self.fontMetrics().width("#")
         self._char_height = self.fontMetrics().height()
         self._base_line = self.fontMetrics().ascent()
 
@@ -308,10 +308,11 @@ class DisassemblyView(QAbstractScrollArea):
         return (data_x, data_y)
 
     def read_memory(self, ptr, length=0):
+        # TODO: remove read_memory
         self._lines.clear()
 
         if self._range is None:
-            self._range = Range(Range.SOURCE_TARGET, self.dwarf)
+            self._range = Range(Range.SOURCE_TARGET, self._app_window.dwarf)
 
         init = self._range.init_with_address(ptr, length)
         if init > 0:
@@ -677,7 +678,7 @@ class DisassemblyView(QAbstractScrollArea):
     def mousePressEvent(self, event):
         # context menu
         if event.button() == Qt.RightButton:
-            if self._running_disasm or self._range is None:
+            if self._running_disasm:
                 return
             self._on_context_menu(event)
 
@@ -689,7 +690,13 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu = QMenu()
 
-        context_menu.addAction('Jump to address', lambda: self._on_cm_jump_to_address())
+        context_menu.addAction('Jump to address', self._on_cm_jump_to_address)
+
+        if not self._lines:
+            # allow jumpto in empty panel
+            glbl_pt = self.mapToGlobal(event.pos())
+            context_menu.exec_(glbl_pt)
+            return
 
         # allow modeswitch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
@@ -742,6 +749,6 @@ class DisassemblyView(QAbstractScrollArea):
             self.disassemble(self._range)
 
     def _on_cm_jump_to_address(self):
-        ptr, input_ = InputDialog.input_pointer(self._app_window)
+        ptr, _ = InputDialog.input_pointer(self._app_window)
         if ptr > 0:
             self.read_memory(ptr)

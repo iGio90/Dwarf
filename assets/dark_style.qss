@@ -170,13 +170,18 @@ QPushButton {
     }
 
 /* Splitter */
+QSplitter::handle {
+    padding: 1px;
+}
 QSplitter::handle:horizontal {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #212121, stop:.5 #444, stop:1 #212121);
-    width: 5px;
+    width: 1px;
+    background-color: #212121;
+    image: url(assets/icons/divider_h.svg);
 }
 
 QSplitter::handle:vertical {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #212121, stop:.5 #444, stop:1 #212121);
+    height: 1px;
+    background-color: #212121;
 }
 
 /* Scrollbar */
@@ -487,3 +492,20 @@ QToolButton {
 
 
 QComboBox::drop-down { border: none; }
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url(assets/branch_closed.svg);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+        border-image: none;
+        image: url(assets/branch_open.svg);
+}
+
+QLabel, QLabel > * {
+    background: transparent;
+    background-color: none;
+}

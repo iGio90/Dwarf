@@ -21,8 +21,8 @@ import shutil
 import json
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl
-from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar,
+from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices, QKeySequence
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
                              QStatusBar, QDockWidget, QTabWidget, QMenu)
 
 from lib import utils
@@ -34,6 +34,7 @@ from ui.widgets.hex_edit import HighLight, HighlightExistsError
 from ui.panel_trace import TraceEvent
 
 from ui.dialogs.about_dlg import AboutDialog
+
 
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
@@ -48,10 +49,23 @@ class AppWindow(QMainWindow):
         self.session_manager.sessionStopped.connect(self.session_stopped)
         self.session_manager.sessionClosed.connect(self.session_closed)
 
+        self._tab_order = [
+            'memory', 'modules', 'ranges', 'jvm-inspector', 'jvm-debugger'
+        ]
+
         self.menu = self.menuBar()
         self._is_newer_dwarf = False
         self.view_menu = None
 
+        #dockwidgets
+        self.watchers_dwidget = None
+        self.hooks_dwiget = None
+        self.bookmarks_dwiget = None
+        self.registers_dock = None
+        self.console_dock = None
+        self.backtrace_dock = None
+        self.threads_dock = None
+        #panels
         self.asm_panel = None
         self.console_panel = None
         self.context_panel = None
@@ -116,8 +130,10 @@ class AppWindow(QMainWindow):
         self.setStatusBar(self.statusbar)
 
         self.main_tabs = QTabWidget(self)
-        self.main_tabs.setMovable(True)
+        self.main_tabs.setMovable(False)
+        self.main_tabs.setTabsClosable(True)
         self.main_tabs.setAutoFillBackground(True)
+        self.main_tabs.tabCloseRequested.connect(self._on_close_tab)
         self.setCentralWidget(self.main_tabs)
 
         if self.dwarf_args.package is None:
@@ -174,13 +190,28 @@ class AppWindow(QMainWindow):
                 self.menu.addMenu(session_menu)
 
         self.view_menu = QMenu('View', self)
+        subview_menu = QMenu('Subview', self.view_menu)
+        subview_menu.addAction(
+            'Search',
+            lambda: self.show_main_tab('search'),
+            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
+        subview_menu.addAction(
+            'Emulator',
+            lambda: self.show_main_tab('emulator'),
+            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
+        subview_menu.addAction(
+            'Disassembly',
+            lambda: self.show_main_tab('disassembly'),
+            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F5))
+        self.view_menu.addMenu(subview_menu)
         self.view_menu.addSeparator()
         self.menu.addMenu(self.view_menu)
 
         if self.dwarf_args.debug_script:
             debug_menu = QMenu('Debug', self)
             debug_menu.addAction('Reload core', self._menu_reload_core)
-            debug_menu.addAction('Debug dwarf js core', self._menu_debug_dwarf_js)
+            debug_menu.addAction('Debug dwarf js core',
+                                 self._menu_debug_dwarf_js)
             self.menu.addMenu(debug_menu)
 
         about_menu = QMenu('About', self)
@@ -199,6 +230,29 @@ class AppWindow(QMainWindow):
         if self.welcome_window:
             self.welcome_window._update_dwarf()
 
+    def _on_close_tab(self, index):
+        tab_text = self.main_tabs.tabText(index)
+        if tab_text:
+            if tab_text.lower() in self.session_manager.session.non_closable:
+                return
+            try:
+                self._ui_elems.remove(tab_text.lower())
+            except ValueError: # recheck ValueError: list.remove(x): x not in list
+                pass
+            self.main_tabs.removeTab(index)
+
+    def _handle_tab_change(self):
+        for index in range(self.main_tabs.count()):
+            tab_name = self.main_tabs.tabText(index).lower().replace(' ', '-')
+            if tab_name in self.session_manager.session.non_closable:
+                self.main_tabs.tabBar().setTabButton(index, QTabBar.RightSide,
+                                                     None)
+
+                if tab_name in self._tab_order:
+                    should_index = self._tab_order.index(tab_name)
+                    if index != should_index:
+                        self.main_tabs.tabBar().moveTab(index, should_index)
+
     def _on_dwarf_updated(self):
         self.onRestart.emit()
 
@@ -214,7 +268,8 @@ class AppWindow(QMainWindow):
         self.dwarf.load_script()
 
     def _menu_debug_dwarf_js(self):
-        you_know_what_to_do = json.loads(self.dwarf._script.exports.debugdwarfjs())
+        you_know_what_to_do = json.loads(
+            self.dwarf._script.exports.debugdwarfjs())
         return you_know_what_to_do
 
     def show_main_tab(self, name):
@@ -244,7 +299,7 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.java_trace_panel)
         elif name == 'jvm-inspector':
             index = self.main_tabs.indexOf(self.java_inspector_panel)
-        elif name == 'jvm-explorer':
+        elif name == 'jvm-debugger':
             index = self.main_tabs.indexOf(self.java_explorer_panel)
         elif name == 'smali':
             index = self.main_tabs.indexOf(self.smali_panel)
@@ -317,7 +372,8 @@ class AppWindow(QMainWindow):
             from ui.panel_bookmarks import BookmarksPanel
             self.bookmarks_dwiget = QDockWidget('Boomarks', self)
             self.bookmarks_panel = BookmarksPanel(self)
-            self.bookmarks_panel.onShowMemoryRequest.connect(self._on_watcher_clicked)
+            self.bookmarks_panel.onShowMemoryRequest.connect(
+                self._on_watcher_clicked)
             self.bookmarks_dwiget.setWidget(self.bookmarks_panel)
             self.bookmarks_dwiget.setObjectName('BookmarksPanel')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.bookmarks_dwiget)
@@ -338,7 +394,7 @@ class AppWindow(QMainWindow):
             self.memory_panel.dataChanged.connect(self._on_memory_modified)
             self.memory_panel.statusChanged.connect(self.set_status_text)
             self.main_tabs.addTab(self.memory_panel, 'Memory')
-        elif elem == 'jvm-explorer':
+        elif elem == 'jvm-debugger':
             from ui.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
             self.main_tabs.addTab(self.java_explorer_panel, 'JVM debugger')
@@ -418,8 +474,6 @@ class AppWindow(QMainWindow):
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
-            self.main_tabs.tabBar().moveTab(
-                self.main_tabs.indexOf(self.asm_panel), 1)
         elif elem == 'emulator':
             from ui.panel_emulator import EmulatorPanel
             self.emulator_panel = EmulatorPanel(self)
@@ -434,6 +488,9 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.smali_panel, 'Smali')
         else:
             print('no handler for elem: ' + elem)
+
+        # make tabs unclosable and sort
+        self._handle_tab_change()
 
         # TODO: remove add @2x
         for item in self.findChildren(QDockWidget):
@@ -615,7 +672,7 @@ class AppWindow(QMainWindow):
                 self.memory_panel = None
                 self.main_tabs.removeTab(0)
                 # self.main_tabs
-            elif elem == 'jvm-explorer':
+            elif elem == 'jvm-debugger':
                 self.java_explorer_panel.close()
                 self.java_explorer_panel = None
                 self.removeDockWidget(self.watchers_dwidget)
@@ -759,17 +816,9 @@ class AppWindow(QMainWindow):
             its connected in panel after creation
         """
         if self.ranges_panel is None:
-            self._create_ui_elem('ranges')
+            self.show_main_tab('ranges')
             # forward only now to panel it connects after creation
             self.ranges_panel.set_ranges(ranges)
-
-        # once we got ranges in place from our target we can create the search panel as well
-        if self.search_panel is None:
-            self._create_ui_elem('search')
-        self.search_panel.set_ranges(ranges)
-
-        if self.ranges_panel is not None:
-            self.show_main_tab('ranges')
 
     def _on_setmodules(self, modules):
         """ Dwarf wants to set Modules
@@ -803,11 +852,11 @@ class AppWindow(QMainWindow):
             is_java = context['is_java']
             if is_java:
                 if self.java_explorer_panel is None:
-                    self._create_ui_elem('jvm-explorer')
+                    self._create_ui_elem('jvm-debugger')
                 self.context_panel.set_context(context['ptr'], 1,
                                                context['context'])
                 self.java_explorer_panel.set_handle_arg(-1)
-                self.show_main_tab('jvm-explorer')
+                self.show_main_tab('jvm-debugger')
             else:
                 self.context_panel.set_context(context['ptr'], 0,
                                                context['context'])
@@ -816,28 +865,10 @@ class AppWindow(QMainWindow):
                     if not 'disassembly' in self._ui_elems:
                         from lib.range import Range
                         _range = Range(Range.SOURCE_TARGET, self.dwarf)
-                        _range.init_with_address(int(context['context']['pc']['value'], 16))
+                        _range.init_with_address(
+                            int(context['context']['pc']['value'], 16))
 
                         self._disassemble_range(_range)
-                    """should_disasm = self.asm_panel is not None and self.asm_panel._range is None
-
-                    if self.asm_panel._running_disasm:
-                        should_disasm = False
-
-                    if should_disasm:
-                        if self.asm_panel._range is not None:
-                            off = int(context['context']['pc']['value'], 16)
-                            if self.asm_panel._range.start_address == off:
-                                should_disasm = False
-                                # we set this to false as well to prevent disasm. be careful to use 'manual' later
-                                manual = False
-
-                    if should_disasm or manual:
-                        self.jump_to_address(
-                            int(context['context']['pc']['value'], 16),
-                            show_panel=False)
-                        self._disassemble_range(self.memory_panel.range)
-                        self.show_main_tab('disassembly')"""
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
@@ -879,7 +910,7 @@ class AppWindow(QMainWindow):
                         self.context_panel.clear()
 
                 # clear jvm explorer
-                if 'jvm-explorer' in self._ui_elems:
+                if 'jvm-debugger' in self._ui_elems:
                     if self.java_explorer_panel is not None:
                         self.java_explorer_panel.clear_panel()
 

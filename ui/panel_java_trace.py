@@ -284,7 +284,6 @@ class JavaTracePanel(QWidget):
 
         self.setup_splitter.addWidget(self.trace_list)
         self.setup_splitter.addWidget(self.class_list)
-        self.setup_splitter.setHandleWidth(1)
 
         layout.addWidget(self.setup_splitter)
         layout.addWidget(self.events_list)

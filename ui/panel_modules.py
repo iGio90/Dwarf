@@ -25,6 +25,7 @@ from lib import utils
 from ui.widgets.list_view import DwarfListView
 
 
+# TODO: add splitters
 class ModulesPanel(QWidget):
     """ ModulesPanel
 
@@ -319,6 +320,9 @@ class ModulesPanel(QWidget):
             if imports:
                 self.set_imports(imports)
                 self.imports_list.setVisible(True)
+                self.imports_list.resizeColumnToContents(0)
+                self.imports_list.resizeColumnToContents(1)
+                self.imports_list.resizeColumnToContents(2)
             else:
                 self.imports_list.setVisible(False)
 
@@ -329,6 +333,8 @@ class ModulesPanel(QWidget):
             if exports:
                 self.set_exports(exports)
                 self.exports_list.setVisible(True)
+                self.exports_list.resizeColumnToContents(0)
+                self.exports_list.resizeColumnToContents(1)
             else:
                 self.exports_list.setVisible(False)
 
@@ -339,6 +345,8 @@ class ModulesPanel(QWidget):
             if symbols:
                 self.set_symbols(symbols)
                 self.symbols_list.setVisible(True)
+                self.symbols_list.resizeColumnToContents(0)
+                self.symbols_list.resizeColumnToContents(1)
             else:
                 self.symbols_list.setVisible(False)
 
@@ -393,6 +401,14 @@ class ModulesPanel(QWidget):
                 'Copy Path', lambda: utils.copy_str_to_clipboard(
                     self.modules_model.item(index, 3).text()))
             context_menu.addSeparator()
+            file_path = self.modules_model.item(index, 3).text()
+            if file_path and file_path.endswith('.so'):  # TODO: add others
+                context_menu.addAction(
+                    'Show ELF Info', lambda: self._on_parse_elf(file_path))
+                context_menu.addSeparator()
+            #elif file_path and (file_path.endswith('.dll') or file_path.endswith('.exe')):
+            #   context_menu.addAction('Show PE Info', lambda: self._on_parse_pe(file_path))
+            #   context_menu.addSeparator()
 
         context_menu.addAction('Refresh', self.update_modules)
         context_menu.exec_(glbl_pt)
@@ -469,3 +485,11 @@ class ModulesPanel(QWidget):
         elif isinstance(ptr, int):
             str_fmt = '0x{0:x}'
             self.onAddHook.emit(str_fmt.format([ptr, name]))
+
+    def _on_parse_elf(self, elf_path):
+        from ui.dialogs.elf_info_dlg import ElfInfo
+        parsed_infos = self._app_window.dwarf.dwarf_api('parseElf', elf_path)
+        elf_dlg = ElfInfo(self._app_window, elf_path)
+        elf_dlg.onShowMemoryRequest.connect(self.onModuleFuncSelected)
+        elf_dlg.set_parsed_data(parsed_infos)
+        elf_dlg.show()

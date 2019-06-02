@@ -104,7 +104,6 @@ class FTracePanel(QWidget):
 
     def setup_options_view(self):
         self.options.setOrientation(Qt.Horizontal)
-        self.options.setHandleWidth(1)
 
         filter_functions_layout = QVBoxLayout()
         filter_functions_layout.addWidget(QLabel("Filter functions"))

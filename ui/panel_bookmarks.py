@@ -162,7 +162,7 @@ class BookmarksPanel(QWidget):
                 ptr = self._bookmarks_model.item(index, 0).text()
                 note = self._bookmarks_model.item(index, 1).text()
 
-            ptr, input_ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
+            ptr, _ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
         else:
             if not isinstance(ptr, int):
                 try:
@@ -170,34 +170,42 @@ class BookmarksPanel(QWidget):
                         ptr = int(ptr, 16)
                     else:
                         ptr = int(ptr)
-                except:
+                except ValueError:
                     ptr = 0
 
         if ptr > 0:
-            index = self._bookmarks_model.findItems(hex(ptr), Qt.MatchExactly)
+            ptr = hex(ptr)
+            if self._bookmarks_list.uppercase_hex:
+                ptr = ptr.upper().replace('0X', '0x')
+
+            index = self._bookmarks_model.findItems(ptr, Qt.MatchExactly)
             if len(index) > 0:
                 index = index[0].row()
                 note = self._bookmarks_model.item(index, 1).text()
             else:
                 index = -1
 
-            accept, note = InputDialog.input(hint='Insert notes for %s' % hex(ptr), input_content=note)
+            accept, note = InputDialog.input(hint='Insert notes for %s' % ptr, input_content=note)
             if accept:
                 if index < 0:
-                    self.insert_bookmark(hex(ptr), note)
+                    self.insert_bookmark(ptr, note)
                 else:
                     item = self._bookmarks_model.item(index, 0)
-                    item.setText(hex(ptr))
+                    item.setText(ptr)
                     item = self._bookmarks_model.item(index, 1)
                     item.setText(note)
 
-                self.bookmarks[hex(ptr)] = note
+                self.bookmarks[ptr] = note
 
     def insert_bookmark(self, ptr_as_hex, note):
+        if self._bookmarks_list.uppercase_hex:
+            ptr_as_hex = ptr_as_hex.upper().replace('0X', '0x')
+
         self._bookmarks_model.appendRow([
             QStandardItem(ptr_as_hex),
             QStandardItem(note)
         ])
+        self._bookmarks_list.resizeColumnToContents(0)
 
     # shortcuts/menu
     def _on_delete_bookmark(self, index):

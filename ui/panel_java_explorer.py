@@ -81,44 +81,72 @@ class JavaExplorerPanel(QWidget):
         self.app = app
 
         self.handle_history = []
+        self.setContentsMargins(0, 0, 0, 0)
 
-        box = QVBoxLayout()
-        box.setContentsMargins(0, 0, 0, 0)
+        # main wrapper
+        main_wrap = QVBoxLayout()
+        main_wrap.setContentsMargins(1, 1, 1, 1)
 
-        self.clazz = QLabel()
+        # create label
+        wrapping_wdgt = QWidget()
+        self.clazz = QLabel(wrapping_wdgt)
+        self.clazz.setContentsMargins(10, 10, 10, 10)
+
         font = QFont()
         font.setBold(True)
         font.setPixelSize(19)
-        self.clazz.setMaximumHeight(40)
         self.clazz.setFont(font)
-        self.clazz.setStyleSheet('margin: 5px 10px;')
-        box.addWidget(self.clazz)
+        self.clazz.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+        wrapping_wdgt.setMaximumHeight(self.clazz.height() + 20)
+        # add to mainwrapper
+        main_wrap.addWidget(wrapping_wdgt)
 
+        # create splitter
         splitter = QSplitter()
-        splitter.setHandleWidth(1)
+        splitter.setContentsMargins(0, 0, 0, 0)
 
+        # left side
         left_col = QWidget()
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel('methods'))
+        label = QLabel('methods'.upper())
+        font = label.font()
+        font.setBold(True)
+        label.setFont(font)
+        label.setStyleSheet('color: #ef5350;')
+        label.setContentsMargins(10, 0, 10, 2)
+        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+        left_layout.addWidget(label)
         self.methods = JavaMethodsWidget(self)
         left_layout.addWidget(self.methods)
         left_col.setLayout(left_layout)
         splitter.addWidget(left_col)
 
+        # middle
         central_col = QWidget()
         central_layout = QVBoxLayout()
         central_layout.setContentsMargins(0, 0, 0, 0)
-        central_layout.addWidget(QLabel('native fields'))
+        label = QLabel('native fields'.upper())
+        label.setFont(font)
+        label.setStyleSheet('color: #ef5350;')
+        label.setContentsMargins(10, 0, 10, 2)
+        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+        central_layout.addWidget(label)
         self.native_fields = JavaFieldsWidget(self, ['name', 'value'], True)
         central_layout.addWidget(self.native_fields)
         central_col.setLayout(central_layout)
         splitter.addWidget(central_col)
 
+        # right side
         right_col = QWidget()
         right_layout = QVBoxLayout()
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.addWidget(QLabel('fields'))
+        label = QLabel('fields'.upper())
+        label.setFont(font)
+        label.setContentsMargins(10, 0, 10, 2)
+        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+        label.setStyleSheet('color: #ef5350;')
+        right_layout.addWidget(label)
         self.fields = JavaFieldsWidget(self, ['name', 'class'], False)
         right_layout.addWidget(self.fields)
         right_col.setLayout(right_layout)
@@ -128,8 +156,9 @@ class JavaExplorerPanel(QWidget):
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 1)
 
-        box.addWidget(splitter)
-        self.setLayout(box)
+        main_wrap.addWidget(splitter)
+        main_wrap.setSpacing(0)
+        self.setLayout(main_wrap)
 
     def _set_data(self, data):
         if 'class' not in data:

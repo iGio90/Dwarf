@@ -79,6 +79,7 @@ class EmulatorPanel(QWidget):
         h_box.addWidget(self._access_list)
 
         layout.addLayout(h_box)
+        layout.setSpacing(0)
         self.setLayout(layout)
 
         self.console = self.app.console.get_emu_console()

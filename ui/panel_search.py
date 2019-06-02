@@ -75,6 +75,8 @@ class SearchPanel(QWidget):
         self._app_window.dwarf.onMemoryScanResult.connect(
             self._on_search_result)
 
+        self._app_window.dwarf.onSetRanges.connect(self._on_setranges)
+
         self._ranges_model = None
         self._result_model = None
 
@@ -130,6 +132,7 @@ class SearchPanel(QWidget):
         self.setLayout(main_wrap)
 
         self._setup_models()
+        self._app_window.dwarf.dwarf_api('updateRanges')
 
     # ************************************************************************
     # **************************** Functions *********************************
@@ -182,9 +185,12 @@ class SearchPanel(QWidget):
         self.results.setModel(self._result_model)
         self.results.doubleClicked.connect(self._on_dblclicked)
 
-    def set_ranges(self, ranges):
+    def _on_setranges(self, ranges):
         """ Fills Rangelist with Data
         """
+        if self._ranges_model.rowCount():
+            return
+
         self.ranges.header().setSectionResizeMode(0, QHeaderView.Fixed)
         if isinstance(ranges, list):
             self._ranges_model.removeRows(0, self._ranges_model.rowCount())

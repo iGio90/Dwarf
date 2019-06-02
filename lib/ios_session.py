@@ -45,6 +45,11 @@ class IosSession(Session):
                 'console', 'watchers', 'backtrace']
 
     @property
+    def non_closable(self):
+        return ['memory', 'ranges', 'modules']
+
+
+    @property
     def session_type(self):
         """ return session name to show in menus etc
         """

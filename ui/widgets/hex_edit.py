@@ -342,7 +342,7 @@ class HexEditor(QAbstractScrollArea):
 
         self._bytes_per_line = self._pref_bpl
 
-        self._char_width = self.fontMetrics().width("2")
+        self._char_width = self.fontMetrics().width("#")
         self._char_height = self.fontMetrics().height()
         self._base_line = self.fontMetrics().ascent()
 

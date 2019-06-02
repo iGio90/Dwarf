@@ -190,8 +190,15 @@ class RangesPanel(DwarfListView):
             if self._ranges_model.item(index, 5):
                 file_path = self._ranges_model.item(index, 5).text()
                 if file_path:
-                    context_menu.addAction('Copy Path', lambda: utils.copy_str_to_clipboard(file_path))
+                    context_menu.addAction(
+                        'Copy Path', lambda: utils.copy_str_to_clipboard(
+                            file_path))
                     context_menu.addSeparator()
+                    if file_path.endswith('.so'):  # TODO: add others
+                        context_menu.addAction(
+                            'Show ELF Info', lambda: self._on_parse_elf(
+                                file_path))
+                        context_menu.addSeparator()
 
         context_menu.addAction('Refresh', self.update_ranges)
         context_menu.exec_(glbl_pt)
@@ -228,5 +235,14 @@ class RangesPanel(DwarfListView):
                 str_fmt = '0x{0:x}'
             ptr = str_fmt.format(ptr)
 
-        if not self._app_window.dwarf.dwarf_api('isAddressWatched', int(ptr, 16)):
+        if not self._app_window.dwarf.dwarf_api('isAddressWatched', int(
+                ptr, 16)):
             self.onAddWatcher.emit(ptr)
+
+    def _on_parse_elf(self, elf_path):
+        from ui.dialogs.elf_info_dlg import ElfInfo
+        parsed_infos = self._app_window.dwarf.dwarf_api('parseElf', elf_path)
+        elf_dlg = ElfInfo(self._app_window, elf_path)
+        elf_dlg.onShowMemoryRequest.connect(self.onItemDoubleClicked)
+        elf_dlg.set_parsed_data(parsed_infos)
+        elf_dlg.show()

@@ -322,7 +322,7 @@ class WelcomeDialog(QDialog):
 
         recent = QLabel('Last saved Sessions')
         font = recent.font()
-        font.setPointSize(11)
+        font.setPixelSize(14)
         font.setBold(True)
         #font.setPointSize(10)
         recent.setFont(font)

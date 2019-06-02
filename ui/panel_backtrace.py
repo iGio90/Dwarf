@@ -33,7 +33,6 @@ class BacktracePanel(DwarfListView):
 
         self._model = QStandardItemModel(0, 2)
         self._model.setHeaderData(0, Qt.Horizontal, 'Address')
-        self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._model.setHeaderData(1, Qt.Horizontal, 'Symbol')
 
         self.setModel(self._model)

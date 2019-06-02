@@ -5,13 +5,20 @@ CTRL+N  - New Native Hook
 CTRL+J  - New Java Hook
 CTRL+O  - New Onload Hook
 
+In Lists: CTRL+F  - Search in List
+
 F4      - Thread Resume
 F5      - Process Resume
 F9      - Process Restart
 F10     - Detach
 
+Open Subviews
+----------------------------------
+CTRL+F2     - Show Emulator
+CTRL+F3     - Show MemorySearch
+CTRL+F5     - Show Disassembly
 
 Disassembly
---------------------------
+----------------------------------
 BackSpace   - Go Back
 CTRL+G      - Goto/Jumpto

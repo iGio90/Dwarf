@@ -34,7 +34,6 @@ class DataPanel(QSplitter):
         self.data = {}
 
         self.setOrientation(Qt.Horizontal)
-        self.setHandleWidth(1)
 
         self._key_list_model = QStandardItemModel(0, 1)
         self.key_lists = DwarfListView(parent=self.app)
