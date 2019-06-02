@@ -105,9 +105,6 @@ class JavaTraceView(QAbstractScrollArea):
         text_options.setAlignment(Qt.AlignLeft)
         text_options.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
 
-        painter.setPen(QColor('#39c'))
-        painter.drawText(self.viewport().width() - 150, 10, 'Items: ' + str(len(self.data)))
-
         for i, line in enumerate(self.data):
             if i == self.pos:
                 break
@@ -245,14 +242,15 @@ class JavaTracePanel(QWidget):
         self._stop_icon = QIcon(utils.resource_path('assets/icons/stop.png'))
 
         self._tool_bar = QToolBar()
-        self._tool_bar.setFixedHeight(16)
-        self._tool_bar.setContentsMargins(1, 1, 1, 1)
-        self._tool_bar.addAction(self._record_icon, 'Record', self.start_trace)
-        self._tool_bar.addAction(self._pause_icon, 'Pause', self.pause_trace)
-        self._tool_bar.addAction(self._stop_icon, 'Stop', self.stop_trace)
+        self._tool_bar.addAction('Start', self.start_trace)
+        self._tool_bar.addAction('Pause', self.pause_trace)
+        self._tool_bar.addAction('Stop', self.stop_trace)
         self._tool_bar.addSeparator()
         self._entries_lbl = QLabel('Entries: 0')
-        self._entries_lbl.setAlignment(Qt.AlignRight)
+        self._entries_lbl.setStyleSheet('color: #ef5350;')
+        self._entries_lbl.setContentsMargins(10, 0, 10, 2)
+        self._entries_lbl.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+        self._entries_lbl.setAlignment(Qt.AlignRight| Qt.AlignVCenter)
         self._entries_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._tool_bar.addWidget(self._entries_lbl)
 

@@ -733,6 +733,8 @@ class HexEditor(QAbstractScrollArea):
     def update_caret(self):
         """ caret blinking
         """
+        if self.data is None:
+            return
         self._blink = not self._blink
         self.viewport().update(self.caret_to_hexcol(self.caret))
 

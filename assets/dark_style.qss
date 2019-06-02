@@ -510,3 +510,14 @@ QLabel, QLabel > * {
     background: transparent;
     background-color: none;
 }
+
+
+QToolBar {
+    padding: 10px;
+}
+
+QToolButton {
+    margin-right: 5px;
+    padding: 2px;
+    border-radius: 2px;
+}

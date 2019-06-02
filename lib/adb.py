@@ -145,10 +145,10 @@ class Adb(QObject):
                     pass
 
                 # check if 'same' results otherwise its no valid result from su -c date
-                if res[len(res) - 1] == date_res[len(date_res) - 1]:
-                    if res[len(res) - 2] == date_res[len(date_res) - 2]:
-                        if res[len(res) - 4] == date_res[len(date_res) - 4]:
-                            if res[len(res) - 6] == date_res[len(date_res) - 6]:
+                if res[len(res) - 1] == date_res[len(date_res) - 1]: # year
+                    if res[len(res) - 2] == date_res[len(date_res) - 2]: # timezone
+                        if res[len(res) - 4] == date_res[len(date_res) - 4]: # day
+                            if res[len(res) - 6] == date_res[len(date_res) - 6]: # month
                                 self._is_su = True
 
                 # no su -> try if the user is already root
