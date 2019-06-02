@@ -405,7 +405,7 @@ class ModulesPanel(QWidget):
             if self._app_window.dwarf._platform == 'linux':
                 context_menu.addAction(
                     'Show ELF Info', lambda: self._on_parse_elf(file_path))
-            context_menu.addSeparator()
+                context_menu.addSeparator()
             #elif file_path and (file_path.endswith('.dll') or file_path.endswith('.exe')):
             #   context_menu.addAction('Show PE Info', lambda: self._on_parse_pe(file_path))
             #   context_menu.addSeparator()
