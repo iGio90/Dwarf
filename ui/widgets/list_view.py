@@ -226,18 +226,24 @@ class DwarfListView(QTreeView):
 
     def _on_cm_search(self):
         from ui.dialog_input import InputDialog
-        accept, input = InputDialog.input(
+        accept, input_ = InputDialog.input(
             self, hint='Search something in this list', placeholder='search...', input_content=self._current_search)
-        if accept:
-            self._current_search = input
-            have_result, search_results = self.contains_text(input, stop_at_match=False)
+
+        if accept and not input_:
+            # reset search
+            self._current_search = ''
+            for row in range(self.model().rowCount()):
+                self.setRowHidden(row, self.model().invisibleRootItem().index(), False)
+        elif accept and input_:
+            # search for input
+            self._current_search = input_
+
+            have_result, search_results = self.contains_text(input_, stop_at_match=False)
 
             if not have_result:
                 return
-            #rows = {}
-            #for x in search_results:
-            #    rows[str(x[0])] = x
 
+            # hide non matching
             for row in range(self.model().rowCount()):
                 item = self.model().item(row, 0)
                 hide = True
