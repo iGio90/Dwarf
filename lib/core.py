@@ -462,7 +462,7 @@ class Dwarf(QObject):
     def hook_java(self, input_=None, pending_args=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(
-                self._app_window, hint='insert java class or methos',
+                self._app_window, hint='insert java class or method',
                 placeholder='com.package.class or com.package.class.method')
             if not accept:
                 return
