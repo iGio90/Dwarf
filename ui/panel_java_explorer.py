@@ -13,215 +13,250 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QSplitter, QWidget, QVBoxLayout, QLabel, QHeaderView
 
 from ui.widgets.list_view import DwarfListView
 
 
-class JavaFieldsWidget(DwarfListView):
-    def __init__(self, explorer_panel, headers, is_native, *__args):
-        super(JavaFieldsWidget, self).__init__(parent=explorer_panel.app)
-        self.explorer_panel = explorer_panel
-        self.is_native_fields_table = is_native
+class JavaExplorerPanel(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
-        self.doubleClicked.connect(self.item_double_clicked)
+        self._app_window = parent
 
-        self._fields_model = QStandardItemModel(0, 2)
-        if headers and len(headers) == 2:
-            self._fields_model.setHeaderData(0, Qt.Horizontal, headers[0])
-            self._fields_model.setHeaderData(1, Qt.Horizontal, headers[1])
-        else:
-            self._fields_model.setHeaderData(0, Qt.Horizontal, 'Name')
-            self._fields_model.setHeaderData(1, Qt.Horizontal, 'Value')
-        self.setModel(self._fields_model)
+        self._handle_history = []
 
-    def add(self, name, value, handle=None, handle_class=None):
-        if handle is not None:
-            handle = {
-                'handle': handle,
-                'handle_class': handle_class
-            }
-            handle_item = QStandardItem(name)
-            handle_item.setData(handle, Qt.UserRole + 1)
-        else:
-            handle_item = QStandardItem(name)
-        self._fields_model.appendRow([handle_item, QStandardItem(str(value))])
+        self._setup_ui()
+        self._setup_models()
 
-    def item_double_clicked(self, item):
-        data = item.data(Qt.UserRole + 1)
-        if data is not None:
-            self.explorer_panel.set_handle(data)
-        return False
+    def _setup_ui(self):
+        self.setContentsMargins(0, 0, 0, 0)
 
+        top_font = QFont()
+        top_font.setBold(True)
+        top_font.setPixelSize(19)
 
-class JavaMethodsWidget(DwarfListView):
-    def __init__(self, explorer_panel, *__args):
-        super(JavaMethodsWidget, self).__init__(parent=explorer_panel.app)
-        self.explorer_panel = explorer_panel
+        # main wrapper
+        main_wrapper = QVBoxLayout()
+        main_wrapper.setContentsMargins(1, 1, 1, 1)
 
+        # wrapwdgt
+        wrap_wdgt = QWidget()
+        self._top_class_name = QLabel(wrap_wdgt)
+        self._top_class_name.setContentsMargins(10, 10, 10, 10)
+        self._top_class_name.setAttribute(Qt.WA_TranslucentBackground,
+                                          True)  # keep this
+        self._top_class_name.setFont(top_font)
+        self._top_class_name.setStyleSheet('color: #ef5350;')
+        wrap_wdgt.setMaximumHeight(self._top_class_name.height() + 20)
+
+        main_wrapper.addWidget(wrap_wdgt)
+
+        # left list
+        left_wrap_wdgt = QWidget()
+
+        left_v_box = QVBoxLayout(left_wrap_wdgt)
+        left_v_box.setContentsMargins(0, 0, 0, 0)
+
+        methods_label = QLabel('METHODS')
+        font = methods_label.font()
+        font.setBold(True)
+        methods_label.setFont(font)
+        methods_label.setContentsMargins(10, 0, 10, 2)
+        methods_label.setAttribute(Qt.WA_TranslucentBackground,
+                                   True)  # keep this
+        left_v_box.addWidget(methods_label)
+
+        self._methods_list = DwarfListView()
+        left_v_box.addWidget(self._methods_list)
+
+        # center list
+        center_wrap_wdgt = QWidget()
+
+        center_v_box = QVBoxLayout(center_wrap_wdgt)
+        center_v_box.setContentsMargins(0, 0, 0, 0)
+
+        methods_label = QLabel('NATIVE FIELDS')
+        methods_label.setFont(font)
+        methods_label.setContentsMargins(10, 0, 10, 2)
+        methods_label.setAttribute(Qt.WA_TranslucentBackground,
+                                   True)  # keep this
+        center_v_box.addWidget(methods_label)
+
+        self._native_fields_list = DwarfListView()
+        self._native_fields_list.doubleClicked.connect(
+            self._on_native_field_dblclicked)
+        center_v_box.addWidget(self._native_fields_list)
+
+        # right list
+        right_wrap_wdgt = QWidget()
+
+        right_v_box = QVBoxLayout(right_wrap_wdgt)
+        right_v_box.setContentsMargins(0, 0, 0, 0)
+
+        methods_label = QLabel('FIELDS')
+        methods_label.setFont(font)
+        methods_label.setContentsMargins(10, 0, 10, 2)
+        methods_label.setAttribute(Qt.WA_TranslucentBackground,
+                                   True)  # keep this
+        right_v_box.addWidget(methods_label)
+
+        self._fields_list = DwarfListView()
+        self._fields_list.doubleClicked.connect(self._on_field_dblclicked)
+        right_v_box.addWidget(self._fields_list)
+
+        # main splitter
+        main_splitter = QSplitter(Qt.Horizontal)
+        main_splitter.setContentsMargins(0, 0, 0, 0)
+        main_splitter.addWidget(left_wrap_wdgt)
+        main_splitter.addWidget(center_wrap_wdgt)
+        main_splitter.addWidget(right_wrap_wdgt)
+        main_splitter.setSizes([250, 100, 100])
+
+        main_wrapper.addWidget(main_splitter)
+        main_wrapper.setSpacing(0)
+        self.setLayout(main_wrapper)
+
+    def _setup_models(self):
+        # left list
         self._methods_model = QStandardItemModel(0, 3)
         self._methods_model.setHeaderData(0, Qt.Horizontal, 'Name')
         self._methods_model.setHeaderData(1, Qt.Horizontal, 'Return')
         self._methods_model.setHeaderData(2, Qt.Horizontal, 'Arguments')
-        self.setModel(self._methods_model)
+        self._methods_list.setModel(self._methods_model)
+        self._methods_list.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self._methods_list.header().setSectionResizeMode(
+            1, QHeaderView.ResizeToContents)
+        # center list
+        self._native_fields_model = QStandardItemModel(0, 2)
+        self._native_fields_model.setHeaderData(0, Qt.Horizontal, 'Name')
+        self._native_fields_model.setHeaderData(1, Qt.Horizontal, 'Value')
+        self._native_fields_list.setModel(self._native_fields_model)
+        self._native_fields_list.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        # right list
+        self._fields_model = QStandardItemModel(0, 2)
+        self._fields_model.setHeaderData(0, Qt.Horizontal, 'Name')
+        self._fields_model.setHeaderData(1, Qt.Horizontal, 'Class')
+        self._fields_list.setModel(self._fields_model)
+        self._fields_list.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
 
-    def add(self, name, ref):
-        overloads = ref['overloads']
-        for i in range(0, len(overloads)):
-            overload = overloads[i]
-            args = []
-            for arg in overload['args']:
-                args.append(arg['className'])
-            self._methods_model.appendRow([
-                QStandardItem(name),
-                QStandardItem(overload['return']['className']),
-                QStandardItem('(%s)' % ', '.join(args)),
-            ])
-
-
-class JavaExplorerPanel(QWidget):
-    def __init__(self, app, *__args):
-        super().__init__(*__args)
-        self.app = app
-
-        self.handle_history = []
-        self.setContentsMargins(0, 0, 0, 0)
-
-        # main wrapper
-        main_wrap = QVBoxLayout()
-        main_wrap.setContentsMargins(1, 1, 1, 1)
-
-        # create label
-        wrapping_wdgt = QWidget()
-        self.clazz = QLabel(wrapping_wdgt)
-        self.clazz.setContentsMargins(10, 10, 10, 10)
-
-        font = QFont()
-        font.setBold(True)
-        font.setPixelSize(19)
-        self.clazz.setFont(font)
-        self.clazz.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
-        wrapping_wdgt.setMaximumHeight(self.clazz.height() + 20)
-        # add to mainwrapper
-        main_wrap.addWidget(wrapping_wdgt)
-
-        # create splitter
-        splitter = QSplitter()
-        splitter.setContentsMargins(0, 0, 0, 0)
-
-        # left side
-        left_col = QWidget()
-        left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        label = QLabel('methods'.upper())
-        font = label.font()
-        font.setBold(True)
-        label.setFont(font)
-        label.setStyleSheet('color: #ef5350;')
-        label.setContentsMargins(10, 0, 10, 2)
-        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
-        left_layout.addWidget(label)
-        self.methods = JavaMethodsWidget(self)
-        left_layout.addWidget(self.methods)
-        left_col.setLayout(left_layout)
-        splitter.addWidget(left_col)
-
-        # middle
-        central_col = QWidget()
-        central_layout = QVBoxLayout()
-        central_layout.setContentsMargins(0, 0, 0, 0)
-        label = QLabel('native fields'.upper())
-        label.setFont(font)
-        label.setStyleSheet('color: #ef5350;')
-        label.setContentsMargins(10, 0, 10, 2)
-        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
-        central_layout.addWidget(label)
-        self.native_fields = JavaFieldsWidget(self, ['name', 'value'], True)
-        central_layout.addWidget(self.native_fields)
-        central_col.setLayout(central_layout)
-        splitter.addWidget(central_col)
-
-        # right side
-        right_col = QWidget()
-        right_layout = QVBoxLayout()
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        label = QLabel('fields'.upper())
-        label.setFont(font)
-        label.setContentsMargins(10, 0, 10, 2)
-        label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
-        label.setStyleSheet('color: #ef5350;')
-        right_layout.addWidget(label)
-        self.fields = JavaFieldsWidget(self, ['name', 'class'], False)
-        right_layout.addWidget(self.fields)
-        right_col.setLayout(right_layout)
-        splitter.addWidget(right_col)
-
-        splitter.setStretchFactor(0, 2)
-        splitter.setStretchFactor(1, 1)
-        splitter.setStretchFactor(2, 1)
-
-        main_wrap.addWidget(splitter)
-        main_wrap.setSpacing(0)
-        self.setLayout(main_wrap)
-
+    # ************************************************************************
+    # **************************** Functions *********************************
+    # ************************************************************************
     def _set_data(self, data):
         if 'class' not in data:
             return
 
-        self.clazz.setText(data['class'])
+        self._top_class_name.setText(data['class'])
         data = data['data']
 
-        self.methods.clear()
-        self.fields.clear()
-        self.native_fields.clear()
+        self._methods_list.clear()
+        self._native_fields_list.clear()
+        self._fields_list.clear()
+
         for key in data:
             ref = data[key]
             if ref['type'] == 'function':
                 if not key.startswith('$'):
-                    self.methods.add(key, ref)
+                    self._add_method(key, ref)
             elif ref['type'] == 'object':
                 if ref['handle'] is not None:
                     if not key.startswith('$'):
-                        self.fields.add(key, ref['value'], ref['handle'], ref['handle_class'])
+                        self._add_field(key, ref['value'], ref['handle'],
+                                        ref['handle_class'])
             else:
                 if not key.startswith('$'):
-                    self.native_fields.add(key, ref['value'])
-        self.methods.sortByColumn(0, 0)
-        self.native_fields.sortByColumn(0, 0)
-        self.fields.sortByColumn(0, 0)
+                    self._add_field(key, ref['value'], is_native=True)
 
-    def set_handle(self, handle):
-        data = self.app.dwarf.dwarf_api('javaExplorer', handle)
-        if data is None:
+        self._methods_list.sortByColumn(0, 0)
+        self._native_fields_list.sortByColumn(0, 0)
+        self._fields_list.sortByColumn(0, 0)
+
+    def _add_method(self, name, ref):
+        ref_overloads = ref['overloads']
+        for _, ref_overload in enumerate(ref_overloads):
+            args = []
+
+            if 'args' in ref_overload:
+                for arg in ref_overload['args']:
+                    if 'className' in arg:
+                        args.append(arg['className'])
+
+            self._methods_model.appendRow([
+                QStandardItem(name),
+                QStandardItem(ref_overload['return']['className']),
+                QStandardItem('(%s)' % ', '.join(args)),
+            ])
+
+    def _add_field(self, name, value, handle=None, handle_class=None, is_native=False):
+        if handle:
+            handle = {'handle': handle, 'handle_class': handle_class}
+            handle_item = QStandardItem(name)
+            handle_item.setData(handle, Qt.UserRole + 1)
+        else:
+            handle_item = QStandardItem(name)
+
+        if not is_native:
+            self._fields_model.appendRow(
+                [handle_item, QStandardItem(str(value))])
+        else:
+            self._native_fields_model.appendRow(
+                [handle_item, QStandardItem(str(value))])
+
+    def _set_handle(self, handle):
+        data = self._app_window.dwarf.dwarf_api('javaExplorer', handle)
+        if not data:
             return
-        self.handle_history.append({'handle': handle})
+        self._handle_history.append({'handle': handle})
         self._set_data(data)
 
-    def set_handle_arg(self, arg):
-        data = self.app.dwarf.dwarf_api('javaExplorer', arg)
-        if data is None:
+    def _set_handle_arg(self, arg):
+        data = self._app_window.dwarf.dwarf_api('javaExplorer', arg)
+        if not data:
             return
-        self.handle_history.append({'handle': arg})
+        self._handle_history.append({'handle': arg})
         self._set_data(data)
 
     def clear_panel(self):
-        self.clazz.setText('')
-        self.handle_history = []
-        self.methods.clear()
-        self.fields.clear()
-        self.native_fields.clear()
+        self._top_class_name.setText('')
+        self._handle_history = []
+        self._methods_list.clear()
+        self._native_fields_list.clear()
+        self._fields_list.clear()
 
-    def back(self):
-        if len(self.handle_history) < 2:
+    def _back(self):
+        if len(self._handle_history) < 2:
             return
-        self.handle_history.pop()
-        data = self.handle_history.pop(len(self.handle_history) - 1)['handle']
+        self._handle_history.pop()
+        data = self._handle_history.pop(len(self._handle_history) - 1)['handle']
         if isinstance(data, int):
-            self.set_handle_arg(data)
+            self._set_handle_arg(data)
         else:
-            self.set_handle(data)
+            self._set_handle(data)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            self.back()
-        super(JavaExplorerPanel, self).keyPressEvent(event)
+    # ************************************************************************
+    # **************************** Handlers **********************************
+    # ************************************************************************
+    def _on_field_dblclicked(self, _):
+        field_row = self._fields_list.selectionModel().currentIndex().row()
+        if field_row >= 0:
+            field_handle = self._fields_model.item(field_row, 0).data(Qt.UserRole + 1)
+            if field_handle:
+                self._set_handle(field_handle)
+
+    def _on_native_field_dblclicked(self, _):
+        field_row = self._native_fields_list.selectionModel().currentIndex().row()
+        if field_row:
+            field_handle = self._native_fields_model.item(
+                field_row, 0).data(Qt.UserRole + 1)
+            if field_handle:
+                self._set_handle(field_handle)
+
+    def keyPressEvent(self, event): # pylint: disable=invalid-name
+        if event.key() == Qt.Key_Backspace:
+            self._back()
+
+        return super().keyPressEvent(event)

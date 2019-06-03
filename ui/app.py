@@ -855,7 +855,7 @@ class AppWindow(QMainWindow):
                     self._create_ui_elem('jvm-debugger')
                 self.context_panel.set_context(context['ptr'], 1,
                                                context['context'])
-                self.java_explorer_panel.set_handle_arg(-1)
+                self.java_explorer_panel._set_handle_arg(-1)
                 self.show_main_tab('jvm-debugger')
             else:
                 self.context_panel.set_context(context['ptr'], 0,
