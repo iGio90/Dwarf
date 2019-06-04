@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5 import QtCore
+from PyQt5.Qt import Qt
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import *
 
@@ -42,7 +42,7 @@ class InputDialogTextEdit(JsCodeEditor):
             event.ignore()
             super(InputDialogTextEdit, self).keyPressEvent(event)
         else:
-            if event.key() == QtCore.Qt.Key_Return:
+            if event.key() == Qt.Key_Return:
                 self.dialog.accept()
             else:
                 super(InputDialogTextEdit, self).keyPressEvent(event)
@@ -54,7 +54,9 @@ class InputDialog(DwarfDialog):
 
         box = QVBoxLayout(self)
         if hint:
-            box.addWidget(QLabel(hint))
+            label = QLabel(hint)
+            label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+            box.addWidget(label)
 
         # wtf this hack to prevent segfault on adding hook with shortcuts from hooks panel.
         # use qtextedit instead of qlineedit won't cause issues
@@ -81,7 +83,7 @@ class InputDialog(DwarfDialog):
         self.setLayout(box)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Return:
+        if event.key() == Qt.Key_Return:
             self.accept()
         else:
             super(InputDialog, self).keyPressEvent(event)
