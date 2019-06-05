@@ -311,7 +311,7 @@ class WelcomeDialog(QDialog):
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         self._sub_title = QLabel(sub_title_text)
         font = QFont('OpenSans', 16, QFont.Bold)
-        font.setPixelSize(16)
+        font.setPixelSize(24)
         self._sub_title.setFont(font)
         font_metric = QFontMetrics(self._sub_title.font())
         self._char_width = font_metric.widthChar('#')
@@ -504,5 +504,7 @@ class WelcomeDialog(QDialog):
         """
         if len(self._sub_title.text()) * self._char_width > (
                 self._sub_title.width() - 155):
-            self._sub_title.setFont(QFont('OpenSans', 14, QFont.Bold))
+            font = QFont('OpenSans', 14, QFont.Bold)
+            font.setPixelSize(20)
+            self._sub_title.setFont(font)
         return super().showEvent(QShowEvent)
