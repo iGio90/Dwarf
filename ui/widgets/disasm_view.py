@@ -308,7 +308,7 @@ class DisassemblyView(QAbstractScrollArea):
             screen_x = 0
 
         top_gap = self._header_height + self._char_height + self._ver_spacing
-        data_x = int(ceil(screen_x / self._char_width))
+        data_x = int(ceil(screen_x / int(self._char_width)))
         data_y = int(
             ceil((screen_y - top_gap) /
                  (self._ver_spacing + self._char_height)))
@@ -421,7 +421,7 @@ class DisassemblyView(QAbstractScrollArea):
 
     def paint_line(self, painter, num_line, line):
         painter.setPen(self._ctrl_colors['foreground'])
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + self._char_width
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width)
         drawing_pos_y = num_line * (self._char_height + self._ver_spacing)
         drawing_pos_y += self._header_height
 
@@ -466,16 +466,16 @@ class DisassemblyView(QAbstractScrollArea):
                     height *= 0.5
                 painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('crimson'))
 
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + self._char_width + 1 + self._char_width
-        drawing_pos_x += (len(str_fmt.format(line.address)) * self._char_width)
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width) + 1 + int(self._char_width)
+        drawing_pos_x += (len(str_fmt.format(line.address)) * int(self._char_width))
 
         painter.setPen(QColor('#444'))
-        drawing_pos_x += self._char_width
+        drawing_pos_x += int(self._char_width)
         for byte in line.bytes:
             painter.drawText(drawing_pos_x, drawing_pos_y, '{0:02x}'.format(byte))
-            drawing_pos_x += self._char_width * 3
+            drawing_pos_x += int(self._char_width) * 3
 
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + ((self._app_window.dwarf.pointer_size * 2) * self._char_width) + (self._longest_bytes + 2) * (self._char_width * 3)
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + ((self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (int(self._char_width) * 3)
         painter.setPen(QColor('#39c'))
         painter.drawText(drawing_pos_x, drawing_pos_y, line.mnemonic)
         if line.is_jump:
@@ -483,7 +483,7 @@ class DisassemblyView(QAbstractScrollArea):
         else:
             painter.setPen(self._ctrl_colors['foreground'])
 
-        drawing_pos_x += (self._longest_mnemonic + 1) * self._char_width
+        drawing_pos_x += (self._longest_mnemonic + 1) * int(self._char_width)
         if line.operands and not line.is_jump:
             ops_str = line.op_str.split(', ', len(line.operands) - 1)
             a = 0
@@ -496,12 +496,12 @@ class DisassemblyView(QAbstractScrollArea):
                     painter.setPen(self._ctrl_colors['foreground'])
 
                 painter.drawText(drawing_pos_x, drawing_pos_y, ops_str[a])
-                drawing_pos_x += len(ops_str[a] * self._char_width)
+                drawing_pos_x += len(ops_str[a] * int(self._char_width))
 
                 if len(line.operands) > 1 and a < len(line.operands) - 1:
                     painter.setPen(self._ctrl_colors['foreground'])
                     painter.drawText(drawing_pos_x, drawing_pos_y, ', ')
-                    drawing_pos_x += 2 * self._char_width
+                    drawing_pos_x += 2 * int(self._char_width)
                 # if ops_str[a].startswith('0x') and not line.string:
                 #    line.string = '{0:d}'.format(int(ops_str[a], 16))
                 #drawing_pos_x += (len(ops_str[a]) + 1) * self._char_width
@@ -512,14 +512,14 @@ class DisassemblyView(QAbstractScrollArea):
                     painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str + ' ▲')
                 elif line.jump_address > line.address:
                     painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str + ' ▼')
-                drawing_pos_x += (len(line.op_str) + 3) * self._char_width
+                drawing_pos_x += (len(line.op_str) + 3) * int(self._char_width)
             else:
                 painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str)
-                drawing_pos_x += (len(line.op_str) + 1) * self._char_width
+                drawing_pos_x += (len(line.op_str) + 1) * int(self._char_width)
 
         if line.symbol_name:
             painter.drawText(drawing_pos_x, drawing_pos_y, '(' + line.symbol_name + ')')
-            drawing_pos_x += (len(line.symbol_name) + 1) * self._char_width
+            drawing_pos_x += (len(line.symbol_name) + 1) * int(self._char_width)
 
         if line.string and not line.is_jump:
             painter.setPen(QColor('#aaa'))
@@ -585,8 +585,8 @@ class DisassemblyView(QAbstractScrollArea):
 
         painter.setPen(self._line_pen)
         painter.setBrush(Qt.NoBrush)
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + self._char_width + self._char_width
-        drawing_pos_x += ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width) + int(self._char_width)
+        drawing_pos_x += ((self._app_window.dwarf.pointer_size * 2) * int(self._char_width))
 
         painter.fillRect(drawing_pos_x, 0, 1, self.viewport().height(), self._ctrl_colors['divider'])
 
@@ -647,7 +647,7 @@ class DisassemblyView(QAbstractScrollArea):
             if index + self.pos >= len(self._lines):
                 return
             left_side = self._breakpoint_linewidth + self._jumps_width
-            addr_width = ((self._app_window.dwarf.pointer_size * 2) * self._char_width)
+            addr_width = ((self._app_window.dwarf.pointer_size * 2) * int(self._char_width))
             if loc_x > left_side:
                 if loc_x < left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
