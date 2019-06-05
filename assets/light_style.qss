@@ -51,7 +51,8 @@ QListView, QTableView, QTreeView, QTabWidget::pane {
 }
 QListView::item,
 QTableView::item,
-QTreeView::item {
+QTreeView::item,
+QTreeView::branch {
     background-color: #fff;
     border: 0;
     padding: 3px 5px;
@@ -431,13 +432,13 @@ QDockWidget::title {
 QDockWidget::close-button {
     border:none;
     background: transparent;
-    icon-size: 14px;
+    icon-size: 9px;
     subcontrol-position: center right;
     subcontrol-origin: margin;
     position: absolute;
-    top: 0px; left: 0px; right: 3px; bottom: 0px;
-    width: 18px;
-    height: 18px;
+    top: 0px; left: 0px; right: 8px; bottom: 0px;
+    width: 10px;
+    height: 10px;
 }
 
 QDockWidget::close-button:hover {
@@ -453,13 +454,13 @@ QDockWidget::close-button:pressed {
 QDockWidget::float-button {
     border:none;
     background: transparent;
-    icon-size: 14px;
+    icon-size: 10px;
     subcontrol-position: center right;
     subcontrol-origin: margin;
     position: absolute;
-    top: 0px; left: 0px; right: 20px; bottom: 0px;
-    width: 18px;
-    height: 18px;
+    top: 0px; left: 0px; right: 25px; bottom: 0px;
+    width: 10px;
+    height: 10px;
 }
 
 QDockWidget::float-button:hover {

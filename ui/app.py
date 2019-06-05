@@ -501,7 +501,7 @@ class AppWindow(QMainWindow):
             if item:
                 if 'darwin' in sys.platform:
                     item.setStyleSheet(
-                        'QDockWidget::title { padding-left:-30px; } QDockWidget::close-button, QDockWidget::float-button  { width: 10px; height:10px }'
+                        'QDockWidget::title { padding-left:-30px; }'
                     )
 
     def set_theme(self, theme):
