@@ -66,6 +66,14 @@ in d2j_invoke.bat to
 'java -Xms512m -Xmx4096m -cp "%CP%" %*'
 ```
 
+### Settings
+You can change in .dwarf
+```
+"dwarf_ui_hexedit_bpl": 32 (default: 16) - Bytes per line in hexview
+"dwarf_ui_hexstyle": "upper", "lower" (default: "upper") - overall hexstyle 0xabcdef or 0xABCDEF (note: click on the "Offset (X)" in hexview to change)
+"dwarf_ui_font_size": 12 (default: 12) - (note: hexview/disasm use other font wait for settingsdlg or change lib/utils.py get_os_monospace_font())
+```
+
 ----
 
 ```
@@ -84,4 +92,3 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 ```
-
