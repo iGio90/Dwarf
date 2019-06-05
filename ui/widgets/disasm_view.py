@@ -91,7 +91,14 @@ class DisassemblyView(QAbstractScrollArea):
         self.font.setFixedPitch(True)
         self.setFont(self.font)
 
-        self._char_width = self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width('#')# self.fontMetrics().width("#")
+        if (self._char_width % 1) < .5:
+            self.font.setLetterSpacing(QFont.AbsoluteSpacing, -(self._char_width % 1.0))
+            self._char_width -= self._char_width % 1.0
+        else:
+            self.font.setLetterSpacing(QFont.AbsoluteSpacing, 1.0 - (self._char_width % 1.0))
+            self._char_width += 1.0 - (self._char_width % 1.0)
+
         self._char_height = self.fontMetrics().height()
         self._base_line = self.fontMetrics().ascent()
 

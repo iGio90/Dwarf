@@ -283,7 +283,7 @@ class HooksPanel(QWidget):
             what = utils.parse_ptr(ptr)
             if what == 0:
                 what = self._hooks_model.item(num_row, 2).data(Qt.UserRole + 2)
-            if self._app_window.dwarf.dwarf_api('setHookLogic', [what, input_]):
+            if self._app_window.dwarf.dwarf_api('setHookLogic', [what, input_.replace('\n','')]):
                 item.setData(input_, Qt.UserRole + 2)
                 if not item.text():
                     item.setText('ƒ')

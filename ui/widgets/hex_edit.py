@@ -22,8 +22,8 @@ import pyperclip
 # pylint: disable=unused-import #temp selection code is missing
 from PyQt5.QtCore import (Qt, QObject, pyqtSignal, QRect, QRectF, QTimer,
                           QPoint, pyqtProperty)
-from PyQt5.QtGui import (QPainter, QColor, QTextOption,
-                         QCursor, QPolygon)
+from PyQt5.QtGui import (QFont, QPainter, QColor, QTextOption,
+                         QCursor, QPolygon, QFontMetricsF)
 from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
 from ui.dialog_input import InputDialog
@@ -342,7 +342,14 @@ class HexEditor(QAbstractScrollArea):
 
         self._bytes_per_line = self._pref_bpl
 
-        self._char_width = self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width('#')# self.fontMetrics().width("#")
+        if (self._char_width % 1) < .5:
+            self.font.setLetterSpacing(QFont.AbsoluteSpacing, -(self._char_width % 1.0))
+            self._char_width -= self._char_width % 1.0
+        else:
+            self.font.setLetterSpacing(QFont.AbsoluteSpacing, 1.0 - (self._char_width % 1.0))
+            self._char_width += 1.0 - (self._char_width % 1.0)
+
         self._char_height = self.fontMetrics().height()
         self._base_line = self.fontMetrics().ascent()
 

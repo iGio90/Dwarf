@@ -110,7 +110,11 @@ class AppWindow(QMainWindow):
         if os.path.exists(utils.resource_path('assets/OpenSans-Regular.ttf')):
             QFontDatabase.addApplicationFont(
                 utils.resource_path('assets/OpenSans-Regular.ttf'))
-            _app.setFont(QFont("OpenSans", 9, QFont.Normal))
+            font = QFont("OpenSans", 9, QFont.Normal)
+            # TODO: add settingsdlg
+            font_size = self.prefs.get('dwarf_ui_font_size', 12)
+            font.setPixelSize(font_size)
+            _app.setFont(font)
             if os.path.exists(utils.resource_path('assets/OpenSans-Bold.ttf')):
                 QFontDatabase.addApplicationFont(
                     utils.resource_path('assets/OpenSans-Bold.ttf'))
