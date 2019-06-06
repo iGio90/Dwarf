@@ -58,7 +58,7 @@ class DisassembleThread(QThread):
                 break
 
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
-            if dwarf_instruction.is_jump:
+            if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
                 _debug_symbols.append(dwarf_instruction.jump_address)
             _instructions.append(dwarf_instruction)
 
