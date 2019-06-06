@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-
+import json
 from math import ceil
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -52,11 +52,14 @@ class DisassembleThread(QThread):
 
         _counter = 0
         _instructions = []
+        _debug_symbols = []
         for cap_inst in self._capstone.disasm(self._range.data[self._range.start_offset:], self._range.start_address):
             if _counter > self._max_instructions:
                 break
 
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
+            if dwarf_instruction.is_jump:
+                _debug_symbols.append(dwarf_instruction.jump_address)
             _instructions.append(dwarf_instruction)
 
             _counter += 1
@@ -66,6 +69,17 @@ class DisassembleThread(QThread):
                     break
                 if cap_inst.group(ARM64_GRP_RET):
                     break
+
+        if _debug_symbols:
+            symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
+            if symbols:
+                for symbol in symbols:
+                    for instruction in _instructions:
+                        if instruction.jump_address == int(symbol['address'], 16):
+                            instruction.symbol_name = symbol['name']
+                            instruction.symbol_module = '-'
+                            if 'moduleName' in symbol:
+                                instruction.symbol_module = symbol['moduleName']
 
         self.onFinished.emit(_instructions)
 

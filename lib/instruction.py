@@ -56,16 +56,11 @@ class Instruction(object):
         self.symbol_module = None
         self.string = None
 
-        if self.jump_address != 0:
+        """if self.jump_address != 0:
             sym = dwarf.dwarf_api('getSymbolByAddress', self.jump_address)
             if sym is not None:
                 self.symbol_name = sym['name']
                 self.symbol_module = '-'
                 if 'moduleName' in sym:
-                    self.symbol_module = sym['moduleName']
-        # elif len(instruction.operands) > 0:
-        #    for op in instruction.operands:
-        #        if op.type == CS_OP_IMM:
-        #            self.string = dwarf.dwarf_api('readString', op.value.imm)
-        #            # if len([x for x in self.string if not x.isprintable()]) > 0:
-        #            #self.string = None
+                    self.symbol_module = sym['moduleName']"""
+
