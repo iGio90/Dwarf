@@ -19,15 +19,97 @@ import sys
 import argparse
 import shutil
 
-import frida
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication
+def pip_install_package(package_name):
+    try:
+        from lib.utils import do_shell_command
+        res = do_shell_command('pip3 install ' + package_name + ' --upgrade --user')
+        if 'Successfully installed' in res:
+            return True
+        elif 'Requirement already up-to-date' in res:
+            return True
+        else:
+            return False
+    except Exception: # pylint: disable=broad-except
+        return False
 
-from lib import utils
-from lib.git import Git
-from lib.prefs import Prefs
-from ui.app import AppWindow
+def _check_package_version(package_name, min_version):
+    try:
+        if package_name == 'frida':
+            import frida
+            installed_version = frida.__version__
+        elif package_name == 'capstone':
+            import capstone
+            installed_version = capstone.__version__
+        elif package_name == 'requests':
+            import requests
+            installed_version = requests.__version__
+        elif package_name == 'pyqt5':
+            from PyQt5 import QtCore
+            installed_version = QtCore.PYQT_VERSION_STR
+        elif package_name == 'pyperclip':
+            import pyperclip
+            installed_version = pyperclip.__version__
+        elif package_name == 'unicorn':
+            import unicorn
+            installed_version = unicorn.__version__
+        if installed_version:
+            installed_version = installed_version.split('.')
+            _min_version = min_version.split('.')
+            needs_update = False
+            if (int(installed_version[0]) < int(_min_version[0])):
+                needs_update = True
+            elif (int(installed_version[0]) <= int(_min_version[0])) and (int(installed_version[1]) < int(_min_version[1])):
+                needs_update = True
+            elif (int(installed_version[1]) <= int(_min_version[1])) and (int(installed_version[2]) < int(_min_version[2])):
+                needs_update = True
+
+            if needs_update:
+                print('updating ' + package_name + '... to ' + min_version)
+                if pip_install_package(package_name + '>=' + min_version):
+                    print('*** success ***')
+    except Exception: # pylint: disable=broad-except
+        # install unicorn on windows
+        if package_name == 'unicorn':
+            if os.name == 'nt':
+                import ctypes
+                is64bit = False
+                if ctypes.sizeof(ctypes.c_void_p) * 8 == 64:
+                    is64bit = True
+
+                    # download installer
+                    req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win32.msi'
+                    if is64bit:
+                        req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win64.msi'
+
+                        import requests
+                        request = requests.get(req_url)
+                        print('Downloading prebuilt unicorn...')
+                        if request is not None and request.status_code == 200:
+
+                            # write installer
+                            with open('unicorn-installer.msi', 'wb') as f:
+                                for chunk in request.iter_content(chunk_size=1024):
+                                    if chunk:
+                                        f.write(chunk)
+
+                            if os.path.exists('unicorn-installer.msi'):
+                                from lib.utils import do_shell_command
+                                res = do_shell_command('msiexec /i unicorn-installer.msi /l*v unicorn-install.log /qn')
+                                if res == '':
+                                    print('unicorn installed see log ' + os.path.curdir + os.path.sep + 'unicorn-install.log')
+                                os.remove('unicorn-installer.msi')
+
+        print('installing ' + package_name + '...')
+        if pip_install_package(package_name + '>=' + min_version):
+            print('*** success ***')
+
+def _check_dependencies():
+    _check_package_version('frida', '12.5.1')
+    _check_package_version('requests', '2.18.4')
+    _check_package_version('pyqt5', '5.11.3')
+    _check_package_version('pyperclip', '1.7.0')
+    _check_package_version('capstone', '4.0.0') # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
+    _check_package_version('unicorn', '1.0.1')
 
 
 def process_args():
@@ -75,11 +157,25 @@ def _on_restart():
 def run_dwarf():
     """ fire it up
     """
+    #os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    os.environ["QT_SCALE_FACTOR"] = "1"
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
+    os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+
+    args = process_args()
+    #_check_dependencies() # not enabled atm
+
+    from lib import utils
+    from lib.git import Git
+    from lib.prefs import Prefs
+    from ui.app import AppWindow
+
     _prefs = Prefs()
     local_update_disabled = _prefs.get('disable_local_frida_update', False)
 
     if not local_update_disabled:
         _git = Git()
+        import frida
         remote_frida = _git.get_frida_version()
         local_frida = frida.__version__
 
@@ -87,8 +183,6 @@ def run_dwarf():
             print('Updating local frida version to ' + remote_frida[0]['tag_name'])
             try:
                 res = utils.do_shell_command('pip3 install frida --upgrade --user')
-                #from pip import _internal
-                #ret = _internal.main(["install", "--upgrade", "--user", "frida"])
                 if 'Successfully installed frida-' + remote_frida[0]['tag_name'] in res:
                     _on_restart()
                 elif 'Requirement already up-to-date' in res:
@@ -100,9 +194,6 @@ def run_dwarf():
             except Exception as e: # pylint: disable=broad-except, invalid-name
                 print('failed to update local frida')
                 print(str(e))
-
-    args = process_args()
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
     if os.name == 'nt':
         # windows stuff
@@ -136,6 +227,10 @@ def run_dwarf():
 
         except Exception:  # pylint: disable=broad-except
             pass
+
+    from PyQt5.QtCore import Qt
+    from PyQt5.QtGui import QIcon
+    from PyQt5.QtWidgets import QApplication
 
     qapp = QApplication([])
 
