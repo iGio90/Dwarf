@@ -265,7 +265,7 @@ class Adb(QObject):
                     pid = pid.join(pid.split())
                     self.su_cmd('kill -9 %s' % pid)
             else:
-                pid = self.su_cmd('pidof -s \'frida-server\'')
+                pid = self.su_cmd('pidof -s \'frida\'')
                 if pid:
                     pid = pid.join(pid.split())
                     self.su_cmd('kill -9 %s' % pid)
