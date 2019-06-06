@@ -32,6 +32,7 @@ class Adb(QObject):
         self._is_su = False
 
         self._have_pidof = False
+        self._have_killall = False
         self._device_serial = None
 
         self._android_version = ''
@@ -196,8 +197,10 @@ class Adb(QObject):
                 utils.do_shell_command('adb forward tcp:27042 tcp:27042')
 
             # check if we have pidof
-            res = self._do_adb_command('shell pidof')
+            res = self._do_adb_command('shell pidof -s pidof')
             self._have_pidof = 'not found' not in res
+            res = self._do_adb_command('shell killall')
+            self._have_killall = 'not found' not in res
 
             # check for root
             if self._is_root:
@@ -249,10 +252,20 @@ class Adb(QObject):
         if not self.available():
             return False
 
-        if self._have_pidof:
-            procs = ['frida', 'frida-server']  #, 'frida-helper-32', 'frida-helper-64']
-            for proc in procs:
-                pid = self.su_cmd('pidof %s' % proc)
+        if self._have_killall:
+            if self._alternate_frida_name:
+                self.su_cmd('killall -9 \'frida-server\'')
+            else:
+                self.su_cmd('killall -9 \'frida\'')
+
+        elif self._have_pidof:
+            if self._alternate_frida_name:
+                pid = self.su_cmd('pidof -s \'frida-server\'')
+                if pid:
+                    pid = pid.join(pid.split())
+                    self.su_cmd('kill -9 %s' % pid)
+            else:
+                pid = self.su_cmd('pidof -s \'frida-server\'')
                 if pid:
                     pid = pid.join(pid.split())
                     self.su_cmd('kill -9 %s' % pid)
@@ -294,7 +307,7 @@ class Adb(QObject):
         if result is not None and 'Unable to start server' in result:
             return False
 
-        return True
+        return self.is_frida_running()
 
     def is_adb_available(self):
         """ Returns true if adb cmd is available
@@ -308,20 +321,21 @@ class Adb(QObject):
             return False
 
         found = False
+        pid = None
 
         if self._have_pidof:
             if self._alternate_frida_name:
-                pid = self.su_cmd('pidof frida-server')
+                pid = self.su_cmd('pidof -s \'frida-server\'')
             else:
-                pid = self.su_cmd('pidof frida')
+                pid = self.su_cmd('pidof -s \'frida\'')
             if pid:
                 try:
                     pid = int(pid.join(pid.split())) # remove \r\n
+                    if pid:
+                        return True
                 except ValueError:
                     # no integer
-                    return False
-
-                return True
+                    found = False
 
         if self._oreo_plus:
             result = self.su_cmd('ps -A | grep \'frida\'')
@@ -332,9 +346,6 @@ class Adb(QObject):
             result = result.split()
 
             if 'frida' in result:
-                # in frida 12.5.0 there was no frida-helper on my tested devs TODO: Recheck
-                # for res in result:
-                # if 'frida-helper' in res:
                 found = True
 
         return found
