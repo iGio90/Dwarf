@@ -38,6 +38,7 @@ class Adb(QObject):
         self._sdk_version = ''
         self._oreo_plus = False
         self._alternate_su_binary = False
+        self._alternate_frida_name = False
 
         self._check_min_required()
 
@@ -249,7 +250,7 @@ class Adb(QObject):
             return False
 
         if self._have_pidof:
-            procs = ['frida']  #, 'frida-helper-32', 'frida-helper-64']
+            procs = ['frida', 'frida-server']  #, 'frida-helper-32', 'frida-helper-64']
             for proc in procs:
                 pid = self.su_cmd('pidof %s' % proc)
                 if pid:
@@ -278,11 +279,17 @@ class Adb(QObject):
             self.kill_frida()
 
         if not daemonize:
-            result = self.su_cmd('frida &')
+            if self._alternate_frida_name:
+                result = self.su_cmd('frida-server &')
+            else:
+                result = self.su_cmd('frida &')
         else:
             # with nox it starts frida fine but keeps running
             # without return so it needs some timeout here
-            result = self.su_cmd('frida -D', timeout=5)
+            if self._alternate_frida_name:
+                result = self.su_cmd('frida-server -D')
+            else:
+                result = self.su_cmd('frida -D', timeout=5)
 
         if result is not None and 'Unable to start server' in result:
             return False
@@ -303,7 +310,10 @@ class Adb(QObject):
         found = False
 
         if self._have_pidof:
-            pid = self.su_cmd('pidof frida')
+            if self._alternate_frida_name:
+                pid = self.su_cmd('pidof frida-server')
+            else:
+                pid = self.su_cmd('pidof frida')
             if pid:
                 try:
                     pid = int(pid.join(pid.split())) # remove \r\n
@@ -338,7 +348,13 @@ class Adb(QObject):
         result = self.su_cmd('frida --version')
         if result is not None:
             if result and 'frida: not found' in result:
-                result = None
+                result = self.su_cmd('frida-server --version')
+                if result and 'frida-server: not found' in result:
+                    result = None
+                elif result:
+                    check_ver = result.split('.')
+                    if len(check_ver) == 3:
+                        self._alternate_frida_name = True
 
             if result == '':
                 result = None

@@ -121,7 +121,7 @@ class FridaUpdateThread(QThread):
                 self.onStatusUpdate.emit('Extracting latest frida')
                 try:
                     with lzma.open('frida.xz') as frida_archive:
-                        with open('frida', 'wb') as frida_binary:
+                        with open('frida-server', 'wb') as frida_binary:
                             frida_binary.write(frida_archive.read())
 
                     # remove downloaded archive
@@ -142,7 +142,7 @@ class FridaUpdateThread(QThread):
             if self._adb.mount_system():
                 self.onStatusUpdate.emit('Pushing to device')
                 # push file to device
-                self._adb.push('frida', '/sdcard/')
+                self._adb.push('frida-server', '/sdcard/')
                 self.onStatusUpdate.emit('Setting up and starting frida')
                 # kill frida
                 self._adb.kill_frida()
@@ -154,13 +154,17 @@ class FridaUpdateThread(QThread):
                     _device_path = _device_path.replace('x', '')
 
                 # copy file note: mv give sometimes a invalid id error
-                self._adb.su_cmd('cp /sdcard/frida ' + _device_path + '/frida')
+                self._adb.su_cmd('cp /sdcard/frida-server ' + _device_path + '/frida-server')
                 # remove file
-                self._adb.su_cmd('rm /sdcard/frida')
+                self._adb.su_cmd('rm ' + _device_path + '/frida') # remove old named file
+                self._adb.su_cmd('rm /sdcard/frida-server')
+
                 # just to make sure
-                self._adb.su_cmd('chown root:root ' + _device_path + '/frida')
+                self._adb.su_cmd('chown root:root ' + _device_path + '/frida-server')
                 # make it executable
-                self._adb.su_cmd('chmod 06755 ' + _device_path + '/frida')
+                self._adb.su_cmd('chmod 06755 ' + _device_path + '/frida-server')
+
+                self._adb.get_frida_version()
                 # start it
                 if not self._adb.start_frida():
                     self.onError.emit('Failed to start fridaserver on Device')
@@ -168,8 +172,8 @@ class FridaUpdateThread(QThread):
                 print('failed to mount /system on device')
 
             # delete extracted file
-            if os.path.exists('frida'):
-                os.remove('frida')
+            if os.path.exists('frida-server'):
+                os.remove('frida-server')
         else:
             self.onError.emit('Failed to download latest frida! Error: %d' % request.status_code)
             return
