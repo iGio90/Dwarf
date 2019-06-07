@@ -65,4 +65,7 @@ class ConsolePanel(QTabWidget):
         self.parent.dwarf.dwarf_api('evaluate', text)
 
     def py_callback(self, text):
-        self.py_console.log(eval(text))
+        try:
+            self.py_console.log(exec(text))
+        except Exception as e:
+            self.py_console.log(str(e))
