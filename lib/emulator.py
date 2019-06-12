@@ -276,6 +276,7 @@ class Emulator(QThread):
                     except:
                         # hook code not implemented in callbacks
                         pass
+                break
 
             # time.sleep(self.instructions_delay)
         except:
