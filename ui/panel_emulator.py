@@ -40,6 +40,7 @@ class EmulatorPanel(QWidget):
         self._toolbar = QToolBar()
         self._toolbar.addAction('Start', self.handle_start)
         self._toolbar.addAction('Step', self.handle_step)
+        self._toolbar.addAction('Step next function', self.handle_step_next_function)
         self._toolbar.addAction('Stop', self.handle_stop)
         self._toolbar.addAction('Clear', self.handle_clear)
         self._toolbar.addAction('Options', self.handle_options)
@@ -128,6 +129,17 @@ class EmulatorPanel(QWidget):
             #    return
 
     def handle_step(self):
+        self.app.console_panel.show_console_tab('emulator')
+
+        try:
+            self.emulator.emulate()
+        except self.emulator.EmulatorAlreadyRunningError:
+            self.console.log('Emulator already running')
+        except self.emulator.EmulatorSetupFailedError as error:
+            self.until_address = 0
+            self.console.log(error)
+
+    def handle_step_next_function(self):
         self.app.console_panel.show_console_tab('emulator')
 
         try:

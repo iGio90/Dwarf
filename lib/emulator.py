@@ -263,8 +263,9 @@ class Emulator(QThread):
 
         try:
             try:
-                data = bytes(uc.mem_read(address | 1, size))
-                assembly = self.cs.disasm(data, address | 1)
+                thumb = 1 if self._current_cpu_mode == CS_MODE_THUMB else 0
+                data = bytes(uc.mem_read(address | thumb, size))
+                assembly = self.cs.disasm(data, address | thumb)
             except:
                 self.log_to_ui('Error: Emulator stopped - disasm')
                 self.stop()
