@@ -107,8 +107,7 @@ class Emulator(QThread):
         self.thumb = self.context.pc.thumb
         if self.thumb:
             self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
-            self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM,
-                                    unicorn.UC_MODE_THUMB)
+            self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM, unicorn.UC_MODE_THUMB)
             self._current_cpu_mode = unicorn.UC_MODE_THUMB
             # Enable VFP instr
             self.uc.mem_map(0x1000, 1024)
@@ -214,6 +213,7 @@ class Emulator(QThread):
         self.stepping = [False, False]
         self._current_instruction = 0
         self._current_cpu_mode = 0
+        self.context = None
         return 0
 
     def hook_code(self, uc, address, size, user_data):
@@ -254,14 +254,6 @@ class Emulator(QThread):
         # set the current context
         self.current_context.set_context(uc)
 
-        # if it's arm we query the cpu mode to detect switches between arm and thumb and set capstone mode if needed
-        if self.cs.arch == CS_ARCH_ARM:
-            mode = self.uc.query(unicorn.UC_QUERY_MODE)
-            if self._current_cpu_mode != mode:
-                self._current_cpu_mode = mode
-                self.cs.mode = self._current_cpu_mode
-                self.thumb = self._current_cpu_mode == unicorn.UC_MODE_THUMB
-
         if self.stepping[0]:
             if self.stepping[1]:
                 uc.emu_stop()
@@ -271,8 +263,8 @@ class Emulator(QThread):
 
         try:
             try:
-                data = bytes(uc.mem_read(address, size))
-                assembly = self.cs.disasm(data, address)
+                data = bytes(uc.mem_read(address | 1, size))
+                assembly = self.cs.disasm(data, address | 1)
             except:
                 self.log_to_ui('Error: Emulator stopped - disasm')
                 self.stop()
@@ -428,9 +420,6 @@ class Emulator(QThread):
         else:
             self.log_to_ui('[*] stepping %s' % hex(address))
         self.onEmulatorStart.emit()
-
-        if self.thumb:
-            address = address | 1
 
         # invalidate prefs before start
         self.invalida_configurations()
