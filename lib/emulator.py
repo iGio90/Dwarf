@@ -236,7 +236,6 @@ class Emulator(QThread):
             return
 
         self._current_instruction = address
-        self._next_instruction = address + size
 
         # check if pc/eip is end_ptr
         pc = 0  # address should be pc too ???
@@ -276,6 +275,7 @@ class Emulator(QThread):
                     except:
                         # hook code not implemented in callbacks
                         pass
+                self._next_instruction = address + i.size
                 break
 
             # time.sleep(self.instructions_delay)
