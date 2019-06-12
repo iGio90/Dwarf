@@ -23,7 +23,6 @@ from PyQt5.QtWidgets import *
 from capstone import *
 from capstone.x86_const import *
 from capstone.arm64_const import *
-from capstone.arm_const import *
 from lib.range import Range
 from lib import utils
 from lib.instruction import Instruction
@@ -31,7 +30,9 @@ from lib.instruction import Instruction
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
 
+
 # TODO: dont diasm again when jump in same range
+
 
 class DisassembleThread(QThread):
     onFinished = pyqtSignal(list, name='onFinished')
@@ -42,6 +43,7 @@ class DisassembleThread(QThread):
         self._dwarf = None
         self._range = None
         self._capstone = None
+        self._capstone_mode = None
         self._max_instructions = 256
         self._stop_on_ret = True
 
@@ -53,7 +55,11 @@ class DisassembleThread(QThread):
         _counter = 0
         _instructions = []
         _debug_symbols = []
-        for cap_inst in self._capstone.disasm(self._range.data[self._range.start_offset:], self._range.start_address):
+
+        thumb = 1 if self._capstone_mode == CS_MODE_THUMB else 0
+
+        for cap_inst in self._capstone.disasm(
+                self._range.data[self._range.start_offset | thumb:], self._range.start_address | thumb):
             if _counter > self._max_instructions:
                 break
 
@@ -85,7 +91,6 @@ class DisassembleThread(QThread):
 
 
 class DisassemblyView(QAbstractScrollArea):
-
     onShowMemoryRequest = pyqtSignal(str, int, name='onShowMemoryRequest')
 
     def __init__(self, parent=None):
@@ -105,7 +110,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.font.setFixedPitch(True)
         self.setFont(self.font)
 
-        self._char_width = QFontMetricsF(self.font).width('#')# self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width('#')  # self.fontMetrics().width("#")
         if (self._char_width % 1) < .5:
             self.font.setLetterSpacing(QFont.AbsoluteSpacing, -(self._char_width % 1.0))
             self._char_width -= self._char_width % 1.0
@@ -274,6 +279,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.disasm_thread._dwarf = self._app_window.dwarf
         self.disasm_thread._stop_on_ret = stop_on_ret
         self.disasm_thread._capstone = capstone
+        self.disasm_thread._capstone_mode = self.capstone_mode
         self.disasm_thread.onFinished.connect(self._on_disasm_finished)
         self.disasm_thread.start(QThread.HighestPriority)
 
@@ -284,7 +290,6 @@ class DisassemblyView(QAbstractScrollArea):
 
         self._running_disasm = False
         self._app_window.hide_progress()
-
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -348,7 +353,8 @@ class DisassemblyView(QAbstractScrollArea):
         # TODO: order by distance
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump]
-        jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.address in jump_list]
+        jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if
+                        x.address in jump_list]
 
         drawing_pos_x = self._jumps_width - 10
 
@@ -376,7 +382,8 @@ class DisassemblyView(QAbstractScrollArea):
                         entry2 = [x for x in self._lines if x.address == line.jump_address]
                         if entry1 and entry2:
                             skip = True
-                            pos2 = (self._lines.index(entry1[0]) - self._lines.index(entry2[0])) * (self._char_height + self._ver_spacing)
+                            pos2 = (self._lines.index(entry1[0]) - self._lines.index(entry2[0])) * (
+                                        self._char_height + self._ver_spacing)
                             painter.drawLine(drawing_pos_x, drawing_pos_y - pos2, drawing_pos_x, drawing_pos_y)
                             painter.drawLine(drawing_pos_x, drawing_pos_y - pos2, 100, drawing_pos_y - pos2)
                             arrow = QPolygon()
@@ -470,7 +477,8 @@ class DisassemblyView(QAbstractScrollArea):
                 if is_hooked:
                     y_pos -= (self._char_height * 0.5)
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('greenyellow'))
+                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height,
+                                 QColor('greenyellow'))
             if is_hooked:
                 height = self._char_height
                 y_pos = drawing_pos_y
@@ -478,9 +486,11 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos += (self._char_height * 0.5)
                 if is_watched:
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height, QColor('crimson'))
+                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height,
+                                 QColor('crimson'))
 
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width) + 1 + int(self._char_width)
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width) + 1 + int(
+            self._char_width)
         drawing_pos_x += (len(str_fmt.format(line.address)) * int(self._char_width))
 
         painter.setPen(QColor('#444'))
@@ -489,7 +499,9 @@ class DisassemblyView(QAbstractScrollArea):
             painter.drawText(drawing_pos_x, drawing_pos_y, '{0:02x}'.format(byte))
             drawing_pos_x += int(self._char_width) * 3
 
-        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + ((self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (int(self._char_width) * 3)
+        drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + (
+                    (self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (
+                                    int(self._char_width) * 3)
         painter.setPen(QColor('#39c'))
         painter.drawText(drawing_pos_x, drawing_pos_y, line.mnemonic)
         if line.is_jump:
@@ -518,7 +530,7 @@ class DisassemblyView(QAbstractScrollArea):
                     drawing_pos_x += 2 * int(self._char_width)
                 # if ops_str[a].startswith('0x') and not line.string:
                 #    line.string = '{0:d}'.format(int(ops_str[a], 16))
-                #drawing_pos_x += (len(ops_str[a]) + 1) * self._char_width
+                # drawing_pos_x += (len(ops_str[a]) + 1) * self._char_width
                 a += 1
         else:
             if self._follow_jumps and line.is_jump:
@@ -584,7 +596,8 @@ class DisassemblyView(QAbstractScrollArea):
             painter.setPen(self._ctrl_colors['foreground'])
             drawing_pos_x = self._jumps_width
             self.paint_jumps(painter)
-            painter.fillRect(drawing_pos_x, 0, self._breakpoint_linewidth, self.viewport().height(), self._ctrl_colors['jump_arrows'])
+            painter.fillRect(drawing_pos_x, 0, self._breakpoint_linewidth, self.viewport().height(),
+                             self._ctrl_colors['jump_arrows'])
 
         for i, line in enumerate(self._lines[self.pos:self.pos + self.visible_lines()]):
             if i > self.visible_lines():
@@ -594,7 +607,8 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos = self._header_height + (i * (self._char_height + self._ver_spacing))
                 y_pos += (self._char_height * 0.5)
                 y_pos -= self._ver_spacing
-                painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(), self._char_height + 2, self._ctrl_colors['line'])
+                painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(),
+                                 self._char_height + 2, self._ctrl_colors['line'])
             self.paint_line(painter, i + 1, line)
 
         painter.setPen(self._line_pen)
@@ -624,13 +638,17 @@ class DisassemblyView(QAbstractScrollArea):
             # dispatch those to super
             super().keyPressEvent(event)
 
-    def on_arch_changed(self):
+    def on_arch_changed(self, context=None):
         if self._app_window.dwarf.arch == 'arm64':
             self.capstone_arch = CS_ARCH_ARM64
             self.capstone_mode = CS_MODE_LITTLE_ENDIAN
         elif self._app_window.dwarf.arch == 'arm':
             self.capstone_arch = CS_ARCH_ARM
+            context = self._app_window.dwarf.current_context()
             self.capstone_mode = CS_MODE_ARM
+            if context is not None and context.is_native_context:
+                if context.pc.thumb:
+                    self.capstone_mode = CS_MODE_THUMB
         elif self._app_window.dwarf.arch == 'ia32':
             self.capstone_arch = CS_ARCH_X86
             self.capstone_mode = CS_MODE_32
@@ -665,7 +683,8 @@ class DisassemblyView(QAbstractScrollArea):
             if loc_x > left_side:
                 if loc_x < left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
-                        self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
+                        self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address),
+                                                      len(self._lines[index + self.pos].bytes))
                 if loc_x > left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
                         if self._follow_jumps and self._lines[index + self.pos].is_jump:
@@ -690,7 +709,7 @@ class DisassemblyView(QAbstractScrollArea):
                         if self._lines[index + self.pos].is_jump:
                             self.current_jump = self._lines[index + self.pos].address
 
-            #self.viewport().update(0, 0, self._breakpoint_linewidth + self._jumps_width, self.viewport().height())
+            # self.viewport().update(0, 0, self._breakpoint_linewidth + self._jumps_width, self.viewport().height())
             y_pos = self._header_height + (index * (self._char_height + self._ver_spacing))
             y_pos += (self._char_height * 0.5)
             y_pos -= self._ver_spacing
@@ -722,7 +741,7 @@ class DisassemblyView(QAbstractScrollArea):
         # allow modeswitch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
             mode_str = 'ARM'
-            if self.capstone_mode == CS_MODE_ARM:
+            if self.capstone_mode == CS_MODE_THUMB:
                 mode_str = 'THUMB'
 
             entry_str = '&Switch to {0} Mode'.format(mode_str)
@@ -733,7 +752,8 @@ class DisassemblyView(QAbstractScrollArea):
         if 0 <= index < self.visible_lines():
             if index + self.pos < len(self._lines):
                 if isinstance(self._lines[index + self.pos], Instruction):
-                    context_menu.addAction('Copy address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
+                    context_menu.addAction('Copy address',
+                                           lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
 
                     context_menu.addSeparator()
 
@@ -744,12 +764,15 @@ class DisassemblyView(QAbstractScrollArea):
                     addr_str = str_fmt.format(self._lines[index + self.pos].address)
                     if self._app_window.watchers_panel:
                         if self._app_window.dwarf.is_address_watched(self._lines[index + self.pos].address):
-                            context_menu.addAction('Remove watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
+                            context_menu.addAction('Remove watcher',
+                                                   lambda: self._app_window.watchers_panel.remove_address(addr_str))
                         else:
-                            context_menu.addAction('Watch address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
+                            context_menu.addAction('Watch address',
+                                                   lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
                     if self._app_window.hooks_panel:
                         if self._lines[index + self.pos].address in self._app_window.dwarf.hooks:
-                            context_menu.addAction('Remove hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
+                            context_menu.addAction('Remove hook',
+                                                   lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
                         else:
                             context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
 

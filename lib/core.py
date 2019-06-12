@@ -246,7 +246,13 @@ class Dwarf(QObject):
 
     @property
     def resumed(self):
-        return self._resumed == True
+        return self._resumed is True
+
+    def current_context(self):
+        key = str(self.context_tid)
+        if key in self.contexts:
+            return self.contexts[key]
+        return None
 
     # ************************************************************************
     # **************************** Functions *********************************
