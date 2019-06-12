@@ -39,6 +39,11 @@ from lib.prefs import Prefs
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
 
 
+STEP_MODE_NONE = 0
+STEP_MODE_SINGLE = 1
+STEP_MODE_FUNCTION = 2
+
+
 class Emulator(QThread):
     class EmulatorSetupFailedError(Exception):
         """ Setup Failed
@@ -78,11 +83,12 @@ class Emulator(QThread):
         self.context = None
         self.thumb = False
         self.end_ptr = 0
+        self.step_mode = STEP_MODE_NONE
 
         self.current_context = None
 
-        self.stepping = [False, False]
         self._current_instruction = 0
+        self._next_instruction = 0
         self._current_cpu_mode = 0
 
         self._request_stop = False
@@ -101,7 +107,7 @@ class Emulator(QThread):
         # inside the same instruction for N times.
         # notice that when an unmapped memory region is required during emulation, this will be taken from target proc
         # and mapped into unicorn context. Later, the code fallback to execute the same instruction once again
-        self._anti_loop = [0, 0]
+        self._anti_loop = 0
 
     def setup_arm(self):
         self.thumb = self.context.pc.thumb
@@ -210,8 +216,8 @@ class Emulator(QThread):
         if self.isRunning():
             raise self.EmulatorAlreadyRunningError()
 
-        self.stepping = [False, False]
         self._current_instruction = 0
+        self._next_instruction = 0
         self._current_cpu_mode = 0
         self.context = None
         return 0
@@ -224,18 +230,13 @@ class Emulator(QThread):
             return
 
         # anti loop checks
-        if self._anti_loop[0] == address:
-            if self._anti_loop[1] == 3:
-                self.log_to_ui('Error: Emulator stopped - looping')
-                self.stop()
-                return
-            else:
-                self._anti_loop[1] += 1
-        else:
-            self._anti_loop[0] = address
-            self._anti_loop[1] = 0
+        if self._anti_loop == address:
+            self.log_to_ui('Error: Emulator stopped - looping')
+            self.stop()
+            return
 
         self._current_instruction = address
+        self._next_instruction = address + size
 
         # check if pc/eip is end_ptr
         pc = 0  # address should be pc too ???
@@ -254,18 +255,10 @@ class Emulator(QThread):
         # set the current context
         self.current_context.set_context(uc)
 
-        if self.stepping[0]:
-            if self.stepping[1]:
-                uc.emu_stop()
-                return
-            else:
-                self.stepping[1] = True
-
         try:
             try:
-                thumb = 1 if self._current_cpu_mode == CS_MODE_THUMB else 0
-                data = bytes(uc.mem_read(address | thumb, size))
-                assembly = self.cs.disasm(data, address | thumb)
+                data = bytes(uc.mem_read(address, size))
+                assembly = self.cs.disasm(data, address)
             except:
                 self.log_to_ui('Error: Emulator stopped - disasm')
                 self.stop()
@@ -288,6 +281,13 @@ class Emulator(QThread):
         except:
             self.log_to_ui('Error: Emulator stopped')
             self.stop()
+            return
+
+        if self.step_mode != STEP_MODE_NONE:
+            if self.step_mode == STEP_MODE_SINGLE:
+                uc.emu_stop()
+            elif self.step_mode == STEP_MODE_FUNCTION:
+                print('lol')
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
         v = value
@@ -373,7 +373,7 @@ class Emulator(QThread):
             return
         return super().start(priority=priority)
 
-    def emulate(self, until=0):
+    def emulate(self, until=0, step_mode=STEP_MODE_NONE):
         if self.isRunning():
             raise self.EmulatorAlreadyRunningError()
 
@@ -403,7 +403,7 @@ class Emulator(QThread):
                 raise self.EmulatorSetupFailedError('Setup failed: %s' % err_msg)
 
         # calculate the start address
-        address = self._current_instruction
+        address = self._next_instruction
         if address == 0:
             if self.uc._arch == unicorn.UC_ARCH_ARM:
                 address = self.uc.reg_read(unicorn.arm_const.UC_ARM_REG_PC)
@@ -419,7 +419,10 @@ class Emulator(QThread):
         if until > 0:
             self.log_to_ui('[*] start emulation from %s to %s' % (hex(address), hex(self.end_ptr)))
         else:
-            self.log_to_ui('[*] stepping %s' % hex(address))
+            if step_mode == STEP_MODE_NONE or self.step_mode == STEP_MODE_SINGLE:
+                self.log_to_ui('[*] stepping %s' % hex(address))
+            else:
+                self.log_to_ui('[*] stepping to next function call')
         self.onEmulatorStart.emit()
 
         # invalidate prefs before start
@@ -443,11 +446,10 @@ class Emulator(QThread):
             self.callbacks = None
 
         # until is 0 (i.e we are stepping)
-        if until == 0:
-            self.stepping = [True, False]
-            # self.end_ptr = address + (self.dwarf.pointer_size * 2) stupid
+        if until == 0 and step_mode == STEP_MODE_NONE:
+            self.step_mode = STEP_MODE_SINGLE
         else:
-            self.stepping = [False, False]
+            self.step_mode = step_mode
 
         self._start_address = address
         self._end_address = self.end_ptr

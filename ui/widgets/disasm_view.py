@@ -43,7 +43,6 @@ class DisassembleThread(QThread):
         self._dwarf = None
         self._range = None
         self._capstone = None
-        self._capstone_mode = None
         self._max_instructions = 256
         self._stop_on_ret = True
 
@@ -56,10 +55,8 @@ class DisassembleThread(QThread):
         _instructions = []
         _debug_symbols = []
 
-        thumb = 1 if self._capstone_mode == CS_MODE_THUMB else 0
-
         for cap_inst in self._capstone.disasm(
-                self._range.data[self._range.start_offset | thumb:], self._range.start_address | thumb):
+                self._range.data[self._range.start_offset:], self._range.start_address):
             if _counter > self._max_instructions:
                 break
 
@@ -279,7 +276,6 @@ class DisassemblyView(QAbstractScrollArea):
         self.disasm_thread._dwarf = self._app_window.dwarf
         self.disasm_thread._stop_on_ret = stop_on_ret
         self.disasm_thread._capstone = capstone
-        self.disasm_thread._capstone_mode = self.capstone_mode
         self.disasm_thread.onFinished.connect(self._on_disasm_finished)
         self.disasm_thread.start(QThread.HighestPriority)
 

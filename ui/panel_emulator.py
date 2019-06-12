@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar)
 
+from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION
 from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.panel_memory import MemoryPanel
@@ -132,7 +133,7 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            self.emulator.emulate()
+            self.emulator.emulate(step_mode=STEP_MODE_SINGLE)
         except self.emulator.EmulatorAlreadyRunningError:
             self.console.log('Emulator already running')
         except self.emulator.EmulatorSetupFailedError as error:
@@ -143,7 +144,7 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            self.emulator.emulate()
+            self.emulator.emulate(step_mode=STEP_MODE_FUNCTION)
         except self.emulator.EmulatorAlreadyRunningError:
             self.console.log('Emulator already running')
         except self.emulator.EmulatorSetupFailedError as error:

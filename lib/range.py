@@ -84,6 +84,8 @@ class Range(object):
                 hook = hooks[key]
                 if utils.parse_ptr(hook['nativePtr']) != 1 and hook['bytes']:
                     hook_address = utils.parse_ptr(hook['nativePtr'])
+                    if hook_address % 2 != 0:
+                        hook_address -= 1
                     if self.base < hook_address < self.tail:
                         offset = hook_address - self.base
                         # patch bytes
