@@ -112,9 +112,9 @@ class Emulator(QThread):
     def setup_arm(self):
         self.thumb = self.context.pc.thumb
         if self.thumb:
+            self._current_cpu_mode = unicorn.UC_MODE_THUMB
             self.cs = Cs(CS_ARCH_ARM, CS_MODE_THUMB)
             self.uc = unicorn.Uc(unicorn.UC_ARCH_ARM, unicorn.UC_MODE_THUMB)
-            self._current_cpu_mode = unicorn.UC_MODE_THUMB
             # Enable VFP instr
             self.uc.mem_map(0x1000, 1024)
             self.uc.mem_write(0x1000, binascii.unhexlify(VFP))
@@ -248,12 +248,16 @@ class Emulator(QThread):
         elif self.dwarf.arch == 'x64':
             pc = uc.reg_read(unicorn.x86_const.UC_X86_REG_RIP)
 
+        if self.thumb:
+            pc = pc | 1
+
         if pc == self._end_address:
             self._request_stop = True
 
         # set the current context
         self.current_context.set_context(uc)
 
+        instruction = None
         try:
             try:
                 data = bytes(uc.mem_read(address, size))
@@ -286,9 +290,10 @@ class Emulator(QThread):
 
         if self.step_mode != STEP_MODE_NONE:
             if self.step_mode == STEP_MODE_SINGLE:
-                uc.emu_stop()
+                self.stop()
             elif self.step_mode == STEP_MODE_FUNCTION:
-                print('lol')
+                if instruction is not None and instruction.is_jump:
+                    self.stop()
 
     def hook_mem_access(self, uc, access, address, size, value, user_data):
         v = value
@@ -453,6 +458,8 @@ class Emulator(QThread):
             self.step_mode = step_mode
 
         self._start_address = address
+        if self.thumb:
+            self._start_address = self._start_address | 1
         self._end_address = self.end_ptr
         self._setup_done = True
         self.start()
