@@ -279,7 +279,10 @@ class Emulator(QThread):
                     except:
                         # hook code not implemented in callbacks
                         pass
-                self._next_instruction = address + i.size
+                if not instruction.is_jump:
+                    self._next_instruction = address + i.size
+                else:
+                    self._next_instruction = instruction.jump_address
                 break
 
             # time.sleep(self.instructions_delay)

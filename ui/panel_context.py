@@ -158,52 +158,9 @@ class ContextPanel(QTabWidget):
             self.show_context_tab('Native')
 
         context_ptr = ptr
+        sorted_regs = self.get_sort_order()
 
-        reg_order = []
-        if self._app_window.dwarf.arch == 'arm':  # arm
-            reg_order = [
-                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9',
-                'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'sp', 'lr', 'sb',
-                'sl', 'fp', 'ip', 'pc'
-            ]
-        elif self._app_window.dwarf.arch == 'arm64':
-            reg_order = [
-                'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9',
-                'x10', 'x11', 'x12', 'x13', 'x14', 'x15', 'x16', 'x17', 'x18',
-                'x19', 'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27',
-                'x28', 'x29', 'x30', 'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6',
-                'w7', 'w8', 'w9', 'w10', 'w11', 'w12', 'w13', 'w14', 'w15',
-                'w16', 'w17', 'w18', 'w19', 'w20', 'w21', 'w22', 'w23', 'w24',
-                'w25', 'w26', 'w27', 'w28', 'w29', 'w30', 'sp', 'lr', 'fp',
-                'wsp', 'wzr', 'xzr', 'nzcv', 'ip0', 'ip1', 's0', 's1', 's2',
-                's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12',
-                's13', 's14', 's15', 's16', 's17', 's18', 's19', 's20', 's21',
-                's22', 's23', 's24', 's25', 's26', 's27', 's28', 's29', 's30',
-                's31', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8',
-                'd9', 'd10', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17',
-                'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24', 'd25', 'd26',
-                'd27', 'd28', 'd29', 'd30', 'd31', 'q0', 'q1', 'q2', 'q3',
-                'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13',
-                'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20', 'q21', 'q22',
-                'q23', 'q24', 'q25', 'q26', 'q27', 'q28', 'q29', 'q30', 'q31',
-                'sp', 'lr', 'sb', 'sl', 'fp', 'ip', 'pc'
-            ]
-        elif self._app_window.dwarf.arch == 'ia32':
-            reg_order = [
-                'eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'esp', 'r8d', 'r9d',
-                'r10d', 'r11d', 'r12d', 'r13d', 'r14d', 'r15d', 'ebp', 'eip',
-                'sp', 'pc'
-            ]
-        elif self._app_window.dwarf.arch == 'x64':  # x64
-            reg_order = [
-                'rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi', 'rbp', 'rsp', 'r8',
-                'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'esp', 'ebp',
-                'rip', 'eip', 'sp', 'pc'
-            ]
-
-        sorted_regs = {b: i for i, b in enumerate(reg_order)}
-
-        for register in sorted(context, key=lambda x: sorted_regs[x]):
+        for register in sorted(context, key=lambda x: sorted_regs[x] if x in sorted_regs else len(sorted_regs)):
             reg_name = QStandardItem()
             reg_name.setTextAlignment(Qt.AlignCenter)
             if context[register]['isValidPointer']:
@@ -265,8 +222,10 @@ class ContextPanel(QTabWidget):
         context_ptr = ptr
         context = context.__dict__
 
-        for register in context:
-            if register.startswith('_'):
+        sorted_regs = self.get_sort_order()
+
+        for register in sorted(context, key=lambda x: sorted_regs[x] if x in sorted_regs else len(sorted_regs)):
+            if register.startswith('_') or register not in sorted_regs:
                 continue
 
             reg_name = QStandardItem()
@@ -318,6 +277,52 @@ class ContextPanel(QTabWidget):
             self._javactx_model.appendRow([_arg, _class, _value])
             self._javactx_list.resizeColumnToContents(0)
             self._javactx_list.resizeColumnToContents(1)
+
+    def get_sort_order(self):
+        reg_order = []
+        if self._app_window.dwarf.arch == 'arm':  # arm
+            reg_order = [
+                'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9',
+                'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'sp', 'lr', 'sb',
+                'sl', 'fp', 'ip', 'pc', 'cspr'
+            ]
+        elif self._app_window.dwarf.arch == 'arm64':
+            reg_order = [
+                'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9',
+                'x10', 'x11', 'x12', 'x13', 'x14', 'x15', 'x16', 'x17', 'x18',
+                'x19', 'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27',
+                'x28', 'x29', 'x30', 'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6',
+                'w7', 'w8', 'w9', 'w10', 'w11', 'w12', 'w13', 'w14', 'w15',
+                'w16', 'w17', 'w18', 'w19', 'w20', 'w21', 'w22', 'w23', 'w24',
+                'w25', 'w26', 'w27', 'w28', 'w29', 'w30', 'sp', 'lr', 'fp',
+                'wsp', 'wzr', 'xzr', 'nzcv', 'ip0', 'ip1', 's0', 's1', 's2',
+                's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 's12',
+                's13', 's14', 's15', 's16', 's17', 's18', 's19', 's20', 's21',
+                's22', 's23', 's24', 's25', 's26', 's27', 's28', 's29', 's30',
+                's31', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8',
+                'd9', 'd10', 'd11', 'd12', 'd13', 'd14', 'd15', 'd16', 'd17',
+                'd18', 'd19', 'd20', 'd21', 'd22', 'd23', 'd24', 'd25', 'd26',
+                'd27', 'd28', 'd29', 'd30', 'd31', 'q0', 'q1', 'q2', 'q3',
+                'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13',
+                'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20', 'q21', 'q22',
+                'q23', 'q24', 'q25', 'q26', 'q27', 'q28', 'q29', 'q30', 'q31',
+                'sp', 'lr', 'sb', 'sl', 'fp', 'ip', 'pc', 'cspr'
+            ]
+        elif self._app_window.dwarf.arch == 'ia32':
+            reg_order = [
+                'eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'esp', 'r8d', 'r9d',
+                'r10d', 'r11d', 'r12d', 'r13d', 'r14d', 'r15d', 'ebp', 'eip',
+                'sp', 'pc'
+            ]
+        elif self._app_window.dwarf.arch == 'x64':  # x64
+            reg_order = [
+                'rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi', 'rbp', 'rsp', 'r8',
+                'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'esp', 'ebp',
+                'rip', 'eip', 'sp', 'pc'
+            ]
+
+        sorted_regs = {b: i for i, b in enumerate(reg_order)}
+        return sorted_regs
 
     # ************************************************************************
     # **************************** Handlers **********************************

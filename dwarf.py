@@ -19,6 +19,7 @@ import sys
 import argparse
 import shutil
 
+
 def pip_install_package(package_name):
     try:
         from lib.utils import do_shell_command
@@ -29,11 +30,13 @@ def pip_install_package(package_name):
             return True
         else:
             return False
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         return False
+
 
 def _check_package_version(package_name, min_version):
     try:
+        installed_version = None
         if package_name == 'frida':
             import frida
             installed_version = frida.__version__
@@ -52,22 +55,24 @@ def _check_package_version(package_name, min_version):
         elif package_name == 'unicorn':
             import unicorn
             installed_version = unicorn.__version__
-        if installed_version:
+        if installed_version is not None:
             installed_version = installed_version.split('.')
             _min_version = min_version.split('.')
             needs_update = False
             if (int(installed_version[0]) < int(_min_version[0])):
                 needs_update = True
-            elif (int(installed_version[0]) <= int(_min_version[0])) and (int(installed_version[1]) < int(_min_version[1])):
+            elif (int(installed_version[0]) <= int(_min_version[0])) and (
+                    int(installed_version[1]) < int(_min_version[1])):
                 needs_update = True
-            elif (int(installed_version[1]) <= int(_min_version[1])) and (int(installed_version[2]) < int(_min_version[2])):
+            elif (int(installed_version[1]) <= int(_min_version[1])) and (
+                    int(installed_version[2]) < int(_min_version[2])):
                 needs_update = True
 
             if needs_update:
                 print('updating ' + package_name + '... to ' + min_version)
                 if pip_install_package(package_name + '>=' + min_version):
                     print('*** success ***')
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         # install unicorn on windows
         if package_name == 'unicorn':
             if os.name == 'nt':
@@ -80,7 +85,6 @@ def _check_package_version(package_name, min_version):
                     req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win32.msi'
                     if is64bit:
                         req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win64.msi'
-
                         import requests
                         request = requests.get(req_url)
                         print('Downloading prebuilt unicorn...')
@@ -96,19 +100,21 @@ def _check_package_version(package_name, min_version):
                                 from lib.utils import do_shell_command
                                 res = do_shell_command('msiexec /i unicorn-installer.msi /l*v unicorn-install.log /qn')
                                 if res == '':
-                                    print('unicorn installed see log ' + os.path.curdir + os.path.sep + 'unicorn-install.log')
+                                    print(
+                                        'unicorn installed see log ' + os.path.curdir + os.path.sep + 'unicorn-install.log')
                                 os.remove('unicorn-installer.msi')
 
         print('installing ' + package_name + '...')
         if pip_install_package(package_name + '>=' + min_version):
             print('*** success ***')
 
+
 def _check_dependencies():
     _check_package_version('frida', '12.5.1')
     _check_package_version('requests', '2.18.4')
     _check_package_version('pyqt5', '5.11.3')
     _check_package_version('pyperclip', '1.7.0')
-    _check_package_version('capstone', '4.0.0') # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
+    _check_package_version('capstone', '4.0.0')  # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
     _check_package_version('unicorn', '1.0.1')
 
 
@@ -132,7 +138,7 @@ def process_args():
 
     parser.add_argument(
         "-p", "--package", help="Attach Dwarf to given packagename")
-    #parser.add_argument("-a", "--attach", type=int, help="Attach Dwarf to given pid")
+    # parser.add_argument("-a", "--attach", type=int, help="Attach Dwarf to given pid")
 
     parser.add_argument("-dev", "--device", help="DeviceSerial adb devices")
 
@@ -157,13 +163,13 @@ def _on_restart():
 def run_dwarf():
     """ fire it up
     """
-    #os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-    os.environ["QT_SCALE_FACTOR"] = "1"
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
-    os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    # os.environ["QT_SCALE_FACTOR"] = "1"
+    # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
+    # os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
 
     args = process_args()
-    #_check_dependencies() # not enabled atm
+    # _check_dependencies() # not enabled atm
 
     from lib import utils
     from lib.git import Git
@@ -191,7 +197,7 @@ def run_dwarf():
                 else:
                     print('failed to update local frida')
                     print(res)
-            except Exception as e: # pylint: disable=broad-except, invalid-name
+            except Exception as e:  # pylint: disable=broad-except, invalid-name
                 print('failed to update local frida')
                 print(str(e))
 
