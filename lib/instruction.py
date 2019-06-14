@@ -17,11 +17,17 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
 from capstone import *
 from capstone.arm_const import *
-from capstone.x86_const import *
 
 
 class Instruction(object):
-    def __init__(self, dwarf, instruction):
+    def __init__(self, dwarf, instruction, context=None):
+        """
+        construct a dwarf instruction
+
+        :param dwarf: the dwarf instance
+        :param instruction: the capstone instruction object
+        :param context: an optional context instance to retrieve jump address
+        """
         self.id = instruction.id
         self.address = instruction.address
 
@@ -47,9 +53,12 @@ class Instruction(object):
         if len(instruction.operands) > 0 and self.is_jump:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
-                    # if len(instruction.operands) == 1:
-                    #    self.is_jump = True
                     self.jump_address = op.value.imm
+                elif op.type == CS_OP_REG:
+                    if context is not None:
+                        op_str = instruction.op_str
+                        if op_str in context.__dict__:
+                            self.jump_address = context.__dict__[op_str]
 
         # resolve jump symbol and string
         self.symbol_name = None

@@ -270,7 +270,7 @@ class Emulator(QThread):
             for i in assembly:
                 # QApplication.processEvents()
 
-                instruction = Instruction(self.dwarf, i)
+                instruction = Instruction(self.dwarf, i, context=self.current_context)
 
                 self.onEmulatorHook.emit(instruction)
                 if self.callbacks is not None:
