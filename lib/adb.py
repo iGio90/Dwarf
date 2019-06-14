@@ -147,10 +147,12 @@ class Adb(QObject):
                     pass
 
                 # check if 'same' results otherwise its no valid result from su -c date
-                if res[len(res) - 1] == date_res[len(date_res) - 1]: # year
-                    if res[len(res) - 2] == date_res[len(date_res) - 2]: # timezone
-                        if res[len(res) - 4] == date_res[len(date_res) - 4]: # day
-                            if res[len(res) - 6] == date_res[len(date_res) - 6]: # month
+                res_len = len(res)
+                date_len = len(date_res)
+                if res[res_len - 1] == date_res[date_len - 1]: # year
+                    if res[res_len - 2] == date_res[date_len - 2]: # timezone
+                        if res[res_len - 4] == date_res[date_len - 4]: # day
+                            if res[res_len - 5] == date_res[date_len - 5]: # month
                                 self._is_su = True
 
                 # no su -> try if the user is already root
@@ -514,10 +516,10 @@ class Adb(QObject):
         if self._is_su:
             if self._alternate_su_binary:
                 ret_val = self._do_adb_command(
-                    'shell su 0 "' + cmd + '"', timeout=timeout)
+                    'shell su 0 ' + cmd, timeout=timeout)
             else:
                 ret_val = self._do_adb_command(
-                    'shell su -c "' + cmd + '"', timeout=timeout)
+                    'shell su -c ' + cmd, timeout=timeout)
         elif self._is_root:
             ret_val = self._do_adb_command('shell ' + cmd, timeout=timeout)
 
