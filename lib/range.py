@@ -49,7 +49,7 @@ class Range(object):
         self.start_address = 0
         self.start_offset = 0
 
-    def init_with_address(self, address, length=0, base=0):
+    def init_with_address(self, address, length=0, base=0, require_data=True):
         self.start_address = utils.parse_ptr(address)
 
         if self.base > 0:
@@ -75,21 +75,22 @@ class Range(object):
             self.tail = self.base + self.size
             self.start_offset = self.start_address - self.base
 
-            # read data
-            self.data = self.dwarf.read_memory(self.base, self.size)
+            if require_data:
+                # read data
+                self.data = self.dwarf.read_memory(self.base, self.size)
 
-            # check if we have hooks in range and patch data
-            hooks = json.loads(self.dwarf._script.exports.hooks())
-            for key in list(hooks.keys()):
-                hook = hooks[key]
-                if utils.parse_ptr(hook['nativePtr']) != 1 and hook['bytes']:
-                    hook_address = utils.parse_ptr(hook['nativePtr'])
-                    if hook_address % 2 != 0:
-                        hook_address -= 1
-                    if self.base < hook_address < self.tail:
-                        offset = hook_address - self.base
-                        # patch bytes
-                        self.patch_bytes(hook['bytes'], offset)
+                # check if we have hooks in range and patch data
+                hooks = json.loads(self.dwarf._script.exports.hooks())
+                for key in list(hooks.keys()):
+                    hook = hooks[key]
+                    if utils.parse_ptr(hook['nativePtr']) != 1 and hook['bytes']:
+                        hook_address = utils.parse_ptr(hook['nativePtr'])
+                        if hook_address % 2 != 0:
+                            hook_address -= 1
+                        if self.base < hook_address < self.tail:
+                            offset = hook_address - self.base
+                            # patch bytes
+                            self.patch_bytes(hook['bytes'], offset)
         elif self.source == Range.SOURCE_EMULATOR:
             uc = self.dwarf.get_emulator().uc
             if uc is not None:
@@ -100,7 +101,7 @@ class Range(object):
                         self.start_offset = self.start_address - self.base
                         self.size = self.tail - self.base
                         break
-                if self.base > 0:
+                if self.base > 0 and require_data:
                     # read data
                     self.data = uc.mem_read(self.base, self.size)
         if self.data is None:

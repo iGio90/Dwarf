@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToo
                              QLineEdit)
 
 from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_NONE
+from lib.range import Range
 from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.panel_memory import MemoryPanel
@@ -184,16 +185,6 @@ class EmulatorPanel(QWidget):
         # add empty line if jump
         if instruction.is_jump:
             self.assembly.add_instruction(None)
-
-            if self.emulator.start_range.base > instruction.jump_address or \
-                    instruction.jump_address > self.emulator.start_range.tail:
-                action = JumpOutsideTheBoxDialog.show_dialog(self.app.dwarf)
-                if action == 0:
-                    if self.emulator.step_mode != STEP_MODE_NONE:
-                        self.handle_step()
-                elif action == 1:
-                    self.app.dwarf.hook_native(input_=hex(instruction.address + instruction.size))
-
             self._require_register_result = [instruction.jump_address]
         else:
             # implicit regs read are notified later through mem access
@@ -208,6 +199,26 @@ class EmulatorPanel(QWidget):
                             break
         self.assembly.verticalScrollBar().setValue(len(self.assembly._lines))
         self.assembly.viewport().update()
+
+        if instruction.is_jump:
+            range_ = Range(Range.SOURCE_TARGET, self.app.dwarf)
+            if range_.init_with_address(instruction.address, require_data=False) > 0:
+                if range_.base > instruction.jump_address or instruction.jump_address > range_.tail:
+                    if self.emulator.step_mode == STEP_MODE_NONE:
+                        self.emulator.stop()
+                    action = JumpOutsideTheBoxDialog.show_dialog(self.app.dwarf)
+                    if action == 0:
+                        # follow jump
+                        if self.emulator.step_mode != STEP_MODE_NONE:
+                            self.handle_step()
+                        else:
+                            self.emulator.emulate(self.until_address)
+                    elif action == 1:
+                        # hook lr
+                        hook_addr = instruction.address + instruction.size
+                        if instruction.thumb:
+                            hook_addr += 1
+                        self.app.dwarf.hook_native(input_=hex(hook_addr))
 
     def on_emulator_log(self, log):
         self.app.console_panel.show_console_tab('emulator')

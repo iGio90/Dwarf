@@ -98,7 +98,6 @@ class Emulator(QThread):
         self.callbacks = None
         self.instructions_delay = 0
 
-        self.start_range = None
         self._start_address = 0
         self._end_address = 0
 
@@ -162,7 +161,7 @@ class Emulator(QThread):
         if not self.context.is_native_context:
             raise self.EmulatorSetupFailedError('Cannot run emulator on non-native context')
 
-        err = self.map_range(self.context.pc.value, is_start_range=True)
+        err = self.map_range(self.context.pc.value)
         if err:
             raise self.EmulatorSetupFailedError('Mapping failed')
 
@@ -334,10 +333,8 @@ class Emulator(QThread):
         self.callbacks_path = self._prefs.get(prefs.EMULATOR_CALLBACKS_PATH, '')
         self.instructions_delay = self._prefs.get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0)
 
-    def map_range(self, address, is_start_range=False):
+    def map_range(self, address):
         range_ = Range(Range.SOURCE_TARGET, self.dwarf)
-        if is_start_range:
-            self.start_range = range_
         if range_.init_with_address(address) > 0:
             return 300
         try:
