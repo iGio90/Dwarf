@@ -30,6 +30,7 @@ class Instruction(object):
         """
         self.id = instruction.id
         self.address = instruction.address
+        self.size = instruction.size
 
         self.bytes = instruction.bytes
 
@@ -50,15 +51,22 @@ class Instruction(object):
         if instruction.group(CS_GRP_JUMP) or instruction.group(CS_GRP_CALL):
             self.is_jump = True
         self.jump_address = 0
+        self.should_change_arm_instruction_set = False
         if len(instruction.operands) > 0 and self.is_jump:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
                     self.jump_address = op.value.imm
+                    self.should_change_arm_instruction_set = True
                 elif op.type == CS_OP_REG:
                     if context is not None:
                         op_str = instruction.op_str
                         if op_str in context.__dict__:
                             self.jump_address = context.__dict__[op_str]
+                            if self.mnemonic == 'blx' or self.mnemonic == 'bx':
+                                if self.jump_address % 2 == 0:
+                                    self.should_change_arm_instruction_set = self.thumb
+                                else:
+                                    self.should_change_arm_instruction_set = not self.thumb
 
         # resolve jump symbol and string
         self.symbol_name = None

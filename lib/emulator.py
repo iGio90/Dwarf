@@ -98,6 +98,7 @@ class Emulator(QThread):
         self.callbacks = None
         self.instructions_delay = 0
 
+        self.start_range = None
         self._start_address = 0
         self._end_address = 0
 
@@ -161,7 +162,7 @@ class Emulator(QThread):
         if not self.context.is_native_context:
             raise self.EmulatorSetupFailedError('Cannot run emulator on non-native context')
 
-        err = self.map_range(self.context.pc.value)
+        err = self.map_range(self.context.pc.value, is_start_range=True)
         if err:
             raise self.EmulatorSetupFailedError('Mapping failed')
 
@@ -283,6 +284,14 @@ class Emulator(QThread):
                     self._next_instruction = address + i.size
                 else:
                     self._next_instruction = instruction.jump_address
+                    if instruction.should_change_arm_instruction_set:
+                        if self.thumb:
+                            self._current_cpu_mode = unicorn.UC_MODE_ARM
+                            self.thumb = False
+                        else:
+                            self._current_cpu_mode = unicorn.UC_MODE_THUMB
+                            self.thumb = True
+                        self.cs.mode(self._current_cpu_mode)
                 break
 
             # time.sleep(self.instructions_delay)
@@ -325,8 +334,10 @@ class Emulator(QThread):
         self.callbacks_path = self._prefs.get(prefs.EMULATOR_CALLBACKS_PATH, '')
         self.instructions_delay = self._prefs.get(prefs.EMULATOR_INSTRUCTIONS_DELAY, 0)
 
-    def map_range(self, address):
+    def map_range(self, address, is_start_range=False):
         range_ = Range(Range.SOURCE_TARGET, self.dwarf)
+        if is_start_range:
+            self.start_range = range_
         if range_.init_with_address(address) > 0:
             return 300
         try:
@@ -462,7 +473,11 @@ class Emulator(QThread):
 
         self._start_address = address
         if self.thumb:
-            self._start_address = self._start_address | 1
+            if self._start_address % 2 == 0:
+                self._start_address = self._start_address | 1
+        else:
+            if self._start_address % 2 != 0:
+                self._start_address -= 1
         self._end_address = self.end_ptr
         self._setup_done = True
         self.start()

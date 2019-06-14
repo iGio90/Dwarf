@@ -13,9 +13,10 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton,
+                             QLineEdit)
 
-from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION
+from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_NONE
 from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.panel_memory import MemoryPanel
@@ -163,8 +164,11 @@ class EmulatorPanel(QWidget):
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
             row = 1
-            res = '%s = %s' % (
-                self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
+            if len(self._require_register_result) == 1:
+                res = 'jump = %s' % (hex(self._require_register_result[0]))
+            else:
+                res = '%s = %s' % (
+                    self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
             if len(self.assembly._lines) > 1:
                 if self.assembly._lines[len(self.assembly._lines) - row] is None:
                     row = 2
@@ -181,16 +185,27 @@ class EmulatorPanel(QWidget):
         if instruction.is_jump:
             self.assembly.add_instruction(None)
 
-        # implicit regs read are notified later through mem access
-        if len(instruction.regs_read) == 0:
-            if len(instruction.operands) > 0:
-                for i in instruction.operands:
-                    if i.type == CS_OP_REG:
-                        self._require_register_result = [
-                            i.value.reg,
-                            instruction.reg_name(i.value.reg)
-                        ]
-                        break
+            if self.emulator.start_range.base > instruction.jump_address or \
+                    instruction.jump_address > self.emulator.start_range.tail:
+                action = JumpOutsideTheBoxDialog.show_dialog(self.app.dwarf)
+                if action == 0:
+                    if self.emulator.step_mode != STEP_MODE_NONE:
+                        self.handle_step()
+                elif action == 1:
+                    self.app.dwarf.hook_native(input_=hex(instruction.address + instruction.size))
+
+            self._require_register_result = [instruction.jump_address]
+        else:
+            # implicit regs read are notified later through mem access
+            if len(instruction.regs_read) == 0:
+                if len(instruction.operands) > 0:
+                    for i in instruction.operands:
+                        if i.type == CS_OP_REG:
+                            self._require_register_result = [
+                                i.value.reg,
+                                instruction.reg_name(i.value.reg)
+                            ]
+                            break
         self.assembly.verticalScrollBar().setValue(len(self.assembly._lines))
         self.assembly.viewport().update()
 
@@ -235,7 +250,8 @@ class EmulatorPanel(QWidget):
                 row = 2
             if access == UC_MEM_READ:
                 if self._require_register_result is not None:
-                    res = '%s = %s' % (self._require_register_result[1], hex(value))
+                    if len(self._require_register_result) > 1:
+                        res = '%s = %s' % (self._require_register_result[1], hex(value))
             else:
                 if self.assembly._lines[len(self.assembly._lines) - row].string:
                     res = '%s, %s = %s' % (self.assembly._lines[len(self.assembly._lines) - row].string, hex(address), hex(value))
@@ -273,8 +289,11 @@ class EmulatorPanel(QWidget):
         # check if the previous hook is waiting for a register result
         if self._require_register_result is not None:
             row = 1
-            res = '%s = %s' % (self._require_register_result[1],
-                               hex(self.emulator.uc.reg_read(self._require_register_result[0])))
+            if len(self._require_register_result) == 1:
+                res = 'jump = %s' % (hex(self._require_register_result[0]))
+            else:
+                res = '%s = %s' % (
+                    self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
             if len(self.assembly._lines) > 1:
                 if self.assembly._lines[len(self.assembly._lines) - row] is None:
                     row = 2
@@ -295,3 +314,51 @@ class EmulatorPanel(QWidget):
             item = self._access_model.item(row, 0).text()
             self.memory_table.read_memory(item)
             self.tabs.setCurrentIndex(1)
+
+
+class JumpOutsideTheBoxDialog(QDialog):
+    def __init__(self, dwarf, parent=None):
+        super(JumpOutsideTheBoxDialog, self).__init__(parent)
+        self.dwarf = dwarf
+
+        layout = QVBoxLayout(self)
+
+        self.setMinimumWidth(500)
+
+        layout.addWidget(QLabel('attempt to jump outside the current map\n'))
+
+        self._follow = False
+        self._hook_lr = False
+
+        buttons = QHBoxLayout()
+        do_noting = QPushButton('do nothing')
+        do_noting.clicked.connect(self.close)
+        buttons.addWidget(do_noting)
+        follow = QPushButton('follow')
+        follow.clicked.connect(self.follow)
+        buttons.addWidget(follow)
+        hook_lr = QPushButton('hook lr')
+        hook_lr.clicked.connect(self.hook_lr)
+        buttons.addWidget(hook_lr)
+
+        layout.addLayout(buttons)
+
+    def follow(self):
+        self._follow = True
+        self.accept()
+
+    def hook_lr(self):
+        self._hook_lr = True
+        self.accept()
+
+    @staticmethod
+    def show_dialog(dwarf):
+        dialog = JumpOutsideTheBoxDialog(dwarf)
+        result = dialog.exec_()
+
+        if result == QDialog.Accepted:
+            if dialog._follow:
+                return 0
+            elif dialog._hook_lr:
+                return 1
+        return -1
