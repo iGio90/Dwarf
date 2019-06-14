@@ -55,14 +55,17 @@ class HooksPanel(QWidget):
         self._app_window.dwarf.onAddNativeHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddNativeOnLoadHook.connect(self._on_add_hook)
         self._app_window.dwarf.onAddJavaOnLoadHook.connect(self._on_add_hook)
-        self._app_window.dwarf.onHitNativeOnLoad.connect(self._on_hit_native_on_load)
-        self._app_window.dwarf.onHitJavaOnLoad.connect(self._on_hit_java_on_load)
+        self._app_window.dwarf.onHitNativeOnLoad.connect(
+            self._on_hit_native_on_load)
+        self._app_window.dwarf.onHitJavaOnLoad.connect(
+            self._on_hit_java_on_load)
         self._app_window.dwarf.onDeleteHook.connect(self._on_hook_deleted)
 
         self._hooks_list = DwarfListView()
         self._hooks_list.doubleClicked.connect(self._on_dblclicked)
         self._hooks_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._hooks_list.customContextMenuRequested.connect(self._on_context_menu)
+        self._hooks_list.customContextMenuRequested.connect(
+            self._on_context_menu)
         self._hooks_model = QStandardItemModel(0, 5)
 
         self._hooks_model.setHeaderData(0, Qt.Horizontal, 'Address')
@@ -97,13 +100,16 @@ class HooksPanel(QWidget):
 
         h_box = QHBoxLayout()
         h_box.setContentsMargins(5, 2, 5, 5)
-        self.btn1 = QPushButton(QIcon(utils.resource_path('assets/icons/plus.svg')), '')
+        self.btn1 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/plus.svg')), '')
         self.btn1.setFixedSize(20, 20)
         self.btn1.clicked.connect(self._on_additem_clicked)
-        btn2 = QPushButton(QIcon(utils.resource_path('assets/icons/dash.svg')), '')
+        btn2 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/dash.svg')), '')
         btn2.setFixedSize(20, 20)
         btn2.clicked.connect(self.delete_items)
-        btn3 = QPushButton(QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
+        btn3 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
         btn3.setFixedSize(20, 20)
         btn3.clicked.connect(self.clear_list)
         h_box.addWidget(self.btn1)
@@ -267,6 +273,11 @@ class HooksPanel(QWidget):
             context_menu.addAction(
                 'Delete Hook', lambda: self._on_delete_hook(index))
 
+            if self._hooks_list.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self._hooks_list._on_cm_search)
+
         # show context menu
         global_pt = self._hooks_list.mapToGlobal(pos)
         context_menu.exec(global_pt)
@@ -283,7 +294,7 @@ class HooksPanel(QWidget):
             what = utils.parse_ptr(ptr)
             if what == 0:
                 what = self._hooks_model.item(num_row, 2).data(Qt.UserRole + 2)
-            if self._app_window.dwarf.dwarf_api('setHookLogic', [what, input_.replace('\n','')]):
+            if self._app_window.dwarf.dwarf_api('setHookLogic', [what, input_.replace('\n', '')]):
                 item.setData(input_, Qt.UserRole + 2)
                 if not item.text():
                     item.setText('ƒ')

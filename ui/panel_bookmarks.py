@@ -69,13 +69,16 @@ class BookmarksPanel(QWidget):
 
         h_box = QHBoxLayout()
         h_box.setContentsMargins(5, 2, 5, 5)
-        self.btn1 = QPushButton(QIcon(utils.resource_path('assets/icons/plus.svg')), '')
+        self.btn1 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/plus.svg')), '')
         self.btn1.setFixedSize(20, 20)
         self.btn1.clicked.connect(lambda: self._create_bookmark(-1))
-        btn2 = QPushButton(QIcon(utils.resource_path('assets/icons/dash.svg')), '')
+        btn2 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/dash.svg')), '')
         btn2.setFixedSize(20, 20)
         btn2.clicked.connect(self.delete_items)
-        btn3 = QPushButton(QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
+        btn3 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
         btn3.setFixedSize(20, 20)
         btn3.clicked.connect(self.clear_list)
         h_box.addWidget(self.btn1)
@@ -117,7 +120,8 @@ class BookmarksPanel(QWidget):
 
         if self._bookmarks_model.rowCount() > 0:
             # something was wrong it should be empty
-            self._bookmarks_model.removeRows(0, self._bookmarks_model.rowCount())
+            self._bookmarks_model.removeRows(
+                0, self._bookmarks_model.rowCount())
 
     # ************************************************************************
     # **************************** Handlers **********************************
@@ -148,8 +152,13 @@ class BookmarksPanel(QWidget):
             context_menu.addAction(
                 'Delete', lambda: self._on_delete_bookmark(index))
             context_menu.addSeparator()
+            if self._bookmarks_list.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self._bookmarks_list._on_cm_search)
+                context_menu.addSeparator()
         context_menu.addAction(
-            'New', lambda: self._create_bookmark())
+            'New', self._create_bookmark)
         global_pt = self._bookmarks_list.mapToGlobal(pos)
         context_menu.exec(global_pt)
 
@@ -162,7 +171,8 @@ class BookmarksPanel(QWidget):
                 ptr = self._bookmarks_model.item(index, 0).text()
                 note = self._bookmarks_model.item(index, 1).text()
 
-            ptr, _ = InputDialog.input_pointer(parent=self._app_window, input_content=ptr)
+            ptr, _ = InputDialog.input_pointer(
+                parent=self._app_window, input_content=ptr)
         else:
             if not isinstance(ptr, int):
                 try:
@@ -185,7 +195,8 @@ class BookmarksPanel(QWidget):
             else:
                 index = -1
 
-            accept, note = InputDialog.input(hint='Insert notes for %s' % ptr, input_content=note)
+            accept, note = InputDialog.input(
+                hint='Insert notes for %s' % ptr, input_content=note)
             if accept:
                 if index < 0:
                     self.insert_bookmark(ptr, note)

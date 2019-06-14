@@ -35,7 +35,8 @@ class DwarfListView(QTreeView):
 
         _prefs = Prefs()
         self.rows_dualcolor = _prefs.get('dwarf_ui_alternaterowcolors', False)
-        self.uppercase_hex = _prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper'
+        self.uppercase_hex = _prefs.get(
+            'dwarf_ui_hexstyle', 'upper').lower() == 'upper'
 
         self.setEditTriggers(self.NoEditTriggers)
         self.setHeaderHidden(False)
@@ -51,7 +52,7 @@ class DwarfListView(QTreeView):
         """
         key = event.key()
         mod = event.modifiers()
-        if key == Qt.Key_F and mod & Qt.ControlModifier and self._search_enabled:  # CTRL + F
+        if key == Qt.Key_F and mod & Qt.ControlModifier and self.search_enabled:  # CTRL + F
             self._on_cm_search()
         else:
             super(DwarfListView, self).keyPressEvent(event)
@@ -90,6 +91,15 @@ class DwarfListView(QTreeView):
             self._uppercase_hex = value
         elif isinstance(value, str):
             self._uppercase_hex = (value == 'upper')
+
+    @property
+    def search_enabled(self):
+        return self._search_enabled
+
+    @search_enabled.setter
+    def search_enabled(self, value):
+        if isinstance(value, bool):
+            self._search_enabled = value
 
     # ************************************************************************
     # **************************** Functions *********************************
@@ -219,7 +229,8 @@ class DwarfListView(QTreeView):
         if header:
             for col in range(header.count()):
                 if header.sectionResizeMode(col) == resize_mode:
-                    header.setSectionResizeMode(col, QHeaderView.ResizeToContents)
+                    header.setSectionResizeMode(
+                        col, QHeaderView.ResizeToContents)
                     width = header.sectionSize(col)
                     header.setSectionResizeMode(col, QHeaderView.Interactive)
                     header.resizeSection(col, width)
@@ -233,12 +244,14 @@ class DwarfListView(QTreeView):
             # reset search
             self._current_search = ''
             for row in range(self.model().rowCount()):
-                self.setRowHidden(row, self.model().invisibleRootItem().index(), False)
+                self.setRowHidden(
+                    row, self.model().invisibleRootItem().index(), False)
         elif accept and input_:
             # search for input
             self._current_search = input_
 
-            have_result, search_results = self.contains_text(input_, stop_at_match=False)
+            have_result, search_results = self.contains_text(
+                input_, stop_at_match=False)
 
             if not have_result:
                 return
@@ -252,4 +265,5 @@ class DwarfListView(QTreeView):
                         hide = False
                         break
 
-                self.setRowHidden(row, self.model().invisibleRootItem().index(), hide)
+                self.setRowHidden(
+                    row, self.model().invisibleRootItem().index(), hide)

@@ -206,6 +206,11 @@ class RangesPanel(DwarfListView):
                                 file_path))
                         context_menu.addSeparator()
 
+            if self.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction('Search', self._on_cm_search)
+                context_menu.addSeparator()
+
         context_menu.addAction('Refresh', self.update_ranges)
         context_menu.exec_(glbl_pt)
 

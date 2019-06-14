@@ -421,9 +421,15 @@ class ModulesPanel(QSplitter):
                 context_menu.addAction(
                     'Show ELF Info', lambda: self._on_parse_elf(file_path))
                 context_menu.addSeparator()
-            #elif file_path and (file_path.endswith('.dll') or file_path.endswith('.exe')):
+            # elif file_path and (file_path.endswith('.dll') or file_path.endswith('.exe')):
             #   context_menu.addAction('Show PE Info', lambda: self._on_parse_pe(file_path))
             #   context_menu.addSeparator()
+
+            if self.modules_list.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self.modules_list._on_cm_search)
+                context_menu.addSeparator()
 
         context_menu.addAction('Refresh', self.update_modules)
         context_menu.exec_(glbl_pt)
@@ -450,6 +456,11 @@ class ModulesPanel(QSplitter):
                 'Copy ModuleName', lambda: utils.copy_str_to_clipboard(
                     self.imports_model.item(index, 2).text()))
 
+            if self.imports_list.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self.imports_list._on_cm_search)
+
             # show context menu
             glbl_pt = self.imports_list.mapToGlobal(pos)
             context_menu.exec_(glbl_pt)
@@ -472,6 +483,11 @@ class ModulesPanel(QSplitter):
             context_menu.addAction(
                 'Copy FunctionName', lambda: utils.copy_str_to_clipboard(
                     func_name))
+
+            if self.exports_list.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self.exports_list._on_cm_search)
 
             # show contextmenu
             glbl_pt = self.exports_list.mapToGlobal(pos)

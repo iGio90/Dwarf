@@ -172,8 +172,10 @@ class UpdateBar(QWidget):
         self.onUpdateNowClicked.emit()
 
     def showEvent(self, QShowEvent):
-        h_center = self.update_button.parent().rect().center() - self.update_button.rect().center()
-        self.update_button.move(self.update_button.parent().width() - self.update_button.width() - 10, h_center.y())
+        h_center = self.update_button.parent().rect().center() - \
+            self.update_button.rect().center()
+        self.update_button.move(self.update_button.parent(
+        ).width() - self.update_button.width() - 10, h_center.y())
         return super().showEvent(QShowEvent)
 
 
@@ -328,7 +330,7 @@ class WelcomeDialog(QDialog):
         font = recent.font()
         font.setPixelSize(14)
         font.setBold(True)
-        #font.setPointSize(10)
+        # font.setPointSize(10)
         recent.setFont(font)
         wrapper.addWidget(recent)
         wrapper.addWidget(self._recent_list)
@@ -401,8 +403,8 @@ class WelcomeDialog(QDialog):
                     have_user_script = exported_session['user_script'] != ''
 
                 #user_script_item = QStandardItem()
-                #if have_user_script:
-                #user_script_item.setIcon(self._dot_icon)
+                # if have_user_script:
+                # user_script_item.setIcon(self._dot_icon)
 
                 on_loads = str(on_loads)
 
@@ -421,7 +423,7 @@ class WelcomeDialog(QDialog):
                 item_5 = QStandardItem(bookmarks)
                 item_5.setTextAlignment(Qt.AlignCenter)
                 #item_6 = QStandardItem(user_script_item)
-                #item_6.setTextAlignment(Qt.AlignCenter)
+                # item_6.setTextAlignment(Qt.AlignCenter)
 
                 self._recent_list_model.insertRow(
                     self._recent_list_model.rowCount(), [
@@ -474,13 +476,14 @@ class WelcomeDialog(QDialog):
             len(self._sub_titles[arr]) - 1)]
 
     def _on_recent_sessions_context_menu(self, pos):
-        index = self.list_view.indexAt(pos).row()
-        glbl_pt = self.list_view.mapToGlobal(pos)
+        index = self._recent_list.indexAt(pos).row()
+        glbl_pt = self._recent_list.mapToGlobal(pos)
         context_menu = QMenu(self)
         if index != -1:
-            context_menu.addAction(
-                'Delete recent session', lambda: self._remove_recent_sessions(
-                    self._recent_list_model.item(index, 0).text()))
+            session_path = self._recent_list_model.item(index, 0).text()
+            if session_path:
+                context_menu.addAction(
+                    'Delete session', lambda: self._remove_recent_session(session_path))
 
             context_menu.exec_(glbl_pt)
 
@@ -492,6 +495,9 @@ class WelcomeDialog(QDialog):
             if session_file in session_history:
                 session_history.pop(session_history.index(session_file))
                 self._prefs.put(prefs.RECENT_SESSIONS, session_history)
+            found, search_res = self._recent_list.contains_text(session_file)
+            if found and search_res:
+                self._recent_list_model.removeRow(search_res[0][0])
 
     def _on_recent_session_double_click(self, model_index):
         row = self._recent_list_model.itemFromIndex(model_index).row()

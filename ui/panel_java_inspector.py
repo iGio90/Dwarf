@@ -161,6 +161,11 @@ class JavaInspector(QWidget):
                     self._javaclass_model.item(index, 0).text()))
             context_menu.addSeparator()
 
+            if self._java_classes.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self._java_classes._on_cm_search)
+
         context_menu.addAction('Refresh', self.update_classes)
         context_menu.exec_(glbl_pt)
 
@@ -193,6 +198,11 @@ class JavaInspector(QWidget):
                 'Hook method', lambda: self._hook_method(
                     self._javamethod_model.item(index, 0).text()))
             context_menu.addSeparator()
+
+            if self._java_methods.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction(
+                    'Search', self._java_methods._on_cm_search)
 
         context_menu.addAction('Refresh', self._cm_refresh_methods)
         context_menu.exec_(glbl_pt)

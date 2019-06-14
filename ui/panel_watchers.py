@@ -163,13 +163,16 @@ class WatchersPanel(QWidget):
 
         h_box = QHBoxLayout()
         h_box.setContentsMargins(5, 2, 5, 5)
-        btn1 = QPushButton(QIcon(utils.resource_path('assets/icons/plus.svg')), '')
+        btn1 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/plus.svg')), '')
         btn1.setFixedSize(20, 20)
         btn1.clicked.connect(self._on_additem_clicked)
-        btn2 = QPushButton(QIcon(utils.resource_path('assets/icons/dash.svg')), '')
+        btn2 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/dash.svg')), '')
         btn2.setFixedSize(20, 20)
         btn2.clicked.connect(self.delete_items)
-        btn3 = QPushButton(QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
+        btn3 = QPushButton(
+            QIcon(utils.resource_path('assets/icons/trashcan.svg')), '')
         btn3.setFixedSize(20, 20)
         btn3.clicked.connect(self.clear_list)
         h_box.addWidget(btn1)
@@ -394,6 +397,9 @@ class WatchersPanel(QWidget):
             context_menu.addAction(
                 'Delete watcher', lambda: self.remove_address(
                     self._watchers_model.item(index, 0).text()))
+            if self.list_view.search_enabled:
+                context_menu.addSeparator()
+                context_menu.addAction('Search', self.list_view._on_cm_search)
         context_menu.exec_(glbl_pt)
 
     def _on_item_dblclick(self, model_index):
