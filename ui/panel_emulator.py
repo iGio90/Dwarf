@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton,
                              QLineEdit)
+from unicorn import UcError
 
 from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_NONE
 from lib.range import Range
@@ -173,6 +174,11 @@ class EmulatorPanel(QWidget):
             if len(self.assembly._lines) > 1:
                 if self.assembly._lines[len(self.assembly._lines) - row] is None:
                     row = 2
+
+                telescope = self.get_telescope(self.emulator.uc.reg_read(self._require_register_result[0]))
+                if telescope is not None:
+                    res += ' (' + telescope + ')'
+
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
                 # invalidate
                 self._require_register_result = None
@@ -265,13 +271,41 @@ class EmulatorPanel(QWidget):
                         res = '%s = %s' % (self._require_register_result[1], hex(value))
             else:
                 if self.assembly._lines[len(self.assembly._lines) - row].string:
-                    res = '%s, %s = %s' % (self.assembly._lines[len(self.assembly._lines) - row].string, hex(address), hex(value))
+                    res = '%s, %s = %s' % (
+                        self.assembly._lines[len(self.assembly._lines) - row].string, hex(address), hex(value))
                 else:
                     res = '%s = %s' % (hex(address), hex(value))
             if res is not None:
+                telescope = self.get_telescope(value)
+                if telescope is not None:
+                    res += ' (' + telescope + ')'
                 # invalidate
                 self._require_register_result = None
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
+
+    def get_telescope(self, address):
+        try:
+            size = self.app.dwarf.pointer_size
+            telescope = self.emulator.uc.mem_read(address, size)
+            try:
+                st = telescope.decode('utf8')
+                if len(st) != size:
+                    return '0x%s' % telescope.hex()
+                while True:
+                    telescope = self.emulator.uc.mem_read(address + size, 1)
+                    if telescope == bytes(0x00):
+                        break
+                    st += telescope.decode('utf8')
+                    size += 1
+                return st
+            except:
+                return '0x%s' % telescope.hex()
+        except UcError as e:
+            if e.errno == 6:
+                err = self.emulator.map_range(address)
+                if err == 0:
+                    return self.get_telescope(address)
+        return None
 
     def on_emulator_memory_range_mapped(self, data):
         address, size = data
@@ -308,6 +342,9 @@ class EmulatorPanel(QWidget):
             if len(self.assembly._lines) > 1:
                 if self.assembly._lines[len(self.assembly._lines) - row] is None:
                     row = 2
+                telescope = self.get_telescope(self.emulator.uc.reg_read(self._require_register_result[0]))
+                if telescope is not None:
+                    res += ' (' + telescope + ')'
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
                 # invalidate
                 self._require_register_result = None

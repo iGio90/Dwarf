@@ -358,7 +358,6 @@ class Emulator(QThread):
 
         self.log_to_ui("[*] Mapped %d at 0x%x" % (range_.size, range_.base))
         self.onEmulatorMemoryRangeMapped.emit([range_.base, range_.size])
-
         return 0
 
     def setup(self, tid=0):
