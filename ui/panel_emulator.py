@@ -44,7 +44,7 @@ class EmulatorPanel(QWidget):
         self._toolbar = QToolBar()
         self._toolbar.addAction('Start', self.handle_start)
         self._toolbar.addAction('Step', self.handle_step)
-        self._toolbar.addAction('Step next function', self.handle_step_next_function)
+        self._toolbar.addAction('Step next jump', self.handle_step_next_jump)
         self._toolbar.addAction('Stop', self.handle_stop)
         self._toolbar.addAction('Clear', self.handle_clear)
         self._toolbar.addAction('Options', self.handle_options)
@@ -143,7 +143,7 @@ class EmulatorPanel(QWidget):
             self.until_address = 0
             self.console.log(error)
 
-    def handle_step_next_function(self):
+    def handle_step_next_jump(self):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
@@ -214,12 +214,18 @@ class EmulatorPanel(QWidget):
                         self.emulator.stop()
                     action = JumpOutsideTheBoxDialog.show_dialog(self.app.dwarf)
                     if action == 0:
-                        # follow jump
+                        # step to jump
                         if self.emulator.step_mode != STEP_MODE_NONE:
                             self.handle_step()
                         else:
                             self.emulator.emulate(self.until_address)
-                    elif action == 1:
+                    if action == 1:
+                        # step to next jump
+                        if self.emulator.step_mode != STEP_MODE_NONE:
+                            self.handle_step_next_jump()
+                        else:
+                            self.emulator.emulate(self.until_address)
+                    elif action == 2:
                         # hook lr
                         hook_addr = instruction.address + instruction.size
                         if instruction.thumb:
@@ -383,24 +389,32 @@ class JumpOutsideTheBoxDialog(QDialog):
 
         layout.addWidget(QLabel('attempt to jump outside the current map\n'))
 
-        self._follow = False
+        self._step = False
+        self._step_next_jump = False
         self._hook_lr = False
 
         buttons = QHBoxLayout()
         do_noting = QPushButton('do nothing')
         do_noting.clicked.connect(self.close)
         buttons.addWidget(do_noting)
-        follow = QPushButton('follow')
-        follow.clicked.connect(self.follow)
-        buttons.addWidget(follow)
+        step = QPushButton('step into')
+        step.clicked.connect(self.step)
+        buttons.addWidget(step)
+        step_next_jump = QPushButton('step to next jump')
+        step_next_jump.clicked.connect(self.step_next_jump)
+        buttons.addWidget(step_next_jump)
         hook_lr = QPushButton('hook lr')
         hook_lr.clicked.connect(self.hook_lr)
         buttons.addWidget(hook_lr)
 
         layout.addLayout(buttons)
 
-    def follow(self):
-        self._follow = True
+    def step(self):
+        self._step = True
+        self.accept()
+
+    def step_next_jump(self):
+        self._step_next_jump = True
         self.accept()
 
     def hook_lr(self):
@@ -413,8 +427,10 @@ class JumpOutsideTheBoxDialog(QDialog):
         result = dialog.exec_()
 
         if result == QDialog.Accepted:
-            if dialog._follow:
+            if dialog._step:
                 return 0
-            elif dialog._hook_lr:
+            elif dialog._step_next_jump:
                 return 1
+            elif dialog._hook_lr:
+                return 2
         return -1
