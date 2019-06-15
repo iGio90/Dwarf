@@ -600,7 +600,9 @@ class Dwarf(QObject):
             return
 
         cmd = parts[0]
-        if cmd == 'backtrace':
+        if cmd == 'api_ping_timeout':
+            self._script.post({"type": str(parts[1])})
+        elif cmd == 'backtrace':
             self.onBackTrace.emit(json.loads(parts[1]))
         elif cmd == 'class_loader_loading_class':
             str_fmt = ('@thread {0} loading class := {1}'.format(parts[1], parts[2]))

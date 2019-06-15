@@ -19,6 +19,9 @@ from capstone import *
 from capstone.arm_const import *
 
 
+EXCHANGE_INSTRUCTION_SET = ['bx', 'blx']
+
+
 class Instruction(object):
     def __init__(self, dwarf, instruction, context=None):
         """
@@ -56,13 +59,14 @@ class Instruction(object):
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
                     self.jump_address = op.value.imm
-                    self.should_change_arm_instruction_set = True
+                    if self.mnemonic in EXCHANGE_INSTRUCTION_SET:
+                        self.should_change_arm_instruction_set = True
                 elif op.type == CS_OP_REG:
                     if context is not None:
                         op_str = instruction.op_str
                         if op_str in context.__dict__:
                             self.jump_address = context.__dict__[op_str]
-                            if self.mnemonic == 'blx' or self.mnemonic == 'bx':
+                            if self.mnemonic in EXCHANGE_INSTRUCTION_SET:
                                 if self.jump_address % 2 == 0:
                                     self.should_change_arm_instruction_set = self.thumb
                                 else:

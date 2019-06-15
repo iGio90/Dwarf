@@ -192,7 +192,7 @@ class ContextPanel(QTabWidget):
                         telescope = QStandardItem()
 
                         telescope_value = str(context[register]['telescope'][1]).replace('\n', ' ')
-                        if len(telescope_value) > 25:
+                        if len(telescope_value) > 50:
                             telescope_value = telescope_value[:50] + '...'
 
                         telescope.setText(telescope_value)

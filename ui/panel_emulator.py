@@ -176,7 +176,7 @@ class EmulatorPanel(QWidget):
                     row = 2
 
                 telescope = self.get_telescope(self.emulator.uc.reg_read(self._require_register_result[0]))
-                if telescope is not None:
+                if telescope is not None and telescope != 'None':
                     res += ' (' + telescope + ')'
 
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
@@ -277,7 +277,7 @@ class EmulatorPanel(QWidget):
                     res = '%s = %s' % (hex(address), hex(value))
             if res is not None:
                 telescope = self.get_telescope(value)
-                if telescope is not None:
+                if telescope is not None and telescope != 'None':
                     res += ' (' + telescope + ')'
                 # invalidate
                 self._require_register_result = None
@@ -292,7 +292,6 @@ class EmulatorPanel(QWidget):
                     if int(telescope[i]) == 0x0 and i != 0:
                         st = telescope.decode('utf8')
                         return st
-
                 st = telescope.decode('utf8')
                 if len(st) != size:
                     return '0x%s' % telescope.hex()
@@ -306,11 +305,14 @@ class EmulatorPanel(QWidget):
             except:
                 return '0x%s' % telescope.hex()
         except UcError as e:
-            if e.errno == 6:
-                err = self.emulator.map_range(address)
-                if err == 0:
-                    return self.get_telescope(address)
-        return None
+            # read from js
+            telescope = self.app.dwarf.dwarf_api('getAddressTs', address)
+            if telescope is None:
+                return None
+            telescope = str(telescope[1]).replace('\n', ' ')
+            if len(telescope) > 50:
+                telescope = telescope[:50] + '...'
+            return telescope
 
     def on_emulator_memory_range_mapped(self, data):
         address, size = data
@@ -345,7 +347,7 @@ class EmulatorPanel(QWidget):
                 res = '%s = %s' % (
                     self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
                 telescope = self.get_telescope(self.emulator.uc.reg_read(self._require_register_result[0]))
-                if telescope is not None:
+                if telescope is not None and telescope != 'None':
                     res += ' (' + telescope + ')'
 
             if len(self.assembly._lines) > 1:
