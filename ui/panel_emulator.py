@@ -288,12 +288,17 @@ class EmulatorPanel(QWidget):
             size = self.app.dwarf.pointer_size
             telescope = self.emulator.uc.mem_read(address, size)
             try:
+                for i in range(len(telescope)):
+                    if int(telescope[i]) == 0x0 and i != 0:
+                        st = telescope.decode('utf8')
+                        return st
+
                 st = telescope.decode('utf8')
                 if len(st) != size:
                     return '0x%s' % telescope.hex()
                 while True:
                     telescope = self.emulator.uc.mem_read(address + size, 1)
-                    if telescope == bytes(0x00):
+                    if int(telescope) == 0x0:
                         break
                     st += telescope.decode('utf8')
                     size += 1
@@ -339,12 +344,13 @@ class EmulatorPanel(QWidget):
             else:
                 res = '%s = %s' % (
                     self._require_register_result[1], hex(self.emulator.uc.reg_read(self._require_register_result[0])))
-            if len(self.assembly._lines) > 1:
-                if self.assembly._lines[len(self.assembly._lines) - row] is None:
-                    row = 2
                 telescope = self.get_telescope(self.emulator.uc.reg_read(self._require_register_result[0]))
                 if telescope is not None:
                     res += ' (' + telescope + ')'
+
+            if len(self.assembly._lines) > 1:
+                if self.assembly._lines[len(self.assembly._lines) - row] is None:
+                    row = 2
                 self.assembly._lines[len(self.assembly._lines) - row].string = res
                 # invalidate
                 self._require_register_result = None

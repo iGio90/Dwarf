@@ -186,6 +186,8 @@ class Emulator(QThread):
         if not self._setup_done:
             return
         try:
+            if self.thumb and self._start_address % 2 != 1:
+                self._start_address += 1
             self.uc.emu_start(self._start_address, 0xffffffffffffffff)  # end is handled in hook_code
         except unicorn.UcError as e:
             self.log_to_ui('[*] error: ' + str(e))
