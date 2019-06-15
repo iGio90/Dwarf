@@ -210,7 +210,14 @@ class Emulator(QThread):
                 self.context = None
             return err
         elif cmd == 'start':
-            return self.emulate(parts[1])
+            if len(parts) > 1:
+                try:
+                    step_mode = int(parts[1])
+                except:
+                    step_mode = STEP_MODE_NONE
+            else:
+                step_mode = STEP_MODE_NONE
+            return self.emulate(step_mode=step_mode)
 
     def clean(self):
         if self.isRunning():

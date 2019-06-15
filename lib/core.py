@@ -50,10 +50,10 @@ class EmulatorThread(QThread):
                 self.onCmdCompleted.emit(str(result))
             except Emulator.EmulatorSetupFailedError as error:
                 result = False
-                self.onError.emit(error)
+                self.onError.emit(str(error))
             except Emulator.EmulatorAlreadyRunningError as error:
                 result = False
-                self.onError.emit(error)
+                self.onError.emit(str(error))
 
 
 class Dwarf(QObject):
