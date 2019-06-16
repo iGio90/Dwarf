@@ -359,7 +359,7 @@ class Adb(QObject):
         else:
             result = self.su_cmd('ps | grep \'frida\'')
 
-        if result is not None:
+        if result:
             result = result.split()
 
             if 'frida' or 'frida-server' in result:
