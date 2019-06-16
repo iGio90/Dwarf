@@ -79,7 +79,7 @@ class Adb(QObject):
         self._adb_available = False
         try:
             adb_version = utils.do_shell_command('adb --version')
-            if adb_version is not None:
+            if adb_version:
                 if adb_version and 'Android Debug Bridge' in adb_version:
                     self._adb_available = True
                 else:
@@ -173,7 +173,7 @@ class Adb(QObject):
             if not self._is_su and self._dev_emu:
                 res = self._do_adb_command(
                     'shell mount -o ro,remount /system')
-                if res is not None:
+                if res:
                     if res and 'not user mountable' in res:
                         # no root user
                         self._is_root = False
@@ -189,12 +189,12 @@ class Adb(QObject):
                 # get some infos about the device and keep for later
                 self._sdk_version = self._do_adb_command(
                     'shell getprop ro.build.version.sdk')
-                if self._sdk_version is not None:
+                if self._sdk_version:
                     self._sdk_version = self._sdk_version.join(
                         self._sdk_version.split())  # cleans '\r\n'
                 self._android_version = self._do_adb_command(
                     'shell getprop ro.build.version.release')
-                if self._android_version is not None:
+                if self._android_version:
                     self._android_version = self._android_version.join(
                         self._android_version.split())
 
@@ -244,7 +244,7 @@ class Adb(QObject):
         res = utils.do_shell_command(
             'adb -s ' + self._device_serial + ' ' + cmd, timeout=timeout)
 
-        if res is not None and 'no device' in res:
+        if res and 'no device' in res:
             return None
 
         return res
@@ -271,28 +271,28 @@ class Adb(QObject):
 
         if self._have_killall:
             if self._alternate_frida_name:
-                self.su_cmd('killall -9 \'frida-server\'')
+                self.su_cmd('killall -9 frida-server')
             else:
-                self.su_cmd('killall -9 \'frida\'')
+                self.su_cmd('killall -9 frida')
 
         elif self._have_pidof:
             if self._alternate_frida_name:
-                pid = self.su_cmd('pidof -s \'frida-server\'')
+                pid = self.su_cmd('pidof -s frida-server')
                 if pid:
-                    pid = pid.join(pid.split())
+                    pid = pid.join(pid.split()) # remove \r\n
                     self.su_cmd('kill -9 %s' % pid)
             else:
-                pid = self.su_cmd('pidof -s \'frida\'')
+                pid = self.su_cmd('pidof -s frida')
                 if pid:
-                    pid = pid.join(pid.split())
+                    pid = pid.join(pid.split()) # remove \r\n
                     self.su_cmd('kill -9 %s' % pid)
         else:
             if self._oreo_plus:
                 self.su_cmd(
-                    'kill -9 $(ps -A | grep \'frida\' | awk \'{ print $1 }\')')
+                    'kill -9 $(ps -A | grep frida | awk \'{ print $1 }\')')
             else:
                 self.su_cmd(
-                    'kill -9 $(ps | grep \'frida\' | awk \'{ print $2 }\')')
+                    'kill -9 $(ps | grep frida | awk \'{ print $2 }\')')
 
         return not self.is_frida_running()
 
@@ -321,7 +321,7 @@ class Adb(QObject):
             else:
                 result = self.su_cmd('frida -D', timeout=5)
 
-        if result is not None and 'Unable to start server' in result:
+        if result and 'Unable to start server' in result:
             return False
 
         return self.is_frida_running()
@@ -342,9 +342,9 @@ class Adb(QObject):
 
         if self._have_pidof:
             if self._alternate_frida_name:
-                pid = self.su_cmd('pidof -s \'frida-server\'')
+                pid = self.su_cmd('pidof -s frida-server')
             else:
-                pid = self.su_cmd('pidof -s \'frida\'')
+                pid = self.su_cmd('pidof -s frida')
             if pid:
                 try:
                     pid = int(pid.join(pid.split())) # remove \r\n
@@ -352,12 +352,12 @@ class Adb(QObject):
                         return True
                 except ValueError:
                     # no integer
-                    found = False
+                    pass
 
         if self._oreo_plus:
-            result = self.su_cmd('ps -A | grep \'frida\'')
+            result = self.su_cmd('ps -A | grep frida')
         else:
-            result = self.su_cmd('ps | grep \'frida\'')
+            result = self.su_cmd('ps | grep frida')
 
         if result:
             result = result.split()
@@ -374,7 +374,7 @@ class Adb(QObject):
             return None
 
         result = self.su_cmd('frida --version')
-        if result is not None:
+        if result:
             if result and 'frida: not found' in result:
                 result = self.su_cmd('frida-server --version')
                 if result and 'frida-server: not found' in result:
@@ -384,10 +384,7 @@ class Adb(QObject):
                     if len(check_ver) == 3:
                         self._alternate_frida_name = True
 
-            if result == '':
-                result = None
-
-        if result is not None:
+        if result:
             return result.join(result.split())
 
         return None

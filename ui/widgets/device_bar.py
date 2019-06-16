@@ -19,7 +19,7 @@ import lzma
 import frida
 import requests
 
-from PyQt5.QtCore import (Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer)
+from PyQt5.Qt import (Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer)
 from PyQt5.QtGui import QFont, QPixmap, QIcon
 from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QComboBox)
 
@@ -164,10 +164,10 @@ class FridaUpdateThread(QThread):
                 # make it executable
                 self._adb.su_cmd('chmod 06755 ' + _device_path + '/frida-server')
 
-                self._adb.get_frida_version()
                 # start it
-                if not self._adb.start_frida():
-                    self.onError.emit('Failed to start fridaserver on Device')
+                if self._adb.get_frida_version():
+                    if not self._adb.start_frida():
+                        self.onError.emit('Failed to start fridaserver on Device')
             else:
                 print('failed to mount /system on device')
 
@@ -197,7 +197,7 @@ class DevicesUpdateThread(QThread):
 
     def run(self):
         # get frida devices
-        devices = frida.enumerate_devices()
+        devices = frida.get_device_manager().enumerate_devices()
 
         for device in devices:
             self.onAddDevice.emit({'id': device.id, 'name': device.name, 'type': device.type})
@@ -373,19 +373,20 @@ class DeviceBar(QWidget):
                     self.onDeviceUpdated.emit(frida_device.id)
 
     def _on_devices_finished(self):
-        if len(self._devices) > 1:
-            self._devices_combobox.clear()
-            self._devices_combobox.setVisible(True)
-            self.update_label.setText('Please select the Device: ')
-            for device in self._devices:
-                self._devices_combobox.addItem(device['name'], device['id'])
-        else:
-            self._devices_combobox.setVisible(False)
-            try:
-                device = frida.get_device(self._devices[0]['id'])
-                self._check_device(device)
-            except:
-                pass
+        if self._devices:
+            if len(self._devices) > 1:
+                self._devices_combobox.clear()
+                self._devices_combobox.setVisible(True)
+                self.update_label.setText('Please select the Device: ')
+                for device in self._devices:
+                    self._devices_combobox.addItem(device['name'], device['id'])
+            else:
+                self._devices_combobox.setVisible(False)
+                try:
+                    device = frida.get_device(self._devices[0]['id'])
+                    self._check_device(device)
+                except:
+                    pass
 
     def _on_timer(self):
         if self._timer_step == -1:
@@ -416,7 +417,8 @@ class DeviceBar(QWidget):
         self._update_btn.setVisible(False)
 
     def _on_device(self):
-        self._timer_step = 4
+        self.update_label.setText('Waiting for Device ...')
+        self._timer_step = 3
         self.is_waiting = True
         self._on_timer()
 
