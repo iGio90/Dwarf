@@ -125,52 +125,65 @@ class Adb(QObject):
 
             if self._dev_emu and date_res:
                 try:
+                    # if date was fine it should end with year
+                    # Thu Feb 8 16:47:32 MST 2001
                     date_res = date_res.split(' ')
+                    res_year = int(date_res[len(date_res) - 1])
                 except ValueError:
-                    pass
+                    return # TODO: raise exceptions
 
-            # try some su command
+            # try some su command to check for su binary
             res = self._do_adb_command('shell su -c date')
-            if res and 'Permission denied' in res:
-                self._is_su = False
-            elif res and 'su: not found' in res:
-                self._is_su = False
-            elif res and 'invalid' in res:
+            if res and 'invalid' in res:
                 res = self._do_adb_command('shell su 0 date')
                 if res:
                     self._alternate_su_binary = True
 
-            if res is not None:
+            if res:
                 try:
-                    res = res.split(' ')
+                    # if su date was fine it should end with year
+                    # Thu Feb 8 16:47:32 MST 2001
+                    su_res = res.split(' ')
+                    res_year = int(su_res[len(su_res) - 1])
+                    if res_year:
+                        # su cmd is available
+                        self._is_su = True
+
+                        # check if both date results matches otherwise its no valid result
+                        res_len = len(su_res)
+                        date_len = len(date_res)
+                        if su_res[res_len - 1] == date_res[date_len - 1]: # year
+                            if su_res[res_len - 2] == date_res[date_len - 2]: # timezone
+                                if su_res[res_len - 4] == date_res[date_len - 4]: # day
+                                    if su_res[res_len - 5] == date_res[date_len - 5]: # month
+                                        self._is_root = True
+
                 except ValueError:
                     pass
 
-                # check if 'same' results otherwise its no valid result from su -c date
-                res_len = len(res)
-                date_len = len(date_res)
-                if res[res_len - 1] == date_res[date_len - 1]: # year
-                    if res[res_len - 2] == date_res[date_len - 2]: # timezone
-                        if res[res_len - 4] == date_res[date_len - 4]: # day
-                            if res[res_len - 5] == date_res[date_len - 5]: # month
-                                self._is_su = True
+            # check status of selinux
+            res = self._do_adb_command('shell getenforce')
+            if res:
+                res = res.join(res.split())
+                if res != 'Permissive' and res != 'Disabled':
+                    self._do_adb_command('shell setenforce 0')
 
-                # no su -> try if the user is already root
-                # on some emulators user is root
-                if not self._is_su and self._dev_emu:
-                    res = self._do_adb_command(
-                        'shell mount -o ro,remount /system')
-                    if res is not None:
-                        if res and 'not user mountable' in res:
-                            # no root user
-                            self._is_root = False
-                        elif res == '':
-                            # cmd executed fine
-                            self._is_root = True
-                        else:
-                            # dont know some other output
-                            self._is_root = False
-                            print('rootcheck: %s' % res)
+            # no su -> try if the user is already root
+            # on some emulators user is root
+            if not self._is_su and self._dev_emu:
+                res = self._do_adb_command(
+                    'shell mount -o ro,remount /system')
+                if res is not None:
+                    if res and 'not user mountable' in res:
+                        # no root user
+                        self._is_root = False
+                    elif res == '':
+                        # cmd executed fine
+                        self._is_root = True
+                    else:
+                        # dont know some other output
+                        self._is_root = False
+                        print('rootcheck: %s' % res)
 
             if self._dev_emu:
                 # get some infos about the device and keep for later
@@ -204,9 +217,11 @@ class Adb(QObject):
             res = self._do_adb_command('shell killall')
             self._have_killall = 'not found' not in res
 
-            # check for root
+            # check for correct userid
             if self._is_root:
                 res = self.su_cmd('id')
+                # root should be 0
+                # https://superuser.com/questions/626843/does-the-root-account-always-have-uid-gid-0/626845#626845
                 self._is_root = 'uid=0' in res
 
     def get_states_string(self):
@@ -347,7 +362,7 @@ class Adb(QObject):
         if result is not None:
             result = result.split()
 
-            if 'frida' in result:
+            if 'frida' or 'frida-server' in result:
                 found = True
 
         return found
