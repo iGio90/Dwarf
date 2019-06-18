@@ -76,9 +76,11 @@ class RapServer:
             else:
                 ret = ""
                 lon = 0
+            if lon > length:
+                lon = length
+                ret = ret[:lon]
             buf = pack(">Bi", key | RAP_REPLY, lon)
-            c.send(buf)
-            c.send(ret)
+            c.send(buf + ret)
         elif key == RAP_WRITE:
             buf = c.recv(4)
             (length,) = unpack(">I", buf)
@@ -90,20 +92,19 @@ class RapServer:
             c.send(buf)
         elif key == RAP_SEEK:
             buf = c.recv(9)
-            (type, off) = unpack(">BQ", buf)
+            (whence, off) = unpack(">BQ", buf)
             seek = 0
             if self.handle_seek is not None:
-                seek = self.handle_seek(off, type)
+                seek = self.handle_seek(off, whence)
             else:
-                if type == 0:  # SET
+                if whence == 0:  # SET
                     seek = off
-                elif type == 1:  # CUR
+                elif whence == 1:  # CUR
                     seek = seek + off
-                elif type == 2:  # END
+                elif whence == 2:  # END
                     seek = self.size
             self.offset = seek
-            buf = pack(">BQ", key | RAP_REPLY, seek)
-            c.send(buf)
+            c.send(pack(">BQ", key | RAP_REPLY, seek))
         elif key == RAP_CLOSE:
             if self.handle_close is not None:
                 length = self.handle_close(self.fd)
