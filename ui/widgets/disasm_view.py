@@ -746,8 +746,8 @@ class DisassemblyView(QAbstractScrollArea):
         if 0 <= index < self.visible_lines():
             if index + self.pos < len(self._lines):
                 if isinstance(self._lines[index + self.pos], Instruction):
-                    context_menu.addAction('Copy address',
-                                           lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
+                    context_menu.addAction(
+                        'Copy address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
 
                     context_menu.addSeparator()
 

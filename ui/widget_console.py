@@ -145,7 +145,7 @@ class DwarfConsoleWidget(QWidget):
         if 'error:' in what.lower():
             html_text = '<font color="crimson">' + what + '</font>'
         else:
-            html_text = what
+            html_text = what.replace('\n', '<br>')
         time_stamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
         self.output.appendHtml(
             '<p><font color="yellowgreen" size="2" style="font-style:italic">'

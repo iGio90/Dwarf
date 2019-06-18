@@ -27,6 +27,9 @@ class ConsolePanel(QTabWidget):
         self.js_console = DwarfConsoleWidget(parent, input_placeholder='$>', function_box=True)
         self.js_console.onCommandExecute.connect(self.js_callback)
 
+        self.r2_console = DwarfConsoleWidget(parent, input_placeholder='r2')
+        self.r2_console.onCommandExecute.connect(self.r2_callback)
+
         self.py_console = DwarfConsoleWidget(parent, input_placeholder='>>>')
         self.py_console.onCommandExecute.connect(self.py_callback)
 
@@ -34,6 +37,7 @@ class ConsolePanel(QTabWidget):
 
         self.addTab(self.js_console, 'javascript')
         self.addTab(self.py_console, 'python')
+        self.addTab(self.r2_console, 'r2')
         self.addTab(self.emu_console, 'emulator')
 
     def clear(self):
@@ -46,6 +50,9 @@ class ConsolePanel(QTabWidget):
     def get_py_console(self):
         return self.py_console
 
+    def get_r2_console(self):
+        return self.r2_console
+
     def get_emu_console(self):
         return self.emu_console
 
@@ -55,14 +62,20 @@ class ConsolePanel(QTabWidget):
             self.setCurrentIndex(0)
         elif tab_name == 'python':
             self.setCurrentIndex(1)
-        elif tab_name == 'emulator':
+        elif tab_name == 'r2':
             self.setCurrentIndex(2)
+        elif tab_name == 'emulator':
+            self.setCurrentIndex(3)
         else:
             self.setCurrentIndex(0)
 
     def js_callback(self, text):
         # the output in the logs is handled in dwarf_api
         self.parent.dwarf.dwarf_api('evaluate', text)
+
+    def r2_callback(self, cmd):
+        response = self.parent.dwarf.r2.api(cmd)
+        self.r2_console.log(response)
 
     def py_callback(self, text):
         try:

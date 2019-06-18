@@ -30,6 +30,7 @@ from lib.emulator import Emulator
 
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
+from lib.r2 import R2Dwarf
 
 from ui.dialog_input import InputDialog
 
@@ -122,6 +123,9 @@ class Dwarf(QObject):
 
         self.java_available = False
 
+        # r2
+        self.r2 = None
+
         # frida device
         self._device = device
 
@@ -177,6 +181,8 @@ class Dwarf(QObject):
             pass
 
     def reinitialize(self):
+        self.r2 = None
+
         self._pid = 0
         self._package = None
         self._process = None
@@ -344,6 +350,8 @@ class Dwarf(QObject):
             if not os.path.exists('lib/core.js'):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
+            self.r2 = R2Dwarf(self)
+
             with open('lib/core.js', 'r') as core_script:
                 script_content = core_script.read()
 
@@ -449,7 +457,7 @@ class Dwarf(QObject):
                     f.write(data)
 
     def dwarf_api(self, api, args=None, tid=0):
-        if self._pid == 0 or self.process is None:
+        if self.pid and self._pid == 0 or self.process is None:
             return
 
         # when tid is 0 we want to execute the api in the current hooked thread
