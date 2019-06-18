@@ -28,7 +28,7 @@ from lib import utils, prefs
 from lib.context import Context
 from lib.emulator import Emulator
 
-from lib.hook import Hook
+from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
 
 from ui.dialog_input import InputDialog
@@ -68,10 +68,13 @@ class Dwarf(QObject):
     # ************************************************************************
     # **************************** Signals ***********************************
     # ************************************************************************
+    # process
+    onProcessDetached = pyqtSignal(list, name='onProcessDetached')
+    onProcessAttached = pyqtSignal(list, name='onProcessAttached')
+
     # script related
     onScriptLoaded = pyqtSignal(name='onScriptLoaded')
     onScriptDestroyed = pyqtSignal(name='onScriptDestroyed')
-    onAttached = pyqtSignal(list, name='onAttached')
     # hook related
     onAddNativeHook = pyqtSignal(Hook, name='onAddNativeHook')
     onAddJavaHook = pyqtSignal(Hook, name='onAddJavaHook')
@@ -124,6 +127,7 @@ class Dwarf(QObject):
 
         # process
         self._pid = 0
+        self._package = None
         self._process = None
         self._script = None
         self._spawned = False
@@ -132,13 +136,12 @@ class Dwarf(QObject):
         # kernel
         self._kernel = Kernel(self)
 
-        self._watchers = []
-
         # hooks
         self.hooks = {}
         self.native_on_loads = {}
         self.java_on_loads = {}
         self.java_hooks = {}
+        self.watchers = {}
         self.temporary_input = ''
         self.native_pending_args = None
         self.java_pending_args = None
@@ -173,7 +176,14 @@ class Dwarf(QObject):
         except:
             pass
 
-    def _reinitialize(self):
+    def reinitialize(self):
+        self._pid = 0
+        self._package = None
+        self._process = None
+        self._script = None
+        self._spawned = False
+        self._resumed = False
+
         self.java_available = False
 
         # frida device
@@ -259,7 +269,7 @@ class Dwarf(QObject):
     # ************************************************************************
     def is_address_watched(self, ptr):
         ptr = utils.parse_ptr(ptr)
-        if ptr in self._watchers:
+        if hex(ptr) in self.watchers:
             return True
 
         return False
@@ -289,7 +299,7 @@ class Dwarf(QObject):
 
         try:
             self._process = self.device.attach(pid[0])
-            #self._process.enable_jit()
+            self._process.on('detached', self._on_detached)
             self._pid = pid[0]
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -314,7 +324,7 @@ class Dwarf(QObject):
         if was_error:
             raise Exception(error_msg)
 
-        self.onAttached.emit([self.pid, pid[1]])
+        self.onProcessAttached.emit([self.pid, pid[1]])
         self.load_script(script)
 
     def detach(self):
@@ -324,7 +334,10 @@ class Dwarf(QObject):
         if self._process is not None:
             self._process.detach()
             if self._spawned:
-                self.device.kill(self.pid)
+                try:
+                    self.device.kill(self.pid)
+                except frida.ProcessNotFoundError:
+                    pass
 
     def load_script(self, script=None, spawned=False):
         try:
@@ -336,7 +349,7 @@ class Dwarf(QObject):
 
             self._script = self._process.create_script(script_content, runtime='v8')
             self._script.on('message', self._on_message)
-            self._script.on('destroyed', self._on_destroyed)
+            self._script.on('destroyed', self._on_script_destroyed)
             self._script.load()
 
             is_debug = self._app_window.dwarf_args.debug_script
@@ -383,13 +396,14 @@ class Dwarf(QObject):
             self.detach()
         try:
             self._pid = self.device.spawn(package)
+            self._package = package
             self._process = self.device.attach(self._pid)
-            #self._process.enable_jit()
+            self._process.on('detached', self._on_detached)
             self._spawned = True
         except Exception as e:
             raise Exception('Frida Error: ' + str(e))
 
-        self.onAttached.emit([self.pid, package])
+        self.onProcessAttached.emit([self.pid, package])
         self.load_script(script, spawned=True)
 
     def resume_proc(self):
@@ -435,7 +449,7 @@ class Dwarf(QObject):
                     f.write(data)
 
     def dwarf_api(self, api, args=None, tid=0):
-        if self.pid == 0 or self.process is None:
+        if self._pid == 0 or self.process is None:
             return
 
         # when tid is 0 we want to execute the api in the current hooked thread
@@ -587,6 +601,12 @@ class Dwarf(QObject):
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
+    def _on_detached(self, process, reason, crash_log):
+        self.onProcessDetached.emit([process, reason, crash_log])
+
+    def _on_script_destroyed(self):
+        self._script = None
+
     def _on_message(self, message, data):
         QApplication.processEvents()
         if 'payload' not in message:
@@ -623,7 +643,7 @@ class Dwarf(QObject):
         elif cmd == 'enable_kernel':
             self._app_window.get_menu().enable_kernel_menu()
         elif cmd == 'hook_java_callback':
-            h = Hook(Hook.HOOK_JAVA)
+            h = Hook(HOOK_JAVA)
             h.set_ptr(1)
             h.set_input(parts[1])
             if self.java_pending_args:
@@ -633,13 +653,13 @@ class Dwarf(QObject):
             self.java_hooks[h.get_input()] = h
             self.onAddJavaHook.emit(h)
         elif cmd == 'hook_java_on_load_callback':
-            h = Hook(Hook.HOOK_JAVA)
+            h = Hook(HOOK_JAVA)
             h.set_ptr(0)
             h.set_input(parts[1])
             self.java_on_loads[parts[1]] = h
             self.onAddJavaOnLoadHook.emit(h)
         elif cmd == 'hook_native_callback':
-            h = Hook(Hook.HOOK_NATIVE)
+            h = Hook(HOOK_NATIVE)
             h.set_ptr(int(parts[1], 16))
             h.set_input(self.temporary_input)
             h.set_bytes(binascii.unhexlify(parts[2]))
@@ -647,12 +667,13 @@ class Dwarf(QObject):
             h.set_condition(parts[4])
             h.set_logic(parts[3])
             h.internalHook = parts[5] == 'true'
+            h.set_debug_symbol(json.loads(parts[6]))
             self.native_pending_args = None
-            if not h.internalHook:
+            if not h.internal_hook:
                 self.hooks[h.get_ptr()] = h
                 self.onAddNativeHook.emit(h)
         elif cmd == 'hook_native_on_load_callback':
-            h = Hook(Hook.HOOK_ONLOAD)
+            h = Hook(HOOK_ONLOAD)
             h.set_ptr(0)
             h.set_input(parts[1])
             self.native_on_loads[parts[1]] = h
@@ -728,11 +749,21 @@ class Dwarf(QObject):
             self.log('watcher hit op %s address %s @thread := %s' %
                      (exception['memory']['operation'], exception['memory']['address'], parts[2]))
         elif cmd == 'watcher_added':
-            self._watchers.append(utils.parse_ptr(parts[1]))
-            self.onWatcherAdded.emit(parts[1], int(parts[2]))
+            ptr = utils.parse_ptr(parts[1])
+            hex_ptr = hex(ptr)
+            flags = int(parts[2])
+
+            h = Hook(HOOK_WATCHER)
+            h.set_ptr(ptr)
+            h.set_logic(flags)
+            h.set_debug_symbol(json.loads(parts[3]))
+            self.watchers[hex_ptr] = h
+
+            self.onWatcherAdded.emit(hex_ptr, flags)
         elif cmd == 'watcher_removed':
-            self._watchers.remove(utils.parse_ptr(parts[1]))
-            self.onWatcherRemoved.emit(parts[1])
+            hex_ptr = hex(utils.parse_ptr(parts[1]))
+            self.watchers.pop(hex_ptr)
+            self.onWatcherRemoved.emit(hex_ptr)
         elif cmd == 'memoryscan_result':
             if parts[1] == '':
                 self.onMemoryScanResult.emit([])
@@ -777,13 +808,6 @@ class Dwarf(QObject):
         if not reason == -1 and self.context_tid == 0:
             self.context_tid = context_data['tid']
 
-    def _on_destroyed(self):
-        self._reinitialize()
-        str_fmt = ('Detached from {0:d}. Script destroyed.'.format(self.pid))
-        print(str_fmt)
-        self.log(str_fmt)
-        self.onScriptDestroyed.emit()
-
     def _on_emulator(self, data):
         if not self._app_window.emulator_panel:
             self._app_window._create_ui_elem('emulator')
@@ -814,40 +838,25 @@ class Dwarf(QObject):
         self.dwarf_api('release', tid, tid=tid)
 
     def save_session(self):
-        hooks = None
-        native_on_loads = None
-        java_on_loads = None
-        watchers = None
-        if self._script is not None:
-            hooks = json.loads(self._script.exports.hooks())
-            for hook_key in list(hooks.keys()):
-                hook = hooks[hook_key]
-                if 'internalHook' in hook and hook['internalHook']:
-                    del hooks[hook_key]
-            native_on_loads = json.loads(self._script.exports.nativeonloads())
-            java_on_loads = json.loads(self._script.exports.javaonloads())
-            watchers = json.loads(self._script.exports.watchers())
-
-        session_object = {
-            'session': self._app_window.session_manager.session.session_type,
-            'hooks': hooks,
-            'nativeOnLoads': native_on_loads,
-            'javaOnLoads': java_on_loads,
-            'watchers': watchers,
-            'bookmarks': self._app_window.bookmarks_panel.bookmarks,
-            'user_script': self._app_window.console_panel.get_js_console().function_content
-        }
-
+        session_object = self.dump_session()
         _file = QFileDialog.getSaveFileName(self._app_window)
         if len(_file) > 0:
             _file = _file[0]
-            with open(_file, 'w') as f:
-                f.write(json.dumps(session_object, indent=2))
+            if len(_file) > 0:
+                with open(_file, 'w') as f:
+                    f.write(json.dumps(session_object, indent=2))
 
-            history = self._app_window.prefs.get(prefs.RECENT_SESSIONS, default=[])
-            if _file in history:
-                history.pop(history.index(_file))
-            history.insert(0, _file)
-            if len(history) > 20:
-                history.pop(len(history) - 1)
-            self._app_window.prefs.put(prefs.RECENT_SESSIONS, history)
+                history = self._app_window.prefs.get(prefs.RECENT_SESSIONS, default=[])
+                if _file in history:
+                    history.pop(history.index(_file))
+                history.insert(0, _file)
+                if len(history) > 20:
+                    history.pop(len(history) - 1)
+                self._app_window.prefs.put(prefs.RECENT_SESSIONS, history)
+
+    def dump_session(self):
+        return {
+            'session': self._app_window.session_manager.session.session_type,
+            'package': self._package,
+            'user_script': self._app_window.console_panel.get_js_console().function_content
+        }

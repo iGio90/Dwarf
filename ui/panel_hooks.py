@@ -25,7 +25,7 @@ from ui.dialog_input import InputDialog
 from ui.dialog_input_multiline import InputMultilineDialog
 
 from lib import utils
-from lib.hook import Hook
+from lib.hook import Hook, HOOK_NATIVE, HOOK_JAVA, HOOK_ONLOAD
 
 
 class HooksPanel(QWidget):
@@ -176,13 +176,13 @@ class HooksPanel(QWidget):
         type_ = QStandardItem()
         type_.setFont(self._bold_font)
         type_.setTextAlignment(Qt.AlignCenter)
-        if hook.hook_type == Hook.HOOK_NATIVE:
+        if hook.hook_type == HOOK_NATIVE:
             type_.setText('N')
             type_.setToolTip('Native hook')
-        elif hook.hook_type == Hook.HOOK_JAVA:
+        elif hook.hook_type == HOOK_JAVA:
             type_.setText('J')
             type_.setToolTip('Java hook')
-        elif hook.hook_type == Hook.HOOK_ONLOAD:
+        elif hook.hook_type == HOOK_ONLOAD:
             type_.setText('O')
             type_.setToolTip('On load hook')
         else:
@@ -191,7 +191,7 @@ class HooksPanel(QWidget):
 
         addr = QStandardItem()
 
-        if hook.hook_type == Hook.HOOK_JAVA:
+        if hook.hook_type == HOOK_JAVA:
             parts = hook.get_input().split('.')
             addr.setText('.'.join(parts[:len(parts) - 1]))
         else:
@@ -203,7 +203,7 @@ class HooksPanel(QWidget):
 
         inp = QStandardItem()
         inp_text = hook.get_input()
-        if hook.hook_type == Hook.HOOK_JAVA:
+        if hook.hook_type == HOOK_JAVA:
             parts = inp_text.split('.')
             inp_text = parts[len(parts) - 1]
         # if len(inp_text) > 15:

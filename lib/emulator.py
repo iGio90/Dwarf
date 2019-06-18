@@ -15,26 +15,19 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import binascii
-import time
-
-from threading import Thread
-
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
-from PyQt5.QtWidgets import QApplication
-
-from importlib._bootstrap import spec_from_loader, module_from_spec
-from importlib._bootstrap_external import SourceFileLoader
-
 import unicorn
+
 from capstone import (Cs, CS_ARCH_ARM, CS_ARCH_ARM64, CS_ARCH_X86, CS_MODE_32,
                       CS_MODE_64, CS_MODE_ARM, CS_MODE_THUMB,
                       CS_MODE_LITTLE_ENDIAN)
+from importlib._bootstrap import spec_from_loader, module_from_spec
+from importlib._bootstrap_external import SourceFileLoader
 from lib import utils, prefs
 from lib.context import EmulatorContext
 from lib.instruction import Instruction
-from lib.range import Range
-
 from lib.prefs import Prefs
+from lib.range import Range
+from PyQt5.QtCore import pyqtSignal, QThread
 
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
 

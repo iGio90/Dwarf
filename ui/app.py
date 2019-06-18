@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
 from lib import utils
 from lib.prefs import Prefs
 from lib.session_manager import SessionManager
+from ui.dialogs.detached import QDialogDetached
 
 from ui.welcome_window import WelcomeDialog
 from ui.widgets.hex_edit import HighLight, HighlightExistsError
@@ -151,7 +152,6 @@ class AppWindow(QMainWindow):
                 'Welcome to Dwarf - A debugger for reverse engineers, crackers and security analyst'
             )
             self.welcome_window.onSessionSelected.connect(self._start_session)
-            self.welcome_window.onSessionRestore.connect(self._restore_session)
             # wait for welcome screen
             self.hide()
             self.welcome_window.show()
@@ -412,6 +412,9 @@ class AppWindow(QMainWindow):
             from ui.panel_console import ConsolePanel
             self.console_dock = QDockWidget('Console', self)
             self.console_panel = ConsolePanel(self)
+            if self.dwarf_args.script and len(self.dwarf_args.script) > 0:
+                with open(self.dwarf_args.script, 'r') as f:
+                    self.console_panel.get_js_console().function_content = f.read()
             self.dwarf.onLogToConsole.connect(self._log_js_output)
             self.console_dock.setWidget(self.console_panel)
             self.console_dock.setObjectName('ConsolePanel')
@@ -619,7 +622,8 @@ class AppWindow(QMainWindow):
             ui_elem = ui_elem.join(ui_elem.split()).lower()
             self._create_ui_elem(ui_elem)
 
-        self.dwarf.onAttached.connect(self._on_attached)
+        self.dwarf.onProcessAttached.connect(self._on_attached)
+        self.dwarf.onProcessDetached.connect(self._on_detached)
         self.dwarf.onScriptLoaded.connect(self._on_script_loaded)
 
         # hookup
@@ -960,6 +964,22 @@ class AppWindow(QMainWindow):
 
     def _on_attached(self, data):
         self.setWindowTitle('Dwarf - Attached to %s (%s)' % (data[1], data[0]))
+
+    def _on_detached(self, data):
+        reason = data[1]
+
+        if reason == 'application-requested':
+            self.session_manager.session.stop()
+            return 0
+
+        ret = QDialogDetached.show_dialog(self.dwarf, data[0], data[1], data[2])
+        if ret == 0:
+            session = self.dwarf.dump_session()
+            self.dwarf.reinitialize()
+            self.session_manager._session = None
+            self.session_stopped()
+
+            self._restore_session(session)
 
     def _on_script_loaded(self):
         # restore the loaded session if any

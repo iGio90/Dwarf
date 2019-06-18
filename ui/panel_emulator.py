@@ -11,23 +11,19 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton,
-                             QLineEdit)
-from unicorn import UcError
-
+from capstone import CS_OP_REG
 from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_NONE
 from lib.range import Range
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton)
 from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.panel_memory import MemoryPanel
-
-from capstone import CS_OP_REG
-from unicorn.unicorn_const import UC_MEM_READ, UC_MEM_FETCH, UC_MEM_WRITE
-
-from ui.widgets.list_view import DwarfListView
 from ui.widgets.disasm_view import DisassemblyView
+from ui.widgets.list_view import DwarfListView
+from unicorn import UcError
+from unicorn.unicorn_const import UC_MEM_READ, UC_MEM_FETCH, UC_MEM_WRITE
 
 
 class EmulatorPanel(QWidget):

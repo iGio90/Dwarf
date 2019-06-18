@@ -126,56 +126,6 @@ class SessionManager(QObject):
 
     def restore_session(self):
         if self._restored_session_data is not None:
-            # restore hooks
-            if 'hooks' in self._restored_session_data:
-                hooks = self._restored_session_data['hooks']
-
-                for hook_key in hooks:
-                    hook = hooks[hook_key]
-                    if hook_key.startswith('0x'):
-                        # this is a native hook
-                        ptr = self._get_session_restore_ptr(hook)
-                        if ptr is not None and ptr > 0:
-                            self.session.dwarf.dwarf_api('hookNative', ptr)
-                    else:
-                        # check if it's a java hook
-                        is_java_hook = 'javaClassMethod' in hook and hook['javaClassMethod'] is not None
-                        if is_java_hook:
-                            self.session.dwarf.dwarf_api('hookJava', hook['javaClassMethod'])
-
-            # restore native on loads
-            if 'nativeOnLoads' in self._restored_session_data:
-                hooks = self._restored_session_data['nativeOnLoads']
-
-                for hook_key in hooks:
-                    self.session.dwarf.dwarf_api('hookNativeOnLoad', hook_key)
-
-            # restore java on loads
-            if 'javaOnLoads' in self._restored_session_data:
-                hooks = self._restored_session_data['javaOnLoads']
-
-                for hook_key in hooks:
-                    self.session.dwarf.dwarf_api('hookJavaOnLoad', hook_key)
-
-            # restore watchers
-            if 'watchers' in self._restored_session_data:
-                hooks = self._restored_session_data['watchers']
-
-                for hook_key in hooks:
-                    hook = hooks[hook_key]
-                    if hook_key.startswith('0x') and 'flags' in hook:
-                        ptr = self._get_session_restore_ptr(hook)
-                        if ptr > 0:
-                            self.session.dwarf.dwarf_api('addWatcher', [ptr, hook['flags']])
-
-            # restore bookmarks
-            if 'bookmarks' in self._restored_session_data:
-                hooks = self._restored_session_data['bookmarks']
-
-                for hook_key in hooks:
-                    hook = hooks[hook_key]
-                    self._app_window.bookmarks_panel.insert_bookmark(hook_key, hook)
-
             # restore user script
             if 'user_script' in self._restored_session_data:
                 self._app_window.console_panel.get_js_console().set_js_script_text(

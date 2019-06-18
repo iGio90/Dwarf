@@ -15,19 +15,21 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
+HOOK_NATIVE = 0
+HOOK_JAVA = 1
+HOOK_ONLOAD = 2
+HOOK_WATCHER = 3
+
 
 class Hook(object):
-    HOOK_NATIVE = 0
-    HOOK_JAVA = 1
-    HOOK_ONLOAD = 2
-
     def __init__(self, hook_type):
         self.hook_type = hook_type
         self.ptr = 0
         self.input = ''
         self.condition = ''
         self.logic = ''
-        self.internalHook = False
+        self.internal_hook = False
+        self.debug_symbol = None
 
         # hold the original bytes of address + (pointer size * 2)
         # to be used from Range class when dumping memory and avoid showing frida asm trampolines
@@ -38,6 +40,9 @@ class Hook(object):
 
     def set_condition(self, condition):
         self.condition = condition
+
+    def set_debug_symbol(self, symbol):
+        self.debug_symbol = symbol
 
     def set_input(self, input):
         self.input = input
@@ -65,3 +70,13 @@ class Hook(object):
             # for java hooks, return class and method
             return self.input
         return self.ptr
+
+    def to_json(self):
+        return {
+            'ptr': self.ptr,
+            'input': self.input,
+            'condition': self.condition,
+            'logic': self.logic,
+            'internal': self.internal_hook,
+            'debug_symbol': self.debug_symbol
+        }
