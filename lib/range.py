@@ -17,14 +17,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import json
 
 from lib import utils
-from lib.hook import Hook
 
 
 class Range(object):
     # dump memory from target proc
     SOURCE_TARGET = 0
-    # dump memory from emulator proc
-    SOURCE_EMULATOR = 1
 
     def __init__(self, source, dwarf):
         super().__init__()
@@ -91,19 +88,6 @@ class Range(object):
                             offset = hook_address - self.base
                             # patch bytes
                             self.patch_bytes(hook['bytes'], offset)
-        elif self.source == Range.SOURCE_EMULATOR:
-            uc = self.dwarf.get_emulator().uc
-            if uc is not None:
-                for base, tail, perm in uc.mem_regions():
-                    if base <= self.start_address <= tail:
-                        self.base = base
-                        self.tail = tail
-                        self.start_offset = self.start_address - self.base
-                        self.size = self.tail - self.base
-                        break
-                if self.base > 0 and require_data:
-                    # read data
-                    self.data = uc.mem_read(self.base, self.size)
         if self.data is None:
             self.data = bytes()
             return 1

@@ -32,7 +32,6 @@ from ui.dialogs.detached import QDialogDetached
 
 from ui.welcome_window import WelcomeDialog
 from ui.widgets.hex_edit import HighLight, HighlightExistsError
-from ui.panel_trace import TraceEvent
 
 from ui.dialogs.about_dlg import AboutDialog
 
@@ -73,7 +72,6 @@ class AppWindow(QMainWindow):
         self.backtrace_panel = None
         self.contexts_list_panel = None
         self.data_panel = None
-        self.emulator_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
         self.bookmarks_panel = None
@@ -85,7 +83,6 @@ class AppWindow(QMainWindow):
         self.modules_panel = None
         self.ranges_panel = None
         self.search_panel = None
-        self.trace_panel = None
         self.watchers_panel = None
         self.welcome_window = None
 
@@ -200,10 +197,6 @@ class AppWindow(QMainWindow):
             lambda: self.show_main_tab('search'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
         subview_menu.addAction(
-            'Emulator',
-            lambda: self.show_main_tab('emulator'),
-            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
-        subview_menu.addAction(
             'Disassembly',
             lambda: self.show_main_tab('disassembly'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F5))
@@ -293,12 +286,8 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.modules_panel)
         elif name == 'disassembly':
             index = self.main_tabs.indexOf(self.asm_panel)
-        elif name == 'trace':
-            index = self.main_tabs.indexOf(self.trace_panel)
         elif name == 'data':
             index = self.main_tabs.indexOf(self.data_panel)
-        elif name == 'emulator':
-            index = self.main_tabs.indexOf(self.emulator_panel)
         elif name == 'java-trace':
             index = self.main_tabs.indexOf(self.java_trace_panel)
         elif name == 'jvm-inspector':
@@ -472,19 +461,11 @@ class AppWindow(QMainWindow):
             from ui.panel_data import DataPanel
             self.data_panel = DataPanel(self)
             self.main_tabs.addTab(self.data_panel, 'Data')
-        elif elem == 'trace':
-            from ui.panel_trace import TracePanel
-            self.trace_panel = TracePanel(self)
-            self.main_tabs.addTab(self.trace_panel, 'Trace')
         elif elem == 'disassembly':
             from ui.widgets.disasm_view import DisassemblyView
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
-        elif elem == 'emulator':
-            from ui.panel_emulator import EmulatorPanel
-            self.emulator_panel = EmulatorPanel(self)
-            self.main_tabs.addTab(self.emulator_panel, 'Emulator')
         elif elem == 'java-trace':
             from ui.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
@@ -553,10 +534,6 @@ class AppWindow(QMainWindow):
         return self.contexts_list_panel
 
     @property
-    def emulator(self):
-        return self.emulator_panel
-
-    @property
     def ftrace(self):
         return self.ftrace_panel
 
@@ -583,10 +560,6 @@ class AppWindow(QMainWindow):
     @property
     def ranges(self):
         return self.ranges_panel
-
-    @property
-    def trace(self):
-        return self.trace_panel
 
     @property
     def watchers(self):
@@ -634,7 +607,6 @@ class AppWindow(QMainWindow):
         self.dwarf.onApplyContext.connect(self._apply_context)
         self.dwarf.onThreadResumed.connect(self.on_tid_resumed)
 
-        self.dwarf.onTraceData.connect(self._on_tracer_data)
         self.dwarf.onSetData.connect(self._on_set_data)
 
         self.session_manager.start_session(self.dwarf_args)
@@ -925,12 +897,6 @@ class AppWindow(QMainWindow):
                 # invalidate dwarf context tid
                 self.dwarf.context_tid = 0
 
-    def _on_tracer_data(self, data):
-        if not data:
-            return
-
-        if self.trace_panel is None:
-            self._create_ui_elem('trace')
 
         if self.trace_panel is not None:
             self.show_main_tab('Trace')

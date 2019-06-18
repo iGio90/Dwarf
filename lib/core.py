@@ -21,40 +21,17 @@ import json
 from frida.core import Session
 
 import frida
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QFileDialog, QApplication
 
-from lib import utils, prefs
+from lib import utils
 from lib.context import Context
-from lib.emulator import Emulator
 
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
 from lib.r2 import R2Dwarf
 
 from ui.dialog_input import InputDialog
-
-
-class EmulatorThread(QThread):
-    onCmdCompleted = pyqtSignal(str, name='onCmdCompleted')
-    onError = pyqtSignal(str, name='onError')
-
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.emulator = None
-        self.cmd = ''
-
-    def run(self):
-        if self.emulator and self.cmd:
-            try:
-                result = self.emulator.api(self.cmd)
-                self.onCmdCompleted.emit(str(result))
-            except Emulator.EmulatorSetupFailedError as error:
-                result = False
-                self.onError.emit(str(error))
-            except Emulator.EmulatorAlreadyRunningError as error:
-                result = False
-                self.onError.emit(str(error))
 
 
 class Dwarf(QObject):
@@ -102,10 +79,7 @@ class Dwarf(QObject):
     onEnumerateJavaMethodsComplete = pyqtSignal(list, name='onEnumerateJavaMethodsComplete')
     # trace
     onJavaTraceEvent = pyqtSignal(list, name='onJavaTraceEvent')
-    onTraceData = pyqtSignal(str, name='onTraceData')
     onSetData = pyqtSignal(list, name='onSetData')
-    # emulator
-    onEmulator = pyqtSignal(list, name='onEmulator')
 
     onBackTrace = pyqtSignal(dict, name='onBackTrace')
 
@@ -157,20 +131,8 @@ class Dwarf(QObject):
         self.context_tid = 0
         self._platform = ''
 
-        # tracers
-        self._native_traced_tid = 0
-
-        # emulator stuff
-        self._emulator = Emulator(self)
-        self._emu_thread = EmulatorThread(self)
-        self._emu_thread.onCmdCompleted.connect(self._on_emu_completed)
-        self._emu_thread.onError.connect(self._on_emu_error)
-        self._emu_thread.emulator = self.emulator
-        self._emu_queue = []
-
         # connect to self
         self.onApplyContext.connect(self._on_apply_context)
-        self.onEmulator.connect(self._on_emulator)
         self.onRequestJsThreadResume.connect(self._on_request_resume_from_js)
 
         self.keystone_installed = False
@@ -208,9 +170,6 @@ class Dwarf(QObject):
         self.native_pending_args = None
         self.java_pending_args = None
 
-        # tracers
-        self._native_traced_tid = 0
-
         self.context_tid = 0
 
     # ************************************************************************
@@ -219,14 +178,6 @@ class Dwarf(QObject):
     @property
     def kernel(self):
         return self._kernel
-
-    @property
-    def emulator(self):
-        return self._emulator
-
-    @property
-    def native_trace_tid(self):
-        return self._native_traced_tid
 
     @property
     def arch(self):
@@ -540,33 +491,6 @@ class Dwarf(QObject):
     def log(self, what):
         self.onLogToConsole.emit(str(what))
 
-    def native_tracer_start(self, tid=0):
-        if self.native_traced_tid > 0:
-            return
-        if tid == 0:
-            accept, tid = InputDialog.input(self._app_window, hint='insert thread id to trace',
-                                            placeholder=str(self.pid))
-            if not accept:
-                return
-            try:
-                if tid.startswith('0x'):
-                    tid = int(tid, 16)
-                else:
-                    tid = int(tid)
-            except:
-                return
-        self.native_traced_tid = tid
-        return self.dwarf_api('startNativeTracer', [tid, True])
-
-    def native_tracer_stop(self):
-        if self.native_traced_tid == 0:
-            return
-        self.dwarf_api('stopNativeTracer')
-        if self._app_window.trace_panel is not None:
-            self._app_window.trace_panel.stop()
-        self.native_traced_tid = 0
-        # self._app_window.get_menu().on_native_tracer_change(False)
-
     def read_memory(self, ptr, length):
         if length > 1024 * 1024:
             position = 0
@@ -635,8 +559,6 @@ class Dwarf(QObject):
         elif cmd == 'class_loader_loading_class':
             str_fmt = ('@thread {0} loading class := {1}'.format(parts[1], parts[2]))
             self.log(str_fmt)
-        elif cmd == 'emulator':
-            self.onEmulator.emit(parts[1:])
         elif cmd == 'enumerate_java_classes_start':
             self.onEnumerateJavaClassesStart.emit()
         elif cmd == 'enumerate_java_classes_match':
@@ -741,8 +663,6 @@ class Dwarf(QObject):
                 self.onSetData.emit(['raw', parts[1], data])
             else:
                 self.onSetData.emit(['plain', parts[1], str(parts[2])])
-        elif cmd == 'tracer':
-            self.onTraceData.emit(parts[1])
         elif cmd == 'unhandled_exception':
             # todo
             pass
@@ -815,32 +735,6 @@ class Dwarf(QObject):
 
         if not reason == -1 and self.context_tid == 0:
             self.context_tid = context_data['tid']
-
-    def _on_emulator(self, data):
-        if not self._app_window.emulator_panel:
-            self._app_window._create_ui_elem('emulator')
-            self._app_window.show_main_tab('emulator')
-
-        if self.emulator and self._emu_thread:
-            if not self._emu_thread.isRunning():
-                self._emu_thread.cmd = data
-                self._emu_thread.start()
-            else:
-                self._emu_queue.append(data)
-
-    def _on_emu_completed(self, result):
-        self.log(result)  # todo: send back to script???
-        if self._emu_queue:
-            self._emu_thread.cmd = self._emu_queue[0]
-            self._emu_queue = self._emu_queue[1:]
-            self._emu_thread.start()
-        else:
-            self._emu_thread.cmd = ''
-
-    def _on_emu_error(self, err_str):
-        self.log(err_str)
-        if self._emu_queue:
-            self._emu_queue.clear()
 
     def _on_request_resume_from_js(self, tid):
         self.dwarf_api('release', tid, tid=tid)

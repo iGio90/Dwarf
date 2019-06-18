@@ -27,7 +27,6 @@ class ContextPanel(QTabWidget):
     # consts
     CONTEXT_TYPE_NATIVE = 0
     CONTEXT_TYPE_JAVA = 1
-    CONTEXT_TYPE_EMULATOR = 2
 
     onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
 
@@ -64,27 +63,6 @@ class ContextPanel(QTabWidget):
         self._nativectx_list.customContextMenuRequested.connect(
             self._on_native_contextmenu)
 
-        self._emulatorctx_model = QStandardItemModel(0, 3)
-        self._emulatorctx_model.setHeaderData(0, Qt.Horizontal, 'Reg')
-        self._emulatorctx_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
-                                              Qt.TextAlignmentRole)
-        self._emulatorctx_model.setHeaderData(1, Qt.Horizontal, 'Value')
-        self._emulatorctx_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
-                                              Qt.TextAlignmentRole)
-        self._emulatorctx_model.setHeaderData(2, Qt.Horizontal, 'Decimal')
-
-        self._emulatorctx_list = DwarfListView()
-        self._emulatorctx_list.setModel(self._emulatorctx_model)
-
-        self._emulatorctx_list.header().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self._emulatorctx_list.header().setSectionResizeMode(
-            1, QHeaderView.ResizeToContents)
-
-        self._emulatorctx_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._emulatorctx_list.customContextMenuRequested.connect(
-            self._on_emulator_contextmenu)
-
         self._javactx_model = QStandardItemModel(0, 3)
         self._javactx_model.setHeaderData(0, Qt.Horizontal, 'Argument')
         self._javactx_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter,
@@ -115,7 +93,6 @@ class ContextPanel(QTabWidget):
     # ************************************************************************
     def clear(self):
         self._nativectx_list.clear()
-        self._emulatorctx_list.clear()
         self._javactx_list.clear()
 
     def set_context(self, ptr, context_type, context):
@@ -128,9 +105,6 @@ class ContextPanel(QTabWidget):
         elif context_type == ContextPanel.CONTEXT_TYPE_JAVA:
             self._javactx_list.clear()
             self._set_java_context(ptr, context)
-        elif context_type == ContextPanel.CONTEXT_TYPE_EMULATOR:
-            self._emulatorctx_list.clear()
-            self._set_emulator_context(ptr, context)
         else:
             raise Exception('unknown context type')
 
@@ -142,8 +116,6 @@ class ContextPanel(QTabWidget):
         tab_name = tab_name.join(tab_name.split()).lower()
         if tab_name == 'native':
             index = self.indexOf(self._nativectx_list)
-        elif tab_name == 'emulator':
-            index = self.indexOf(self._emulatorctx_list)
         elif tab_name == 'java':
             index = self.indexOf(self._javactx_list)
 
@@ -211,45 +183,6 @@ class ContextPanel(QTabWidget):
             self._nativectx_model.appendRow(
                 [reg_name, value_x, value_dec, telescope])
             self._nativectx_list.resizeColumnToContents(0)
-
-    def _set_emulator_context(self, ptr, context):
-        if self.indexOf(self._emulatorctx_list) == -1:
-            self.addTab(self._emulatorctx_list, 'Emulator')
-            self.show_context_tab('Emulator')
-        else:
-            self.show_context_tab('Emulator')
-
-        context_ptr = ptr
-        context = context.__dict__
-
-        sorted_regs = self.get_sort_order()
-
-        for register in sorted(context, key=lambda x: sorted_regs[x] if x in sorted_regs else len(sorted_regs)):
-            if register.startswith('_') or register not in sorted_regs:
-                continue
-
-            reg_name = QStandardItem()
-            reg_name.setTextAlignment(Qt.AlignCenter)
-            reg_name.setForeground(QColor('#39c'))
-            value_x = QStandardItem()
-            # value_x.setTextAlignment(Qt.AlignCenter)
-            value_dec = QStandardItem()
-            # value_dec.setTextAlignment(Qt.AlignCenter)
-
-            reg_name.setText(register)
-            reg_name.setData(context_ptr)
-
-            if context[register] is not None:
-                if isinstance(context[register], int):
-                    str_fmt = '0x{0:x}'
-                    if self._emulatorctx_list.uppercase_hex:
-                        str_fmt = '0x{0:X}'
-                    value_x.setText(str_fmt.format(context[register]))
-                    value_dec.setText('{0:d}'.format(context[register]))
-
-            self._emulatorctx_model.appendRow([reg_name, value_x, value_dec])
-            self._emulatorctx_list.resizeColumnToContents(0)
-            self._emulatorctx_list.resizeColumnToContents(1)
 
     def _set_java_context(self, ptr, context):
         if self.indexOf(self._javactx_list) == -1:
@@ -339,14 +272,6 @@ class ContextPanel(QTabWidget):
             context_menu.addAction(
                 'Jump to address', lambda: self._app_window.jump_to_address(
                     self._nativectx_model.item(index, 1).text()))
-            context_menu.exec_(glbl_pt)
-
-    def _on_emulator_contextmenu(self, pos):
-        index = self._emulatorctx_list.indexAt(pos).row()
-        glbl_pt = self._emulatorctx_list.mapToGlobal(pos)
-        context_menu = QMenu(self)
-        if index != -1:
-            # show contextmenu
             context_menu.exec_(glbl_pt)
 
     def _on_java_contextmenu(self, pos):

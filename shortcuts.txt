@@ -14,7 +14,6 @@ F10     - Detach
 
 Open Subviews
 ----------------------------------
-CTRL+F2     - Show Emulator
 CTRL+F3     - Show MemorySearch
 CTRL+F5     - Show Disassembly
 

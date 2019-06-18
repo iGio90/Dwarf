@@ -52,9 +52,6 @@ def _check_package_version(package_name, min_version):
         elif package_name == 'pyperclip':
             import pyperclip
             installed_version = pyperclip.__version__
-        elif package_name == 'unicorn':
-            import unicorn
-            installed_version = unicorn.__version__
         if installed_version is not None:
             installed_version = installed_version.split('.')
             _min_version = min_version.split('.')
@@ -73,37 +70,6 @@ def _check_package_version(package_name, min_version):
                 if pip_install_package(package_name + '>=' + min_version):
                     print('*** success ***')
     except Exception:  # pylint: disable=broad-except
-        # install unicorn on windows
-        if package_name == 'unicorn':
-            if os.name == 'nt':
-                import ctypes
-                is64bit = False
-                if ctypes.sizeof(ctypes.c_void_p) * 8 == 64:
-                    is64bit = True
-
-                    # download installer
-                    req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win32.msi'
-                    if is64bit:
-                        req_url = 'https://github.com/unicorn-engine/unicorn/releases/download/1.0.1/unicorn-1.0.1-python-win64.msi'
-                        import requests
-                        request = requests.get(req_url)
-                        print('Downloading prebuilt unicorn...')
-                        if request is not None and request.status_code == 200:
-
-                            # write installer
-                            with open('unicorn-installer.msi', 'wb') as f:
-                                for chunk in request.iter_content(chunk_size=1024):
-                                    if chunk:
-                                        f.write(chunk)
-
-                            if os.path.exists('unicorn-installer.msi'):
-                                from lib.utils import do_shell_command
-                                res = do_shell_command('msiexec /i unicorn-installer.msi /l*v unicorn-install.log /qn')
-                                if res == '':
-                                    print(
-                                        'unicorn installed see log ' + os.path.curdir + os.path.sep + 'unicorn-install.log')
-                                os.remove('unicorn-installer.msi')
-
         print('installing ' + package_name + '...')
         if pip_install_package(package_name + '>=' + min_version):
             print('*** success ***')
@@ -115,7 +81,6 @@ def _check_dependencies():
     _check_package_version('pyqt5', '5.11.3')
     _check_package_version('pyperclip', '1.7.0')
     _check_package_version('capstone', '4.0.0')  # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
-    _check_package_version('unicorn', '1.0.1')
 
 
 def process_args():
