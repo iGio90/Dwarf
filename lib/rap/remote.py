@@ -76,9 +76,7 @@ class RapServer:
             else:
                 ret = ""
                 lon = 0
-            print("PACKING REPLY")
             buf = pack(">Bi", key | RAP_REPLY, lon)
-            print("SENDING RAP READ")
             c.send(buf)
             c.send(ret)
         elif key == RAP_WRITE:
@@ -151,11 +149,9 @@ class RapServer:
         s = socket()
         s.bind(("0.0.0.0", port))
         s.listen(999)
-        print("Listening at port %d" % port)
         self.running = True
         while self.running:
             (c, (addr, port)) = s.accept()
-            print("New client %s:%d" % (addr, port))
             self._handle_client(c)
 
     def stop(self):

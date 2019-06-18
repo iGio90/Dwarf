@@ -52,4 +52,5 @@ class R2Dwarf(QObject):
     def api(self, cmd):
         if not self.available:
             return None
-        return self.r2.cmd(cmd).decode('utf8')
+        ret = self.r2.cmd(cmd).decode('utf8')
+        return ret
