@@ -28,9 +28,6 @@ EMULATOR_CALLBACKS_PATH = 'emulator_callbacks_path'
 EMULATOR_INSTRUCTIONS_DELAY = 'emulator_instructions_delay'
 
 
-RECENT_SESSIONS = 'recent_sessions'
-
-
 class Prefs(QObject):
     """ Preferences
 

@@ -82,9 +82,7 @@ class AndroidSession(Session):
         self._device_window = DeviceWindow(self._app_window, 'usb')
 
         # main menu every session needs
-        self._menu = [QMenu(self.session_type + ' Session')]
-        self._menu[0].addAction('Save Session', self.dwarf.save_session)
-        self._menu[0].addAction('Close Session', self.stop_session)
+        self._menu = []
         self._smali_thread = None
 
     @property

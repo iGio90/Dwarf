@@ -837,23 +837,6 @@ class Dwarf(QObject):
     def _on_request_resume_from_js(self, tid):
         self.dwarf_api('release', tid, tid=tid)
 
-    def save_session(self):
-        session_object = self.dump_session()
-        _file = QFileDialog.getSaveFileName(self._app_window)
-        if len(_file) > 0:
-            _file = _file[0]
-            if len(_file) > 0:
-                with open(_file, 'w') as f:
-                    f.write(json.dumps(session_object, indent=2))
-
-                history = self._app_window.prefs.get(prefs.RECENT_SESSIONS, default=[])
-                if _file in history:
-                    history.pop(history.index(_file))
-                history.insert(0, _file)
-                if len(history) > 20:
-                    history.pop(len(history) - 1)
-                self._app_window.prefs.put(prefs.RECENT_SESSIONS, history)
-
     def dump_session(self):
         return {
             'session': self._app_window.session_manager.session.session_type,
