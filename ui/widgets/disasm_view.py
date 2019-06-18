@@ -31,9 +31,6 @@ from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
 
 
-# TODO: dont diasm again when jump in same range
-
-
 class DisassembleThread(QThread):
     onFinished = pyqtSignal(list, name='onFinished')
     onError = pyqtSignal(str, name='onError')
@@ -728,21 +725,22 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu.addAction('Jump to address', self._on_cm_jump_to_address)
 
+        # allow mode switch arm/thumb
+        if self.capstone_arch == CS_ARCH_ARM:
+            mode_str = 'ARM'
+            if self.capstone_mode == CS_MODE_THUMB:
+                mode_str = 'THUMB'
+
+            entry_str = '&Switch to {0} mode'.format(mode_str)
+            context_menu.addAction(entry_str, self._on_switch_mode)
+
         if not self._lines:
             # allow jumpto in empty panel
             glbl_pt = self.mapToGlobal(event.pos())
             context_menu.exec_(glbl_pt)
             return
 
-        # allow modeswitch arm/thumb
-        if self.capstone_arch == CS_ARCH_ARM:
-            mode_str = 'ARM'
-            if self.capstone_mode == CS_MODE_THUMB:
-                mode_str = 'THUMB'
-
-            entry_str = '&Switch to {0} Mode'.format(mode_str)
-            context_menu.addAction(entry_str, self._on_switch_mode)
-            context_menu.addSeparator()
+        context_menu.addSeparator()
 
         index = self.pixel_to_line(loc_x, loc_y)
         if 0 <= index < self.visible_lines():

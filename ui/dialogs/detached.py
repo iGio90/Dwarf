@@ -15,6 +15,7 @@ class QDialogDetached(DwarfDialog):
         layout.addWidget(QLabel('%d detached with reason: %s\n' % (process.pid, reason)))
 
         self._restart = False
+        self._terminate = False
 
         buttons = QHBoxLayout()
         do_noting = QPushButton('ok')
@@ -24,11 +25,18 @@ class QDialogDetached(DwarfDialog):
             restart = QPushButton('restart')
             restart.clicked.connect(self.restart)
             buttons.addWidget(restart)
+        do_noting = QPushButton('terminate')
+        do_noting.clicked.connect(self.terminate)
+        buttons.addWidget(do_noting)
 
         layout.addLayout(buttons)
 
     def restart(self):
         self._restart = True
+        self.accept()
+
+    def terminate(self):
+        self._terminate = True
         self.accept()
 
     @staticmethod
@@ -39,4 +47,6 @@ class QDialogDetached(DwarfDialog):
         if result == QDialog.Accepted:
             if dialog._restart:
                 return 0
+            elif dialog._terminate:
+                return 1
         return -1

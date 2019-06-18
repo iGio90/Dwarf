@@ -412,7 +412,7 @@ class AppWindow(QMainWindow):
             from ui.panel_console import ConsolePanel
             self.console_dock = QDockWidget('Console', self)
             self.console_panel = ConsolePanel(self)
-            if self.dwarf_args.script and len(self.dwarf_args.script) > 0:
+            if self.dwarf_args.script and len(self.dwarf_args.script) > 0 and os.path.exists(self.dwarf_args.script):
                 with open(self.dwarf_args.script, 'r') as f:
                     self.console_panel.get_js_console().function_content = f.read()
             self.dwarf.onLogToConsole.connect(self._log_js_output)
@@ -980,6 +980,10 @@ class AppWindow(QMainWindow):
             self.session_stopped()
 
             self._restore_session(session)
+        elif ret == 1:
+            self.session_manager.session.stop()
+
+        return 0
 
     def _on_script_loaded(self):
         # restore the loaded session if any
