@@ -897,18 +897,6 @@ class AppWindow(QMainWindow):
                 # invalidate dwarf context tid
                 self.dwarf.context_tid = 0
 
-
-        if self.trace_panel is not None:
-            self.show_main_tab('Trace')
-            self.trace_panel.start()
-
-            trace_events_parts = data[1].split(',')
-            while trace_events_parts:
-                trace_event = TraceEvent(
-                    trace_events_parts.pop(0), trace_events_parts.pop(0),
-                    trace_events_parts.pop(0), trace_events_parts.pop(0))
-                self.trace_panel.event_queue.append(trace_event)
-
     def _on_set_data(self, data):
         if not isinstance(data, list):
             return

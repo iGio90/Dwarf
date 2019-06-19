@@ -301,7 +301,7 @@ class Dwarf(QObject):
             if not os.path.exists('lib/core.js'):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
-            self.r2 = R2Dwarf(self)
+            #self.r2 = R2Dwarf(self)
 
             with open('lib/core.js', 'r') as core_script:
                 script_content = core_script.read()

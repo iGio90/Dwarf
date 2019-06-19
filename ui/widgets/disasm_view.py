@@ -50,7 +50,9 @@ class DisassembleThread(QThread):
 
         _counter = 0
         _instructions = []
+
         _debug_symbols = []
+        _debug_symbols_indexes = []
 
         for cap_inst in self._capstone.disasm(
                 self._range.data[self._range.start_offset:], self._range.start_address):
@@ -60,6 +62,7 @@ class DisassembleThread(QThread):
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
             if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
                 _debug_symbols.append(dwarf_instruction.jump_address)
+                _debug_symbols_indexes.append(str(len(_instructions)))
             _instructions.append(dwarf_instruction)
 
             _counter += 1
@@ -73,13 +76,13 @@ class DisassembleThread(QThread):
         if _debug_symbols:
             symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
             if symbols:
-                for symbol in symbols:
-                    for instruction in _instructions:
-                        if instruction.jump_address == int(symbol['address'], 16):
-                            instruction.symbol_name = symbol['name']
-                            instruction.symbol_module = '-'
-                            if 'moduleName' in symbol:
-                                instruction.symbol_module = symbol['moduleName']
+                for i in range(len(symbols)):
+                    symbol = symbols[i]
+                    instruction = _instructions[int(_debug_symbols_indexes[i])]
+                    instruction.symbol_name = symbol['name']
+                    instruction.symbol_module = '-'
+                    if 'moduleName' in symbol:
+                        instruction.symbol_module = symbol['moduleName']
 
         self.onFinished.emit(_instructions)
 
@@ -727,10 +730,10 @@ class DisassemblyView(QAbstractScrollArea):
 
         # allow mode switch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
-            mode_str = 'ARM'
             if self.capstone_mode == CS_MODE_THUMB:
+                mode_str = 'ARM'
+            else:
                 mode_str = 'THUMB'
-
             entry_str = '&Switch to {0} mode'.format(mode_str)
             context_menu.addAction(entry_str, self._on_switch_mode)
 
