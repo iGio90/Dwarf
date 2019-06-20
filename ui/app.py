@@ -72,6 +72,7 @@ class AppWindow(QMainWindow):
         self.backtrace_panel = None
         self.contexts_list_panel = None
         self.data_panel = None
+        self.emulator_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
         self.bookmarks_panel = None
@@ -197,6 +198,10 @@ class AppWindow(QMainWindow):
             lambda: self.show_main_tab('search'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
         subview_menu.addAction(
+            'Emulator',
+            lambda: self.show_main_tab('emulator'),
+            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
+        subview_menu.addAction(
             'Disassembly',
             lambda: self.show_main_tab('disassembly'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F5))
@@ -288,6 +293,8 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.asm_panel)
         elif name == 'data':
             index = self.main_tabs.indexOf(self.data_panel)
+        elif name == 'emulator':
+            index = self.main_tabs.indexOf(self.emulator_panel)
         elif name == 'java-trace':
             index = self.main_tabs.indexOf(self.java_trace_panel)
         elif name == 'jvm-inspector':
@@ -466,6 +473,10 @@ class AppWindow(QMainWindow):
             self.asm_panel = DisassemblyView(self)
             self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
+        elif elem == 'emulator':
+            from ui.panel_emulator import EmulatorPanel
+            self.emulator_panel = EmulatorPanel(self)
+            self.main_tabs.addTab(self.emulator_panel, 'Emulator')
         elif elem == 'java-trace':
             from ui.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
@@ -532,6 +543,10 @@ class AppWindow(QMainWindow):
     @property
     def threads(self):
         return self.contexts_list_panel
+
+    @property
+    def emulator(self):
+        return self.emulator_panel
 
     @property
     def ftrace(self):
@@ -842,7 +857,7 @@ class AppWindow(QMainWindow):
                                                context['context'])
 
                 if 'pc' in context['context']:
-                    if not 'disassembly' in self._ui_elems:
+                    if not 'disassembly' in self._ui_elems or manual:
                         from lib.range import Range
                         _range = Range(Range.SOURCE_TARGET, self.dwarf)
                         _range.init_with_address(

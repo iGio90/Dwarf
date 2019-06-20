@@ -36,6 +36,15 @@ class DwarfCompleter(QCompleter):
             'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'removeWatcher', 'restart',
             'setData',
+            # trace
+            'startNativeTracer',
+            'stopNativeTracer',
+            # emu
+            'emulator',
+            'emulator.clean()',
+            'emulator.start(',
+            'emulator.step()',
+            'emulator.stop()',
 
             'JSON.stringify('
         ]
@@ -80,7 +89,7 @@ class JsHighlighter(QSyntaxHighlighter):
             'hookAllJavaMethods', 'hookJava', 'hookNative',
             'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
             'nativeBacktrace', 'release', 'resume', 'removeWatcher', 'restart',
-            'setData',
+            'setData', 'startNativeTracer', 'stopNativeTracer',
             "prototype",
             "create",
             "defineProperty",

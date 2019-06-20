@@ -131,3 +131,9 @@ class ContextsListPanel(DwarfListView):
             context_menu = QMenu()
             context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
             context_menu.exec_(glbl_pt)
+
+    def _on_cm_start_trace(self, tid):
+        self.dwarf.native_tracer_start(int(tid))
+
+    def _on_cm_stop_trace(self):
+        self.dwarf.native_tracer_stop()
