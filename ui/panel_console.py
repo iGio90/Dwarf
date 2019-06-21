@@ -37,7 +37,7 @@ class ConsolePanel(QTabWidget):
 
         self.addTab(self.js_console, 'javascript')
         self.addTab(self.py_console, 'python')
-        self.addTab(self.r2_console, 'r2')
+        #self.addTab(self.r2_console, 'r2')
         self.addTab(self.emu_console, 'emulator')
 
     def clear(self):
@@ -62,10 +62,10 @@ class ConsolePanel(QTabWidget):
             self.setCurrentIndex(0)
         elif tab_name == 'python':
             self.setCurrentIndex(1)
-        elif tab_name == 'r2':
-            self.setCurrentIndex(2)
+        #elif tab_name == 'r2':
+        #    self.setCurrentIndex(2)
         elif tab_name == 'emulator':
-            self.setCurrentIndex(3)
+            self.setCurrentIndex(2)
         else:
             self.setCurrentIndex(0)
 
