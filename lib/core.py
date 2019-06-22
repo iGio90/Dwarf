@@ -678,6 +678,9 @@ class Dwarf(QObject):
         elif cmd == 'native_on_load_module_loading':
             str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
             self.log_event(str_fmt)
+        elif cmd == 'new_thread':
+            str_fmt = ('@thread {0} starting new thread with target fn := {1}'.format(parts[1], parts[2]))
+            self.log_event(str_fmt)
         elif cmd == 'release':
             str_fmt = ('releasing := {0}'.format(parts[1]))
             self.log_event(str_fmt)
