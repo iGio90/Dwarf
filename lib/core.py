@@ -350,8 +350,9 @@ class Dwarf(QObject):
             self._script.on('destroyed', self._on_script_destroyed)
             self._script.load()
 
+            break_start = self._app_window.dwarf_args.break_start
             is_debug = self._app_window.dwarf_args.debug_script
-            self._script.exports.init(is_debug, spawned)
+            self._script.exports.init(break_start, is_debug, spawned)
 
             if script is not None:
                 if os.path.exists(script):
@@ -678,6 +679,8 @@ class Dwarf(QObject):
             str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
             self.log_event(str_fmt)
         elif cmd == 'release':
+            str_fmt = ('releasing := {0}'.format(parts[1]))
+            self.log_event(str_fmt)
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
             self.onThreadResumed.emit(int(parts[1]))

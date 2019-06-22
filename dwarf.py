@@ -143,6 +143,9 @@ def process_args():
     parser.add_argument("-dev", "--device", help="DeviceSerial adb devices")
 
     parser.add_argument(
+        "-bs", "--break-start", action='store_true', help="break at start")
+
+    parser.add_argument(
         "-sp", "--spawn", action='store_true', help="force spawn")
 
     parser.add_argument(
