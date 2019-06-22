@@ -412,6 +412,7 @@ class AppWindow(QMainWindow):
                 with open(self.dwarf_args.script, 'r') as f:
                     self.console_panel.get_js_console().function_content = f.read()
             self.dwarf.onLogToConsole.connect(self._log_js_output)
+            self.dwarf.onLogEvent.connect(self._log_event)
             self.console_dock.setWidget(self.console_panel)
             self.console_dock.setObjectName('ConsolePanel')
             self.addDockWidget(Qt.BottomDockWidgetArea, self.console_dock)
@@ -804,6 +805,10 @@ class AppWindow(QMainWindow):
     def _log_js_output(self, output):
         if self.console_panel is not None:
             self.console_panel.get_js_console().log(output)
+
+    def _log_event(self, output):
+        if self.console_panel is not None:
+            self.console_panel.get_events_console().log(output)
 
     def _on_setranges(self, ranges):
         """ Dwarf wants to set Ranges

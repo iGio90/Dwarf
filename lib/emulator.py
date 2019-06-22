@@ -457,8 +457,10 @@ class Emulator(QThread):
         else:
             if step_mode == STEP_MODE_NONE or step_mode == STEP_MODE_SINGLE:
                 self.log_to_ui('[*] stepping %s' % hex(address))
-            else:
+            elif step_mode == STEP_MODE_FUNCTION:
                 self.log_to_ui('[*] stepping to next function call')
+            elif step_mode == STEP_MODE_JUMP:
+                self.log_to_ui('[*] stepping to next jump')
         self.onEmulatorStart.emit()
 
         # invalidate prefs before start

@@ -14,15 +14,17 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtWidgets import QTabWidget
+from PyQt5.QtWidgets import QTabWidget, QSplitter
 
 from ui.widget_console import DwarfConsoleWidget
 
 
-class ConsolePanel(QTabWidget):
-    def __init__(self, parent=None):
-        super(ConsolePanel, self).__init__(parent=parent)
+class ConsolePanel(QSplitter):
+    def __init__(self, parent=None, *__args):
+        super().__init__(*__args)
         self.parent = parent
+
+        self.qtabs = QTabWidget()
 
         self.js_console = DwarfConsoleWidget(parent, input_placeholder='$>', function_box=True)
         self.js_console.onCommandExecute.connect(self.js_callback)
@@ -35,10 +37,15 @@ class ConsolePanel(QTabWidget):
 
         self.emu_console = DwarfConsoleWidget(parent, has_input=False)
 
-        self.addTab(self.js_console, 'javascript')
-        self.addTab(self.py_console, 'python')
+        self.qtabs.addTab(self.js_console, 'javascript')
+        self.qtabs.addTab(self.py_console, 'python')
         #self.addTab(self.r2_console, 'r2')
-        self.addTab(self.emu_console, 'emulator')
+        self.qtabs.addTab(self.emu_console, 'emulator')
+
+        self.events = DwarfConsoleWidget(parent, has_input=False)
+
+        self.addWidget(self.qtabs)
+        self.addWidget(self.events)
 
     def clear(self):
         self.js_console.clear()
@@ -56,18 +63,21 @@ class ConsolePanel(QTabWidget):
     def get_emu_console(self):
         return self.emu_console
 
+    def get_events_console(self):
+        return self.events
+
     def show_console_tab(self, tab_name):
         tab_name = tab_name.join(tab_name.split()).lower()
         if tab_name == 'javascript':
-            self.setCurrentIndex(0)
+            self.qtabs.setCurrentIndex(0)
         elif tab_name == 'python':
-            self.setCurrentIndex(1)
+            self.qtabs.setCurrentIndex(1)
         #elif tab_name == 'r2':
         #    self.setCurrentIndex(2)
         elif tab_name == 'emulator':
-            self.setCurrentIndex(2)
+            self.qtabs.setCurrentIndex(2)
         else:
-            self.setCurrentIndex(0)
+            self.qtabs.setCurrentIndex(0)
 
     def js_callback(self, text):
         # the output in the logs is handled in dwarf_api

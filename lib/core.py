@@ -91,6 +91,7 @@ class Dwarf(QObject):
     onSetRanges = pyqtSignal(list, name='onSetRanges')
     onSetModules = pyqtSignal(list, name='onSetModules')
     onLogToConsole = pyqtSignal(str, name='onLogToConsole')
+    onLogEvent = pyqtSignal(str, name='onLogEvent')
     # thread+context
     onThreadResumed = pyqtSignal(int, name='onThreadResumed')
     onRequestJsThreadResume = pyqtSignal(int, name='onRequestJsThreadResume')
@@ -473,7 +474,7 @@ class Dwarf(QObject):
                 self._script.post({"type": str(tid)})
             return self._script.exports.api(tid, api, args)
         except Exception as e:
-            self.log(str(e))
+            self.log_event(str(e))
             return None
 
     def hook_java(self, input_=None, pending_args=None):
@@ -528,6 +529,9 @@ class Dwarf(QObject):
 
     def log(self, what):
         self.onLogToConsole.emit(str(what))
+
+    def log_event(self, what):
+        self.onLogEvent.emit(str(what))
 
     def read_memory(self, ptr, length):
         if length > 1024 * 1024:
@@ -596,7 +600,7 @@ class Dwarf(QObject):
             self.onBackTrace.emit(json.loads(parts[1]))
         elif cmd == 'class_loader_loading_class':
             str_fmt = ('@thread {0} loading class := {1}'.format(parts[1], parts[2]))
-            self.log(str_fmt)
+            self.log_event(str_fmt)
         elif cmd == 'emulator':
             self.onEmulator.emit(parts[1:])
         elif cmd == 'enumerate_java_classes_start':
@@ -660,7 +664,7 @@ class Dwarf(QObject):
             self.onDeleteHook.emit(parts)
         elif cmd == 'java_on_load_callback':
             str_fmt = ('Hook java onload {0} @thread := {1}'.format(parts[1], parts[2]))
-            self.log(str_fmt)
+            self.log_event(str_fmt)
             self.onHitJavaOnLoad.emit(parts[1])
         elif cmd == 'java_trace':
             self.onJavaTraceEvent.emit(parts)
@@ -668,11 +672,11 @@ class Dwarf(QObject):
             self.log(parts[1])
         elif cmd == 'native_on_load_callback':
             str_fmt = ('Hook native onload {0} @thread := {1}'.format(parts[1], parts[3]))
-            self.log(str_fmt)
+            self.log_event(str_fmt)
             self.onHitNativeOnLoad.emit([parts[1], parts[2]])
         elif cmd == 'native_on_load_module_loading':
             str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
-            self.log(str_fmt)
+            self.log_event(str_fmt)
         elif cmd == 'release':
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]
@@ -714,7 +718,7 @@ class Dwarf(QObject):
             self.onSetRanges.emit(json.loads(parts[2]))
         elif cmd == 'watcher':
             exception = json.loads(parts[1])
-            self.log('watcher hit op %s address %s @thread := %s' %
+            self.log_event('watcher hit op %s address %s @thread := %s' %
                      (exception['memory']['operation'], exception['memory']['address'], parts[2]))
         elif cmd == 'watcher_added':
             ptr = utils.parse_ptr(parts[1])
@@ -749,7 +753,7 @@ class Dwarf(QObject):
             self._pointer_size = context_data['pointerSize']
             self.java_available = context_data['java']
             str_fmt = ('injected into := {0:d}'.format(self.pid))
-            self.log(str_fmt)
+            self.log_event(str_fmt)
 
             # unlock java on loads
             if self.java_available:
@@ -771,7 +775,7 @@ class Dwarf(QObject):
                 name = context_data['ptr']
 
             if context_data['reason'] == 0:
-                self.log('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
+                self.log_event('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
 
         if not reason == -1 and self.context_tid == 0:
             self.context_tid = context_data['tid']
