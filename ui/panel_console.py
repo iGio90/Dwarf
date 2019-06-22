@@ -27,8 +27,8 @@ class ConsolePanel(QTabWidget):
         self.js_console = DwarfConsoleWidget(parent, input_placeholder='$>', function_box=True)
         self.js_console.onCommandExecute.connect(self.js_callback)
 
-        self.r2_console = DwarfConsoleWidget(parent, input_placeholder='r2')
-        self.r2_console.onCommandExecute.connect(self.r2_callback)
+        #self.r2_console = DwarfConsoleWidget(parent, input_placeholder='r2')
+        #self.r2_console.onCommandExecute.connect(self.r2_callback)
 
         self.py_console = DwarfConsoleWidget(parent, input_placeholder='>>>')
         self.py_console.onCommandExecute.connect(self.py_callback)

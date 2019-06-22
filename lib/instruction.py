@@ -14,6 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import struct
 
 from capstone import *
 from capstone.arm_const import *
@@ -50,24 +51,31 @@ class Instruction(object):
         self.thumb = dwarf.arch == 'arm' and (
                 ARM_GRP_THUMB in self.groups or ARM_GRP_THUMB1ONLY in self.groups or
                 ARM_GRP_THUMB2 in self.groups or ARM_GRP_THUMB2DSP in self.groups)
-        self.is_jump = False
-        if instruction.group(CS_GRP_JUMP) or instruction.group(CS_GRP_CALL):
-            self.is_jump = True
+
+        self.is_call = instruction.group(CS_GRP_CALL)
+        self.is_jump = instruction.group(CS_GRP_JUMP)
+
+        self.call_address = 0
         self.jump_address = 0
+
         self.should_change_arm_instruction_set = False
         if len(instruction.operands) > 0 and self.is_jump:
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
-                    self.jump_address = op.value.imm
+                    address = op.value.imm & int('0x' + (dwarf.pointer_size * 'ff'), 16)
+                    self._set_jump_address(address)
+
                     if self.mnemonic in EXCHANGE_INSTRUCTION_SET:
                         self.should_change_arm_instruction_set = True
                 elif op.type == CS_OP_REG:
                     if context is not None:
                         op_str = instruction.op_str
                         if op_str in context.__dict__:
-                            self.jump_address = context.__dict__[op_str]
+                            address = context.__dict__[op_str] & int('0x' + (dwarf.pointer_size * 'ff'), 16)
+                            self._set_jump_address(address)
+
                             if self.mnemonic in EXCHANGE_INSTRUCTION_SET:
-                                if self.jump_address % 2 == 0:
+                                if self.call_address % 2 == 0:
                                     self.should_change_arm_instruction_set = self.thumb
                                 else:
                                     self.should_change_arm_instruction_set = not self.thumb
@@ -85,3 +93,8 @@ class Instruction(object):
                 if 'moduleName' in sym:
                     self.symbol_module = sym['moduleName']"""
 
+    def _set_jump_address(self, jump):
+        if self.is_call:
+            self.call_address = jump
+        elif self.is_jump:
+            self.jump_address = jump

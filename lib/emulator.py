@@ -35,6 +35,7 @@ VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"
 STEP_MODE_NONE = 0
 STEP_MODE_SINGLE = 1
 STEP_MODE_FUNCTION = 2
+STEP_MODE_JUMP = 3
 
 
 class Emulator(QThread):
@@ -131,18 +132,27 @@ class Emulator(QThread):
         self.uc = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_64)
         self.cs = Cs(CS_ARCH_X86, CS_MODE_64)
 
-    def _setup(self):
-        if self.dwarf.arch == 'arm':
-            self.setup_arm()
-        elif self.dwarf.arch == 'arm64':
-            self.setup_arm64()
-        elif self.dwarf.arch == 'ia32':
-            self.setup_x86()
-        elif self.dwarf.arch == 'x64':
-            self.setup_x64()
+    def _setup(self, user_arch=None, user_mode=None, cs_arch=None, cs_mode=None):
+        if user_arch is not None and user_mode is not None:
+            try:
+                self.uc = unicorn.Uc(user_arch, user_mode)
+                self.cs = Cs(cs_arch, cs_mode)
+
+                self.thumb = user_mode == unicorn.UC_MODE_THUMB
+            except:
+                raise self.EmulatorSetupFailedError('Unsupported arch')
         else:
-            # unsupported arch
-            raise self.EmulatorSetupFailedError('Unsupported arch')
+            if self.dwarf.arch == 'arm':
+                self.setup_arm()
+            elif self.dwarf.arch == 'arm64':
+                self.setup_arm64()
+            elif self.dwarf.arch == 'ia32':
+                self.setup_x86()
+            elif self.dwarf.arch == 'x64':
+                self.setup_x64()
+            else:
+                # unsupported arch
+                raise self.EmulatorSetupFailedError('Unsupported arch')
 
         if not self.uc or not self.cs:
             raise self.EmulatorSetupFailedError('Unicorn or Capstone missing')
@@ -281,10 +291,15 @@ class Emulator(QThread):
                     except:
                         # hook code not implemented in callbacks
                         pass
-                if not instruction.is_jump:
+
+                if not instruction.is_jump and not instruction.is_call:
                     self._next_instruction = address + i.size
                 else:
-                    self._next_instruction = instruction.jump_address
+                    if instruction.is_call:
+                        self._next_instruction = instruction.call_address
+                    elif instruction.is_jump:
+                        self._next_instruction = instruction.jump_address
+
                     if instruction.should_change_arm_instruction_set:
                         if self.thumb:
                             self._current_cpu_mode = unicorn.UC_MODE_ARM
@@ -305,6 +320,9 @@ class Emulator(QThread):
             if self.step_mode == STEP_MODE_SINGLE:
                 self.stop()
             elif self.step_mode == STEP_MODE_FUNCTION:
+                if instruction is not None and instruction.is_call:
+                    self.stop()
+            elif self.step_mode == STEP_MODE_JUMP:
                 if instruction is not None and instruction.is_jump:
                     self.stop()
 
@@ -355,7 +373,7 @@ class Emulator(QThread):
         self.onEmulatorMemoryRangeMapped.emit([range_.base, range_.size])
         return 0
 
-    def setup(self, tid=0):
+    def setup(self, tid=0, user_arch=None, user_mode=None, cs_arch=None, cs_mode=None):
         if tid == 0:
             # get current context tid if none provided
             tid = self.dwarf.context_tid
@@ -380,7 +398,7 @@ class Emulator(QThread):
             return self.ERR_INVALID_CONTEXT
 
         try:
-            self._setup()
+            self._setup(user_arch=user_arch, user_mode=user_mode, cs_arch=cs_arch, cs_mode=cs_mode)
         except self.EmulatorSetupFailedError:
             return self.ERR_SETUP_FAILED
         return 0
@@ -391,7 +409,7 @@ class Emulator(QThread):
             return
         return super().start(priority=priority)
 
-    def emulate(self, until=0, step_mode=STEP_MODE_NONE):
+    def emulate(self, until=0, step_mode=STEP_MODE_NONE, user_arch=None, user_mode=None, cs_arch=None, cs_mode=None):
         if self.isRunning():
             raise self.EmulatorAlreadyRunningError()
 
@@ -408,7 +426,7 @@ class Emulator(QThread):
                 raise self.EmulatorSetupFailedError('Invalid EndPtr')
 
         if self.context is None:
-            err = self.setup()
+            err = self.setup(user_arch=user_arch, user_mode=user_mode, cs_arch=cs_arch, cs_mode=cs_mode)
             if err > 0:
                 # make sure context is None if setup failed for any reason. we want a clean setup later
                 self.context = None
@@ -437,7 +455,7 @@ class Emulator(QThread):
         if until > 0:
             self.log_to_ui('[*] start emulation from %s to %s' % (hex(address), hex(self.end_ptr)))
         else:
-            if step_mode == STEP_MODE_NONE or self.step_mode == STEP_MODE_SINGLE:
+            if step_mode == STEP_MODE_NONE or step_mode == STEP_MODE_SINGLE:
                 self.log_to_ui('[*] stepping %s' % hex(address))
             else:
                 self.log_to_ui('[*] stepping to next function call')
