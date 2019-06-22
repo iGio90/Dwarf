@@ -129,12 +129,6 @@ class ContextsListPanel(DwarfListView):
             is_java = data['is_java']
             glbl_pt = self.mapToGlobal(pos)
             context_menu = QMenu()
-            if not is_java:
-                if self.dwarf.native_trace_tid == tid:
-                    context_menu.addAction('Stop Trace', lambda: self._on_cm_stop_trace())
-                else:
-                    context_menu.addAction('Trace', lambda: self._on_cm_start_trace(tid))
-                context_menu.addSeparator()
             context_menu.addAction('Resume', lambda: self.dwarf.dwarf_api('release', tid))
             context_menu.exec_(glbl_pt)
 

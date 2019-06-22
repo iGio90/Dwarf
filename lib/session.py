@@ -29,7 +29,7 @@ class Session(QObject):
     def __init__(self, parent=None, session_type=''):
         super(Session, self).__init__(parent)
         self._dwarf = Dwarf(self, parent)
-        self._dwarf.onScriptDestroyed.connect(self.stop)
+        #self._dwarf.onScriptDestroyed.connect(self.stop)
         self._session_type = session_type
 
     # ************************************************************************

@@ -28,10 +28,10 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
 from lib import utils
 from lib.prefs import Prefs
 from lib.session_manager import SessionManager
+from ui.dialogs.detached import QDialogDetached
 
 from ui.welcome_window import WelcomeDialog
 from ui.widgets.hex_edit import HighLight, HighlightExistsError
-from ui.panel_trace import TraceEvent
 
 from ui.dialogs.about_dlg import AboutDialog
 
@@ -84,7 +84,6 @@ class AppWindow(QMainWindow):
         self.modules_panel = None
         self.ranges_panel = None
         self.search_panel = None
-        self.trace_panel = None
         self.watchers_panel = None
         self.welcome_window = None
 
@@ -151,7 +150,6 @@ class AppWindow(QMainWindow):
                 'Welcome to Dwarf - A debugger for reverse engineers, crackers and security analyst'
             )
             self.welcome_window.onSessionSelected.connect(self._start_session)
-            self.welcome_window.onSessionRestore.connect(self._restore_session)
             # wait for welcome screen
             self.hide()
             self.welcome_window.show()
@@ -293,8 +291,6 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.modules_panel)
         elif name == 'disassembly':
             index = self.main_tabs.indexOf(self.asm_panel)
-        elif name == 'trace':
-            index = self.main_tabs.indexOf(self.trace_panel)
         elif name == 'data':
             index = self.main_tabs.indexOf(self.data_panel)
         elif name == 'emulator':
@@ -412,7 +408,11 @@ class AppWindow(QMainWindow):
             from ui.panel_console import ConsolePanel
             self.console_dock = QDockWidget('Console', self)
             self.console_panel = ConsolePanel(self)
+            if self.dwarf_args.script and len(self.dwarf_args.script) > 0 and os.path.exists(self.dwarf_args.script):
+                with open(self.dwarf_args.script, 'r') as f:
+                    self.console_panel.get_js_console().function_content = f.read()
             self.dwarf.onLogToConsole.connect(self._log_js_output)
+            self.dwarf.onLogEvent.connect(self._log_event)
             self.console_dock.setWidget(self.console_panel)
             self.console_dock.setObjectName('ConsolePanel')
             self.addDockWidget(Qt.BottomDockWidgetArea, self.console_dock)
@@ -469,10 +469,6 @@ class AppWindow(QMainWindow):
             from ui.panel_data import DataPanel
             self.data_panel = DataPanel(self)
             self.main_tabs.addTab(self.data_panel, 'Data')
-        elif elem == 'trace':
-            from ui.panel_trace import TracePanel
-            self.trace_panel = TracePanel(self)
-            self.main_tabs.addTab(self.trace_panel, 'Trace')
         elif elem == 'disassembly':
             from ui.widgets.disasm_view import DisassemblyView
             self.asm_panel = DisassemblyView(self)
@@ -582,10 +578,6 @@ class AppWindow(QMainWindow):
         return self.ranges_panel
 
     @property
-    def trace(self):
-        return self.trace_panel
-
-    @property
     def watchers(self):
         return self.watchers_panel
 
@@ -619,7 +611,8 @@ class AppWindow(QMainWindow):
             ui_elem = ui_elem.join(ui_elem.split()).lower()
             self._create_ui_elem(ui_elem)
 
-        self.dwarf.onAttached.connect(self._on_attached)
+        self.dwarf.onProcessAttached.connect(self._on_attached)
+        self.dwarf.onProcessDetached.connect(self._on_detached)
         self.dwarf.onScriptLoaded.connect(self._on_script_loaded)
 
         # hookup
@@ -630,7 +623,6 @@ class AppWindow(QMainWindow):
         self.dwarf.onApplyContext.connect(self._apply_context)
         self.dwarf.onThreadResumed.connect(self.on_tid_resumed)
 
-        self.dwarf.onTraceData.connect(self._on_tracer_data)
         self.dwarf.onSetData.connect(self._on_set_data)
 
         self.session_manager.start_session(self.dwarf_args)
@@ -814,6 +806,10 @@ class AppWindow(QMainWindow):
         if self.console_panel is not None:
             self.console_panel.get_js_console().log(output)
 
+    def _log_event(self, output):
+        if self.console_panel is not None:
+            self.console_panel.get_events_console().log(output)
+
     def _on_setranges(self, ranges):
         """ Dwarf wants to set Ranges
             only hooked up to switch tab or create ui
@@ -866,7 +862,7 @@ class AppWindow(QMainWindow):
                                                context['context'])
 
                 if 'pc' in context['context']:
-                    if not 'disassembly' in self._ui_elems:
+                    if not 'disassembly' in self._ui_elems or manual:
                         from lib.range import Range
                         _range = Range(Range.SOURCE_TARGET, self.dwarf)
                         _range.init_with_address(
@@ -921,24 +917,6 @@ class AppWindow(QMainWindow):
                 # invalidate dwarf context tid
                 self.dwarf.context_tid = 0
 
-    def _on_tracer_data(self, data):
-        if not data:
-            return
-
-        if self.trace_panel is None:
-            self._create_ui_elem('trace')
-
-        if self.trace_panel is not None:
-            self.show_main_tab('Trace')
-            self.trace_panel.start()
-
-            trace_events_parts = data[1].split(',')
-            while trace_events_parts:
-                trace_event = TraceEvent(
-                    trace_events_parts.pop(0), trace_events_parts.pop(0),
-                    trace_events_parts.pop(0), trace_events_parts.pop(0))
-                self.trace_panel.event_queue.append(trace_event)
-
     def _on_set_data(self, data):
         if not isinstance(data, list):
             return
@@ -960,6 +938,26 @@ class AppWindow(QMainWindow):
 
     def _on_attached(self, data):
         self.setWindowTitle('Dwarf - Attached to %s (%s)' % (data[1], data[0]))
+
+    def _on_detached(self, data):
+        reason = data[1]
+
+        if reason == 'application-requested':
+            self.session_manager.session.stop()
+            return 0
+
+        ret = QDialogDetached.show_dialog(self.dwarf, data[0], data[1], data[2])
+        if ret == 0:
+            session = self.dwarf.dump_session()
+            self.dwarf.reinitialize()
+            self.session_manager._session = None
+            self.session_stopped()
+
+            self._restore_session(session)
+        elif ret == 1:
+            self.session_manager.session.stop()
+
+        return 0
 
     def _on_script_loaded(self):
         # restore the loaded session if any

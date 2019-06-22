@@ -14,6 +14,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import json
+import os
+
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, \
     QFileDialog, QSpinBox, QLabel, QWidget, QPlainTextEdit, QCompleter
 from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QFontDatabase, QPainter, QTextCursor
@@ -27,28 +30,8 @@ from ui.dialog_scripts import ScriptsDialog
 class DwarfCompleter(QCompleter):
     insertText = pyqtSignal(str)
 
-    def __init__(self, myKeywords=None, parent=None):
-        myKeywords = [
-            'api.findExport(', 'api.addWatcher(', 'api.resume()', 'console', 'console.log(',
-            'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
-            'enumerateJavaMethods', 'findExport', 'getAddressTs',
-            'hookAllJavaMethods', 'hookJava', 'hookNative',
-            'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
-            'nativeBacktrace', 'release', 'removeWatcher', 'restart',
-            'setData',
-            # trace
-            'startNativeTracer',
-            'stopNativeTracer',
-            # emu
-            'emulator',
-            'emulator.clean()',
-            'emulator.start(',
-            'emulator.step()',
-            'emulator.stop()',
-
-            'JSON.stringify('
-        ]
-        QCompleter.__init__(self, myKeywords, parent)
+    def __init__(self, keywords, parent=None):
+        QCompleter.__init__(self, keywords, parent)
         self.setCompletionMode(QCompleter.PopupCompletion)
         self.highlighted.connect(self.setHighlighted)
 
@@ -60,7 +43,7 @@ class DwarfCompleter(QCompleter):
 
 
 class JsHighlighter(QSyntaxHighlighter):
-    def __init__(self, parent=None):
+    def __init__(self, keywords, parent=None):
         super(JsHighlighter, self).__init__(parent)
 
         self.keyword_color = QColor('#C678DD')
@@ -78,10 +61,7 @@ class JsHighlighter(QSyntaxHighlighter):
             "var", "void", "while", "with", "yield"
         ]
 
-        self._known_m = [
-            "Memory", "Process", "MemoryWatcher", "Thread", "Object", "Function", "Interceptor", "Java",
-            "JSON", "console"
-        ]
+        self._known_m = keywords
 
         self._known = [
             'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
@@ -391,6 +371,15 @@ class JsCodeEditor(QPlainTextEdit):
 
         self._show_linenums = show_linenumes
 
+        keywords = []
+        keywords_path = '.keywords.json'
+        if os.path.exists(keywords_path):
+            with open(keywords_path, 'r') as f:
+                try:
+                    keywords = json.load(f)
+                except:
+                    pass
+
         if self._show_linenums:
             self.ui_line_numbers = JsCodeEditLineNums(self)
             self.blockCountChanged.connect(self.update_linenum_width)
@@ -401,10 +390,10 @@ class JsCodeEditor(QPlainTextEdit):
         # default distance is 80
         self.setTabStopDistance(self.fontMetrics().width('9999'))
 
-        self.highlighter = JsHighlighter(self.document())
+        self.highlighter = JsHighlighter(keywords, parent=self.document())
 
         # code completion
-        self.completer = DwarfCompleter()
+        self.completer = DwarfCompleter(keywords)
         self.completer.setWidget(self)
         self.completer.setCompletionMode(QCompleter.PopupCompletion)
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)

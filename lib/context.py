@@ -26,7 +26,7 @@ class Context(object):
 
             for register in context:
                 if len(register) > 0 and register != 'toJSON':
-                    self.__dict__[register] = Register(context[register])
+                    self.__dict__[register] = Register(register, context[register])
         else:
             self.is_native_context = False
 

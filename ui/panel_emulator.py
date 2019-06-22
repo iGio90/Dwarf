@@ -11,23 +11,21 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import capstone
+from capstone import CS_OP_REG
+from lib.emulator import STEP_MODE_NONE, STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_JUMP
+from lib.range import Range
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton,
-                             QLineEdit)
-from unicorn import UcError
-
-from lib.emulator import STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_NONE
-from lib.range import Range
+                             QComboBox)
 from ui.dialog_emulator_configs import EmulatorConfigsDialog
 from ui.dialog_input import InputDialog
 from ui.panel_memory import MemoryPanel
-
-from capstone import CS_OP_REG
-from unicorn.unicorn_const import UC_MEM_READ, UC_MEM_FETCH, UC_MEM_WRITE
-
-from ui.widgets.list_view import DwarfListView
 from ui.widgets.disasm_view import DisassemblyView
+from ui.widgets.list_view import DwarfListView
+from unicorn import UcError, unicorn_const
+from unicorn.unicorn_const import UC_MEM_READ, UC_MEM_FETCH, UC_MEM_WRITE
 
 
 class EmulatorPanel(QWidget):
@@ -38,18 +36,42 @@ class EmulatorPanel(QWidget):
         self.emulator = self.app.dwarf.emulator
         self.until_address = 0
 
+        self._uc_user_arch = None
+        self._uc_user_mode = None
+        self._cs_user_arch = None
+        self._cs_user_mode = None
+
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
+        self._toolbar_container = QHBoxLayout()
         self._toolbar = QToolBar()
         self._toolbar.addAction('Start', self.handle_start)
         self._toolbar.addAction('Step', self.handle_step)
+        self._toolbar.addAction('Step next call', self.handle_step_next_call)
         self._toolbar.addAction('Step next jump', self.handle_step_next_jump)
         self._toolbar.addAction('Stop', self.handle_stop)
         self._toolbar.addAction('Clear', self.handle_clear)
         self._toolbar.addAction('Options', self.handle_options)
+        self._toolbar_container.addWidget(self._toolbar)
 
-        layout.addWidget(self._toolbar)
+        selection_layout = QHBoxLayout()
+        selection_layout.setAlignment(Qt.AlignRight)
+        self.cpu_selection = QComboBox(self)
+        for v in unicorn_const.__dict__:
+            if 'UC_ARCH_' in v:
+                self.cpu_selection.addItem('_'.join(v.split('_')[2:]).lower(), unicorn_const.__dict__[v])
+        self.cpu_selection.activated[str].connect(self._on_cpu_selection)
+        self.mode_selection = QComboBox(self)
+        for v in unicorn_const.__dict__:
+            if 'UC_MODE_' in v:
+                self.mode_selection.addItem('_'.join(v.split('_')[2:]).lower(), unicorn_const.__dict__[v])
+        self.mode_selection.activated[str].connect(self._on_mode_selection)
+        selection_layout.addWidget(self.cpu_selection)
+        selection_layout.addWidget(self.mode_selection)
+        self._toolbar_container.addLayout(selection_layout)
+
+        layout.addLayout(self._toolbar_container)
 
         self.tabs = QTabWidget()
         self.assembly = DisassemblyView(self.app)
@@ -100,6 +122,22 @@ class EmulatorPanel(QWidget):
         self._require_register_result = None
         self._last_instruction_address = 0
 
+    def _on_cpu_selection(self, cpu):
+        self._uc_user_arch = unicorn_const.__dict__['UC_ARCH_' + cpu.upper()]
+        self._cs_user_arch = capstone.__dict__['CS_ARCH_' + cpu.upper()]
+        self._uc_user_mode = unicorn_const.__dict__['UC_MODE_' + self.mode_selection.itemText(
+            self.mode_selection.currentIndex()).upper()]
+        self._cs_user_mode = capstone.__dict__['CS_MODE_' + self.mode_selection.itemText(
+            self.mode_selection.currentIndex()).upper()]
+
+    def _on_mode_selection(self, mode):
+        self._uc_user_mode = unicorn_const.__dict__['UC_MODE_' + mode.upper()]
+        self._cs_user_mode = capstone.__dict__['CS_MODE_' + mode.upper()]
+        self._uc_user_arch = unicorn_const.__dict__['UC_ARCH_' + self.cpu_selection.itemText(
+            self.cpu_selection.currentIndex()).upper()]
+        self._cs_user_arch = capstone.__dict__['CS_ARCH_' + self.cpu_selection.itemText(
+            self.cpu_selection.currentIndex()).upper()]
+
     def resizeEvent(self, event):
         self.ranges_list.setFixedHeight((self.height() / 100) * 25)
         self.ranges_list.setFixedWidth((self.width() / 100) * 30)
@@ -126,7 +164,9 @@ class EmulatorPanel(QWidget):
         if address > 0:
             self.until_address = address
             self.app.console_panel.show_console_tab('emulator')
-            self.emulator.emulate(self.until_address)
+            self.emulator.emulate(self.until_address, user_arch=self._uc_user_arch,
+                                  user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                                  cs_mode=self._cs_user_mode)
             # if err > 0:
             #    self.until_address = 0
             #    self.console.log('cannot start emulator. err: %d' % err)
@@ -136,7 +176,23 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            self.emulator.emulate(step_mode=STEP_MODE_SINGLE)
+            self.emulator.emulate(step_mode=STEP_MODE_SINGLE, user_arch=self._uc_user_arch,
+                                  user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                                  cs_mode=self._cs_user_mode)
+        except self.emulator.EmulatorAlreadyRunningError:
+            self.console.log('Emulator already running')
+        except self.emulator.EmulatorSetupFailedError as error:
+            self.until_address = 0
+            self.console.log(error)
+
+    def handle_step_next_call(self):
+        self.app.console_panel.show_console_tab('emulator')
+
+        try:
+            self.emulator.emulate(
+                step_mode=STEP_MODE_FUNCTION, user_arch=self._uc_user_arch,
+                user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                cs_mode=self._cs_user_mode)
         except self.emulator.EmulatorAlreadyRunningError:
             self.console.log('Emulator already running')
         except self.emulator.EmulatorSetupFailedError as error:
@@ -147,7 +203,10 @@ class EmulatorPanel(QWidget):
         self.app.console_panel.show_console_tab('emulator')
 
         try:
-            self.emulator.emulate(step_mode=STEP_MODE_FUNCTION)
+            self.emulator.emulate(
+                step_mode=STEP_MODE_JUMP, user_arch=self._uc_user_arch,
+                user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                cs_mode=self._cs_user_mode)
         except self.emulator.EmulatorAlreadyRunningError:
             self.console.log('Emulator already running')
         except self.emulator.EmulatorSetupFailedError as error:
@@ -189,7 +248,7 @@ class EmulatorPanel(QWidget):
         self.assembly.add_instruction(instruction)
 
         # add empty line if jump
-        if instruction.is_jump:
+        if instruction.is_jump or instruction.is_call:
             self.assembly.add_instruction(None)
             self._require_register_result = [instruction.jump_address]
         else:
@@ -206,10 +265,10 @@ class EmulatorPanel(QWidget):
         self.assembly.verticalScrollBar().setValue(len(self.assembly._lines))
         self.assembly.viewport().update()
 
-        if instruction.is_jump:
+        if instruction.is_call:
             range_ = Range(Range.SOURCE_TARGET, self.app.dwarf)
             if range_.init_with_address(instruction.address, require_data=False) > 0:
-                if range_.base > instruction.jump_address or instruction.jump_address > range_.tail:
+                if range_.base > instruction.call_address > range_.tail:
                     if self.emulator.step_mode == STEP_MODE_NONE:
                         self.emulator.stop()
                     action = JumpOutsideTheBoxDialog.show_dialog(self.app.dwarf)
@@ -218,13 +277,19 @@ class EmulatorPanel(QWidget):
                         if self.emulator.step_mode != STEP_MODE_NONE:
                             self.handle_step()
                         else:
-                            self.emulator.emulate(self.until_address)
+                            self.emulator.emulate(
+                                self.until_address, user_arch=self._uc_user_arch,
+                                user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                                cs_mode=self._cs_user_mode)
                     if action == 1:
                         # step to next jump
                         if self.emulator.step_mode != STEP_MODE_NONE:
                             self.handle_step_next_jump()
                         else:
-                            self.emulator.emulate(self.until_address)
+                            self.emulator.emulate(
+                                self.until_address, user_arch=self._uc_user_arch,
+                                user_mode=self._uc_user_mode, cs_arch=self._cs_user_arch,
+                                cs_mode=self._cs_user_mode)
                     elif action == 2:
                         # hook lr
                         hook_addr = instruction.address + instruction.size
