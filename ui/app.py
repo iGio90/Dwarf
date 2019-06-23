@@ -858,8 +858,7 @@ class AppWindow(QMainWindow):
                 self.java_explorer_panel._set_handle_arg(-1)
                 self.show_main_tab('jvm-debugger')
             else:
-                self.context_panel.set_context(context['ptr'], 0,
-                                               context['context'])
+                self.context_panel.set_context(context['ptr'], 0, context['context'])
 
                 if 'pc' in context['context']:
                     if not 'disassembly' in self._ui_elems or manual:

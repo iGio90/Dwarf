@@ -15,6 +15,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import binascii
+
+import capstone
 import unicorn
 
 from capstone import (Cs, CS_ARCH_ARM, CS_ARCH_ARM64, CS_ARCH_X86, CS_MODE_32,
@@ -210,18 +212,53 @@ class Emulator(QThread):
         if cmd == 'clean':
             return self.clean()
         elif cmd == 'setup':
-            err = self.setup(parts[1])
+            custom_uc_arch = None
+            custom_cs_arch = None
+            custom_uc_mode = None
+            custom_cs_mode = None
+            if len(parts) > 3:
+                try:
+                    arch = 'UC_ARCH_' + parts[2].upper()
+                    if arch in unicorn.__dict__:
+                        custom_uc_arch = unicorn.__dict__[arch]
+                        arch = 'CS_ARCH_' + parts[2].upper()
+                        custom_cs_arch = capstone.__dict__[arch]
+                    mode = 'UC_MODE_' + parts[3].upper()
+                    if mode in unicorn.__dict__:
+                        custom_uc_mode = unicorn.__dict__[mode]
+                        mode = 'CS_MODE_' + parts[3].upper()
+                        custom_cs_mode = capstone.__dict__[mode]
+                except:
+                    custom_uc_arch = None
+                    custom_cs_arch = None
+                    custom_uc_mode = None
+                    custom_cs_mode = None
+
+
+            if custom_uc_arch is not None and custom_uc_mode is not None:
+                err = self.setup(
+                    parts[1], user_arch=custom_uc_arch, user_mode= custom_uc_mode,
+                    cs_arch=custom_cs_arch, cs_mode=custom_cs_mode)
+            else:
+                err = self.setup(parts[1])
             if err > 0:
                 self.context = None
             return err
         elif cmd == 'start':
+            until = 0
+            if len(parts) > 1:
+                try:
+                    until = int(parts[1])
+                except:
+                    pass
+            return self.emulate(until=until)
+        elif cmd == 'step':
+            step_mode = STEP_MODE_SINGLE
             if len(parts) > 1:
                 try:
                     step_mode = int(parts[1])
                 except:
-                    step_mode = STEP_MODE_NONE
-            else:
-                step_mode = STEP_MODE_NONE
+                    pass
             return self.emulate(step_mode=step_mode)
 
     def clean(self):
