@@ -4,7 +4,9 @@ A debugger for reverse engineers, crackers and security analyst.
 Or you can call it damn, why are raspberries so fluffy or yet, duck warriors are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code.
 
-Checkout the [website](https://igio90.github.io/Dwarf/) for features, api and examples
+| Checkout the [website](https://igio90.github.io/Dwarf/) for features, api and examples
+
+| [CHANGELOG](https://igio90.github.io/Dwarf/docs/changelog.html)
 
 ![DWARF](https://i.imgur.com/rbOwjh5.png)
 
