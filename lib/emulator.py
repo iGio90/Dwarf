@@ -49,6 +49,7 @@ class Emulator(QThread):
         """ isrunning
         """
 
+    onEmulatorSetup = pyqtSignal(list, name='onEmulatorSetup')
     onEmulatorStart = pyqtSignal(name='onEmulatorStart')
     onEmulatorStop = pyqtSignal(name='onEmulatorStop')
     onEmulatorStep = pyqtSignal(name='onEmulatorStep')
@@ -233,7 +234,6 @@ class Emulator(QThread):
                     custom_cs_arch = None
                     custom_uc_mode = None
                     custom_cs_mode = None
-
 
             if custom_uc_arch is not None and custom_uc_mode is not None:
                 err = self.setup(
@@ -436,6 +436,7 @@ class Emulator(QThread):
 
         try:
             self._setup(user_arch=user_arch, user_mode=user_mode, cs_arch=cs_arch, cs_mode=cs_mode)
+            self.onEmulatorSetup.emit([user_arch, user_mode])
         except self.EmulatorSetupFailedError:
             return self.ERR_SETUP_FAILED
         return 0

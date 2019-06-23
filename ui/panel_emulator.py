@@ -111,6 +111,7 @@ class EmulatorPanel(QWidget):
 
         self.console = self.app.console.get_emu_console()
 
+        self.emulator.onEmulatorSetup.connect(self.on_emulator_setup)
         self.emulator.onEmulatorStart.connect(self.on_emulator_start)
         self.emulator.onEmulatorStop.connect(self.on_emulator_stop)
         # self.emulator.onEmulatorStep.connect(self.on_emulator_step)
@@ -403,6 +404,15 @@ class EmulatorPanel(QWidget):
         _size = QStandardItem()
         _size.setText("{0:,d}".format(int(size)))
         self._ranges_model.appendRow([_address, _size])
+
+    def on_emulator_setup(self, data):
+        user_arch = data[0]
+        user_mode = data[1]
+        if user_arch is not None and user_mode is not None:
+            index = self.cpu_selection.findData(user_arch)
+            self.cpu_selection.setCurrentIndex(index)
+            index = self.mode_selection.findData(user_mode)
+            self.mode_selection.setCurrentIndex(index)
 
     def on_emulator_start(self):
         pass
