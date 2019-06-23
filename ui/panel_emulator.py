@@ -84,14 +84,15 @@ class EmulatorPanel(QWidget):
 
         layout.addWidget(self.tabs)
 
-        h_box = QHBoxLayout()
         self.ranges_list = DwarfListView(self.app)
         self.ranges_list.doubleClicked.connect(self.ranges_item_double_clicked)
         self._ranges_model = QStandardItemModel(0, 2)
         self._ranges_model.setHeaderData(0, Qt.Horizontal, 'Memory')
         self._ranges_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Size')
+        self._access_model.setHeaderData(1, Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
         self.ranges_list.setModel(self._ranges_model)
+        self.tabs.addTab(self.ranges_list, 'Ranges')
 
         self._access_list = DwarfListView(self.app)
         self._access_list.doubleClicked.connect(self.access_item_double_clicked)
@@ -102,10 +103,8 @@ class EmulatorPanel(QWidget):
         self._access_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._access_model.setHeaderData(2, Qt.Horizontal, 'Value')
         self._access_list.setModel(self._access_model)
-        h_box.addWidget(self.ranges_list)
-        h_box.addWidget(self._access_list)
+        self.tabs.addTab(self._access_list, 'Access')
 
-        layout.addLayout(h_box)
         layout.setSpacing(0)
         self.setLayout(layout)
 

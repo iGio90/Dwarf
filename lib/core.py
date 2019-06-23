@@ -815,6 +815,14 @@ class Dwarf(QObject):
     def _on_request_resume_from_js(self, tid):
         self.dwarf_api('release', tid, tid=tid)
 
+    def restart_proc(self):
+        session = self.dump_session()
+        self.reinitialize()
+        self._app_window.session_manager._session = None
+        self._app_window.session_stopped()
+
+        self._restore_session(session)
+
     def dump_session(self):
         return {
             'session': self._app_window.session_manager.session.session_type,
