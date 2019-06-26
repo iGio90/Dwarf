@@ -24,13 +24,12 @@ import frida
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from PyQt5.QtWidgets import QFileDialog, QApplication
 
-from lib import utils, prefs
+from lib import utils
 from lib.context import Context
 from lib.emulator import Emulator
 
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
-from lib.r2 import R2Dwarf
 
 from ui.dialog_input import InputDialog
 
