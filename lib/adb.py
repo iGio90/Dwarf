@@ -160,8 +160,8 @@ class Adb(QObject):
                 except ValueError:
                     pass
 
-            root_res = self._do_adb_command('shell whoami')
-            if 'root' in root_res:
+            res = self._do_adb_command('shell whoami')
+            if 'root' in res:
                 self._is_root = True
 
             # check status of selinux
