@@ -198,7 +198,6 @@ class DevicesUpdateThread(QThread):
     def run(self):
         # get frida devices
         devices = frida.get_device_manager().enumerate_devices()
-
         for device in devices:
             self.onAddDevice.emit({'id': device.id, 'name': device.name, 'type': device.type})
 
@@ -374,7 +373,7 @@ class DeviceBar(QWidget):
 
     def _on_devices_finished(self):
         if self._devices:
-            if len(self._devices) > 1:
+            if len(self._devices) >= 1:
                 self._devices_combobox.clear()
                 self._devices_combobox.setVisible(True)
                 self.update_label.setText('Please select the Device: ')

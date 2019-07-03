@@ -157,9 +157,12 @@ class Adb(QObject):
                                 if su_res[res_len - 4] == date_res[date_len - 4]: # day
                                     if su_res[res_len - 5] == date_res[date_len - 5]: # month
                                         self._is_root = True
-
                 except ValueError:
                     pass
+
+            res = self._do_adb_command('shell whoami')
+            if 'root' in res:
+                self._is_root = True
 
             # check status of selinux
             res = self._do_adb_command('shell getenforce')
