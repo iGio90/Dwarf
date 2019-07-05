@@ -30,8 +30,8 @@ class DwarfConsoleInput(JsCodeEditor):
 
     onEnterKeyPressed = pyqtSignal(str, name='onEnterKeyPressed')
 
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
+    def __init__(self, parent=None, completer=True):
+        super().__init__(parent=parent, completer=completer)
         self.cmds = []
         self.cmd_index = 0
         self.setStyleSheet('padding: 0; padding: 0 5px;')
@@ -88,7 +88,7 @@ class DwarfConsoleWidget(QWidget):
 
     onCommandExecute = pyqtSignal(str, name='onCommandExecute')
 
-    def __init__(self, parent=None, input_placeholder='', function_box=False, has_input=True):
+    def __init__(self, parent=None, input_placeholder='', function_box=False, has_input=True, completer=True):
         super().__init__(parent=parent)
 
         self.app_window = parent
@@ -111,7 +111,7 @@ class DwarfConsoleWidget(QWidget):
             box = QHBoxLayout()
             box.setContentsMargins(QMargins(3, 3, 3, 3))
 
-            self.input = DwarfConsoleInput(self)
+            self.input = DwarfConsoleInput(self, completer=completer)
             self.input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             self.input.setPlaceholderText(input_placeholder)
             self.input.onEnterKeyPressed.connect(self._enter_pressed)
@@ -135,7 +135,7 @@ class DwarfConsoleWidget(QWidget):
         else:
             self.onCommandExecute.emit(cmd)
 
-    def log(self, what, clear=False):
+    def log(self, what, clear=False, time_prefix=True):
         if clear:
             self.clear()
 
@@ -146,10 +146,11 @@ class DwarfConsoleWidget(QWidget):
             html_text = '<font color="crimson">' + what + '</font>'
         else:
             html_text = what.replace('\n', '<br>')
+
         time_stamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
         self.output.appendHtml(
             '<p><font color="yellowgreen" size="2" style="font-style:italic">'
-            + time_stamp + '</font>&nbsp;&nbsp;' + html_text + '</p>')
+            + (time_stamp if time_prefix else '') + '</font>&nbsp;&nbsp;' + html_text + '</p>')
         self.output.verticalScrollBar().setValue(
             self.output.verticalScrollBar().maximum())
 

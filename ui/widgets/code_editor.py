@@ -364,7 +364,7 @@ class JsCodeEditLineNums(QWidget):
 
 class JsCodeEditor(QPlainTextEdit):
     # todo: linehighlight
-    def __init__(self, parent=None, show_linenumes=False):
+    def __init__(self, parent=None, show_linenumes=False, completer=True):
         super(JsCodeEditor, self).__init__(parent)
 
         self.setFont(get_os_monospace_font())
@@ -392,12 +392,15 @@ class JsCodeEditor(QPlainTextEdit):
 
         self.highlighter = JsHighlighter(keywords, parent=self.document())
 
-        # code completion
-        self.completer = DwarfCompleter(keywords)
-        self.completer.setWidget(self)
-        self.completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.insertText.connect(self.insertCompletion)
+        if completer:
+            # code completion
+            self.completer = DwarfCompleter(keywords)
+            self.completer.setWidget(self)
+            self.completer.setCompletionMode(QCompleter.PopupCompletion)
+            self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+            self.completer.insertText.connect(self.insertCompletion)
+        else:
+            self.completer = None
 
     @property
     def line_numbers(self):
@@ -495,65 +498,31 @@ class JsCodeEditor(QPlainTextEdit):
         tc.select(QTextCursor.WordUnderCursor)
         cr = self.cursorRect()
 
-        if len(tc.selectedText()) > 0:
-            self.completer.setCompletionPrefix(tc.selectedText())
-            popup = self.completer.popup()
-            popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
+        if self.completer:
+            if len(tc.selectedText()) > 0:
+                self.completer.setCompletionPrefix(tc.selectedText())
+                popup = self.completer.popup()
+                popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
 
-            cr.setWidth(
-                self.completer.popup().sizeHintForColumn(0) +
-                self.completer.popup().verticalScrollBar().sizeHint().width())
-            self.completer.complete(cr)
-        else:
-            self.completer.popup().hide()
-
-        return
-        if self.completer and self.completer.popup() and self.completer.popup(
-        ).isVisible():
-            if event.key() in (Qt.Key_Enter, Qt.Key_Return, Qt.Key_Escape,
-                               Qt.Key_Tab, Qt.Key_Backtab):
-                event.ignore()
-                return
-            # return super().keyPressEvent(event)
-
-        isShortcut = (event.modifiers() == Qt.ControlModifier
-                      and event.key() == Qt.Key_Space)
-        if (not self.completer or not isShortcut):
-            super().keyPressEvent(event)
-
-        ctrlOrShift = event.modifiers() in (Qt.ControlModifier,
-                                            Qt.ShiftModifier)
-        if ctrlOrShift and event.text() == '':
-            return
-
-        eow = "~!@#$%^&*+{}|:\"<>?,./;'[]\\-="  # end of word
-
-        hasModifier = ((event.modifiers() != Qt.NoModifier)
-                       and not ctrlOrShift)
-
-        completionPrefix = self.textUnderCursor()
-
-        if not isShortcut:
-            if self.completer.popup():
+                cr.setWidth(
+                    self.completer.popup().sizeHintForColumn(0) +
+                    self.completer.popup().verticalScrollBar().sizeHint().width())
+                self.completer.complete(cr)
+            else:
                 self.completer.popup().hide()
-            return
-
-        self.completer.setCompletionPrefix(completionPrefix)
-        popup = self.completer.popup()
-        popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
-        cr = self.cursorRect()
-        cr.setWidth(self.completer.popup().sizeHintForColumn(
-            0) + self.completer.popup().verticalScrollBar().sizeHint().width())
-        self.completer.complete(cr)
 
     def insertCompletion(self, completion):
         tc = self.textCursor()
-        extra = (len(completion) - len(self.completer.completionPrefix()))
         tc.movePosition(QTextCursor.Left)
         tc.movePosition(QTextCursor.EndOfWord)
+        if self.completer:
+            extra = (len(completion) - len(self.completer.completionPrefix()))
+        else:
+            extra = len(completion)
         tc.insertText(completion[-extra:])
         self.setTextCursor(tc)
-        self.completer.popup().hide()
+        if self.completer:
+            self.completer.popup().hide()
 
     def textUnderCursor(self):
         tc = self.textCursor()

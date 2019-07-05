@@ -16,18 +16,18 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import os
 import binascii
+import frida
+import importlib.util
 import json
 
-from frida.core import Session
-
-import frida
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from PyQt5.QtWidgets import QFileDialog, QApplication
+
+from frida.core import Session
 
 from lib import utils
 from lib.context import Context
 from lib.emulator import Emulator
-
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
 
@@ -122,8 +122,8 @@ class Dwarf(QObject):
 
         self.java_available = False
 
-        # r2
-        self.r2 = None
+        # plugins
+        self._plugins = []
 
         # frida device
         self._device = device
@@ -176,8 +176,10 @@ class Dwarf(QObject):
         except:
             pass
 
+        self.reload_plugins()
+
     def reinitialize(self):
-        self.r2 = None
+        self._plugins = []
 
         self._pid = 0
         self._package = None
@@ -205,6 +207,8 @@ class Dwarf(QObject):
         self.java_pending_args = None
 
         self.context_tid = 0
+
+        self.reload_plugins()
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -339,8 +343,6 @@ class Dwarf(QObject):
             if not os.path.exists('lib/core.js'):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
-            #self.r2 = R2Dwarf(self)
-
             with open('lib/core.js', 'r') as core_script:
                 script_content = core_script.read()
 
@@ -364,6 +366,12 @@ class Dwarf(QObject):
             self.resume_proc()
 
             self.onScriptLoaded.emit()
+
+            for plugin in self._plugins:
+                try:
+                    plugin.on_target_attached(self, self.pid)
+                except Exception as e:
+                    print('failed to dispatch target attached callback to plugin %s:\n%s' % (str(plugin), str(e)))
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -828,3 +836,24 @@ class Dwarf(QObject):
             'package': self._package,
             'user_script': self._app_window.console_panel.get_js_console().function_content
         }
+
+    def reload_plugins(self):
+        plugins_path = os.path.join(os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
+        for _, directories, _ in os.walk(plugins_path):
+            for directory in [x for x in directories if x != '__pycache__']:
+                plugin_dir = os.path.join(plugins_path, directory)
+                plugin_file = os.path.join(plugin_dir, 'plugin.py')
+                # check if {pluginname}.py exitsts
+                if plugin_file and os.path.exists(plugin_file):
+                    spec = importlib.util.spec_from_file_location('', location=plugin_file)
+                    if not spec:
+                        continue
+
+                    try:
+                        plugin = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(plugin)
+                        plugin.init(self)
+                        self._plugins.append(plugin)
+                    except Exception as e:
+                        print('failed to load plugin %s: %s' % (plugin_file, str(e)))
+                        return

@@ -15,10 +15,10 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
-import os
-import sys
-import shutil
 import json
+import os
+import shutil
+import sys
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl
 from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices, QKeySequence
@@ -28,12 +28,11 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
 from lib import utils
 from lib.prefs import Prefs
 from lib.session_manager import SessionManager
-from ui.dialogs.detached import QDialogDetached
-
-from ui.welcome_window import WelcomeDialog
-from ui.widgets.hex_edit import HighLight, HighlightExistsError
 
 from ui.dialogs.about_dlg import AboutDialog
+from ui.dialogs.detached import QDialogDetached
+from ui.welcome_window import WelcomeDialog
+from ui.widgets.hex_edit import HighLight, HighlightExistsError
 
 
 class AppWindow(QMainWindow):
