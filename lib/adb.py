@@ -170,7 +170,7 @@ class Adb(QObject):
 
             # no su -> try if the user is already root
             # on some emulators user is root
-            if self._is_su and self._dev_emu:
+            if not self._is_su and self._dev_emu:
                 res = self._do_adb_command(
                     'shell mount -o ro,remount /system')
                 if res or res == '':
