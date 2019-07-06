@@ -394,6 +394,11 @@ class Dwarf(QObject):
             self._on_destroyed()
         return 1
 
+    def dump_keywords(self):
+        kw = sorted(self._script.exports.keywords())
+        with open('.keywords.json', 'w') as f:
+            f.write(json.dumps(kw))
+
     def spawn(self, package, script=None):
         if self.device is None:
             raise self.NoDeviceAssignedError('No Device assigned')
