@@ -170,7 +170,7 @@ class Adb(QObject):
 
             # no su -> try if the user is already root
             # on some emulators user is root
-            if not self._is_su and self._dev_emu:
+            if self._is_su and self._dev_emu:
                 res = self._do_adb_command(
                     'shell mount -o ro,remount /system')
                 if res or res == '':
@@ -183,7 +183,11 @@ class Adb(QObject):
                     else:
                         # dont know some other output
                         self._is_root = False
-                        print('rootcheck: %s' % res)
+                        # check for uid 0
+                        res = self.su_cmd('id')
+                        # root should be 0
+                        # https://superuser.com/questions/626843/does-the-root-account-always-have-uid-gid-0/626845#626845
+                        self._is_root = 'uid=0' in res
 
             if self._dev_emu:
                 # get some infos about the device and keep for later
