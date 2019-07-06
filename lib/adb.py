@@ -173,7 +173,7 @@ class Adb(QObject):
             if not self._is_su and self._dev_emu:
                 res = self._do_adb_command(
                     'shell mount -o ro,remount /system')
-                if res:
+                if res or res == '':
                     if res and 'not user mountable' in res:
                         # no root user
                         self._is_root = False
