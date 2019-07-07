@@ -157,12 +157,9 @@ class Adb(QObject):
                                 if su_res[res_len - 4] == date_res[date_len - 4]: # day
                                     if su_res[res_len - 5] == date_res[date_len - 5]: # month
                                         self._is_root = True
+
                 except ValueError:
                     pass
-
-            res = self._do_adb_command('shell whoami')
-            if 'root' in res:
-                self._is_root = True
 
             # check status of selinux
             res = self._do_adb_command('shell getenforce')
@@ -176,7 +173,7 @@ class Adb(QObject):
             if not self._is_su and self._dev_emu:
                 res = self._do_adb_command(
                     'shell mount -o ro,remount /system')
-                if res:
+                if res or res == '':
                     if res and 'not user mountable' in res:
                         # no root user
                         self._is_root = False
@@ -186,7 +183,11 @@ class Adb(QObject):
                     else:
                         # dont know some other output
                         self._is_root = False
-                        print('rootcheck: %s' % res)
+                        # check for uid 0
+                        res = self.su_cmd('id')
+                        # root should be 0
+                        # https://superuser.com/questions/626843/does-the-root-account-always-have-uid-gid-0/626845#626845
+                        self._is_root = 'uid=0' in res
 
             if self._dev_emu:
                 # get some infos about the device and keep for later
