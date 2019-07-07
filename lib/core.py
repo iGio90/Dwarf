@@ -338,7 +338,7 @@ class Dwarf(QObject):
                 except frida.ProcessNotFoundError:
                     pass
 
-    def load_script(self, script=None, spawned=False):
+    def load_script(self, script=None, spawned=False, break_at_start=False):
         try:
             if not os.path.exists('lib/core.js'):
                 raise self.CoreScriptNotFoundError('core.js not found!')
@@ -351,9 +351,10 @@ class Dwarf(QObject):
             self._script.on('destroyed', self._on_script_destroyed)
             self._script.load()
 
-            break_start = self._app_window.dwarf_args.break_start
+            break_at_start = break_at_start or self._app_window.dwarf_args.break_start
             is_debug = self._app_window.dwarf_args.debug_script
-            self._script.exports.init(break_start, is_debug, spawned)
+            # this break_at_start have same behavior from args or from the checkbox i added
+            self._script.exports.init(break_at_start, is_debug, spawned)
 
             if script is not None:
                 if os.path.exists(script):
@@ -366,12 +367,6 @@ class Dwarf(QObject):
             self.resume_proc()
 
             self.onScriptLoaded.emit()
-
-            for plugin in self._plugins:
-                try:
-                    plugin.on_target_attached(self, self.pid)
-                except Exception as e:
-                    print('failed to dispatch target attached callback to plugin %s:\n%s' % (str(plugin), str(e)))
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -399,7 +394,7 @@ class Dwarf(QObject):
         with open('.keywords.json', 'w') as f:
             f.write(json.dumps(kw))
 
-    def spawn(self, package, script=None):
+    def spawn(self, package, script=None, break_at_start=False):
         if self.device is None:
             raise self.NoDeviceAssignedError('No Device assigned')
 
@@ -415,7 +410,7 @@ class Dwarf(QObject):
             raise Exception('Frida Error: ' + str(e))
 
         self.onProcessAttached.emit([self.pid, package])
-        self.load_script(script, spawned=True)
+        self.load_script(script, spawned=True, break_at_start=break_at_start)
 
     def resume_proc(self):
         if self._spawned and not self._resumed:

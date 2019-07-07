@@ -15,19 +15,16 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
-import os
 import random
-import json
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QFontMetrics
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QFontMetrics
 from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
                              QHBoxLayout, QPushButton, QSpacerItem,
-                             QSizePolicy, QStyle, qApp, QHeaderView, QMenu)
+                             QSizePolicy, QStyle, qApp)
 
-from lib import utils, prefs
+from lib import utils
 from lib.git import Git
-from ui.widgets.list_view import DwarfListView
 
 
 class DwarfCommitsThread(QThread):

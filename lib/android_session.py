@@ -221,7 +221,7 @@ class AndroidSession(Session):
                 return
 
     def on_spawn_selected(self, data):
-        device, package_name = data
+        device, package_name, break_at_start = data
         if device:
             self.adb.device = device.id
             self.dwarf.device = device
@@ -235,7 +235,7 @@ class AndroidSession(Session):
                 self._smali_thread.start()
 
             try:
-                self.dwarf.spawn(package=package_name)
+                self.dwarf.spawn(package=package_name, break_at_start=break_at_start)
             except Exception as e:
                 utils.show_message_box('Failed spawning {0}'.format(package_name), str(e))
                 self.stop()

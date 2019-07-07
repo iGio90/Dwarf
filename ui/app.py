@@ -956,6 +956,12 @@ class AppWindow(QMainWindow):
         # restore the loaded session if any
         self.session_manager.restore_session()
 
+        for plugin in self.dwarf._plugins:
+            try:
+                plugin.on_target_attached(self, self.pid)
+            except Exception as e:
+                print('failed to dispatch target attached callback to plugin %s:\n%s' % (str(plugin), str(e)))
+
     def _on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos
         data = self.memory_panel.data[pos:pos + length]

@@ -29,13 +29,18 @@ from lib import utils
 
 
 class DeviceWindow(DwarfDialog):
-
     onSelectedProcess = pyqtSignal(list, name='onSelectedProcess')
     onSpwanSelected = pyqtSignal(list, name='onSpawnSelected')
     onClosed = pyqtSignal(name='onClosed')
 
     def __init__(self, parent=None, device='local'):
         super(DeviceWindow, self).__init__(parent=parent)
+
+        self.spawn_list = None
+        self.proc_list = None
+        self.desktop_geom = None
+        self._dev_bar = None
+
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -48,7 +53,7 @@ class DeviceWindow(DwarfDialog):
             if device == 'local':
                 self.device = frida.get_local_device()
                 self.title = 'Local Session'
-            elif device == 'usb': # TODO: change
+            elif device == 'usb':  # TODO: change
                 self.title = 'Android Session'
                 self.device = None
             elif device == 'ios':
@@ -127,12 +132,12 @@ class DeviceWindow(DwarfDialog):
 
         vbox = QVBoxLayout()
         vbox.setContentsMargins(0, 0, 0, 0)
-        #vbox.addWidget(self._dev_bar)
+        # vbox.addWidget(self._dev_bar)
         main_wrap.addLayout(inner_hbox)
 
         # center
-        self.setGeometry(QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
-
+        self.setGeometry(
+            QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(), qApp.desktop().availableGeometry()))
 
     def _update_device(self, device_id):
         try:
@@ -156,7 +161,7 @@ class DeviceWindow(DwarfDialog):
     def _spawn_selected(self, spawn):
         if spawn[1]:
             self.accept()
-            self.onSpwanSelected.emit([self.device, spawn[1]])
+            self.onSpwanSelected.emit([self.device, spawn[1], self.spawn_list.break_at_start])
 
     def _on_spawn_error(self, error_str):
         utils.show_message_box('Failed to refresh Spawnlist', error_str)

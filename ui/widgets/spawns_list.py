@@ -18,7 +18,7 @@ import frida
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QHeaderView, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QHeaderView, QVBoxLayout, QPushButton, QCheckBox
 
 from ui.widgets.list_view import DwarfListView
 
@@ -61,6 +61,7 @@ class SpawnsThread(QThread):
 
         self.is_finished.emit()
 
+
 class SpawnsList(QWidget):
     """ ProcessListWidget wich shows running Processes on Device
         Includes a Refresh Button to manually start refreshthread
@@ -79,9 +80,7 @@ class SpawnsList(QWidget):
     def __init__(self, device, parent=None):
         super(SpawnsList, self).__init__(parent=parent)
 
-        # if not isinstance(device, frida.core.Device):
-        #    print('No FridaDevice')
-        #    return
+        self.break_at_start = False
 
         self._device = device
 
@@ -96,6 +95,11 @@ class SpawnsList(QWidget):
         v_box = QVBoxLayout()
         v_box.setContentsMargins(0, 0, 0, 0)
         v_box.addWidget(self.spawn_list)
+
+        break_spawn_start = QCheckBox('Break at spawn')
+        break_spawn_start.stateChanged.connect(self._on_toggle_break_spawn)
+        v_box.addWidget(break_spawn_start)
+
         self.refresh_button = QPushButton('Refresh')
         self.refresh_button.clicked.connect(self._on_refresh_procs)
         self.refresh_button.setEnabled(False)
@@ -187,3 +191,6 @@ class SpawnsList(QWidget):
     def _on_refresh_finished(self):
         self.spawn_list.resizeColumnToContents(0)
         self.refresh_button.setEnabled(True)
+
+    def _on_toggle_break_spawn(self, state):
+        self.break_at_start = state == Qt.Checked
