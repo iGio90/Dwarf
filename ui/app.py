@@ -715,7 +715,10 @@ class AppWindow(QMainWindow):
         q_settings.setValue('dwarf_ui_window', self.saveState())
 
         if self.dwarf:
-            self.dwarf.detach()
+            try:
+                self.dwarf.detach()
+            except:
+                pass
         super().closeEvent(event)
 
     def _on_watcher_clicked(self, ptr):
