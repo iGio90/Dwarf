@@ -184,7 +184,7 @@ class Adb(QObject):
                         # dont know some other output
                         self._is_root = False
                         # check for uid 0
-                        res = self.su_cmd('id')
+                        res = self._do_adb_command('shell id')
                         # root should be 0
                         # https://superuser.com/questions/626843/does-the-root-account-always-have-uid-gid-0/626845#626845
                         self._is_root = 'uid=0' in res
