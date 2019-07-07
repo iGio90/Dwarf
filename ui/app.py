@@ -946,7 +946,7 @@ class AppWindow(QMainWindow):
 
         ret = QDialogDetached.show_dialog(self.dwarf, data[0], data[1], data[2])
         if ret == 0:
-            self.dwarf.()
+            self.dwarf.restart_proc()
         elif ret == 1:
             self.session_manager.session.stop()
 
