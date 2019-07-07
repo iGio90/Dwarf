@@ -958,7 +958,7 @@ class AppWindow(QMainWindow):
 
         for plugin in self.dwarf._plugins:
             try:
-                plugin.on_target_attached(self, self.pid)
+                plugin.on_target_attached(self.dwarf, self.dwarf.pid)
             except Exception as e:
                 print('failed to dispatch target attached callback to plugin %s:\n%s' % (str(plugin), str(e)))
 
