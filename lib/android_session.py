@@ -133,7 +133,6 @@ class AndroidSession(Session):
 
         process_menu = QMenu('&Process')
         process_menu.addAction('Resume', self._on_proc_resume, Qt.Key_F5)
-        process_menu.addAction('Restart', self._on_proc_restart, Qt.Key_F9)
         process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
 
         self._menu.append(process_menu)
@@ -246,9 +245,6 @@ class AndroidSession(Session):
 
     def _on_proc_resume(self, tid=0):
         self.dwarf.dwarf_api('release', tid)
-
-    def _on_proc_restart(self):
-        self.restart_proc()
 
     def _on_detach(self):
         self.dwarf.detach()

@@ -833,7 +833,7 @@ class Dwarf(QObject):
         self._app_window.session_manager._session = None
         self._app_window.session_stopped()
 
-        self._restore_session(session)
+        # self._restore_session(session)
 
     def dump_session(self):
         return {
