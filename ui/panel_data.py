@@ -66,10 +66,16 @@ class DataPanel(QSplitter):
             self.editor.setVisible(True)
             self.editor.setPlainText(self.data[item.text()][1])
         else:
-            self.editor.setVisible(False)
+            data = self.data[item.text()][1]
+            try:
+                as_tx = data.decode('utf8')
+                self.editor.setVisible(True)
+                self.editor.setPlainText(as_tx)
+            except:
+                self.editor.setVisible(False)
             self.hex_view.setVisible(True)
             self.hex_view.bytes_per_line = 16
-            self.hex_view.set_data(self.data[item.text()][1])
+            self.hex_view.set_data(data)
 
     def _on_context_menu(self, pos):
         context_menu = QMenu(self)

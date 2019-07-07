@@ -920,10 +920,9 @@ class AppWindow(QMainWindow):
             return
 
         if self.data_panel is None:
-            self._create_ui_elem('data')
+            self.show_main_tab('data')
 
         if self.data_panel is not None:
-            self.show_main_tab('Data')
             self.data_panel.append_data(data[0], data[1], data[2])
 
     def show_progress(self, text):
@@ -955,12 +954,6 @@ class AppWindow(QMainWindow):
     def _on_script_loaded(self):
         # restore the loaded session if any
         self.session_manager.restore_session()
-
-        for plugin in self.dwarf._plugins:
-            try:
-                plugin.on_target_attached(self.dwarf, self.dwarf.pid)
-            except Exception as e:
-                print('failed to dispatch target attached callback to plugin %s:\n%s' % (str(plugin), str(e)))
 
     def _on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos

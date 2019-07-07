@@ -716,7 +716,7 @@ class Dwarf(QObject):
             value = parts[2]
             self.onContextChanged.emit(str(context_property), value)
         elif cmd == 'set_data':
-            if data:
+            if data is not None:
                 self.onSetData.emit(['raw', parts[1], data])
             else:
                 self.onSetData.emit(['plain', parts[1], str(parts[2])])
