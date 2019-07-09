@@ -352,6 +352,9 @@ class Dwarf(QObject):
             self._script.load()
 
             break_at_start = break_at_start or self._app_window.dwarf_args.break_start
+            # we invalidate the arg in any case (set this from ui needs a store in args for an eventual restore session)
+            self._app_window.dwarf_args.break_start = break_at_start
+
             is_debug = self._app_window.dwarf_args.debug_script
             # this break_at_start have same behavior from args or from the checkbox i added
             self._script.exports.init(break_at_start, is_debug, spawned)
@@ -823,12 +826,14 @@ class Dwarf(QObject):
         self.dwarf_api('release', tid, tid=tid)
 
     def restart_proc(self):
+        session_type = self._app_window.session_manager._session.session_type
         session = self.dump_session()
+
         self.reinitialize()
         self._app_window.session_manager._session = None
         self._app_window.session_stopped()
 
-        # self._restore_session(session)
+        self._app_window._restore_session(session)
 
     def dump_session(self):
         return {

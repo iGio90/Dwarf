@@ -600,6 +600,8 @@ class AppWindow(QMainWindow):
     def _restore_session(self, session_data):
         if 'session' in session_data:
             session_type = session_data['session']
+            self.dwarf_args.package = session_data['package']
+            self.dwarf_args.spawn = True
             self._start_session(session_type, session_data=session_data)
 
     def session_created(self):

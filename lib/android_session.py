@@ -79,7 +79,8 @@ class AndroidSession(Session):
         if not self.adb.min_required:
             utils.show_message_box(self.adb.get_states_string())
 
-        self._device_window = DeviceWindow(self._app_window, 'usb')
+        if app_window.dwarf_args.package is None:
+            self._device_window = DeviceWindow(self._app_window, 'usb')
 
         # main menu every session needs
         self._menu = []

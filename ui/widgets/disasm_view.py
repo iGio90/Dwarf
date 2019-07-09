@@ -41,7 +41,6 @@ class DisassembleThread(QThread):
         self._range = None
         self._capstone = None
         self._max_instructions = 256
-        self._stop_on_ret = True
 
     def run(self):
         if self._range is None:
@@ -67,11 +66,10 @@ class DisassembleThread(QThread):
 
             _counter += 1
 
-            if self._stop_on_ret:
-                if cap_inst.group(CS_GRP_RET):
-                    break
-                if cap_inst.group(ARM64_GRP_RET):
-                    break
+            if cap_inst.group(CS_GRP_RET):
+                break
+            if cap_inst.group(ARM64_GRP_RET):
+                break
 
         if _debug_symbols:
             symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
@@ -244,7 +242,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
-    def disassemble(self, dwarf_range, num_instructions=256, stop_on_ret=True):
+    def disassemble(self, dwarf_range, num_instructions=256):
         if self._running_disasm:
             return
 
@@ -274,7 +272,6 @@ class DisassemblyView(QAbstractScrollArea):
         self.disasm_thread._max_instructions = self._max_instructions
         self.disasm_thread._range = self._range
         self.disasm_thread._dwarf = self._app_window.dwarf
-        self.disasm_thread._stop_on_ret = stop_on_ret
         self.disasm_thread._capstone = capstone
         self.disasm_thread.onFinished.connect(self._on_disasm_finished)
         self.disasm_thread.start(QThread.HighestPriority)
