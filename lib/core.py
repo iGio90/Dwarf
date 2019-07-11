@@ -122,9 +122,6 @@ class Dwarf(QObject):
 
         self.java_available = False
 
-        # plugins
-        self._plugins = []
-
         # frida device
         self._device = device
 
@@ -176,10 +173,8 @@ class Dwarf(QObject):
         except:
             pass
 
-        self.reload_plugins()
 
     def reinitialize(self):
-        self._plugins = []
 
         self._pid = 0
         self._package = None
@@ -207,8 +202,6 @@ class Dwarf(QObject):
         self.java_pending_args = None
 
         self.context_tid = 0
-
-        self.reload_plugins()
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -370,6 +363,7 @@ class Dwarf(QObject):
             self.resume_proc()
 
             self.onScriptLoaded.emit()
+
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
@@ -842,23 +836,3 @@ class Dwarf(QObject):
             'user_script': self._app_window.console_panel.get_js_console().function_content
         }
 
-    def reload_plugins(self):
-        plugins_path = os.path.join(os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
-        for _, directories, _ in os.walk(plugins_path):
-            for directory in [x for x in directories if x != '__pycache__']:
-                plugin_dir = os.path.join(plugins_path, directory)
-                plugin_file = os.path.join(plugin_dir, 'plugin.py')
-                # check if {pluginname}.py exitsts
-                if plugin_file and os.path.exists(plugin_file):
-                    spec = importlib.util.spec_from_file_location('', location=plugin_file)
-                    if not spec:
-                        continue
-
-                    try:
-                        plugin = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(plugin)
-                        plugin.init(self)
-                        self._plugins.append(plugin)
-                    except Exception as e:
-                        print('failed to load plugin %s: %s' % (plugin_file, str(e)))
-                        return

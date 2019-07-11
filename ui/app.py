@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
 from lib import utils
 from lib.prefs import Prefs
 from lib.session_manager import SessionManager
+from lib.plugin_manager import PluginManager
 
 from ui.dialogs.about_dlg import AboutDialog
 from ui.dialogs.detached import QDialogDetached
@@ -138,6 +139,11 @@ class AppWindow(QMainWindow):
         self.main_tabs.tabCloseRequested.connect(self._on_close_tab)
         self.setCentralWidget(self.main_tabs)
 
+
+        # pluginmanager
+        self.plugin_manager = PluginManager(self)
+        self.plugin_manager.reload_plugins()
+
         if self.dwarf_args.package is None:
             self.welcome_window = WelcomeDialog(self)
             self.welcome_window.setModal(True)
@@ -190,6 +196,21 @@ class AppWindow(QMainWindow):
             else:
                 self.menu.addMenu(session_menu)
 
+        # plugins
+        if self.plugin_manager._plugins:
+            self.plugin_menu = QMenu('Plugins', self)
+            for plugin in self.plugin_manager._plugins:
+                if session.session_type.lower() in self.plugin_manager._plugins[plugin].supported_sessions:
+                    plugin_sub_menu = QMenu(self.plugin_manager._plugins[plugin].name, self.plugin_menu)
+
+                    if not plugin_sub_menu.isEmpty():
+                        plugin_sub_menu.addSeparator()
+                    plugin_sub_menu.addAction('About', lambda: self._show_plugin_about(plugin))
+                    self.plugin_menu.addMenu(plugin_sub_menu)
+
+            if not self.plugin_menu.isEmpty():
+                self.menu.addMenu(self.plugin_menu)
+
         self.view_menu = QMenu('View', self)
         subview_menu = QMenu('Subview', self.view_menu)
         subview_menu.addAction(
@@ -223,6 +244,14 @@ class AppWindow(QMainWindow):
         about_menu.addSeparator()
         about_menu.addAction('Info', self._show_about_dlg)
         self.menu.addMenu(about_menu)
+
+    def _show_plugin_about(self, plugin):
+        plugin = self.plugin_manager._plugins[plugin]
+        if plugin:
+            utils.show_message_box(
+                'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'
+                .format(plugin.name, plugin.version, plugin.description,
+                        plugin.author, plugin.homepage, plugin.license))
 
     def _enable_update_menu(self):
         self._is_newer_dwarf = True
