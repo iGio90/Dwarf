@@ -71,7 +71,6 @@ class Dwarf(QObject):
     # process
     onProcessDetached = pyqtSignal(list, name='onProcessDetached')
     onProcessAttached = pyqtSignal(list, name='onProcessAttached')
-
     # script related
     onScriptLoaded = pyqtSignal(name='onScriptLoaded')
     onScriptDestroyed = pyqtSignal(name='onScriptDestroyed')
@@ -111,6 +110,8 @@ class Dwarf(QObject):
     onMemoryScanResult = pyqtSignal(list, name='onMemoryScanResult')
 
     onContextChanged = pyqtSignal(str, str, name='onContextChanged')
+
+    onReceiveCmd = pyqtSignal(list, name="onReceiveCmd")
 
     # ************************************************************************
     # **************************** Init **************************************
@@ -592,10 +593,11 @@ class Dwarf(QObject):
             print('payload: ' + str(message))
             return
 
+        self.onReceiveCmd.emit([message, data])
+
         what = message['payload']
         parts = what.split(':::')
         if len(parts) < 2:
-            print(what)
             return
 
         cmd = parts[0]
@@ -751,8 +753,6 @@ class Dwarf(QObject):
                 self.onMemoryScanResult.emit([])
             else:
                 self.onMemoryScanResult.emit(json.loads(parts[1]))
-        else:
-            print('unknown message: ' + what)
 
     def _on_apply_context(self, context_data):
         reason = context_data['reason']
