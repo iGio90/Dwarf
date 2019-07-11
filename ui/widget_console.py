@@ -148,7 +148,7 @@ class DwarfConsoleWidget(QWidget):
             html_text = what.replace('\n', '<br>')
 
         self.output.appendHtml(
-            '<p>' + (self.timestamp() if time_prefix else '') + html_text + '</p>')
+            '<pre><p>' + (self.timestamp() if time_prefix else '') + html_text + '</p></pre>')
         self.output.verticalScrollBar().setValue(
             self.output.verticalScrollBar().maximum())
 
