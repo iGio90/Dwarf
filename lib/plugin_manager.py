@@ -20,13 +20,14 @@ import inspect
 import importlib.util
 from lib.dwarf_plugin import DwarfPlugin
 
-class PluginManager:
 
+class PluginManager:
     def __init__(self, app):
         self._app = app
-        #self._app.session_manager.sessionCreated.connect(self.reload_plugins)
+        # self._app.session_manager.sessionCreated.connect(self.reload_plugins)
         self._app.session_manager.sessionStarted.connect(self.on_session_started)
-        self._plugins_path = os.path.join(os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
+        self._plugins_path = os.path.join(
+            os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
 
         self._plugins = {}
 
@@ -45,7 +46,7 @@ class PluginManager:
                     try:
                         _plugin = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(_plugin)
-                    except Exception as e: # pylint: disable=broad-except, invalid-name
+                    except Exception as e:  # pylint: disable=broad-except, invalid-name
                         print('failed to load plugin %s: %s' % (plugin_file, str(e)))
                         return
 
@@ -69,7 +70,7 @@ class PluginManager:
                             if _has_required_funcs:
                                 try:
                                     _instance = _class(self._app)
-                                except Exception as e: # pylint: disable=broad-except, invalid-name
+                                except Exception as e:  # pylint: disable=broad-except, invalid-name
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
                                     return
 
@@ -79,7 +80,7 @@ class PluginManager:
                                 try:
                                     self._plugins[_instance.name] = _instance
                                     _instance.on_plugin_loaded()
-                                except Exception as e: # pylint: disable=broad-except, invalid-name
+                                except Exception as e:  # pylint: disable=broad-except, invalid-name
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
 
     def on_session_started(self):

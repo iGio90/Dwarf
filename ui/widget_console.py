@@ -147,12 +147,14 @@ class DwarfConsoleWidget(QWidget):
         else:
             html_text = what.replace('\n', '<br>')
 
-        time_stamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
         self.output.appendHtml(
-            '<p><font color="yellowgreen" size="2" style="font-style:italic">'
-            + (time_stamp if time_prefix else '') + '</font>&nbsp;&nbsp;' + html_text + '</p>')
+            '<p>' + (self.timestamp() if time_prefix else '') + html_text + '</p>')
         self.output.verticalScrollBar().setValue(
             self.output.verticalScrollBar().maximum())
+
+    def timestamp(self):
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
+        return '<font color="yellowgreen" size="2" style="font-style:italic">' + timestamp + '</font>&nbsp;&nbsp;'
 
     def clear(self):
         self.output.setPlainText('')
