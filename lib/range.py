@@ -78,19 +78,6 @@ class Range(object):
             if require_data:
                 # read data
                 self.data = self.dwarf.read_memory(self.base, self.size)
-
-                # check if we have hooks in range and patch data
-                hooks = json.loads(self.dwarf._script.exports.hooks())
-                for key in list(hooks.keys()):
-                    hook = hooks[key]
-                    if utils.parse_ptr(hook['nativePtr']) != 1 and hook['bytes']:
-                        hook_address = utils.parse_ptr(hook['nativePtr'])
-                        if hook_address % 2 != 0:
-                            hook_address -= 1
-                        if self.base < hook_address < self.tail:
-                            offset = hook_address - self.base
-                            # patch bytes
-                            self.patch_bytes(hook['bytes'], offset)
         elif self.source == Range.SOURCE_EMULATOR:
             uc = self.dwarf.get_emulator().uc
             if uc is not None:
