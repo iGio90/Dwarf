@@ -177,6 +177,9 @@ class DisassemblyView(QAbstractScrollArea):
 
         self.pos = 0
 
+        # hacky way to let plugins hook this and inject menu actions
+        self.menu_extra_menu = []
+
     # ************************************************************************
     # **************************** Properties ********************************
     # ************************************************************************
@@ -785,6 +788,10 @@ class DisassemblyView(QAbstractScrollArea):
                                                    lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
                         else:
                             context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
+
+        for menu in self.menu_extra_menu:
+            context_menu.addSeparator()
+            context_menu.addMenu(menu)
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
