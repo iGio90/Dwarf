@@ -18,14 +18,14 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 import inspect
 import importlib.util
-from lib.dwarf_plugin import DwarfPlugin
+import time
+
+from lib import utils
 
 
 class PluginManager:
     def __init__(self, app):
         self._app = app
-        # self._app.session_manager.sessionCreated.connect(self.reload_plugins)
-        self._app.session_manager.sessionStarted.connect(self.on_session_started)
         self._plugins_path = os.path.join(
             os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
 
@@ -53,43 +53,27 @@ class PluginManager:
                     _classes = inspect.getmembers(_plugin, predicate=inspect.isclass)
                     for _, _class in _classes:
                         if inspect.isclass(_class) and not inspect.isabstract(_class):
-                            if not _class.__name__.endswith('Plugin'):
-                                continue
 
-                            if _class.__name__ == 'DwarfPlugin':
+                            if _class.__name__ is not 'Plugin':
                                 continue
 
                             _has_required_funcs = False
                             _funcs = inspect.getmembers(_class, predicate=inspect.isfunction)
 
-                            # TODO: check for all
                             for function_name, _ in _funcs:
-                                if function_name == 'get_name':
+                                if function_name == '__get_plugin_info__':
                                     _has_required_funcs = True
+                                    print('failed to load plugin "%s": missing __get_plugin_info__ method' % plugin_file)
 
                             if _has_required_funcs:
                                 try:
                                     _instance = _class(self._app)
-                                except Exception as e:  # pylint: disable=broad-except, invalid-name
-                                    print('failed to load plugin %s: %s' % (plugin_file, str(e)))
-                                    return
 
-                                if not isinstance(_instance, DwarfPlugin):
-                                    continue
-
-                                try:
+                                    plugin_info = _instance.__get_plugin_info__()
+                                    if 'name' not in plugin_info:
+                                        print('failed to load plugin "%s": missing name in __get_plugin_info__' % plugin_file)
+                                        continue
+                                    _instance.name = plugin_info['name']
                                     self._plugins[_instance.name] = _instance
-                                    _instance.on_plugin_loaded()
-                                except Exception as e:  # pylint: disable=broad-except, invalid-name
+                                except Exception as e:
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
-
-    def on_session_started(self):
-        for plugin_name in self._plugins:
-            plugin = self._plugins[plugin_name]
-            plugin.on_session_started(self._app)
-
-    def on_attached(self, package):
-        pid, package = package
-        for plugin_name in self._plugins:
-            plugin = self._plugins[plugin_name]
-            plugin.on_attached(self._app, package)

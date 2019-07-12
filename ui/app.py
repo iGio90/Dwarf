@@ -200,13 +200,12 @@ class AppWindow(QMainWindow):
         if self.plugin_manager._plugins:
             self.plugin_menu = QMenu('Plugins', self)
             for plugin in self.plugin_manager._plugins:
-                if session.session_type.lower() in self.plugin_manager._plugins[plugin].supported_sessions:
-                    plugin_sub_menu = QMenu(self.plugin_manager._plugins[plugin].name, self.plugin_menu)
+                plugin_sub_menu = QMenu(self.plugin_manager._plugins[plugin].name, self.plugin_menu)
 
-                    if not plugin_sub_menu.isEmpty():
-                        plugin_sub_menu.addSeparator()
-                    plugin_sub_menu.addAction('About', lambda: self._show_plugin_about(plugin))
-                    self.plugin_menu.addMenu(plugin_sub_menu)
+                if not plugin_sub_menu.isEmpty():
+                    plugin_sub_menu.addSeparator()
+                plugin_sub_menu.addAction('About', lambda: self._show_plugin_about(plugin))
+                self.plugin_menu.addMenu(plugin_sub_menu)
 
             if not self.plugin_menu.isEmpty():
                 self.menu.addMenu(self.plugin_menu)
@@ -248,10 +247,17 @@ class AppWindow(QMainWindow):
     def _show_plugin_about(self, plugin):
         plugin = self.plugin_manager._plugins[plugin]
         if plugin:
+            info = plugin.__get_plugin_info__()
+
+            version = utils.safe_read_map(info, 'version', '')
+            description = utils.safe_read_map(info, 'description', '')
+            author = utils.safe_read_map(info, 'author', '')
+            homepage = utils.safe_read_map(info, 'homepage', '')
+            license_ = utils.safe_read_map(info, 'license', '')
+
             utils.show_message_box(
                 'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'
-                .format(plugin.name, plugin.version, plugin.description,
-                        plugin.author, plugin.homepage, plugin.license))
+                .format(plugin.name, version, description, author, homepage, license_))
 
     def _enable_update_menu(self):
         self._is_newer_dwarf = True

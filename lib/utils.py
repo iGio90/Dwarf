@@ -148,6 +148,12 @@ def copy_hex_to_clipboard(hex_str):
         pyperclip.copy(str_fmt.format(hex_str))
 
 
+def safe_read_map(map, key, default):
+    if key not in map:
+        return default
+    return map[key]
+
+
 def is_connected():
     try:
         socket.setdefaulttimeout(2)
