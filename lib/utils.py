@@ -23,7 +23,7 @@ import pyperclip
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QSizePolicy
 
 from lib.prefs import Prefs
 
@@ -152,6 +152,24 @@ def safe_read_map(map, key, default):
     if key not in map:
         return default
     return map[key]
+
+
+def progress_dialog(message):
+    progress_dialog = QProgressDialog()
+    progress_dialog.setFixedSize(300, 50)
+    progress_dialog.setAutoFillBackground(True)
+    progress_dialog.setWindowModality(Qt.WindowModal)
+    progress_dialog.setWindowTitle('Please wait')
+    progress_dialog.setLabelText(message)
+    progress_dialog.setSizeGripEnabled(False)
+    progress_dialog.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    progress_dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+    progress_dialog.setWindowFlag(Qt.WindowCloseButtonHint, False)
+    progress_dialog.setModal(True)
+    progress_dialog.setCancelButton(None)
+    progress_dialog.setRange(0, 0)
+    progress_dialog.setMinimumDuration(0)
+    return progress_dialog
 
 
 def is_connected():

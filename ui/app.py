@@ -520,9 +520,9 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.data_panel, 'Data')
             elem_wiget = self.data_panel
         elif elem == 'disassembly':
-            from ui.widgets.disasm_view import DisassemblyView
-            self.asm_panel = DisassemblyView(self)
-            self.asm_panel.onShowMemoryRequest.connect(self._on_disasm_showmem)
+            from ui.widgets.disasm_view import DisassemblyPanel
+            self.asm_panel = DisassemblyPanel(self)
+            self.asm_panel.disasm_view.onShowMemoryRequest.connect(self._on_disasm_showmem)
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
             elem_wiget = self.asm_panel
         elif elem == 'emulator':

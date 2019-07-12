@@ -60,7 +60,6 @@ class PluginManager:
                             for function_name, _ in _funcs:
                                 if function_name == '__get_plugin_info__':
                                     _has_required_funcs = True
-                                    print('failed to load plugin "%s": missing __get_plugin_info__ method' % plugin_file)
 
                             if _has_required_funcs:
                                 try:
@@ -74,3 +73,6 @@ class PluginManager:
                                     self._plugins[_instance.name] = _instance
                                 except Exception as e:
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
+                            else:
+                                print('failed to load plugin "%s": missing __get_plugin_info__ method' % plugin_file)
+

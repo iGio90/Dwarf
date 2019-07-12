@@ -85,6 +85,22 @@ class DisassembleThread(QThread):
         self.onFinished.emit(_instructions)
 
 
+class DisassemblyPanel(QSplitter):
+    onDisassemble = pyqtSignal(str, name='onShowMemoryRequest')
+
+    def __init__(self, app):
+        super(DisassemblyPanel, self).__init__()
+
+        self.app = app
+
+        self.disasm_view = DisassemblyView(app)
+        self.addWidget(self.disasm_view)
+
+    def disassemble(self, dwarf_range):
+        self.onDisassemble.emit(hex(dwarf_range.start_address))
+        self.disasm_view.disassemble(dwarf_range)
+
+
 class DisassemblyView(QAbstractScrollArea):
     onShowMemoryRequest = pyqtSignal(str, int, name='onShowMemoryRequest')
 
@@ -676,8 +692,8 @@ class DisassemblyView(QAbstractScrollArea):
             if loc_x > left_side:
                 if loc_x < left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
-                        self.onShowMemoryRequest.emit(hex(self._lines[index + self.pos].address),
-                                                      len(self._lines[index + self.pos].bytes))
+                        self.onShowMemoryRequest.emit(
+                            hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
                 if loc_x > left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
                         if self._follow_jumps and self._lines[index + self.pos].is_jump:

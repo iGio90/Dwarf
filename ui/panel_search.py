@@ -305,24 +305,13 @@ class SearchPanel(QWidget):
         if len(ranges) == 0:
             return 1
 
+        status_message = 'searching...'
+
         if self._blocking_search:
-            self.progress = QProgressDialog()
-            self.progress.setFixedSize(300, 50)
-            self.progress.setAutoFillBackground(True)
-            self.progress.setWindowModality(Qt.WindowModal)
-            self.progress.setWindowTitle('Please wait')
-            self.progress.setLabelText('searching...')
-            self.progress.setSizeGripEnabled(False)
-            self.progress.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            self.progress.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-            self.progress.setWindowFlag(Qt.WindowCloseButtonHint, False)
-            self.progress.setModal(True)
-            self.progress.setCancelButton(None)
-            self.progress.setRange(0, 0)
-            self.progress.setMinimumDuration(0)
+            self.progress = utils.progress_dialog(status_message)
             self.progress.forceShow()
 
-        self._app_window.show_progress('searching...')
+        self._app_window.show_progress(status_message)
         self.input.setEnabled(False)
         self.search_btn.setEnabled(False)
         self.check_all_btn.setEnabled(False)
