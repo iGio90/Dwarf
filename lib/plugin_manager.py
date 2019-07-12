@@ -18,9 +18,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import os
 import inspect
 import importlib.util
-import time
-
-from lib import utils
 
 
 class PluginManager:

@@ -174,9 +174,7 @@ class Dwarf(QObject):
         except:
             pass
 
-
     def reinitialize(self):
-
         self._pid = 0
         self._package = None
         self._process = None
@@ -731,7 +729,7 @@ class Dwarf(QObject):
         elif cmd == 'watcher':
             exception = json.loads(parts[1])
             self.log_event('watcher hit op %s address %s @thread := %s' %
-                     (exception['memory']['operation'], exception['memory']['address'], parts[2]))
+                           (exception['memory']['operation'], exception['memory']['address'], parts[2]))
         elif cmd == 'watcher_added':
             ptr = utils.parse_ptr(parts[1])
             hex_ptr = hex(ptr)
@@ -835,4 +833,3 @@ class Dwarf(QObject):
             'package': self._package,
             'user_script': self._app_window.console_panel.get_js_console().function_content
         }
-

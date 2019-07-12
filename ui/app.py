@@ -57,7 +57,7 @@ class AppWindow(QMainWindow):
         self._is_newer_dwarf = False
         self.view_menu = None
 
-        #dockwidgets
+        # dockwidgets
         self.watchers_dwidget = None
         self.hooks_dwiget = None
         self.bookmarks_dwiget = None
@@ -65,7 +65,7 @@ class AppWindow(QMainWindow):
         self.console_dock = None
         self.backtrace_dock = None
         self.threads_dock = None
-        #panels
+        # panels
         self.asm_panel = None
         self.console_panel = None
         self.context_panel = None
@@ -138,7 +138,6 @@ class AppWindow(QMainWindow):
         self.main_tabs.setAutoFillBackground(True)
         self.main_tabs.tabCloseRequested.connect(self._on_close_tab)
         self.setCentralWidget(self.main_tabs)
-
 
         # pluginmanager
         self.plugin_manager = PluginManager(self)
@@ -257,7 +256,7 @@ class AppWindow(QMainWindow):
 
             utils.show_message_box(
                 'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'
-                .format(plugin.name, version, description, author, homepage, license_))
+                    .format(plugin.name, version, description, author, homepage, license_))
 
     def _enable_update_menu(self):
         self._is_newer_dwarf = True
@@ -273,7 +272,7 @@ class AppWindow(QMainWindow):
                 return
             try:
                 self._ui_elems.remove(tab_text.lower())
-            except ValueError: # recheck ValueError: list.remove(x): x not in list
+            except ValueError:  # recheck ValueError: list.remove(x): x not in list
                 pass
             self.main_tabs.removeTab(index)
 
