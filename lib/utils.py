@@ -169,6 +169,7 @@ def progress_dialog(message):
     progress_dialog.setCancelButton(None)
     progress_dialog.setRange(0, 0)
     progress_dialog.setMinimumDuration(0)
+    progress_dialog.setAutoClose(False)
     return progress_dialog
 
 

@@ -40,7 +40,7 @@ class DisassembleThread(QThread):
         self._dwarf = None
         self._range = None
         self._capstone = None
-        self._max_instructions = 256
+        self._num_instructions = 0
 
     def run(self):
         if self._range is None:
@@ -55,7 +55,7 @@ class DisassembleThread(QThread):
 
         for cap_inst in self._capstone.disasm(
                 self._range.data[self._range.start_offset:], self._range.start_address):
-            if _counter > self._max_instructions:
+            if 0 < self._num_instructions < _counter:
                 break
 
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
@@ -66,9 +66,8 @@ class DisassembleThread(QThread):
 
             _counter += 1
 
-            if cap_inst.group(CS_GRP_RET):
-                break
-            if cap_inst.group(ARM64_GRP_RET):
+            if (cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET)) \
+                    and self._num_instructions == 0:
                 break
 
         if _debug_symbols:
@@ -86,7 +85,7 @@ class DisassembleThread(QThread):
 
 
 class DisassemblyPanel(QSplitter):
-    onDisassemble = pyqtSignal(str, name='onShowMemoryRequest')
+    onDisassemble = pyqtSignal(object, name='onDisassemble')
 
     def __init__(self, app):
         super(DisassemblyPanel, self).__init__()
@@ -96,9 +95,16 @@ class DisassemblyPanel(QSplitter):
         self.disasm_view = DisassemblyView(app)
         self.addWidget(self.disasm_view)
 
+        """
+        this is one more way for allowing plugin hooks and perform additional operation on the range object
+        """
+        self.run_default_disassembler = True
+
     def disassemble(self, dwarf_range):
-        self.onDisassemble.emit(hex(dwarf_range.start_address))
-        self.disasm_view.disassemble(dwarf_range)
+        self.onDisassemble.emit(dwarf_range)
+
+        if self.run_default_disassembler:
+            self.disasm_view.disassemble(dwarf_range)
 
 
 class DisassemblyView(QAbstractScrollArea):
@@ -135,7 +141,6 @@ class DisassemblyView(QAbstractScrollArea):
         self._history = []
         self._lines = []
         self._range = None
-        self._max_instructions = 128
         self._longest_bytes = 0
         self._longest_mnemonic = 0
 
@@ -261,12 +266,12 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
-    def disassemble(self, dwarf_range, num_instructions=256):
+    def disassemble(self, dwarf_range, num_instructions=0):
         if self._running_disasm:
             return
 
         self._running_disasm = True
-        self._app_window.show_progress('Disassembling...')
+        self._app_window.show_progress('disassembling...')
 
         self._lines.clear()
         self.viewport().update()
@@ -286,9 +291,8 @@ class DisassemblyView(QAbstractScrollArea):
             return
 
         self._range = dwarf_range
-        self._max_instructions = num_instructions
         self.disasm_thread = DisassembleThread(self._app_window)
-        self.disasm_thread._max_instructions = self._max_instructions
+        self.disasm_thread._num_instructions = num_instructions
         self.disasm_thread._range = self._range
         self.disasm_thread._dwarf = self._app_window.dwarf
         self.disasm_thread._capstone = capstone
