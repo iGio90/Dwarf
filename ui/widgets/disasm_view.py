@@ -85,8 +85,6 @@ class DisassembleThread(QThread):
 
 
 class DisassemblyPanel(QSplitter):
-    onDisassemble = pyqtSignal(object, name='onDisassemble')
-
     def __init__(self, app):
         super(DisassemblyPanel, self).__init__()
 
@@ -95,19 +93,12 @@ class DisassemblyPanel(QSplitter):
         self.disasm_view = DisassemblyView(app)
         self.addWidget(self.disasm_view)
 
-        """
-        this is one more way for allowing plugin hooks and perform additional operation on the range object
-        """
-        self.run_default_disassembler = True
-
     def disassemble(self, dwarf_range):
-        self.onDisassemble.emit(dwarf_range)
-
-        if self.run_default_disassembler:
-            self.disasm_view.disassemble(dwarf_range)
+        self.disasm_view.disassemble(dwarf_range)
 
 
 class DisassemblyView(QAbstractScrollArea):
+    onDisassemble = pyqtSignal(object, name='onDisassemble')
     onShowMemoryRequest = pyqtSignal(str, int, name='onShowMemoryRequest')
 
     def __init__(self, parent=None):
@@ -184,6 +175,10 @@ class DisassemblyView(QAbstractScrollArea):
 
         # hacky way to let plugins hook this and inject menu actions
         self.menu_extra_menu_hooks = []
+        """
+        this is one more way for allowing plugin hooks and perform additional operation on the range object
+        """
+        self.run_default_disassembler = True
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -270,6 +265,12 @@ class DisassemblyView(QAbstractScrollArea):
         if self._running_disasm:
             return
 
+        self.onDisassemble.emit(dwarf_range)
+
+        if self.run_default_disassembler:
+            self.start_disassemble(dwarf_range, num_instructions=num_instructions)
+
+    def start_disassemble(self, dwarf_range, num_instructions=0):
         self._running_disasm = True
         self._app_window.show_progress('disassembling...')
 
