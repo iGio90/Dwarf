@@ -164,17 +164,13 @@ class ContextPanel(QTabWidget):
             reg_name = QStandardItem()
             reg_name.setTextAlignment(Qt.AlignCenter)
             if context[register]['isValidPointer']:
-                reg_name.setData(context_ptr)
+                reg_name.setData(context_ptr, Qt.UserRole + 1)
 
             value_x = QStandardItem()
             if context[register]['isValidPointer']:
                 value_x.setForeground(Qt.red)
-                value_x.setData(True)
-            else:
-                value_x.setData(False)
-            # value_x.setTextAlignment(Qt.AlignCenter)
+
             value_dec = QStandardItem()
-            # value_dec.setTextAlignment(Qt.AlignCenter)
             telescope = QStandardItem()
 
             reg_name.setText(register)
@@ -241,7 +237,7 @@ class ContextPanel(QTabWidget):
             # value_dec.setTextAlignment(Qt.AlignCenter)
 
             reg_name.setText(register)
-            reg_name.setData(context_ptr)
+            reg_name.setData(context_ptr, Qt.UserRole + 1)
 
             if context[register] is not None:
                 if isinstance(context[register], int):
@@ -337,12 +333,21 @@ class ContextPanel(QTabWidget):
         context_menu = QMenu(self)
         if index != -1:
             item = self._nativectx_model.item(index, 1)
+            dec = self._nativectx_model.item(index, 2)
+            telescope = self._nativectx_model.item(index, 3)
             # show contextmenu
-            context_menu.addAction(
-                'Copy value', lambda: utils.copy_hex_to_clipboard(item.text()))
-            if item.data():
-                context_menu.addAction(
-                    'Jump to address', lambda: self._app_window.jump_to_address(item.text()))
+            if self._nativectx_model.item(index, 0).data(Qt.UserRole + 1):
+                context_menu.addAction('Jump to {0}'.format(item.text()), lambda: self._app_window.jump_to_address(item.text()))
+                context_menu.addSeparator()
+            # copy menu
+            context_sub_menu = QMenu('Copy', context_menu)
+            context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(item.text()))
+            if dec.text():
+                context_sub_menu.addAction('Decimal', lambda: utils.copy_str_to_clipboard(dec.text()))
+            if telescope.text():
+                context_sub_menu.addAction('Telescope', lambda: utils.copy_str_to_clipboard(telescope.text()))
+            context_menu.addMenu(context_sub_menu)
+
             context_menu.exec_(glbl_pt)
 
     def _on_emulator_contextmenu(self, pos):
@@ -359,6 +364,16 @@ class ContextPanel(QTabWidget):
         context_menu = QMenu(self)
         if index != -1:
             # show contextmenu
+            argument = self._javactx_model.item(index, 1)
+            _class = self._javactx_model.item(index, 2)
+            value = self._javactx_model.item(index, 3)
+            context_sub_menu = QMenu('Copy', context_menu)
+            context_sub_menu.addAction('Argument', lambda: utils.copy_str_to_clipboard(argument.text()))
+            if _class.text():
+                context_sub_menu.addAction('Class', lambda: utils.copy_str_to_clipboard(_class.text()))
+            if value.text():
+                context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(value.text()))
+            context_menu.addMenu(context_sub_menu)
             context_menu.exec_(glbl_pt)
 
     def _on_context_changed(self, reg_name, reg_val):

@@ -20,6 +20,8 @@ from PyQt5.QtWidgets import QHeaderView, QMenu
 
 from ui.widgets.list_view import DwarfListView
 
+from lib import utils
+
 
 class BacktracePanel(DwarfListView):
 
@@ -34,11 +36,13 @@ class BacktracePanel(DwarfListView):
         self._model = QStandardItemModel(0, 2)
         self._model.setHeaderData(0, Qt.Horizontal, 'Address')
         self._model.setHeaderData(1, Qt.Horizontal, 'Symbol')
-
         self.setModel(self._model)
+
         self.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.doubleClicked.connect(self._item_doubleclicked)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._on_contextmenu)
         self._mode = 'native'
 
     def set_backtrace(self, bt):
@@ -95,3 +99,35 @@ class BacktracePanel(DwarfListView):
         if row != -1:
             if self._mode == 'native':
                 self.onShowMemoryRequest.emit(self._model.item(row, 0).text())
+
+    def _on_contextmenu(self, pos):
+        index = self.indexAt(pos).row()
+        glbl_pt = self.mapToGlobal(pos)
+        context_menu = QMenu(self)
+        if index != -1:
+            if self._mode == 'native':
+                addr_item = self.model().item(index, 0).text()
+                symbol_item = self.model().item(index, 1).text()
+                # show contextmenu
+                context_menu.addAction('Jump to {0}'.format(addr_item), lambda: self.onShowMemoryRequest.emit(addr_item))
+                context_menu.addSeparator()
+                context_menu.addAction('Copy Address', lambda: utils.copy_hex_to_clipboard(addr_item))
+                if symbol_item and symbol_item != '-':
+                    context_menu.addAction('Copy Symbol', lambda: utils.copy_str_to_clipboard(symbol_item))
+            elif self._mode == 'java':
+                method_item = self.model().item(index, 0).text()
+                if method_item.startswith('at '):
+                    method_item = method_item.replace('at ', '')
+
+                source_item = self.model().item(index, 1).text()
+                if ':' in source_item:
+                    source_item = source_item.split(':')[0]
+                # show contextmenu
+                # context_menu.addAction('Jump to', lambda: self._app_window.jump_to_address(addr_item.text()))
+                # context_menu.addSeparator()
+                # TODO: add jumpto java
+                context_menu.addAction('Copy Method', lambda: utils.copy_str_to_clipboard(method_item))
+                context_menu.addAction('Copy Source', lambda: utils.copy_str_to_clipboard(source_item))
+
+            context_menu.exec_(glbl_pt)
+
