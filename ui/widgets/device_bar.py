@@ -372,6 +372,10 @@ class DeviceBar(QWidget):
                     self._restart_btn.setVisible(True)
                     self.onDeviceUpdated.emit(frida_device.id)
 
+        elif self._adb.non_root_available():
+            self.update_label.setText('Device: ' + frida_device.name + ' (NOROOT!)')
+            self.onDeviceUpdated.emit(frida_device.id)
+
     def _on_devices_finished(self):
         if self._devices:
             if len(self._devices) > 1:
