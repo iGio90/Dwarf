@@ -169,6 +169,9 @@ class ContextPanel(QTabWidget):
             value_x = QStandardItem()
             if context[register]['isValidPointer']:
                 value_x.setForeground(Qt.red)
+                value_x.setData(True)
+            else:
+                value_x.setData(False)
             # value_x.setTextAlignment(Qt.AlignCenter)
             value_dec = QStandardItem()
             # value_dec.setTextAlignment(Qt.AlignCenter)
@@ -333,13 +336,13 @@ class ContextPanel(QTabWidget):
         glbl_pt = self._nativectx_list.mapToGlobal(pos)
         context_menu = QMenu(self)
         if index != -1:
+            item = self._nativectx_model.item(index, 1)
             # show contextmenu
             context_menu.addAction(
-                'Copy value', lambda: utils.copy_hex_to_clipboard(
-                    self._nativectx_model.item(index, 1).text()))
-            context_menu.addAction(
-                'Jump to address', lambda: self._app_window.jump_to_address(
-                    self._nativectx_model.item(index, 1).text()))
+                'Copy value', lambda: utils.copy_hex_to_clipboard(item.text()))
+            if item.data():
+                context_menu.addAction(
+                    'Jump to address', lambda: self._app_window.jump_to_address(item.text()))
             context_menu.exec_(glbl_pt)
 
     def _on_emulator_contextmenu(self, pos):
