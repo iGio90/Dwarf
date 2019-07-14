@@ -26,7 +26,7 @@ class PluginManager:
         self._plugins_path = os.path.join(
             os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
 
-        self._plugins = {}
+        self.plugins = {}
 
     def reload_plugins(self):
         for _, directories, _ in os.walk(self._plugins_path):
@@ -70,7 +70,7 @@ class PluginManager:
                                         print('failed to load plugin "%s": missing name in __get_plugin_info__' % plugin_file)
                                         continue
                                     _instance.name = plugin_info['name']
-                                    self._plugins[_instance.name] = _instance
+                                    self.plugins[_instance.name] = _instance
                                 except Exception as e:
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
                             else:

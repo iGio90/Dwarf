@@ -197,13 +197,22 @@ class AppWindow(QMainWindow):
                 self.menu.addMenu(session_menu)
 
         # plugins
-        if self.plugin_manager._plugins:
+        if self.plugin_manager.plugins:
             self.plugin_menu = QMenu('Plugins', self)
-            for plugin in self.plugin_manager._plugins:
-                plugin_sub_menu = QMenu(self.plugin_manager._plugins[plugin].name, self.plugin_menu)
+            for plugin in self.plugin_manager.plugins:
+                plugin_instance = self.plugin_manager.plugins[plugin]
+                plugin_sub_menu = QMenu(plugin_instance.name, self.plugin_menu)
+
+                try:
+                    actions = plugin_instance.__get_top_menu_actions__()
+                    for action in actions:
+                        plugin_sub_menu.addAction(action)
+                except:
+                    pass
 
                 if not plugin_sub_menu.isEmpty():
                     plugin_sub_menu.addSeparator()
+
                 plugin_sub_menu.addAction('About', lambda: self._show_plugin_about(plugin))
                 self.plugin_menu.addMenu(plugin_sub_menu)
 
