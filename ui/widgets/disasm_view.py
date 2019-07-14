@@ -183,7 +183,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.pos = 0
 
         # hacky way to let plugins hook this and inject menu actions
-        self.menu_extra_menu = []
+        self.menu_extra_menu_hooks = []
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -766,11 +766,13 @@ class DisassemblyView(QAbstractScrollArea):
         context_menu.addSeparator()
 
         index = self.pixel_to_line(loc_x, loc_y)
+        address = -1
         if 0 <= index < self.visible_lines():
             if index + self.pos < len(self._lines):
                 if isinstance(self._lines[index + self.pos], Instruction):
+                    address = self._lines[index + self.pos].address
                     context_menu.addAction(
-                        'Copy address', lambda: utils.copy_hex_to_clipboard(self._lines[index + self.pos].address))
+                        'Copy address', lambda: utils.copy_hex_to_clipboard(address))
 
                     context_menu.addSeparator()
 
@@ -778,24 +780,26 @@ class DisassemblyView(QAbstractScrollArea):
                         str_fmt = '0x{0:X}'
                     else:
                         str_fmt = '0x{0:x}'
-                    addr_str = str_fmt.format(self._lines[index + self.pos].address)
+                    addr_str = str_fmt.format(address)
                     if self._app_window.watchers_panel:
-                        if self._app_window.dwarf.is_address_watched(self._lines[index + self.pos].address):
-                            context_menu.addAction('Remove watcher',
-                                                   lambda: self._app_window.watchers_panel.remove_address(addr_str))
+                        if self._app_window.dwarf.is_address_watched(address):
+                            context_menu.addAction(
+                                'Remove watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
                         else:
-                            context_menu.addAction('Watch address',
-                                                   lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
+                            context_menu.addAction(
+                                'Watch address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
                     if self._app_window.hooks_panel:
-                        if self._lines[index + self.pos].address in self._app_window.dwarf.hooks:
-                            context_menu.addAction('Remove hook',
-                                                   lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
+                        if address in self._app_window.dwarf.hooks:
+                            context_menu.addAction(
+                                'Remove hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
                         else:
                             context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
 
-        for menu in self.menu_extra_menu:
-            context_menu.addSeparator()
-            context_menu.addMenu(menu)
+        for fcn in self.menu_extra_menu_hooks:
+            try:
+                fcn(context_menu, address)
+            except Exception as e:
+                print('failed to add hook menu: %s' % str(e))
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
