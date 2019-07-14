@@ -254,7 +254,7 @@ class AppWindow(QMainWindow):
         self.menu.addMenu(about_menu)
 
     def _show_plugin_about(self, plugin):
-        plugin = self.plugin_manager._plugins[plugin]
+        plugin = self.plugin_manager.plugins[plugin]
         if plugin:
             info = plugin.__get_plugin_info__()
 
