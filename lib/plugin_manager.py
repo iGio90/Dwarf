@@ -28,7 +28,6 @@ class PluginManager:
 
         self._plugins = {}
 
-
     @property
     def plugins(self):
         return self._plugins
@@ -48,7 +47,7 @@ class PluginManager:
                     try:
                         _plugin = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(_plugin)
-                    except Exception as e: # pylint: disable=broad-except, invalid-name
+                    except Exception as e:  # pylint: disable=broad-except, invalid-name
                         print('failed to load plugin %s: %s' % (plugin_file, str(e)))
                         return
 
@@ -73,13 +72,13 @@ class PluginManager:
 
                                     plugin_info = _instance.__get_plugin_info__()
                                     if 'name' not in plugin_info:
-                                        print('failed to load plugin "%s": missing name in __get_plugin_info__' % plugin_file)
+                                        print(
+                                            'failed to load plugin "%s": missing name in __get_plugin_info__' % plugin_file)
                                         continue
                                     _instance.name = plugin_info['name']
                                     self._plugins[_instance.name] = _instance
                                     break
-                                except Exception as e: # pylint: disable=broad-except, invalid-name
+                                except Exception as e:  # pylint: disable=broad-except, invalid-name
                                     print('failed to load plugin %s: %s' % (plugin_file, str(e)))
                             else:
                                 print('failed to load plugin "%s": missing __get_plugin_info__ method' % plugin_file)
-

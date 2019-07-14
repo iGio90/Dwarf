@@ -358,6 +358,13 @@ class Dwarf(QObject):
 
                     self.dwarf_api('evaluateFunction', user_script)
 
+            for plugin in self._app_window.plugin_manager.plugins:
+                plugin_instance = self._app_window.plugin_manager.plugins[plugin]
+                try:
+                    self.dwarf_api('evaluate', plugin_instance.__get_agent__())
+                except:
+                    pass
+
             # resume immediately
             self.resume_proc()
 
