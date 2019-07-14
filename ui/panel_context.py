@@ -335,7 +335,7 @@ class ContextPanel(QTabWidget):
         if index != -1:
             # show contextmenu
             context_menu.addAction(
-                'Copy address', lambda: utils.copy_hex_to_clipboard(
+                'Copy value', lambda: utils.copy_hex_to_clipboard(
                     self._nativectx_model.item(index, 1).text()))
             context_menu.addAction(
                 'Jump to address', lambda: self._app_window.jump_to_address(
