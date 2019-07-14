@@ -745,6 +745,9 @@ class HexEditor(QAbstractScrollArea):
         if not self.isVisible():
             return
 
+        if not self.hasFocus():
+            return
+
         self._blink = not self._blink
         self.viewport().update(self.caret_to_hexcol(self.caret))
 

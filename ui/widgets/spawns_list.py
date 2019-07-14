@@ -27,7 +27,7 @@ class SpawnsThread(QThread):
     """ Updates the SpawnsList
         signals:
             clear_proc()
-            add_spawn(NotEditableListWidgetItem)
+            add_spawn()
             is_error(str) - shows str in statusbar
         device must set before run
     """

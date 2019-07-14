@@ -319,6 +319,9 @@ class ModulesPanel(QSplitter):
     def _module_clicked(self):
         """ Module Clicked updates imports/exports/symbols
         """
+        if not self.modules_list.hasFocus():
+            return
+
         module_index = self.modules_list.selectionModel().currentIndex().row()
         module = self.modules_model.item(module_index, 0)  # module name
         if module is None:
