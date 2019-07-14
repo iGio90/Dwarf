@@ -164,10 +164,11 @@ class ContextPanel(QTabWidget):
             reg_name = QStandardItem()
             reg_name.setTextAlignment(Qt.AlignCenter)
             if context[register]['isValidPointer']:
-                reg_name.setForeground(Qt.red)
                 reg_name.setData(context_ptr)
 
             value_x = QStandardItem()
+            if context[register]['isValidPointer']:
+                value_x.setForeground(Qt.red)
             # value_x.setTextAlignment(Qt.AlignCenter)
             value_dec = QStandardItem()
             # value_dec.setTextAlignment(Qt.AlignCenter)
