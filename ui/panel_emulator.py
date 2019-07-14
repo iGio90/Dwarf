@@ -90,7 +90,7 @@ class EmulatorPanel(QWidget):
         self._ranges_model.setHeaderData(0, Qt.Horizontal, 'Memory')
         self._ranges_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._ranges_model.setHeaderData(1, Qt.Horizontal, 'Size')
-        self._access_model.setHeaderData(1, Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+        self._ranges_model.setHeaderData(1, Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
         self.ranges_list.setModel(self._ranges_model)
         self.tabs.addTab(self.ranges_list, 'Ranges')
 
