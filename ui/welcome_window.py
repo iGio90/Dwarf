@@ -160,6 +160,7 @@ class UpdateBar(QWidget):
             self.parent().width() - 10 - update_label.width() * .2, 5,
             update_label.width() * .2, 25)
         self.update_button.clicked.connect(self.update_now_clicked)
+        self.setMaximumHeight(35)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
 
