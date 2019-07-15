@@ -449,7 +449,7 @@ class DeviceBar(QWidget):
                 if self._adb.available() and request_url.index('https://') == 0:
                     self._install_btn.setVisible(False)
                     self._update_btn.setVisible(False)
-
+                    qApp.processEvents()
                     if self._update_thread is not None:
                         if not self._update_thread.isRunning():
                             self._update_thread.frida_update_url = request_url
@@ -474,6 +474,7 @@ class DeviceBar(QWidget):
     def _on_start_btn(self):
         if self._adb.available():
             self._start_btn.setVisible(False)
+            qApp.processEvents()
             if self._adb.start_frida():
                 #self.onDeviceUpdated.emit(self._device_id)
                 self._on_devices_finished()
@@ -483,6 +484,7 @@ class DeviceBar(QWidget):
     def _on_restart_btn(self):
         if self._adb.available():
             self._restart_btn.setVisible(False)
+            qApp.processEvents()
             if self._adb.start_frida(restart=True):
                 self._restart_btn.setVisible(True)
                 #self.onDeviceUpdated.emit(self._device_id)

@@ -326,7 +326,7 @@ class Adb(QObject):
             # with nox it starts frida fine but keeps running
             # without return so it needs some timeout here
             if self._alternate_frida_name:
-                result = self.su_cmd('frida-server -D')
+                result = self.su_cmd('frida-server -D', timeout=5)
             else:
                 result = self.su_cmd('frida -D', timeout=5)
 
