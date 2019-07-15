@@ -231,6 +231,7 @@ class WelcomeDialog(QDialog):
         """ Setup Ui
         """
         main_wrap = QVBoxLayout()
+        main_wrap.setSpacing(10)
         main_wrap.setContentsMargins(0, 0, 0, 0)
 
         # updatebar on top
