@@ -408,10 +408,10 @@ class ModulesPanel(QSplitter):
                 'Dump Binary', lambda: self._on_dumpmodule(
                     self.modules_model.item(index, 1).text(),
                     self.modules_model.item(index, 2).text()))
+            context_menu.addSeparator()
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
                     self.modules_model.item(index, 1).text()))
-            context_menu.addSeparator()
             context_menu.addAction(
                 'Copy Name', lambda: utils.copy_str_to_clipboard(
                     self.modules_model.item(index, 0).text()))
