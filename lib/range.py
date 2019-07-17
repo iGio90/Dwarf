@@ -18,6 +18,7 @@ import json
 
 from lib import utils
 from lib.hook import Hook
+from lib.types.module_info import ModuleInfo
 
 
 class Range(object):
@@ -40,6 +41,8 @@ class Range(object):
         self.start_address = 0
         self.start_offset = 0
 
+        self.module_info = None
+
     def invalidate(self):
         self.base = 0
         self.size = 0
@@ -61,6 +64,7 @@ class Range(object):
             try:
                 _range = self.dwarf.dwarf_api('getRange', self.start_address)
             except Exception as e:
+                print(e)
                 return 1
             if _range is None or len(_range) == 0:
                 return 1
@@ -78,6 +82,15 @@ class Range(object):
             if require_data:
                 # read data
                 self.data = self.dwarf.read_memory(self.base, self.size)
+
+            # get module info for this range
+            self.module_info = self.dwarf.database.get_module_info(_range['base'])
+            if self.module_info is None:
+                self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
+                self.dwarf.database.put_module_info(_range['base'], self.module_info)
+            elif self.module_info.have_details:
+                self.module_info.update_details(self.dwarf)
+
         elif self.source == Range.SOURCE_EMULATOR:
             uc = self.dwarf.get_emulator().uc
             if uc is not None:

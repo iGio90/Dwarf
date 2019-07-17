@@ -22,6 +22,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QHeaderView, QSplitter,
                              QMenu)
 from lib import utils
+from lib.types.module_info import ModuleInfo
 from ui.widgets.list_view import DwarfListView
 
 
@@ -323,50 +324,52 @@ class ModulesPanel(QSplitter):
             return
 
         module_index = self.modules_list.selectionModel().currentIndex().row()
-        module = self.modules_model.item(module_index, 0)  # module name
-        if module is None:
+        module_name = self.modules_model.item(module_index, 0)
+        if module_name is None:
             return
 
-        imports = self._app_window.dwarf.dwarf_api('enumerateImports',
-                                                   module.text())
-        if imports:
-            imports = json.loads(imports)
-            if imports:
-                self.set_imports(imports)
-                self.imports_list.setVisible(True)
-                self.imports_list.resizeColumnToContents(0)
-                self.imports_list.resizeColumnToContents(1)
-                self.imports_list.resizeColumnToContents(2)
-            else:
-                self.imports_list.setVisible(False)
+        module_name = module_name.text()
+        module_address = self.modules_model.item(module_index, 1).text()
 
-        exports = self._app_window.dwarf.dwarf_api('enumerateExports',
-                                                   module.text())
-        if exports:
-            exports = json.loads(exports)
-            if exports:
-                self.set_exports(exports)
-                self.exports_list.setVisible(True)
-                self.exports_list.resizeColumnToContents(0)
-                self.exports_list.resizeColumnToContents(1)
-            else:
-                self.exports_list.setVisible(False)
+        module_info = self._app_window.dwarf.database.get_module_info(module_address)
+        if module_info is not None:
+            if not module_info.have_details:
+                module_info.update_details(self._app_window.dwarf)
+        else:
+            module_info = ModuleInfo.build_module_info(self._app_window.dwarf, module_name, fill_ied=True)
+            self._app_window.dwarf.database.put_module_info(module_address, module_info)
 
-        symbols = self._app_window.dwarf.dwarf_api('enumerateSymbols',
-                                                   module.text())
-        if symbols:
-            symbols = json.loads(symbols)
-            if symbols:
-                self.set_symbols(symbols)
-                self.symbols_list.setVisible(True)
-                self.symbols_list.resizeColumnToContents(0)
-                self.symbols_list.resizeColumnToContents(1)
-            else:
-                self.symbols_list.setVisible(False)
+        self.update_module_ui(module_info)
 
         if not self._sized:
             self.setSizes([100, 100])
             self._sized = True
+
+    def update_module_ui(self, module_info):
+        if len(module_info.imports) > 0:
+            self.set_imports(module_info.imports)
+            self.imports_list.setVisible(True)
+            self.imports_list.resizeColumnToContents(0)
+            self.imports_list.resizeColumnToContents(1)
+            self.imports_list.resizeColumnToContents(2)
+        else:
+            self.imports_list.setVisible(False)
+
+        if len(module_info.exports) > 0:
+            self.set_exports(module_info.exports)
+            self.exports_list.setVisible(True)
+            self.exports_list.resizeColumnToContents(0)
+            self.exports_list.resizeColumnToContents(1)
+        else:
+            self.exports_list.setVisible(False)
+
+        if len(module_info.symbols) > 0:
+            self.set_symbols(module_info.symbols)
+            self.symbols_list.setVisible(True)
+            self.symbols_list.resizeColumnToContents(0)
+            self.symbols_list.resizeColumnToContents(1)
+        else:
+            self.symbols_list.setVisible(False)
 
     def _module_dblclicked(self):
         """ Module DoubleClicked

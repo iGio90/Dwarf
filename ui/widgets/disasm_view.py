@@ -29,6 +29,7 @@ from lib.instruction import Instruction
 
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog
+from ui.widgets.list_view import DwarfListView
 
 
 class DisassembleThread(QThread):
@@ -90,11 +91,34 @@ class DisassemblyPanel(QSplitter):
 
         self.app = app
 
+        self.functions_list = DwarfListView()
+        self.functions_list_model = QStandardItemModel(0, 1)
+        self.functions_list_model.setHeaderData(0, Qt.Horizontal, 'functions')
+        self.functions_list.setModel(self.functions_list_model)
+        self.addWidget(self.functions_list)
+        self.functions_list.hide()
+
         self.disasm_view = DisassemblyView(app)
         self.addWidget(self.disasm_view)
 
+        self.setStretchFactor(0, 1)
+        self.setStretchFactor(1, 5)
+
     def disassemble(self, dwarf_range):
         self.disasm_view.disassemble(dwarf_range)
+
+    def show_functions_for_module(self, hex_module_base):
+        self.functions_list_model.setRowCount(0)
+        module_info = self.app.dwarf.database.get_module_info(hex_module_base)
+        if module_info is not None:
+            if len(module_info.functions) > 0:
+                self.functions_list.show()
+                for function in sorted(module_info.functions, key=lambda x: x.name):
+                    item = QStandardItem(function.name)
+                    item.setData(function.address, Qt.UserRole + 2)
+                    self.functions_list_model.appendRow([item])
+            else:
+                self.functions_list.hide()
 
 
 class DisassemblyView(QAbstractScrollArea):
@@ -299,6 +323,8 @@ class DisassemblyView(QAbstractScrollArea):
         self.disasm_thread._capstone = capstone
         self.disasm_thread.onFinished.connect(self._on_disasm_finished)
         self.disasm_thread.start(QThread.HighestPriority)
+
+        self._app_window.asm_panel.show_functions_for_module(hex(dwarf_range.base))
 
     def _on_disasm_finished(self, instructions):
         if isinstance(instructions, list):

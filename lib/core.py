@@ -27,6 +27,7 @@ from frida.core import Session
 
 from lib import utils
 from lib.context import Context
+from lib.database import Database
 from lib.emulator import Emulator
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
@@ -118,8 +119,9 @@ class Dwarf(QObject):
     # ************************************************************************
     def __init__(self, session=None, parent=None, device=None):
         super(Dwarf, self).__init__(parent=parent)
-
         self._app_window = parent
+
+        self.database = Database()
 
         self.java_available = False
 
@@ -175,6 +177,8 @@ class Dwarf(QObject):
             pass
 
     def reinitialize(self):
+        self.database = Database()
+
         self._pid = 0
         self._package = None
         self._process = None
@@ -362,7 +366,7 @@ class Dwarf(QObject):
                 plugin_instance = self._app_window.plugin_manager.plugins[plugin]
                 try:
                     self.dwarf_api('evaluate', plugin_instance.__get_agent__())
-                except:
+                except Exception as e:
                     pass
 
             # resume immediately
