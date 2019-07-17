@@ -51,6 +51,7 @@ class ModulesPanel(QSplitter):
             return
 
         self._app_window.dwarf.onSetModules.connect(self.set_modules)
+        self._app_window.dwarf.onModuleLoaded.connect(self.on_module_loaded)
 
         self._uppercase_hex = True
         self._sized = False
@@ -190,32 +191,39 @@ class ModulesPanel(QSplitter):
 
         self.modules_list.clear()
         for module in modules:
-            name = QStandardItem()
-            name.setTextAlignment(Qt.AlignLeft)
-            if 'name' in module:
-                name.setText(module['name'])
+            self.add_module(module)
 
-            base = QStandardItem()
-            base.setTextAlignment(Qt.AlignCenter)
+    def on_module_loaded(self, data):
+        module = data[0]
+        self.add_module(module)
 
-            str_fmt = '0x{0:X}'
-            if not self.uppercase_hex:
-                str_fmt = '0x{0:x}'
+    def add_module(self, module):
+        name = QStandardItem()
+        name.setTextAlignment(Qt.AlignLeft)
+        if 'name' in module:
+            name.setText(module['name'])
 
-            if 'base' in module:
-                base.setText(str_fmt.format(int(module['base'], 16)))
+        base = QStandardItem()
+        base.setTextAlignment(Qt.AlignCenter)
 
-            size = QStandardItem()
-            size.setTextAlignment(Qt.AlignRight)
-            if 'size' in module:
-                size.setText("{0:,d}".format(int(module['size'])))
+        str_fmt = '0x{0:X}'
+        if not self.uppercase_hex:
+            str_fmt = '0x{0:x}'
 
-            path = QStandardItem()
-            path.setTextAlignment(Qt.AlignLeft)
-            if 'path' in module:
-                path.setText(module['path'])
+        if 'base' in module:
+            base.setText(str_fmt.format(int(module['base'], 16)))
 
-            self.modules_model.appendRow([name, base, size, path])
+        size = QStandardItem()
+        size.setTextAlignment(Qt.AlignRight)
+        if 'size' in module:
+            size.setText("{0:,d}".format(int(module['size'])))
+
+        path = QStandardItem()
+        path.setTextAlignment(Qt.AlignLeft)
+        if 'path' in module:
+            path.setText(module['path'])
+
+        self.modules_model.appendRow([name, base, size, path])
 
     def update_modules(self):
         """ DwarfApiCall updateModules

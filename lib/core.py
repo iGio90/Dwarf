@@ -114,6 +114,8 @@ class Dwarf(QObject):
 
     onReceiveCmd = pyqtSignal(list, name="onReceiveCmd")
 
+    onModuleLoaded = pyqtSignal(list, name='onModuleLoaded')
+
     # ************************************************************************
     # **************************** Init **************************************
     # ************************************************************************
@@ -691,8 +693,10 @@ class Dwarf(QObject):
             self.log_event(str_fmt)
             self.onHitNativeOnLoad.emit([parts[1], parts[2]])
         elif cmd == 'native_on_load_module_loading':
-            str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], parts[2]))
+            module = json.loads(parts[2])
+            str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], module['name']))
             self.log_event(str_fmt)
+            self.onModuleLoaded.emit([module])
         elif cmd == 'new_thread':
             str_fmt = ('@thread {0} starting new thread with target fn := {1}'.format(parts[1], parts[2]))
             self.log_event(str_fmt)
