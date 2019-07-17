@@ -4,11 +4,9 @@ A debugger for reverse engineers, crackers and security analyst.
 Or you can call it damn, why are raspberries so fluffy or yet, duck warriors are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code.
 
-| Checkout the [website](https://igio90.github.io/Dwarf/) for features, api and examples
 
-| [CHANGELOG](https://igio90.github.io/Dwarf/docs/changelog.html)
-
-![DWARF](https://i.imgur.com/rbOwjh5.png)
+![DWARF](https://i.ibb.co/bKYm5Sr/Screenshot-from-2019-07-17-23-35-00.png)
+![DWARFWHITE](https://i.ibb.co/hHHHc8m/Screenshot-from-2019-07-17-23-35-28.png)
 
 ### Something you can do with Dwarf
 * breakpoints
@@ -44,18 +42,6 @@ pip3 install -r requirements.txt
 python3 dwarf.py
 ```
 
-### Optionally
-
-You can install keystone-engine to enable assembler:
-
-```
-Windows
-x86: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win32.msi
-x64: https://github.com/keystone-engine/keystone/releases/download/0.9.1/keystone-0.9.1-python-win64.msi
-
-OSX / Unix
-pip3 install keystone-engine
-```
 
 dex2jar tools (required for baksmali/decompiling)
 ```
@@ -67,6 +53,9 @@ On Windows add d2j folder to %PATH% and change:
 in d2j_invoke.bat to
 'java -Xms512m -Xmx4096m -cp "%CP%" %*'
 ```
+
+### Extend
+You can extend Dwarf with plugins. [Checkout how to get it done!](PLUGINS.md)
 
 ### Settings
 You can change in .dwarf
