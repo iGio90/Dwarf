@@ -244,6 +244,25 @@ class AppWindow(QMainWindow):
                                  self._menu_debug_dwarf_js)
             self.menu.addMenu(debug_menu)
 
+        # tools
+        _tools = self.prefs.get('tools')
+        if _tools:
+            tools_menu = QMenu('Tools', self)
+
+            for _tool in _tools:
+                if _tool and _tool['name']:
+                    if _tool['name'] == 'sep':
+                        tools_menu.addSeparator()
+                        continue
+
+                    _cmd = _tool['cmd']
+
+                    tools_menu.addAction(_tool['name'])
+
+            if not tools_menu.isEmpty():
+                tools_menu.triggered.connect(self._execute_tool)
+                self.menu.addMenu(tools_menu)
+
         about_menu = QMenu('About', self)
         about_menu.addAction('Dwarf on GitHub', self._menu_github)
         about_menu.addAction('Documention', self._menu_documentation)
@@ -304,6 +323,20 @@ class AppWindow(QMainWindow):
     def remove_tmp_dir(self):
         if os.path.exists('.tmp'):
             shutil.rmtree('.tmp', ignore_errors=True)
+
+    def _execute_tool(self, qaction):
+        if qaction:
+            _tools = self.prefs.get('tools')
+            if _tools:
+                for _tool in _tools:
+                    if _tool and _tool['name'] and _tool['name'] != 'sep':
+                        if qaction.text() == _tool['name']:
+                            try:
+                                import subprocess
+                                subprocess.Popen(_tool['cmd'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                            except:
+                                pass
+                            break
 
     def _set_theme(self, qaction):
         if qaction:

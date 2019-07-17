@@ -20,8 +20,8 @@ Built on top of pyqt5, frida and some terrible code.
 * exchange data with your target and display it in UI
 * digging through memory, disassembly and jvm fields/functions
 * backtrace both native and java
-* takes your whole frida agent in script editor, convert hooks to breakpoints etc 
-* more... 
+* takes your whole frida agent in script editor, convert hooks to breakpoints etc
+* more...
 * all of this can be done through scripting to build custom debugging logic
 
 ### Pre requisites
@@ -75,6 +75,12 @@ You can change in .dwarf
 "dwarf_ui_hexstyle": "upper", "lower" (default: "upper") - overall hexstyle 0xabcdef or 0xABCDEF (note: click on the "Offset (X)" in hexview to change)
 "dwarf_ui_font_size": 12 (default: 12) - (note: hexview/disasm use other font wait for settingsdlg or change lib/utils.py get_os_monospace_font())
 ```
++ ToolMenu
+
+   ```
+   "tools": [{"name": "Calculator", "cmd": "calc"}, {"name": "Terminal", "cmd": "sh"}]
+   ```
+   *to place an separator you can use `{"name": "sep"}`*
 
 ----
 
