@@ -3,7 +3,7 @@
 this will give you a basic how-to instantantiate your plugin, which will receive the qt main application as object.
 this object allows you to alter, create ui elements and to access dwarf core (for speak with frida).
 
-Your best environment to debug a plugin will be an IDE with Dwarf project opened. You will then create the plugins folder in dwarf path (if not existing), and creare a directory with the plugin name
+Your best environment to create and debug a plugin will be an IDE with Dwarf project opened (so you have api references and completition). You will then create the plugins folder in dwarf path (if not existing), and creare a directory with the plugin name
 
 > dwarf_path/plugins/my_plugin/
 
