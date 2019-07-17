@@ -37,6 +37,7 @@ class Range(object):
         self.size = 0
         self.tail = 0
         self.data = bytes()
+        self.permissions = '---'
 
         self.start_address = 0
         self.start_offset = 0
@@ -78,6 +79,7 @@ class Range(object):
                 self.size = length
             self.tail = self.base + self.size
             self.start_offset = self.start_address - self.base
+            self.permissions = _range['protection']
 
             if require_data:
                 # read data
