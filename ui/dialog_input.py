@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import *
 from ui.widgets.code_editor import JsCodeEditor
 from ui.dialogs.dwarf_dialog import DwarfDialog
 
+
 class InputDialogTextEdit(JsCodeEditor):
     def __init__(self, dialog, *__args):
         super().__init__(*__args)
@@ -55,7 +56,7 @@ class InputDialog(DwarfDialog):
         box = QVBoxLayout(self)
         if hint:
             label = QLabel(hint)
-            label.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
+            label.setAttribute(Qt.WA_TranslucentBackground, True)  # keep this
             box.addWidget(label)
 
         # wtf this hack to prevent segfault on adding hook with shortcuts from hooks panel.
@@ -65,6 +66,10 @@ class InputDialog(DwarfDialog):
         self.input_widget.setPlaceholderText(placeholder)
         if len(input_content) > 0:
             self.input_widget.setPlainText(input_content)
+
+            tc = self.input_widget.textCursor()
+            tc.setPosition(len(input_content))
+            self.input_widget.setTextCursor(tc)
 
         box.addWidget(self.input_widget)
 
