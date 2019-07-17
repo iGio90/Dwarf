@@ -97,6 +97,7 @@ class DisassemblyPanel(QSplitter):
         self.functions_list.setModel(self.functions_list_model)
         self.addWidget(self.functions_list)
         self.functions_list.hide()
+        self.functions_list.doubleClicked.connect(self._function_double_clicked)
 
         self.disasm_view = DisassemblyView(app)
         self.addWidget(self.disasm_view)
@@ -119,6 +120,11 @@ class DisassemblyPanel(QSplitter):
                     self.functions_list_model.appendRow([item])
             else:
                 self.functions_list.hide()
+
+    def _function_double_clicked(self, model_index):
+        item = self.functions_list_model.itemFromIndex(model_index)
+        address = item.data(Qt.UserRole + 2)
+        self.disasm_view.read_memory(address)
 
 
 class DisassemblyView(QAbstractScrollArea):
@@ -377,9 +383,6 @@ class DisassemblyView(QAbstractScrollArea):
         return (data_x, data_y)
 
     def read_memory(self, ptr, length=0):
-        # TODO: remove read_memory
-        self._lines.clear()
-
         if self._range is None:
             self._range = Range(Range.SOURCE_TARGET, self._app_window.dwarf)
 

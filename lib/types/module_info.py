@@ -62,9 +62,10 @@ class ModuleInfo:
     def parse_symbol(self, symbol):
         type_ = symbol['type']
         if type_ == 'function':
-            f = Function(symbol)
-            self.functions.append(f)
-            self.functions_map[symbol['address']] = f
+            if symbol['address'] not in self.functions_map:
+                f = Function(symbol)
+                self.functions.append(f)
+                self.functions_map[symbol['address']] = f
 
     def update_details(self, dwarf):
         self._updated_details = True
