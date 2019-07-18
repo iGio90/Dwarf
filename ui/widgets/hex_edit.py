@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
 from ui.dialog_input import InputDialog
 from lib import utils
-from lib.range import Range
+from lib.types.range import Range
 
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-statements

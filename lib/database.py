@@ -11,7 +11,6 @@ class Database:
 
     def put_module_info(self, address, module_info):
         address = self.sanify_address(address)
-        print(module_info.name, hex(module_info.base))
         self.modules_info[address] = module_info
         return module_info
 

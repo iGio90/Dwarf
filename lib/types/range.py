@@ -84,13 +84,12 @@ class Range(object):
                 self.data = self.dwarf.read_memory(self.base, self.size)
 
             # get module info for this range
-            # TODO: check why!!! when not listed in process.modules
-            """self.module_info = self.dwarf.database.get_module_info(_range['base'])
+            self.module_info = self.dwarf.database.get_module_info(_range['base'])
             if self.module_info is None:
                 self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
                 self.dwarf.database.put_module_info(_range['base'], self.module_info)
             elif self.module_info.have_details:
-                self.module_info.update_details(self.dwarf)"""
+                self.module_info.update_details(self.dwarf)
 
         elif self.source == Range.SOURCE_EMULATOR:
             uc = self.dwarf.get_emulator().uc

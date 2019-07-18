@@ -26,9 +26,9 @@ from importlib._bootstrap import spec_from_loader, module_from_spec
 from importlib._bootstrap_external import SourceFileLoader
 from lib import utils, prefs
 from lib.context import EmulatorContext
-from lib.instruction import Instruction
+from lib.types.instruction import Instruction
 from lib.prefs import Prefs
-from lib.range import Range
+from lib.types.range import Range
 from PyQt5.QtCore import pyqtSignal, QThread
 
 VFP = "4ff4700001ee500fbff36f8f4ff08043e8ee103a"

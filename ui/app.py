@@ -965,7 +965,7 @@ class AppWindow(QMainWindow):
 
                 if 'pc' in context['context']:
                     if not 'disassembly' in self._ui_elems or manual:
-                        from lib.range import Range
+                        from lib.types.range import Range
                         _range = Range(Range.SOURCE_TARGET, self.dwarf)
                         _range.init_with_address(int(context['context']['pc']['value'], 16))
 

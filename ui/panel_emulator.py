@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import capstone
 from capstone import CS_OP_REG
 from lib.emulator import STEP_MODE_NONE, STEP_MODE_SINGLE, STEP_MODE_FUNCTION, STEP_MODE_JUMP
-from lib.range import Range
+from lib.types.range import Range
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolBar, QDialog, QLabel, QPushButton,

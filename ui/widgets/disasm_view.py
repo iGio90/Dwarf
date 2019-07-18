@@ -23,9 +23,9 @@ from PyQt5.QtWidgets import *
 from capstone import *
 from capstone.x86_const import *
 from capstone.arm64_const import *
-from lib.range import Range
+from lib.types.range import Range
 from lib import utils
-from lib.instruction import Instruction
+from lib.types.instruction import Instruction
 
 from lib.prefs import Prefs
 from ui.dialog_input import InputDialog

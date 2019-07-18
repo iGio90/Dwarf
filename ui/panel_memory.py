@@ -15,7 +15,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
-from lib.range import Range
+from lib.types.range import Range
 from ui.widgets.hex_edit import HexEditor
 
 
