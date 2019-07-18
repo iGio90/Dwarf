@@ -32,6 +32,20 @@ from ui.dialog_input import InputDialog
 from ui.widgets.list_view import DwarfListView
 
 
+class ReadMemoryThread(QThread):
+    onFinish = pyqtSignal(int, name='onDisasmViewMemoryReadFinish')
+
+    def __init__(self, dwarf_range, ptr, length):
+        super().__init__()
+        self.dwarf_range = dwarf_range
+        self.ptr = ptr
+        self.length = length
+
+    def run(self):
+        result = self.dwarf_range.init_with_address(self.ptr, self.length)
+        self.onFinish.emit(result)
+
+
 class DisassembleThread(QThread):
     onFinished = pyqtSignal(list, name='onFinished')
     onError = pyqtSignal(str, name='onError')
@@ -150,6 +164,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._uppercase_hex = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
 
         self._app_window = parent
+        self._reading_memory = False
 
         self.setAutoFillBackground(True)
 
@@ -398,13 +413,18 @@ class DisassemblyView(QAbstractScrollArea):
         return (data_x, data_y)
 
     def read_memory(self, ptr, length=0):
+        if self._reading_memory:
+            return 1
+
         if self._range is None:
             self._range = Range(Range.SOURCE_TARGET, self._app_window.dwarf)
 
-        init = self._range.init_with_address(ptr, length)
-        if init > 0:
-            return 1
-        self.disassemble(self._range)
+        self._app_window.show_progress('reading at %s' % hex(ptr))
+
+        self._reading_memory = True
+        self.read_memory_thread = ReadMemoryThread(self._range, ptr, length)
+        self.read_memory_thread.onFinish.connect(self._on_finish_memory_read)
+        self.read_memory_thread.start()
         return 0
 
     # ************************************************************************
@@ -444,7 +464,7 @@ class DisassemblyView(QAbstractScrollArea):
                         if entry1 and entry2:
                             skip = True
                             pos2 = (self._lines.index(entry1[0]) - self._lines.index(entry2[0])) * (
-                                        self._char_height + self._ver_spacing)
+                                    self._char_height + self._ver_spacing)
                             painter.drawLine(drawing_pos_x, drawing_pos_y - pos2, drawing_pos_x, drawing_pos_y)
                             painter.drawLine(drawing_pos_x, drawing_pos_y - pos2, 100, drawing_pos_y - pos2)
                             arrow = QPolygon()
@@ -561,8 +581,8 @@ class DisassemblyView(QAbstractScrollArea):
             drawing_pos_x += int(self._char_width) * 3
 
         drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + (
-                    (self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (
-                                    int(self._char_width) * 3)
+                (self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (
+                                int(self._char_width) * 3)
         painter.setPen(QColor('#39c'))
         painter.drawText(drawing_pos_x, drawing_pos_y, line.mnemonic)
         if line.is_jump:
@@ -731,6 +751,12 @@ class DisassemblyView(QAbstractScrollArea):
             elif self._app_window.dwarf.arch == 'x64':
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
+
+    def _on_finish_memory_read(self, result):
+        self._app_window.hide_progress()
+        self._reading_memory = False
+        if result <= 0:
+            self.disassemble(self._range)
 
     def mouseDoubleClickEvent(self, event):
         loc_x = event.pos().x()
