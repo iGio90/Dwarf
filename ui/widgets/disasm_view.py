@@ -130,6 +130,7 @@ class DisassemblyPanel(QSplitter):
 class DisassemblyView(QAbstractScrollArea):
     onDisassemble = pyqtSignal(object, name='onDisassemble')
     onShowMemoryRequest = pyqtSignal(str, int, name='onShowMemoryRequest')
+    onDisasmViewKeyPressEvent = pyqtSignal(int, int, name='onDisasmViewKeyPressEvent')
 
     def __init__(self, parent=None):
         super(DisassemblyView, self).__init__(parent=parent)
@@ -673,6 +674,7 @@ class DisassemblyView(QAbstractScrollArea):
     # **************************** Handlers **********************************
     # ************************************************************************
     def keyPressEvent(self, event):
+        self.onDisasmViewKeyPressEvent.emit(event.key(), event.modifiers)
         if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
             if len(self._history) > 1:
                 self._history.pop(len(self._history) - 1)
