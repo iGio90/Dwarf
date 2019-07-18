@@ -295,6 +295,11 @@ class DisassemblyView(QAbstractScrollArea):
         if self._running_disasm:
             return
 
+        target_address = dwarf_range.base + dwarf_range.start_offset
+        for insn in self._lines:
+            if insn.address == target_address:
+                return
+
         self.onDisassemble.emit(dwarf_range)
 
         if self.run_default_disassembler:
@@ -668,7 +673,7 @@ class DisassemblyView(QAbstractScrollArea):
     # **************************** Handlers **********************************
     # ************************************************************************
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Backspace:
+        if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
             if len(self._history) > 1:
                 self._history.pop(len(self._history) - 1)
                 self.read_memory(self._history[len(self._history) - 1])
