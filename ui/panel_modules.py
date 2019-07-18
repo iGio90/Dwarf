@@ -22,6 +22,7 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QHeaderView, QSplitter,
                              QMenu)
 from lib import utils
+from lib.database import Database
 from lib.types.module_info import ModuleInfo
 from ui.widgets.list_view import DwarfListView
 
@@ -225,9 +226,20 @@ class ModulesPanel(QSplitter):
 
         self.modules_model.appendRow([name, base, size, path])
 
+        module_info = ModuleInfo(module)
+        if 'exports' in module and module['exports']:
+            module_info.apply_exports(module['exports'])
+        if 'imports' in module and module['imports']:
+            module_info.apply_imports(module['imports'])
+        if 'symbols' in module and module['symbols']:
+            module_info.apply_symbols(module['symbols'])
+        module_info._updated_details = True
+        self._app_window.dwarf.database.put_module_info(base.text(), module_info)
+
     def update_modules(self):
         """ DwarfApiCall updateModules
         """
+        self._app_window.dwarf.database = Database() # TODO: do better solution
         return self._app_window.dwarf.dwarf_api('updateModules')
 
     def set_imports(self, imports):
@@ -340,13 +352,13 @@ class ModulesPanel(QSplitter):
         module_address = self.modules_model.item(module_index, 1).text()
 
         module_info = self._app_window.dwarf.database.get_module_info(module_address)
-        if module_info is not None:
+        """if module_info is not None:
             if not module_info.have_details:
                 module_info.update_details(self._app_window.dwarf)
         else:
             module_info = ModuleInfo.build_module_info(self._app_window.dwarf, module_name, fill_ied=True)
             self._app_window.dwarf.database.put_module_info(module_address, module_info)
-
+        """
         self.update_module_ui(module_info)
 
         if not self._sized:
