@@ -239,7 +239,6 @@ class ModulesPanel(QSplitter):
     def update_modules(self):
         """ DwarfApiCall updateModules
         """
-        self._app_window.dwarf.database = Database() # TODO: do better solution
         return self._app_window.dwarf.dwarf_api('updateModules')
 
     def set_imports(self, imports):
@@ -348,7 +347,6 @@ class ModulesPanel(QSplitter):
         if module_name is None:
             return
 
-        module_name = module_name.text()
         module_address = self.modules_model.item(module_index, 1).text()
 
         module_info = self._app_window.dwarf.database.get_module_info(module_address)
