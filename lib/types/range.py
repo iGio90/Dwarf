@@ -97,7 +97,7 @@ class Range(object):
         if self.module_info is None:
             self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
             self.dwarf.database.put_module_info(_range['base'], self.module_info)
-        elif self.module_info.have_details:
+        elif not self.module_info.have_details:
             self.module_info.update_details(self.dwarf)
 
     def patch_bytes(self, _bytes, offset):
