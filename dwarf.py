@@ -136,8 +136,6 @@ def run_dwarf():
     # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
     # os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
 
-    print(os.name)
-
     args = process_args()
     # _check_dependencies() # not enabled atm
 
