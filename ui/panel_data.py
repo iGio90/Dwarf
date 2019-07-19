@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QItemSelection
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QSplitter, QPlainTextEdit, QMenu
 
@@ -35,7 +35,7 @@ class DataPanel(QSplitter):
         self.key_lists = DwarfListView(parent=self.app)
         self.key_lists.setHeaderHidden(True)
         self.key_lists.setModel(self._key_list_model)
-        self.key_lists.doubleClicked.connect(self.list_item_double_clicked)
+        self.key_lists.selectionModel().selectionChanged.connect(self.item_selected)
         self.key_lists.setContextMenuPolicy(Qt.CustomContextMenu)
         self.key_lists.customContextMenuRequested.connect(self._on_context_menu)
         self.addWidget(self.key_lists)
@@ -59,8 +59,8 @@ class DataPanel(QSplitter):
             self._key_list_model.appendRow([QStandardItem(key)])
         self.data[key] = [data_type, text_data]
 
-    def list_item_double_clicked(self, item):
-        item = self._key_list_model.itemFromIndex(item)
+    def item_selected(self, item1, item2):
+        item = self._key_list_model.itemFromIndex(item1.indexes()[0])
         if self.data[item.text()][0] == 'plain':
             self.hex_view.setVisible(False)
             self.editor.setVisible(True)

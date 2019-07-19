@@ -414,7 +414,11 @@ class DisassemblyView(QAbstractScrollArea):
         if self._range is None:
             self._range = Range(self._app_window.dwarf)
 
-        self._app_window.show_progress('reading at %s' % hex(ptr))
+        if not isinstance(ptr, str):
+            hex_ptr = hex(ptr)
+        else:
+            hex_ptr = ptr
+        self._app_window.show_progress('reading at %s' % hex_ptr)
 
         self._reading_memory = True
         self.read_memory_thread = ReadMemoryThread(self._range, ptr, length)
