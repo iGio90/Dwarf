@@ -80,6 +80,16 @@ class Instruction(object):
                                     self.should_change_arm_instruction_set = self.thumb
                                 else:
                                     self.should_change_arm_instruction_set = not self.thumb
+                elif op.type == CS_OP_MEM:
+                    _temp = 0
+                    if op.value.mem.base != 0:
+                        reg = instruction.reg_name(op.value.mem.base)
+                        if reg == 'rip' or reg == 'pc':
+                            _temp = instruction.address
+                    if op.value.mem.disp != 0:
+                        _temp += op.value.mem.disp
+                    self._set_jump_address(_temp)
+
 
         # resolve jump symbol and string
         self.symbol_name = None

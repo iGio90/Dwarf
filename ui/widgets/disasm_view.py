@@ -56,6 +56,7 @@ class DisassembleThread(QThread):
         self._range = None
         self._capstone = None
         self._num_instructions = 0
+        self._max_instruction = 1024
 
     def run(self):
         if self._range is None:
@@ -86,8 +87,8 @@ class DisassembleThread(QThread):
 
                 _counter += 1
 
-                if not self._num_instructions:
-                    if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET):
+                if self._num_instructions < 1:
+                    if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or _counter > self._max_instruction:
                         break
 
             if _debug_symbols:
@@ -795,7 +796,8 @@ class DisassemblyView(QAbstractScrollArea):
                                 return
                             except IndexError:
                                 pass
-                            self.read_memory(new_pos)
+                            if new_pos > 0:
+                                self.read_memory(new_pos)
 
     # pylint: disable=C0103
     def mouseMoveEvent(self, event):
