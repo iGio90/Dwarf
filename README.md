@@ -11,7 +11,6 @@ Built on top of pyqt5, frida and some terrible code.
 ### Something you can do with Dwarf
 * breakpoints
 * watchpoints without hardware support
-* visual emulation with auto map from target, reporting memory accesses
 * breaks module loading cycle, java classes
 * set breaks conditions and custom logics
 * inject code on each breakpointed thread
@@ -19,8 +18,8 @@ Built on top of pyqt5, frida and some terrible code.
 * digging through memory, disassembly and jvm fields/functions
 * backtrace both native and java
 * takes your whole frida agent in script editor, convert hooks to breakpoints etc
-* more...
-* all of this can be done through scripting to build custom debugging logic
+* plugins to enhance features and ui
+* everything can be done through scripting to build custom debugging logic
 
 ### Pre requisites
 A frida server running anywhere.
