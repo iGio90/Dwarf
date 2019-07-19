@@ -25,3 +25,4 @@ env
 plugins
 scripts
 .r2pipe
+.ranges

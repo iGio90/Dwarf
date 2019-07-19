@@ -97,7 +97,7 @@ class Dwarf(QObject):
         super(Dwarf, self).__init__(parent=parent)
         self._app_window = parent
 
-        self.database = Database()
+        self.database = Database(self)
 
         self.java_available = False
 
@@ -144,7 +144,7 @@ class Dwarf(QObject):
             pass
 
     def reinitialize(self):
-        self.database = Database()
+        self.database = Database(self)
 
         self._pid = 0
         self._package = None

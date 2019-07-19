@@ -36,15 +36,6 @@ class Range(object):
 
         self.module_info = None
 
-    def invalidate(self):
-        self.base = 0
-        self.size = 0
-        self.tail = 0
-        self.data = bytes()
-
-        self.start_address = 0
-        self.start_offset = 0
-
     def init_with_address(self, address, length=0, base=0, require_data=True):
         self.start_address = utils.parse_ptr(address)
 
@@ -62,11 +53,22 @@ class Range(object):
             return 1
         return 0
 
+    def invalidate(self):
+        self.base = 0
+        self.size = 0
+        self.tail = 0
+        self.data = bytes()
+
+        self.start_address = 0
+        self.start_offset = 0
+
     def read_data(self, base, length, require_data=True):
+        if self.start_address == 0:
+            return 1
+
         try:
             _range = self.dwarf.dwarf_api('getRange', self.start_address)
         except Exception as e:
-            print(e)
             return 1
         if _range is None or len(_range) == 0:
             return 1
@@ -75,6 +77,7 @@ class Range(object):
         self.base = int(_range['base'], 16)
         if base > 0:
             self.base = base
+
         self.size = _range['size']
         if 0 < length < self.size:
             self.size = length
@@ -83,8 +86,11 @@ class Range(object):
         self.permissions = _range['protection']
 
         if require_data:
-            # read data
-            self.data = self.dwarf.read_memory(self.base, self.size)
+            # try to get data from the database
+            self.data = self.dwarf.database.get_range_data(self.base)
+            if self.data is None:
+                self.data = self.dwarf.read_memory(self.base, self.size)
+                self.dwarf.database.put_range_data(self.base, self.permissions, self.data)
 
         # get module info for this range
         self.module_info = self.dwarf.database.get_module_info(_range['base'])
