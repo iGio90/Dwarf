@@ -81,7 +81,6 @@ def _check_dependencies():
     _check_package_version('pyqt5', '5.11.3')
     _check_package_version('pyperclip', '1.7.0')
     _check_package_version('capstone', '4.0.0')  # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
-    _check_package_version('unicorn', '1.0.1')
 
 
 def process_args():
