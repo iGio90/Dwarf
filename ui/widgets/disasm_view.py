@@ -81,9 +81,9 @@ class DisassembleThread(QThread):
 
             _counter += 1
 
-            if (cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET)) \
-                    and self._num_instructions == 0:
-                break
+            if not self._num_instructions:
+                if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET):
+                    break
 
         if _debug_symbols:
             symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
@@ -322,11 +322,6 @@ class DisassemblyView(QAbstractScrollArea):
         if self._running_disasm:
             return
 
-        target_address = dwarf_range.base + dwarf_range.start_offset
-        for insn in self._lines:
-            if insn.address == target_address:
-                return
-
         self.onDisassemble.emit(dwarf_range)
 
         if self.run_default_disassembler:
@@ -433,7 +428,7 @@ class DisassemblyView(QAbstractScrollArea):
     def paint_jumps(self, painter):
         # TODO: order by distance
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
-        jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump]
+        jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump or x.is_call]
         jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if
                         x.address in jump_list]
 
@@ -585,13 +580,13 @@ class DisassemblyView(QAbstractScrollArea):
                                 int(self._char_width) * 3)
         painter.setPen(QColor('#39c'))
         painter.drawText(drawing_pos_x, drawing_pos_y, line.mnemonic)
-        if line.is_jump:
+        if line.is_jump or line.is_call:
             painter.setPen(self._jump_color)
         else:
             painter.setPen(self._ctrl_colors['foreground'])
 
         drawing_pos_x += (self._longest_mnemonic + 1) * int(self._char_width)
-        if line.operands and not line.is_jump:
+        if line.operands and not line.is_jump and not line.is_call:
             ops_str = line.op_str.split(', ', len(line.operands) - 1)
             a = 0
             for op in line.operands:
@@ -614,7 +609,7 @@ class DisassemblyView(QAbstractScrollArea):
                 # drawing_pos_x += (len(ops_str[a]) + 1) * self._char_width
                 a += 1
         else:
-            if self._follow_jumps and line.is_jump:
+            if self._follow_jumps and (line.is_jump or line.is_call):
                 if line.jump_address < line.address:
                     painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str + ' ▲')
                 elif line.jump_address > line.address:
@@ -628,7 +623,7 @@ class DisassemblyView(QAbstractScrollArea):
             painter.drawText(drawing_pos_x, drawing_pos_y, '(' + line.symbol_name + ')')
             drawing_pos_x += (len(line.symbol_name) + 1) * int(self._char_width)
 
-        if line.string and not line.is_jump:
+        if line.string and not line.is_jump and not line.is_call:
             painter.setPen(QColor('#aaa'))
             painter.drawText(drawing_pos_x, drawing_pos_y, ' ; "' + line.string + '"')
 
@@ -775,8 +770,17 @@ class DisassemblyView(QAbstractScrollArea):
                             hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
                 if loc_x > left_side + addr_width:
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
-                        if self._follow_jumps and self._lines[index + self.pos].is_jump:
+                        _instruction = self._lines[index + self.pos]
+                        if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
                             new_pos = self._lines[index + self.pos].jump_address
+                            new_line = [x for x in self._lines if x.address == new_pos]
+                            try:
+                                new_line = self._lines.index(new_line[0])
+                                self.verticalScrollBar().setValue(new_line)
+                                self._current_line = new_line
+                                return
+                            except IndexError:
+                                pass
                             self.read_memory(new_pos)
 
     # pylint: disable=C0103
@@ -794,7 +798,8 @@ class DisassemblyView(QAbstractScrollArea):
                 self._current_line = index
                 if index + self.pos < len(self._lines):
                     if isinstance(self._lines[index + self.pos], Instruction):
-                        if self._lines[index + self.pos].is_jump:
+                        _instruction = self._lines[index + self.pos]
+                        if _instruction.is_jump or _instruction.is_call:
                             self.current_jump = self._lines[index + self.pos].address
 
             # self.viewport().update(0, 0, self._breakpoint_linewidth + self._jumps_width, self.viewport().height())
