@@ -793,29 +793,36 @@ class DisassemblyView(QAbstractScrollArea):
                 return
             left_side = self._breakpoint_linewidth + self._jumps_width
             addr_width = ((self._app_window.dwarf.pointer_size * 2) * int(self._char_width))
+
+            # get instruction
+            _instruction = self._lines[index + self.pos]
+            if not _instruction or not isinstance(_instruction, Instruction):
+                return
+
             if loc_x > left_side:
                 if loc_x < left_side + addr_width:
-                    if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
-                        self.onShowMemoryRequest.emit(
-                            hex(self._lines[index + self.pos].address), len(self._lines[index + self.pos].bytes))
+                    self.onShowMemoryRequest.emit(
+                        hex(_instruction.address), len(_instruction.bytes))
                 if loc_x > left_side + addr_width:
-                    if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
-                        _instruction = self._lines[index + self.pos]
-                        if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
-                            if _instruction.is_jump:
-                                new_pos = self._lines[index + self.pos].jump_address
-                            elif _instruction.is_call:
-                                new_pos = self._lines[index + self.pos].call_address
-                            new_line = [x for x in self._lines if x.address == new_pos]
-                            try:
-                                new_line = self._lines.index(new_line[0])
-                                self.verticalScrollBar().setValue(new_line)
-                                # TODO: add highlighting line
-                                return
-                            except IndexError:
-                                pass
-                            if new_pos > 0:
-                                self.read_memory(new_pos)
+                    if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
+                        if _instruction.is_jump:
+                            new_pos = _instruction.jump_address
+                        elif _instruction.is_call:
+                            new_pos = _instruction.call_address
+                        new_line = [x for x in self._lines if x.address == new_pos]
+                        try:
+                            new_line = self._lines.index(new_line[0])
+                            self.verticalScrollBar().setValue(new_line)
+                            # TODO: add highlighting line
+                            return
+                        except IndexError:
+                            pass
+
+                        if new_pos > 0:
+                            self.read_memory(new_pos)
+                        else:
+                            # noone should ever view this
+                            print('Error: trying to read from pos 0!')
 
     # pylint: disable=C0103
     def mouseMoveEvent(self, event):

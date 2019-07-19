@@ -29,7 +29,6 @@ from lib.prefs import Prefs
 
 VERSION = sys.version_info
 
-
 def do_shell_command(cmd, timeout=60):
     """ Execute cmd
     """
@@ -180,3 +179,19 @@ def is_connected():
         return True
     except:
         return False
+
+
+# https://github.com/ActiveState/code/tree/master/recipes/Python/391367_deprecated
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emmitted
+    when the function is used."""
+    def newFunc(*args, **kwargs):
+        import warnings
+        warnings.warn("Call to deprecated function %s." % func.__name__,
+                      category=DeprecationWarning)
+        return func(*args, **kwargs)
+    newFunc.__name__ = func.__name__
+    newFunc.__doc__ = func.__doc__
+    newFunc.__dict__.update(func.__dict__)
+    return newFunc
