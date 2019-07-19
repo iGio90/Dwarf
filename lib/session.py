@@ -11,6 +11,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+import frida
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from lib.core import Dwarf
@@ -70,6 +71,10 @@ class Session(QObject):
     # **************************** Functions *********************************
     # ************************************************************************
     def stop(self):
-        self.dwarf.detach()
+        try:
+            self.dwarf.detach()
+        except frida.InvalidOperationError:
+            # device detached
+            pass
         self.onStopped.emit()
         self.onClosed.emit()

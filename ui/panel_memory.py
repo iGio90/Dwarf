@@ -15,13 +15,9 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
-from lib.types.range import Range
 from ui.widgets.hex_edit import HexEditor
 
 
 class MemoryPanel(HexEditor):
     def __init__(self, app, *__args):
         super(MemoryPanel, self).__init__(app)
-
-    def get_source_type(self):
-        return Range.SOURCE_TARGET

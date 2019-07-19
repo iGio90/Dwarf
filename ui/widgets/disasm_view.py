@@ -417,7 +417,7 @@ class DisassemblyView(QAbstractScrollArea):
             return 1
 
         if self._range is None:
-            self._range = Range(Range.SOURCE_TARGET, self._app_window.dwarf)
+            self._range = Range(self._app_window.dwarf)
 
         self._app_window.show_progress('reading at %s' % hex(ptr))
 

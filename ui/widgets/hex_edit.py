@@ -1961,7 +1961,7 @@ class HexEditor(QAbstractScrollArea):
     def read_memory(self, ptr, length=0, base=0):
         # todo: remove it is mostly copy&pasta from old code
         if self.range is None:
-            self.range = Range(self.get_source_type(), self.app.dwarf)
+            self.range = Range(self.app.dwarf)
 
         if '64' in self.app.dwarf.arch:
             self.is_64bit_address = True

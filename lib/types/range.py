@@ -20,15 +20,9 @@ from lib.types.module_info import ModuleInfo
 
 
 class Range(object):
-    # dump memory from target proc
-    SOURCE_TARGET = 0
-    # dump memory from emulator proc
-    SOURCE_EMULATOR = 1
-
-    def __init__(self, source, dwarf):
+    def __init__(self, dwarf):
         super().__init__()
 
-        self.source = source
         self.dwarf = dwarf
 
         self.base = 0
@@ -59,57 +53,46 @@ class Range(object):
                 self.start_offset = self.start_address - self.base
                 return -1
 
-        if self.source == Range.SOURCE_TARGET:
-            try:
-                _range = self.dwarf.dwarf_api('getRange', self.start_address)
-            except Exception as e:
-                print(e)
-                return 1
-            if _range is None or len(_range) == 0:
-                return 1
+        self.read_data(base, length, require_data=require_data)
 
-            # setup range fields
-            self.base = int(_range['base'], 16)
-            if base > 0:
-                self.base = base
-            self.size = _range['size']
-            if 0 < length < self.size:
-                self.size = length
-            self.tail = self.base + self.size
-            self.start_offset = self.start_address - self.base
-            self.permissions = _range['protection']
-
-            if require_data:
-                # read data
-                self.data = self.dwarf.read_memory(self.base, self.size)
-
-            # get module info for this range
-            self.module_info = self.dwarf.database.get_module_info(_range['base'])
-            if self.module_info is None:
-                self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
-                self.dwarf.database.put_module_info(_range['base'], self.module_info)
-            elif self.module_info.have_details:
-                self.module_info.update_details(self.dwarf)
-
-        elif self.source == Range.SOURCE_EMULATOR:
-            uc = self.dwarf.get_emulator().uc
-            if uc is not None:
-                for base, tail, perm in uc.mem_regions():
-                    if base <= self.start_address <= tail:
-                        self.base = base
-                        self.tail = tail
-                        self.start_offset = self.start_address - self.base
-                        self.size = self.tail - self.base
-                        break
-                if self.base > 0 and require_data:
-                    # read data
-                    self.data = uc.mem_read(self.base, self.size)
         if self.data is None:
             self.data = bytes()
             return 1
         if len(self.data) == 0:
             return 1
         return 0
+
+    def read_data(self, base, length, require_data=True):
+        try:
+            _range = self.dwarf.dwarf_api('getRange', self.start_address)
+        except Exception as e:
+            print(e)
+            return 1
+        if _range is None or len(_range) == 0:
+            return 1
+
+        # setup range fields
+        self.base = int(_range['base'], 16)
+        if base > 0:
+            self.base = base
+        self.size = _range['size']
+        if 0 < length < self.size:
+            self.size = length
+        self.tail = self.base + self.size
+        self.start_offset = self.start_address - self.base
+        self.permissions = _range['protection']
+
+        if require_data:
+            # read data
+            self.data = self.dwarf.read_memory(self.base, self.size)
+
+        # get module info for this range
+        self.module_info = self.dwarf.database.get_module_info(_range['base'])
+        if self.module_info is None:
+            self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
+            self.dwarf.database.put_module_info(_range['base'], self.module_info)
+        elif self.module_info.have_details:
+            self.module_info.update_details(self.dwarf)
 
     def patch_bytes(self, _bytes, offset):
         data_bt = bytearray(self.data)

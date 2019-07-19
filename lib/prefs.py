@@ -24,9 +24,6 @@ VIEW_CONTEXT = 'view_context'
 VIEW_HOOKS = 'view_hooks'
 VIEW_WATCHERS = 'view_watchers'
 
-EMULATOR_CALLBACKS_PATH = 'emulator_callbacks_path'
-EMULATOR_INSTRUCTIONS_DELAY = 'emulator_instructions_delay'
-
 
 class Prefs(QObject):
     """ Preferences
@@ -52,9 +49,6 @@ class Prefs(QObject):
                     self._prefs = json.load(f)
                 except:
                     pass
-
-        # reset single instance preferences
-        self.put(EMULATOR_CALLBACKS_PATH, '')
 
     def get(self, key, default=None):
         """ Get Setting
