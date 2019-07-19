@@ -20,10 +20,11 @@ import os
 import shutil
 import sys
 
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl
 from PyQt5.QtGui import QFont, QFontDatabase, QDesktopServices, QKeySequence
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
-                             QStatusBar, QDockWidget, QTabWidget, QMenu, QWidget)
+                             QStatusBar, QDockWidget, QTabWidget, QMenu, QWidget, QAction)
 
 from lib import utils
 from lib.prefs import Prefs
@@ -201,7 +202,7 @@ class AppWindow(QMainWindow):
             self.plugin_menu = QMenu('Plugins', self)
             for plugin in self.plugin_manager.plugins:
                 plugin_instance = self.plugin_manager.plugins[plugin]
-                plugin_sub_menu = QMenu(plugin_instance.name, self.plugin_menu)
+                plugin_sub_menu = self.plugin_menu.addMenu(plugin_instance.name)
 
                 try:
                     actions = plugin_instance.__get_top_menu_actions__()
@@ -213,8 +214,9 @@ class AppWindow(QMainWindow):
                 if not plugin_sub_menu.isEmpty():
                     plugin_sub_menu.addSeparator()
 
-                plugin_sub_menu.addAction('About', lambda: self._show_plugin_about(plugin))
-                self.plugin_menu.addMenu(plugin_sub_menu)
+                about = plugin_sub_menu.addAction('About')
+                about.triggered.connect(
+                    lambda x, item=plugin: self._show_plugin_about(item))
 
             if not self.plugin_menu.isEmpty():
                 self.menu.addMenu(self.plugin_menu)
@@ -240,8 +242,7 @@ class AppWindow(QMainWindow):
         if self.dwarf_args.debug_script:
             debug_menu = QMenu('Debug', self)
             debug_menu.addAction('Reload core', self._menu_reload_core)
-            debug_menu.addAction('Debug dwarf js core',
-                                 self._menu_debug_dwarf_js)
+            debug_menu.addAction('Debug dwarf js core', self._menu_debug_dwarf_js)
             self.menu.addMenu(debug_menu)
 
         # tools
@@ -284,8 +285,8 @@ class AppWindow(QMainWindow):
             license_ = utils.safe_read_map(info, 'license', '')
 
             utils.show_message_box(
-                'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'
-                    .format(plugin.name, version, description, author, homepage, license_))
+                'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'.
+                format(plugin.name, version, description, author, homepage, license_))
 
     def _enable_update_menu(self):
         self._is_newer_dwarf = True
