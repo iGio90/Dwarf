@@ -51,7 +51,7 @@ class SetupDialog(DwarfDialog):
 
         if sys.platform == 'linux':
             dwarf_bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin/dwarf')
-            if os.path.exists(dwarf_bin_path):
+            if not os.path.exists(dwarf_bin_path):
                 self.launcher_box = QVBoxLayout()
                 self.launcher_box.setContentsMargins(0, 40, 0, 0)
                 launcher_label = QLabel('Launcher')
