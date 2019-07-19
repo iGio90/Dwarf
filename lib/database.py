@@ -18,10 +18,10 @@ class Database:
     def _clean_ranges_cache(self):
         # files will be cleaned on next db creation. to cleanup cache is enough to remove info from the map
         # we clean only ranges with writable permissions
-        for range in list(self.ranges_info.keys()):
-            perm = self.ranges_info[range]
+        for _range in list(self.ranges_info.keys()):
+            perm = self.ranges_info[_range]
             if 'w' in perm:
-                del self.ranges_info[range]
+                del self.ranges_info[_range]
 
     def get_module_info(self, address):
         address = self.sanify_address(address)
