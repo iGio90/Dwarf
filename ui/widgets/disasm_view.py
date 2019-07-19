@@ -322,11 +322,6 @@ class DisassemblyView(QAbstractScrollArea):
         if self._running_disasm:
             return
 
-        target_address = dwarf_range.base + dwarf_range.start_offset
-        for insn in self._lines:
-            if insn.address == target_address:
-                return
-
         self.onDisassemble.emit(dwarf_range)
 
         if self.run_default_disassembler:
@@ -419,7 +414,11 @@ class DisassemblyView(QAbstractScrollArea):
         if self._range is None:
             self._range = Range(self._app_window.dwarf)
 
-        self._app_window.show_progress('reading at %s' % hex(ptr))
+        if not isinstance(ptr, str):
+            hex_ptr = hex(ptr)
+        else:
+            hex_ptr = ptr
+        self._app_window.show_progress('reading at %s' % hex_ptr)
 
         self._reading_memory = True
         self.read_memory_thread = ReadMemoryThread(self._range, ptr, length)

@@ -220,20 +220,16 @@ class AppWindow(QMainWindow):
                 self.menu.addMenu(self.plugin_menu)
 
         self.view_menu = QMenu('View', self)
-        subview_menu = QMenu('Subview', self.view_menu)
-        subview_menu.addAction(
+        self.panels_menu = QMenu('Panels', self.view_menu)
+        self.panels_menu.addAction(
             'Search',
             lambda: self.show_main_tab('search'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
-        # subview_menu.addAction(
-        #    'Emulator',
-        #    lambda: self.show_main_tab('emulator'),
-        #    shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
-        subview_menu.addAction(
+        self.panels_menu.addAction(
             'Disassembly',
             lambda: self.show_main_tab('disassembly'),
-            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F5))
-        self.view_menu.addMenu(subview_menu)
+            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F4))
+        self.view_menu.addMenu(self.panels_menu)
         self.view_menu.addSeparator()
         self.menu.addMenu(self.view_menu)
 
