@@ -101,7 +101,7 @@ class AppWindow(QMainWindow):
 
         # themes
         self.prefs = Prefs()
-        self.set_theme(self.prefs.get('dwarf_ui_theme', 'black'))
+        utils.set_theme(self.prefs.get('dwarf_ui_theme', 'black'), self.prefs)
 
         # load font
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):
@@ -339,7 +339,7 @@ class AppWindow(QMainWindow):
 
     def _set_theme(self, qaction):
         if qaction:
-            self.set_theme(qaction.text())
+            utils.set_theme(qaction.text(), self.prefs)
 
     def _menu_reload_core(self):
         self.dwarf.load_script()
@@ -590,25 +590,6 @@ class AppWindow(QMainWindow):
                     item.setStyleSheet(
                         'QDockWidget::title { padding-left:-30px; }'
                     )
-
-    def set_theme(self, theme):
-        if theme:
-            theme = theme.replace(os.pardir, '').replace('.', '')
-            theme = theme.join(theme.split()).lower()
-            theme_style = 'assets/' + theme + '_style.qss'
-            if not os.path.exists(utils.resource_path(theme_style)):
-                return
-
-            self.prefs.put('dwarf_ui_theme', theme)
-
-            try:
-                _app = QApplication.instance()
-                with open(theme_style) as stylesheet:
-                    _app.setStyleSheet(_app.styleSheet() + '\n' +
-                                       stylesheet.read())
-            except Exception as e:
-                pass
-                # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
 
     def set_status_text(self, txt):
         self.statusbar.showMessage(txt)

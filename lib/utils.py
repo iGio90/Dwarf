@@ -23,7 +23,7 @@ import pyperclip
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QSizePolicy
+from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QSizePolicy, QApplication
 
 from lib.prefs import Prefs
 
@@ -195,3 +195,24 @@ def deprecated(func):
     newFunc.__doc__ = func.__doc__
     newFunc.__dict__.update(func.__dict__)
     return newFunc
+
+
+def set_theme(theme, prefs=None):
+    if theme:
+        theme = theme.replace(os.pardir, '').replace('.', '')
+        theme = theme.join(theme.split()).lower()
+        theme_style = 'assets/' + theme + '_style.qss'
+        if not os.path.exists(resource_path(theme_style)):
+            return
+
+        if prefs is not None:
+            prefs.put('dwarf_ui_theme', theme)
+
+        try:
+            _app = QApplication.instance()
+            with open(theme_style) as stylesheet:
+                _app.setStyleSheet(_app.styleSheet() + '\n' +
+                                   stylesheet.read())
+        except Exception as e:
+            pass
+            # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)

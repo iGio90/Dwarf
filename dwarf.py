@@ -19,6 +19,8 @@ import sys
 import argparse
 import shutil
 
+from ui.dialog_setup import SetupDialog
+
 
 def pip_install_package(package_name):
     try:
@@ -136,18 +138,45 @@ def run_dwarf():
     # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
     # os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
 
-    print(os.name)
-
-    args = process_args()
-    # _check_dependencies() # not enabled atm
-
     from lib import utils
     from lib.git import Git
     from lib.prefs import Prefs
     from ui.app import AppWindow
 
+    from PyQt5.QtCore import Qt
+    from PyQt5.QtGui import QIcon
+    from PyQt5.QtWidgets import QApplication
+
+    qapp = QApplication([])
+
+    qapp.setDesktopSettingsAware(True)
+    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
+    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    qapp.setLayoutDirection(Qt.LeftToRight)
+
+    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
+    qapp.setApplicationName("dwarf")
+
+    # set icon
+    _icon = None
+    if os.name == "nt" and os.path.exists(
+            utils.resource_path('assets/dwarf.ico')):
+        _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
+        qapp.setWindowIcon(_icon)
+    else:
+        if os.path.exists(utils.resource_path('assets/dwarf.png')):
+            _icon = QIcon(utils.resource_path('assets/dwarf.png'))
+            qapp.setWindowIcon(_icon)
+
     _prefs = Prefs()
     local_update_disabled = _prefs.get('disable_local_frida_update', False)
+
+    args = process_args()
+
+    did_first_run = _prefs.get('did_first_run', False)
+    if not did_first_run:
+        _prefs.put('did_first_run', True)
+        SetupDialog.showDialog(_prefs)
 
     if not local_update_disabled:
         _git = Git()
@@ -203,30 +232,6 @@ def run_dwarf():
 
         except Exception:  # pylint: disable=broad-except
             pass
-
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QIcon
-    from PyQt5.QtWidgets import QApplication
-
-    qapp = QApplication([])
-
-    qapp.setDesktopSettingsAware(True)
-    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
-    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    qapp.setLayoutDirection(Qt.LeftToRight)
-
-    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
-    qapp.setApplicationName("dwarf")
-
-    # set icon
-    if os.name == "nt" and os.path.exists(
-            utils.resource_path('assets/dwarf.ico')):
-        _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
-        qapp.setWindowIcon(_icon)
-    else:
-        if os.path.exists(utils.resource_path('assets/dwarf.png')):
-            _icon = QIcon(utils.resource_path('assets/dwarf.png'))
-            qapp.setWindowIcon(_icon)
 
     app_window = AppWindow(args)
     app_window.setWindowIcon(_icon)
