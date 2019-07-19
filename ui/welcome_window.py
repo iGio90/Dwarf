@@ -216,6 +216,16 @@ class WelcomeDialog(QDialog):
         self.setWindowFlag(Qt.WindowCloseButtonHint, True)
         self.setModal(True)
 
+        self._recent_list_model = QStandardItemModel(0, 2)
+        self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Type')
+        self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Path')
+
+        self._recent_list = DwarfListView(self)
+        self._recent_list.setModel(self._recent_list_model)
+
+        self._recent_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self._recent_list.header().setSectionResizeMode(1, QHeaderView.Stretch)
+
         # setup ui elements
         self.setup_ui()
 
@@ -234,7 +244,6 @@ class WelcomeDialog(QDialog):
         """ Setup Ui
         """
         main_wrap = QVBoxLayout()
-        #main_wrap.setSpacing(10)
         main_wrap.setContentsMargins(0, 0, 0, 0)
 
         # updatebar on top
@@ -289,18 +298,7 @@ class WelcomeDialog(QDialog):
 
         wrapper.addLayout(v_box)
 
-        self._recent_list_model = QStandardItemModel(0, 1)
-        self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Path')
-
-        self._recent_list = DwarfListView(self)
-        self._recent_list.setModel(self._recent_list_model)
-
-        self._recent_list.header().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents | QHeaderView.Interactive)
-
-        wrapper.addLayout(v_box)
-
-        recent = QLabel('Recent Sessions')
+        recent = QLabel('Recent saved Sessions')
         font = recent.font()
         font.setPixelSize(14)
         font.setBold(True)
@@ -309,7 +307,6 @@ class WelcomeDialog(QDialog):
         wrapper.addWidget(recent)
         wrapper.addWidget(self._recent_list)
         h_box.addLayout(wrapper, stretch=False)
-
         buttonSpacer = QSpacerItem(15, 100, QSizePolicy.Fixed,
                                    QSizePolicy.Minimum)
         h_box.addItem(buttonSpacer)
