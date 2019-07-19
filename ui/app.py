@@ -38,8 +38,8 @@ from ui.widgets.hex_edit import HighLight, HighlightExistsError
 
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
-    onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onUIElementCreated')
-    onSystemUIElementRemoved = pyqtSignal(str, name='onUIElementRemoved')
+    onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
+    onSystemUIElementRemoved = pyqtSignal(str, name='onSystemUIElementRemoved')
 
     def __init__(self, dwarf_args, flags=None):
         super(AppWindow, self).__init__(flags)
