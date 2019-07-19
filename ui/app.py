@@ -39,6 +39,7 @@ from ui.widgets.hex_edit import HighLight, HighlightExistsError
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onUIElementCreated')
+    onSystemUIElementRemoved = pyqtSignal(str, name='onUIElementRemoved')
 
     def __init__(self, dwarf_args, flags=None):
         super(AppWindow, self).__init__(flags)
@@ -292,13 +293,16 @@ class AppWindow(QMainWindow):
     def _on_close_tab(self, index):
         tab_text = self.main_tabs.tabText(index)
         if tab_text:
-            if tab_text.lower() in self.session_manager.session.non_closable:
+            tab_text = tab_text.lower()
+            if tab_text in self.session_manager.session.non_closable:
                 return
             try:
-                self._ui_elems.remove(tab_text.lower())
+                self._ui_elems.remove(tab_text)
             except ValueError:  # recheck ValueError: list.remove(x): x not in list
                 pass
             self.main_tabs.removeTab(index)
+
+            self.onSystemUIElementRemoved.emit(tab_text)
 
     def _handle_tab_change(self):
         for index in range(self.main_tabs.count()):
