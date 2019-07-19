@@ -15,16 +15,19 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
+import os
 import random
+import json
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QFontMetrics
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QFontMetrics
 from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
                              QHBoxLayout, QPushButton, QSpacerItem,
-                             QSizePolicy, QStyle, qApp)
+                             QSizePolicy, QStyle, qApp, QHeaderView, QMenu)
 
-from lib import utils
+from lib import utils, prefs
 from lib.git import Git
+from ui.widgets.list_view import DwarfListView
 
 
 class DwarfCommitsThread(QThread):
@@ -213,6 +216,16 @@ class WelcomeDialog(QDialog):
         self.setWindowFlag(Qt.WindowCloseButtonHint, True)
         self.setModal(True)
 
+        self._recent_list_model = QStandardItemModel(0, 2)
+        self._recent_list_model.setHeaderData(0, Qt.Horizontal, 'Type')
+        self._recent_list_model.setHeaderData(1, Qt.Horizontal, 'Path')
+
+        self._recent_list = DwarfListView(self)
+        self._recent_list.setModel(self._recent_list_model)
+
+        self._recent_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self._recent_list.header().setSectionResizeMode(1, QHeaderView.Stretch)
+
         # setup ui elements
         self.setup_ui()
 
@@ -231,7 +244,6 @@ class WelcomeDialog(QDialog):
         """ Setup Ui
         """
         main_wrap = QVBoxLayout()
-        main_wrap.setSpacing(10)
         main_wrap.setContentsMargins(0, 0, 0, 0)
 
         # updatebar on top
@@ -245,7 +257,7 @@ class WelcomeDialog(QDialog):
         h_box.setContentsMargins(15, 15, 15, 15)
         wrapper = QVBoxLayout()
         head = QHBoxLayout()
-        head.setContentsMargins(10, 10, 0, 10)
+        head.setContentsMargins(50, 10, 0, 10)
         # dwarf icon
         icon = QLabel()
         icon.setPixmap(QPixmap(utils.resource_path('assets/dwarf.svg')))
@@ -258,10 +270,10 @@ class WelcomeDialog(QDialog):
         v_box = QVBoxLayout()
         title = QLabel('Dwarf')
         title.setContentsMargins(0, 0, 0, 0)
-        font = QFont('Anton', 80, QFont.Bold)
-        font.setPixelSize(100)
+        font = QFont('Anton', 100, QFont.Bold)
+        font.setPixelSize(120)
         title.setFont(font)
-        title.setMaximumHeight(105)
+        title.setMaximumHeight(125)
         title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         title.setAlignment(Qt.AlignCenter)
         head.addWidget(title)
@@ -272,13 +284,13 @@ class WelcomeDialog(QDialog):
             self._pick_random_word(4))
         sub_title_text = sub_title_text[:1].upper() + sub_title_text[1:]
         self._sub_title = QLabel(sub_title_text)
-        font = QFont('OpenSans', 14, QFont.Bold)
-        font.setPixelSize(18)
+        font = QFont('OpenSans', 16, QFont.Bold)
+        font.setPixelSize(24)
         self._sub_title.setFont(font)
         font_metric = QFontMetrics(self._sub_title.font())
         self._char_width = font_metric.widthChar('#')
         self._sub_title.setAlignment(Qt.AlignCenter)
-        self._sub_title.setContentsMargins(0, 0, 0, 20)
+        self._sub_title.setContentsMargins(175, 0, 0, 20)
         self._sub_title.setSizePolicy(QSizePolicy.Expanding,
                                       QSizePolicy.Minimum)
         v_box.addLayout(head)
@@ -286,6 +298,14 @@ class WelcomeDialog(QDialog):
 
         wrapper.addLayout(v_box)
 
+        recent = QLabel('Recent saved Sessions')
+        font = recent.font()
+        font.setPixelSize(14)
+        font.setBold(True)
+        # font.setPointSize(10)
+        recent.setFont(font)
+        wrapper.addWidget(recent)
+        wrapper.addWidget(self._recent_list)
         h_box.addLayout(wrapper, stretch=False)
         buttonSpacer = QSpacerItem(15, 100, QSizePolicy.Fixed,
                                    QSizePolicy.Minimum)
