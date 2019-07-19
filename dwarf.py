@@ -174,7 +174,7 @@ def run_dwarf():
     args = process_args()
 
     did_first_run = _prefs.get('did_first_run', False)
-    if not did_first_run:
+    if False: # did_first_run:
         _prefs.put('did_first_run', True)
         SetupDialog.showDialog(_prefs)
 
