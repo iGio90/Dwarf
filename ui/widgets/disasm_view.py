@@ -781,7 +781,7 @@ class DisassemblyView(QAbstractScrollArea):
                             try:
                                 new_line = self._lines.index(new_line[0])
                                 self.verticalScrollBar().setValue(new_line)
-                                self._current_line = new_line
+                                self._current_line = new_line - self._current_line
                                 return
                             except IndexError:
                                 pass
