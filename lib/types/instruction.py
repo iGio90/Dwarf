@@ -90,7 +90,6 @@ class Instruction(object):
                         _temp += op.value.mem.disp
                     self._set_jump_address(_temp)
 
-
         # resolve jump symbol and string
         self.symbol_name = None
         self.symbol_module = None
