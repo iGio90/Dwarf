@@ -438,8 +438,16 @@ class DisassemblyView(QAbstractScrollArea):
         # TODO: order by distance
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         jump_list = [x.address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.is_jump or x.is_call]
-        jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if
-                        x.address in jump_list]
+        #jump_targets = [x.jump_address for x in self._lines[self.pos:self.pos + self.visible_lines()] if x.address in jump_list]
+
+        jump_targets = []
+
+        for x in self._lines[self.pos:self.pos + self.visible_lines()]:
+            if x.address in jump_list:
+                if x.is_call:
+                    jump_targets.append(x.call_address)
+                elif x.is_jump:
+                    jump_targets.append(x.jump_address)
 
         drawing_pos_x = self._jumps_width - 10
 
@@ -462,9 +470,13 @@ class DisassemblyView(QAbstractScrollArea):
 
                 if line.address not in jump_targets:
                     painter.drawLine(drawing_pos_x + 2, drawing_pos_y, self._jumps_width, drawing_pos_y)
-                    if line.jump_address in jump_targets:
+                    if line.is_jump:
+                        _address = line.jump_address
+                    elif line.is_call:
+                        _address = line.call_address
+                    if _address in jump_targets:
                         entry1 = [x for x in self._lines if x.address == line.address]
-                        entry2 = [x for x in self._lines if x.address == line.jump_address]
+                        entry2 = [x for x in self._lines if x.address == _address]
                         if entry1 and entry2:
                             skip = True
                             pos2 = (self._lines.index(entry1[0]) - self._lines.index(entry2[0])) * (
@@ -486,7 +498,11 @@ class DisassemblyView(QAbstractScrollArea):
                     skip = True
 
                 if not skip:
-                    if line.address > line.jump_address:
+                    if line.is_jump:
+                        _address = line.jump_address
+                    elif line.is_call:
+                        _address = line.call_address
+                    if line.address > _address:
                         if line.id == X86_INS_JMP or line.id == X86_INS_CALL:
                             painter.setPen(self._solid_pen)
                         else:
@@ -503,7 +519,7 @@ class DisassemblyView(QAbstractScrollArea):
                             painter.setBrush(self._ctrl_colors['jump_arrows'])
                             painter.setPen(Qt.NoPen)
                         painter.drawPolygon(arrow)
-                    elif line.address < line.jump_address:
+                    elif line.address < _address:
                         if line.id == X86_INS_JMP or line.id == X86_INS_CALL:
                             painter.setPen(self._solid_pen)
                         else:
@@ -619,9 +635,13 @@ class DisassemblyView(QAbstractScrollArea):
                 a += 1
         else:
             if self._follow_jumps and (line.is_jump or line.is_call):
-                if line.jump_address < line.address:
+                if line.is_jump:
+                    _address = line.jump_address
+                elif line.is_call:
+                    _address = line.call_address
+                if _address < line.address:
                     painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str + ' ▲')
-                elif line.jump_address > line.address:
+                elif _address > line.address:
                     painter.drawText(drawing_pos_x, drawing_pos_y, line.op_str + ' ▼')
                 drawing_pos_x += (len(line.op_str) + 3) * int(self._char_width)
             else:
@@ -782,16 +802,14 @@ class DisassemblyView(QAbstractScrollArea):
                         _instruction = self._lines[index + self.pos]
                         if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
                             if _instruction.is_jump:
-                                new_pos = _instruction.jump_address
+                                new_pos = self._lines[index + self.pos].jump_address
                             elif _instruction.is_call:
-                                new_pos = _instruction.call_address
-                            else:
-                                new_pos = 0
+                                new_pos = self._lines[index + self.pos].call_address
                             new_line = [x for x in self._lines if x.address == new_pos]
                             try:
                                 new_line = self._lines.index(new_line[0])
                                 self.verticalScrollBar().setValue(new_line)
-                                self._current_line = new_line - self._current_line
+                                # TODO: add highlighting line
                                 return
                             except IndexError:
                                 pass
