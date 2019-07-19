@@ -216,3 +216,24 @@ def set_theme(theme, prefs=None):
         except Exception as e:
             pass
             # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)
+
+
+def create_launcher():
+    if sys.platform == 'linux':
+        pyver = ''
+        if sys.version_info[0] == 3:
+            pyver = '3'
+
+        if not os.path.exists('bin'):
+            os.mkdir('bin')
+
+        os.system('echo "python%s dwarf.py" > bin/dwarf' % pyver)
+        os.system('chmod a+x bin/dwarf')
+
+        bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin')
+        home_path = os.path.expanduser('~')
+        bashrc = os.path.join(home_path, '.bashrc')
+
+        with open(bashrc, 'r') as f:
+            if 'Dwarf' not in f.read():
+                os.system('echo "%s" >> %s' % ('PATH=$PATH:%s' % bin_path, bashrc))

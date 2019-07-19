@@ -182,6 +182,13 @@ class AppWindow(QMainWindow):
         theme.triggered.connect(self._set_theme)
         dwarf_menu.addMenu(theme)
         dwarf_menu.addSeparator()
+
+        if sys.platform == 'linux':
+            dwarf_bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin/dwarf')
+            if not os.path.exists(dwarf_bin_path):
+                dwarf_menu.addAction('Create launcher', utils.create_launcher)
+                dwarf_menu.addSeparator()
+
         if self._is_newer_dwarf:
             dwarf_menu.addAction('Update', self._update_dwarf)
         dwarf_menu.addAction('Close', self.session_manager.session.stop)
@@ -265,6 +272,7 @@ class AppWindow(QMainWindow):
         about_menu.addAction('Api', self._menu_api)
         about_menu.addAction('Slack', self._menu_slack)
         about_menu.addSeparator()
+
         about_menu.addAction('Info', self._show_about_dlg)
         self.menu.addMenu(about_menu)
 
