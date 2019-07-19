@@ -59,7 +59,8 @@ class Instruction(object):
         self.jump_address = 0
 
         self.should_change_arm_instruction_set = False
-        if len(instruction.operands) > 0 and self.is_jump:
+
+        if len(instruction.operands) > 0 and (self.is_jump or self.is_call):
             for op in instruction.operands:
                 if op.type == CS_OP_IMM:
                     address = op.value.imm & int('0x' + (dwarf.pointer_size * 'ff'), 16)

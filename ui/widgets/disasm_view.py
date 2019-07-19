@@ -68,33 +68,38 @@ class DisassembleThread(QThread):
         _debug_symbols = []
         _debug_symbols_indexes = []
 
-        for cap_inst in self._capstone.disasm(
-                self._range.data[self._range.start_offset:], self._range.start_address):
-            if 0 < self._num_instructions < _counter:
-                break
-
-            dwarf_instruction = Instruction(self._dwarf, cap_inst)
-            if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
-                _debug_symbols.append(dwarf_instruction.jump_address)
-                _debug_symbols_indexes.append(str(len(_instructions)))
-            _instructions.append(dwarf_instruction)
-
-            _counter += 1
-
-            if not self._num_instructions:
-                if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET):
+        if self._range.data is not None:
+            for cap_inst in self._capstone.disasm(
+                    self._range.data[self._range.start_offset:], self._range.start_address):
+                if 0 < self._num_instructions < _counter:
                     break
 
-        if _debug_symbols:
-            symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
-            if symbols:
-                for i in range(len(symbols)):
-                    symbol = symbols[i]
-                    instruction = _instructions[int(_debug_symbols_indexes[i])]
-                    instruction.symbol_name = symbol['name']
-                    instruction.symbol_module = '-'
-                    if 'moduleName' in symbol:
-                        instruction.symbol_module = symbol['moduleName']
+                dwarf_instruction = Instruction(self._dwarf, cap_inst)
+                if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
+                    _debug_symbols.append(dwarf_instruction.jump_address)
+                    _debug_symbols_indexes.append(str(len(_instructions)))
+                elif dwarf_instruction.is_call and dwarf_instruction.call_address:
+                    _debug_symbols.append(dwarf_instruction.call_address)
+                    _debug_symbols_indexes.append(str(len(_instructions)))
+
+                _instructions.append(dwarf_instruction)
+
+                _counter += 1
+
+                if not self._num_instructions:
+                    if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET):
+                        break
+
+            if _debug_symbols:
+                symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
+                if symbols:
+                    for i in range(len(symbols)):
+                        symbol = symbols[i]
+                        instruction = _instructions[int(_debug_symbols_indexes[i])]
+                        instruction.symbol_name = symbol['name']
+                        instruction.symbol_module = '-'
+                        if 'moduleName' in symbol:
+                            instruction.symbol_module = symbol['moduleName']
 
         self.onFinished.emit(_instructions)
 
@@ -776,7 +781,12 @@ class DisassemblyView(QAbstractScrollArea):
                     if self._lines[index + self.pos] and isinstance(self._lines[index + self.pos], Instruction):
                         _instruction = self._lines[index + self.pos]
                         if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
-                            new_pos = self._lines[index + self.pos].jump_address
+                            if _instruction.is_jump:
+                                new_pos = _instruction.jump_address
+                            elif _instruction.is_call:
+                                new_pos = _instruction.call_address
+                            else:
+                                new_pos = 0
                             new_line = [x for x in self._lines if x.address == new_pos]
                             try:
                                 new_line = self._lines.index(new_line[0])
