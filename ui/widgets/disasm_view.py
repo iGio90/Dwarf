@@ -32,20 +32,6 @@ from ui.dialog_input import InputDialog
 from ui.widgets.list_view import DwarfListView
 
 
-class ReadMemoryThread(QThread):
-    onFinish = pyqtSignal(int, name='onDisasmViewMemoryReadFinish')
-
-    def __init__(self, dwarf_range, ptr, length):
-        super().__init__()
-        self.dwarf_range = dwarf_range
-        self.ptr = ptr
-        self.length = length
-
-    def run(self):
-        result = self.dwarf_range.init_with_address(self.ptr, self.length)
-        self.onFinish.emit(result)
-
-
 class DisassembleThread(QThread):
     onFinished = pyqtSignal(list, name='onFinished')
     onError = pyqtSignal(str, name='onError')
@@ -420,16 +406,8 @@ class DisassemblyView(QAbstractScrollArea):
         if self._range is None:
             self._range = Range(self._app_window.dwarf)
 
-        if not isinstance(ptr, str):
-            hex_ptr = hex(ptr)
-        else:
-            hex_ptr = ptr
-        self._app_window.show_progress('reading at %s' % hex_ptr)
-
         self._reading_memory = True
-        self.read_memory_thread = ReadMemoryThread(self._range, ptr, length)
-        self.read_memory_thread.onFinish.connect(self._on_finish_memory_read)
-        self.read_memory_thread.start()
+        self._range.init_async(ptr, length=length, cb=self._on_range_initialized)
         return 0
 
     # ************************************************************************
@@ -777,8 +755,7 @@ class DisassemblyView(QAbstractScrollArea):
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
 
-    def _on_finish_memory_read(self, result):
-        self._app_window.hide_progress()
+    def _on_range_initialized(self, range_, result):
         self._reading_memory = False
         if result <= 0:
             self.disassemble(self._range)

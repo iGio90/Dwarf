@@ -14,9 +14,26 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+from PyQt5.QtCore import pyqtSignal, QThread
 
 from lib import utils
 from lib.types.module_info import ModuleInfo
+
+
+class AsyncInitialization(QThread):
+    onRangeAsyncInitializationFinish = pyqtSignal(list, name='onRangeAsyncInitializationFinish')
+
+    def __init__(self, dwarf_range, ptr, length, base, cb):
+        super().__init__()
+        self.dwarf_range = dwarf_range
+        self.ptr = ptr
+        self.length = length
+        self.base = base
+        self.cb = cb
+
+    def run(self):
+        result = self.dwarf_range.init_with_address(self.ptr, length=self.length, base=self.base)
+        self.onRangeAsyncInitializationFinish.emit([self.cb, result])
 
 
 class Range(object):
@@ -35,6 +52,26 @@ class Range(object):
         self.start_offset = 0
 
         self.module_info = None
+
+        self.read_memory_thread = None
+
+    def init_async(self, ptr, length=0, base=0, cb=None):
+        if not isinstance(ptr, str):
+            hex_ptr = hex(ptr)
+        else:
+            hex_ptr = ptr
+        self.dwarf._app_window.show_progress('reading at %s' % hex_ptr)
+
+        self.read_memory_thread = AsyncInitialization(self, ptr, length, base, cb)
+        self.read_memory_thread.onRangeAsyncInitializationFinish.connect(self._on_finish_memory_read)
+        self.read_memory_thread.start()
+
+    def _on_finish_memory_read(self, data):
+        self.dwarf._app_window.hide_progress()
+        cb = data[0]
+        init_result = data[1]
+        if cb is not None:
+            cb(self, init_result)
 
     def init_with_address(self, address, length=0, base=0, require_data=True):
         self.start_address = utils.parse_ptr(address)

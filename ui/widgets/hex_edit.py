@@ -1970,8 +1970,10 @@ class HexEditor(QAbstractScrollArea):
 
         self._addr_width_changed()
 
-        init = self.range.init_with_address(ptr, length, base)
-        if init > 0:
+        self.range.init_async(ptr, length=length, base=base, cb=self._on_range_initialized)
+
+    def _on_range_initialized(self, range_, result):
+        if result > 0:
             self.adjust()
             self.range = None
             self.display_error('Unable to init range at addr')
