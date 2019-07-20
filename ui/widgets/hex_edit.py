@@ -1195,14 +1195,15 @@ class HexEditor(QAbstractScrollArea):
         elif key == Qt.Key_End:
             self.caret.position = len(self.data)
         elif key == Qt.Key_G and mod & Qt.ControlModifier:  # CTRL + G
-            self.on_cm_jumpto()
+            if self.range is not None:
+                self.on_cm_jumpto()
         elif key == Qt.Key_D and mod & Qt.ControlModifier:  # CTRL + D
             self.on_cm_showasm()
         elif text.lower() in self._hex_chars:
-            if not self._read_only and text:
+            if self.range is not None and not self._read_only and text:
                 self.modify_data(text.lower())
         elif text.isalpha() or text.isdigit() or text.isspace():
-            if not self._read_only:
+            if self.range is not None and not self._read_only:
                 if self.caret.mode == 'ascii':
                     self.modify_data(text)
 
@@ -1294,8 +1295,8 @@ class HexEditor(QAbstractScrollArea):
             menu_actions[follow_pointer] = self.on_cm_followpointer
             context_menu.addSeparator()
 
-        jump_to = context_menu.addAction("&Jump to address")
-        menu_actions[jump_to] = self.on_cm_jumpto
+            jump_to = context_menu.addAction("&Jump to address")
+            menu_actions[jump_to] = self.on_cm_jumpto
 
         #write_string = context_menu.addAction("&Write string")
         #menu_actions[write_string] = self.on_cm_writestring
