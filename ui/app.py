@@ -923,7 +923,8 @@ class AppWindow(QMainWindow):
     def _apply_context(self, context, manual=False):
         # update current context tid
         # this should be on top as any further api from js needs to be executed on that thread
-        is_initial_hook = context['reason'] >= 0
+        reason = context['reason']
+        is_initial_hook = reason == -1
         if manual or (self.dwarf.context_tid and not is_initial_hook):
             self.dwarf.context_tid = context['tid']
 
@@ -942,13 +943,20 @@ class AppWindow(QMainWindow):
             else:
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
 
-                if 'pc' in context['context']:
-                    if not 'disassembly' in self._ui_elems or manual:
-                        from lib.types.range import Range
-                        _range = Range(self.dwarf)
-                        _range.init_with_address(int(context['context']['pc']['value'], 16))
+                if reason == 2:
+                    # native on load
+                    if self.memory_panel.range is None:
+                        base = context['moduleBase']
+                        self.show_main_tab('memory')
+                        self.memory_panel.read_memory(base)
+                else:
+                    if 'pc' in context['context']:
+                        if not 'disassembly' in self._ui_elems or manual:
+                            from lib.types.range import Range
+                            _range = Range(self.dwarf)
+                            _range.init_with_address(int(context['context']['pc']['value'], 16))
 
-                        self._disassemble_range(_range)
+                            self._disassemble_range(_range)
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
