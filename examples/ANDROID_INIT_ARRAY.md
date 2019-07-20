@@ -1,4 +1,4 @@
-Combining dwarf Android native onload with r2 js api to reach initialization functions.
+Combining dwarf Android native onload with r2 js api to automate the reaching of initialization functions.
 
 the most recent version of onload hooks in Android exists in Dwarf by attaching **soinfo::call_constructor()**
 
