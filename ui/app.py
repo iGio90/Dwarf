@@ -239,6 +239,9 @@ class AppWindow(QMainWindow):
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F4))
         self.view_menu.addMenu(self.panels_menu)
         self.view_menu.addSeparator()
+        self.view_menu.addAction('Hide all', self._hide_all_widgets, shortcut=QKeySequence(Qt.CTRL + Qt.Key_F1))
+        self.view_menu.addAction('Show all', self._show_all_widgets, shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
+        self.view_menu.addSeparator()
         self.menu.addMenu(self.view_menu)
 
         if self.dwarf_args.debug_script:
@@ -348,6 +351,24 @@ class AppWindow(QMainWindow):
     def _set_theme(self, qaction):
         if qaction:
             utils.set_theme(qaction.text(), self.prefs)
+
+    def _hide_all_widgets(self):
+        self.watchers_dwidget.hide()
+        self.hooks_dwiget.hide()
+        self.bookmarks_dwiget.hide()
+        self.registers_dock.hide()
+        self.console_dock.hide()
+        self.backtrace_dock.hide()
+        self.threads_dock.hide()
+
+    def _show_all_widgets(self):
+        self.watchers_dwidget.show()
+        self.hooks_dwiget.show()
+        self.bookmarks_dwiget.show()
+        self.registers_dock.show()
+        self.console_dock.show()
+        self.backtrace_dock.show()
+        self.threads_dock.show()
 
     def _menu_reload_core(self):
         self.dwarf.load_script()
