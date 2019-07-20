@@ -70,9 +70,10 @@ class Database:
 
     def put_range_data(self, address, permissions, data):
         address = self.sanify_address(address)
-        self.ranges_info[address] = permissions
-        with open(os.path.join(self._ranges_path, address), 'wb') as f:
-            f.write(data)
+        if data is not None:
+            self.ranges_info[address] = permissions
+            with open(os.path.join(self._ranges_path, address), 'wb') as f:
+                f.write(data)
 
     def sanify_address(self, address):
         hex_adr = address
