@@ -289,7 +289,7 @@ class AppWindow(QMainWindow):
 
             utils.show_message_box(
                 'Name: {0}\nVersion: {1}\nDescription: {2}\nAuthor: {3}\nHomepage: {4}\nLicense: {5}'.
-                format(plugin.name, version, description, author, homepage, license_))
+                    format(plugin.name, version, description, author, homepage, license_))
 
     def _enable_update_menu(self):
         self._is_newer_dwarf = True
@@ -951,7 +951,7 @@ class AppWindow(QMainWindow):
                         self.memory_panel.read_memory(base)
                 else:
                     if 'pc' in context['context']:
-                        if not 'disassembly' in self._ui_elems or manual:
+                        if 'disassembly' not in self._ui_elems or manual:
                             from lib.types.range import Range
                             _range = Range(self.dwarf)
                             _range.init_with_address(int(context['context']['pc']['value'], 16))
