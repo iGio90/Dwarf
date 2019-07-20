@@ -418,6 +418,8 @@ class AppWindow(QMainWindow):
         about_dlg.show()
 
     def _create_ui_elem(self, elem):
+        elem = elem.lower()
+
         if not isinstance(elem, str):
             return
 
