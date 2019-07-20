@@ -12,7 +12,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
-import json
 
 import frida
 from PyQt5.QtCore import Qt, QThread, pyqtSignal

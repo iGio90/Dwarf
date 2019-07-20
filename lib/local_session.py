@@ -64,8 +64,8 @@ class LocalSession(Session):
     def _setup_menu(self):
         """ Build Menus
         """
-        file_menu = QMenu('&File')
-        self._menu.append(file_menu)
+        #file_menu = QMenu('&File')
+        #self._menu.append(file_menu)
 
         process_menu = QMenu('&Process')
         process_menu.addAction('Resume', self._on_proc_resume, Qt.Key_F5)
