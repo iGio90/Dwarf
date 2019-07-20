@@ -39,4 +39,4 @@ api.hookNativeOnLoad('libtarget.so', function () {
 });
 ```
 
-![DWARF](https://i.ibb.co/pKdkNdy/Screenshot-from-2019-07-20-20-43-55.png)
+![DWARF](https://i.ibb.co/sV2Z648/Screenshot-from-2019-07-20-20-50-16.png)
