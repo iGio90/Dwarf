@@ -25,11 +25,12 @@ from ui.widgets.code_editor import JsCodeEditor
 
 
 class JsEditorDialog(DwarfDialog):
-    def __init__(self, app_window, def_text='', placeholder_text='', flags=None, *args, **kwargs):
+    def __init__(self, app_window, def_text='', placeholder_text='', file=None, flags=None, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
         self.title = 'CodeEditor'
         self._app_window = app_window
+        self.file = file
 
         font_size_pref = self._app_window.prefs.get('dwarf_ui_theme_editor_fs')
         if font_size_pref:
@@ -70,9 +71,10 @@ class JsEditorDialog(DwarfDialog):
         open_button = QPushButton('open')
         open_button.clicked.connect(self.handler_open)
         top_buttons.addWidget(open_button)
-        save = QPushButton('save')
-        save.clicked.connect(self.handler_save)
-        top_buttons.addWidget(save)
+        if file is None:
+            self.btn_save = QPushButton('save')
+            self.btn_save.clicked.connect(self.handler_save)
+            top_buttons.addWidget(self.btn_save)
         dwarf = QPushButton('dwarf')
         dwarf.clicked.connect(self.handler_dwarf_scripts)
         top_buttons.addWidget(dwarf)
@@ -139,3 +141,5 @@ class JsEditorDialog(DwarfDialog):
         if len(r) > 0 and len(r[0]) > 0:
             with open(r[0], 'w') as f:
                 f.write(self.input_widget.toPlainText())
+            self.btn_save.setVisible(False)
+            self.file = r[0]

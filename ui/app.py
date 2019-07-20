@@ -523,6 +523,7 @@ class AppWindow(QMainWindow):
             self.console_panel = ConsolePanel(self)
             if self.dwarf_args.script and len(self.dwarf_args.script) > 0 and os.path.exists(self.dwarf_args.script):
                 with open(self.dwarf_args.script, 'r') as f:
+                    self.console_panel.get_js_console().script_file = self.dwarf_args.script
                     self.console_panel.get_js_console().function_content = f.read()
             self.dwarf.onLogToConsole.connect(self._log_js_output)
             self.dwarf.onLogEvent.connect(self._log_event)

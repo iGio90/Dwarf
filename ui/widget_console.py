@@ -96,6 +96,7 @@ class DwarfConsoleWidget(QWidget):
         layout = QVBoxLayout()
 
         self.function_content = ''
+        self.script_file = None
 
         self.setContentsMargins(QMargins(0, 0, 0, 0))
         layout.setContentsMargins(QMargins(0, 0, 0, 0))
@@ -159,18 +160,25 @@ class DwarfConsoleWidget(QWidget):
         self.output.setPlainText('')
 
     def js_function_box(self):
-        accept, what = JsEditorDialog(
+        dialog = JsEditorDialog(
             self.app_window,
             def_text=self.function_content,
+            file=self.script_file,
             placeholder_text='// js script with both frida and dwarf api.\n'
-            '// note that it\'s evaluated. Which means, if you define a variable\n'
-            '// or attach an Interceptor, it won\'t be removed by '
-            'just deleting the script content').show()
-        if accept:
-            self.function_content = what
-            if what:
-                self.app_window.session_manager.session.dwarf.dwarf_api(
-                    'evaluateFunction', what)
+                             '// note that it\'s evaluated. Which means, if you define a variable\n'
+                             '// or attach an Interceptor, it won\'t be removed by '
+                             'just deleting the script content')
+        accept, what = dialog.show()
+        if self.script_file is None and dialog.file is not None:
+            # script got saved
+            self.script_file = dialog.file
+        self.function_content = what
+        if self.function_content:
+            if accept:
+                self.app_window.session_manager.session.dwarf.dwarf_api('evaluateFunction', self.function_content)
+            if self.script_file is not None:
+                with open(self.script_file, 'w') as f:
+                    f.write(self.function_content)
 
     def get_js_script_text(self):
         return self.function_content
