@@ -914,7 +914,10 @@ class AppWindow(QMainWindow):
     # dwarf handlers
     def _log_js_output(self, output):
         if self.console_panel is not None:
-            self.console_panel.get_js_console().log(output)
+            time_prefix = True
+            if len(output.split('\n')) > 1 or len(output.split('<br />')) > 1:
+                time_prefix = False
+            self.console_panel.get_js_console().log(output, time_prefix=time_prefix)
 
     def _log_event(self, output):
         if self.console_panel is not None:
