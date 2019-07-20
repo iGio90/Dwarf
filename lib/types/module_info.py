@@ -44,14 +44,14 @@ class ModuleInfo:
     def build_module_info(dwarf, name_or_address, fill_ied=False):
         module_base_info = dwarf.dwarf_api('findModule', name_or_address)
 
-        if module_base_info is not None:
+        if module_base_info:
             db_module_info = dwarf.database.get_module_info(module_base_info['base'])
-            if db_module_info is not None:
+            if db_module_info:
                 if not db_module_info.have_details and fill_ied:
                     db_module_info.update_details(dwarf)
                 return db_module_info
 
-            if module_base_info is not None:
+            if module_base_info:
                 module_info = ModuleInfo(module_base_info)
 
                 if fill_ied:
