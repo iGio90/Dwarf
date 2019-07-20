@@ -55,40 +55,12 @@ class AppWindow(QMainWindow):
             'memory', 'modules', 'ranges', 'jvm-inspector', 'jvm-debugger'
         ]
 
-        self.menu = self.menuBar()
         self._is_newer_dwarf = False
+
+        self.menu = self.menuBar()
         self.view_menu = None
 
-        # dockwidgets
-        self.watchers_dwidget = None
-        self.hooks_dwiget = None
-        self.bookmarks_dwiget = None
-        self.registers_dock = None
-        self.console_dock = None
-        self.backtrace_dock = None
-        self.threads_dock = None
-        # panels
-        self.asm_panel = None
-        self.console_panel = None
-        self.context_panel = None
-        self.backtrace_panel = None
-        self.contexts_list_panel = None
-        self.data_panel = None
-        self.ftrace_panel = None
-        self.hooks_panel = None
-        self.bookmarks_panel = None
-        self.smali_panel = None
-        self.java_inspector_panel = None
-        self.java_explorer_panel = None
-        self.java_trace_panel = None
-        self.memory_panel = None
-        self.modules_panel = None
-        self.ranges_panel = None
-        self.search_panel = None
-        self.watchers_panel = None
-        self.welcome_window = None
-
-        self._ui_elems = []
+        self._initialize_ui_elements()
 
         self.setWindowTitle(
             'Dwarf - A debugger for reverse engineers, crackers and security analyst'
@@ -171,6 +143,38 @@ class AppWindow(QMainWindow):
                 else:
                     print('* Starting new Session')
                     self._start_session(dwarf_args.type)
+
+    def _initialize_ui_elements(self):
+        # dockwidgets
+        self.watchers_dwidget = None
+        self.hooks_dwiget = None
+        self.bookmarks_dwiget = None
+        self.registers_dock = None
+        self.console_dock = None
+        self.backtrace_dock = None
+        self.threads_dock = None
+        # panels
+        self.asm_panel = None
+        self.console_panel = None
+        self.context_panel = None
+        self.backtrace_panel = None
+        self.contexts_list_panel = None
+        self.data_panel = None
+        self.ftrace_panel = None
+        self.hooks_panel = None
+        self.bookmarks_panel = None
+        self.smali_panel = None
+        self.java_inspector_panel = None
+        self.java_explorer_panel = None
+        self.java_trace_panel = None
+        self.memory_panel = None
+        self.modules_panel = None
+        self.ranges_panel = None
+        self.search_panel = None
+        self.watchers_panel = None
+        self.welcome_window = None
+
+        self._ui_elems = []
 
     def _setup_main_menu(self):
         self.menu = self.menuBar()
@@ -794,8 +798,10 @@ class AppWindow(QMainWindow):
                 self.removeDockWidget(self.bookmarks_dwiget)
                 self.bookmarks_dwiget = None
 
+        self._initialize_ui_elements()
+
     def session_closed(self):
-        self._ui_elems = []
+        self._initialize_ui_elements()
         self.hide()
         if self.welcome_window is not None:
             self.welcome_window.exec()

@@ -768,7 +768,6 @@ class Dwarf(QObject):
         self.dwarf_api('release', tid, tid=tid)
 
     def restart_proc(self):
-        session_type = self._app_window.session_manager._session.session_type
         session = self.dump_session()
 
         self.reinitialize()

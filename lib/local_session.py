@@ -129,8 +129,7 @@ class LocalSession(Session):
         self.dwarf.dwarf_api('release', tid)
 
     def _on_proc_restart(self):
-        self.dwarf.dwarf_api('restart')
-        self._on_proc_resume()
+        self.dwarf.restart_proc()
 
     def _on_detach(self):
         self.dwarf.detach()
