@@ -17,14 +17,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import json
 import os
 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QFileDialog, QSpinBox, QLabel, QWidget, QPlainTextEdit, QCompleter
-from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QFontDatabase, QPainter, QTextCursor
-from PyQt5.QtCore import QFile, QRegExp, Qt, QRegularExpression, QRect, QSize, QStringListModel, pyqtSignal
+from PyQt5.QtCore import QRegExp, Qt, QRect, QSize, pyqtSignal
+from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QPainter, QTextCursor
+from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QCompleter
 
 from lib.utils import get_os_monospace_font
-from lib.prefs import Prefs
-from ui.dialog_scripts import ScriptsDialog
 
 
 class DwarfCompleter(QCompleter):
@@ -483,7 +480,6 @@ class JsCodeEditor(QPlainTextEdit):
         super().focusInEvent(event)
 
     def keyPressEvent(self, event):
-
         tc = self.textCursor()
         if event.key() == Qt.Key_Enter or event.key(
         ) == Qt.Key_Return or event.key() == Qt.Key_Tab:
@@ -519,7 +515,9 @@ class JsCodeEditor(QPlainTextEdit):
             extra = (len(completion) - len(self.completer.completionPrefix()))
         else:
             extra = len(completion)
-        tc.insertText(completion[-extra:])
+        for i in range(len(completion) - extra):
+            tc.deletePreviousChar()
+        tc.insertText(completion)
         self.setTextCursor(tc)
         if self.completer:
             self.completer.popup().hide()

@@ -14,13 +14,12 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, \
-    QFileDialog, QSpinBox, QLabel, QWidget, QPlainTextEdit, QCompleter
-from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QFontDatabase, QPainter, QTextCursor
-from PyQt5.QtCore import QFile, QRegExp, Qt, QRegularExpression, QRect, QSize, QStringListModel, pyqtSignal
+    QFileDialog, QSpinBox, QLabel
 
 from ui.dialog_scripts import ScriptsDialog
-
 from ui.dialogs.dwarf_dialog import DwarfDialog
 from ui.widgets.code_editor import JsCodeEditor
 
