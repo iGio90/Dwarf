@@ -85,7 +85,9 @@ class ModuleInfo:
     def parse_symbol(self, symbol):
         type_ = symbol['type']
         if type_ == 'function':
-            if symbol['address'] not in self.functions_map:
+            # needs to check if address is in symbol. i saw this
+            # {'name': '_ZN15QXcbIntegrationC1ERK11QStringListRiPPc', 'type': 'function'}
+            if 'address' in symbol and symbol['address'] not in self.functions_map:
                 f = Function(symbol)
                 self.functions.append(f)
                 self.functions_map[symbol['address']] = f
