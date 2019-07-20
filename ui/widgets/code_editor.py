@@ -32,6 +32,8 @@ class DwarfCompleter(QCompleter):
         self.setCompletionMode(QCompleter.PopupCompletion)
         self.highlighted.connect(self.setHighlighted)
 
+        self.lastSelected = None
+
     def setHighlighted(self, text):
         self.lastSelected = text
 
@@ -481,8 +483,7 @@ class JsCodeEditor(QPlainTextEdit):
 
     def keyPressEvent(self, event):
         tc = self.textCursor()
-        if event.key() == Qt.Key_Enter or event.key(
-        ) == Qt.Key_Return or event.key() == Qt.Key_Tab:
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or event.key() == Qt.Key_Tab:
             if self.completer.popup().isVisible():
                 self.completer.insertText.emit(self.completer.getSelected())
                 self.completer.setCompletionMode(QCompleter.PopupCompletion)
@@ -498,7 +499,7 @@ class JsCodeEditor(QPlainTextEdit):
             if len(tc.selectedText()) > 0:
                 self.completer.setCompletionPrefix(tc.selectedText())
                 popup = self.completer.popup()
-                popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
+                #popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
 
                 cr.setWidth(
                     self.completer.popup().sizeHintForColumn(0) +
