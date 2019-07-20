@@ -383,6 +383,7 @@ class AppWindow(QMainWindow):
         return you_know_what_to_do
 
     def show_main_tab(self, name):
+        name = name.lower()
         # elem doesnt exists? create it
         if name not in self._ui_elems:
             self._create_ui_elem(name)
