@@ -649,7 +649,7 @@ class AppWindow(QMainWindow):
 
     @property
     def modules(self):
-        return self.memory_panel
+        return self.modules_panel
 
     @property
     def ranges(self):
