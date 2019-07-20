@@ -1295,8 +1295,8 @@ class HexEditor(QAbstractScrollArea):
             menu_actions[follow_pointer] = self.on_cm_followpointer
             context_menu.addSeparator()
 
-            jump_to = context_menu.addAction("&Jump to address")
-            menu_actions[jump_to] = self.on_cm_jumpto
+        jump_to = context_menu.addAction("&Jump to address")
+        menu_actions[jump_to] = self.on_cm_jumpto
 
         #write_string = context_menu.addAction("&Write string")
         #menu_actions[write_string] = self.on_cm_writestring
@@ -1325,10 +1325,11 @@ class HexEditor(QAbstractScrollArea):
             fill_content = context_menu.addAction("Fill")  # todo: needs key
             menu_actions[fill_content] = self.on_cm_fill"""
 
-        action = context_menu.exec_(QCursor.pos())
-        if action in menu_actions:
-            if action != copy_addr:
-                menu_actions[action]()
+        if not context_menu.isEmpty():
+            action = context_menu.exec_(QCursor.pos())
+            if action in menu_actions:
+                if action != copy_addr:
+                    menu_actions[action]()
 
     def on_cm_jumpto(self):
         """ ContextMenu JumpTo
@@ -1955,10 +1956,11 @@ class HexEditor(QAbstractScrollArea):
         self._hex_start = old_hex_start
         self._ascii_start = old_ascii_start
 
-    # ====================  old stuff  ==============================
-    # required
-    # todo: remove!!!
-    # pylint: disable=missing-docstring
+    #! ************************************************************************
+    #! **************************** deprecated ********************************
+    #! ************************************************************************
+    from lib.utils import deprecated
+    @deprecated
     def read_memory(self, ptr, length=0, base=0):
         # todo: remove it is mostly copy&pasta from old code
         if self.range is None:
