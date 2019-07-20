@@ -648,9 +648,10 @@ class Dwarf(QObject):
         elif cmd == 'log':
             self.log(parts[1])
         elif cmd == 'native_on_load_callback':
-            str_fmt = ('Hook native onload {0} @thread := {1}'.format(parts[1], parts[3]))
+            data = json.loads(parts[2])
+            str_fmt = ('Hook native onload {0} @thread := {1}'.format(data['module'], parts[1]))
             self.log_event(str_fmt)
-            self.onHitNativeOnLoad.emit([parts[1], parts[2]])
+            self.onHitNativeOnLoad.emit([parts[1], data])
         elif cmd == 'native_on_load_module_loading':
             module = json.loads(parts[2])
             if module is not None:

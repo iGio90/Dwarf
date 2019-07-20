@@ -232,9 +232,9 @@ class HooksPanel(QWidget):
         self._hooks_model.appendRow([addr, type_, inp, logic, condition])
 
     def _on_hit_native_on_load(self, data):
-        items = self._hooks_model.findItems(data[0], Qt.MatchExactly, 2)
+        items = self._hooks_model.findItems(data[1]['module'], Qt.MatchExactly, 2)
         if len(items) > 0:
-            self._hooks_model.item(items[0].row(), 0).setText(data[1])
+            self._hooks_model.item(items[0].row(), 0).setText(data[1]['moduleBase'])
 
     def _on_hit_java_on_load(self, data):
         items = self._hooks_model.findItems(data[0], Qt.MatchExactly, 2)
