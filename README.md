@@ -24,9 +24,9 @@ Built on top of pyqt5, frida and some terrible code.
 ### Pre requisites
 A frida server running anywhere.
 
-#### Android Session:
-  + make sure you can use 'adb' command in console or [Read here](https://www.xda-developers.com/adb-fastboot-any-directory-windows-linux/)
-  + root on the device/emulator is required!
+#### Android target specific
+  + make sure ‘adb’ is in path or [read here](https://www.xda-developers.com/adb-fastboot-any-directory-windows-linux/)
+  + root on the device/emulator is required
   + make sure frida is in /system/bin|xbin with a+x permissions or eventually use Dwarf to automatically install latest frida server 
 
 ### Setup and run
