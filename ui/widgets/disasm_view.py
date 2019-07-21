@@ -319,6 +319,13 @@ class DisassemblyView(QAbstractScrollArea):
         if self.run_default_disassembler:
             self.start_disassemble(dwarf_range, num_instructions=num_instructions)
 
+    def get_line_for_address(self, ptr):
+        ptr = utils.parse_ptr(ptr)
+        for x in range(len(self._lines)):
+            if self._lines[x].address == ptr:
+                return x
+        return -1
+
     def start_disassemble(self, dwarf_range, num_instructions=0):
         self._running_disasm = True
         self._app_window.show_progress('disassembling...')
@@ -782,21 +789,20 @@ class DisassemblyView(QAbstractScrollArea):
                         hex(_instruction.address), len(_instruction.bytes))
                 if loc_x > left_side + addr_width:
                     if self._follow_jumps and (_instruction.is_jump or _instruction.is_call):
+                        new_pos = 0
+
                         if _instruction.is_jump:
                             new_pos = _instruction.jump_address
                         elif _instruction.is_call:
                             new_pos = _instruction.call_address
-                        new_line = [x for x in self._lines if x.address == new_pos]
-                        try:
-                            new_line = self._lines.index(new_line[0])
-                            self.verticalScrollBar().setValue(new_line)
-                            # TODO: add highlighting line
-                            return
-                        except IndexError:
-                            pass
 
                         if new_pos > 0:
-                            self.read_memory(new_pos)
+                            new_line = self.get_line_for_address(new_pos)
+                            if new_line >= 0:
+                                self.verticalScrollBar().setValue(new_line)
+                                # TODO: add highlighting line
+                            else:
+                                self.read_memory(new_pos)
                         else:
                             # noone should ever view this
                             print('Error: trying to read from pos 0!')
