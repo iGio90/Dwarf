@@ -64,9 +64,6 @@ class DisassembleThread(QThread):
 
             should_break = False
             while True:
-                if 0 < self._num_instructions < _counter:
-                    break
-
                 disasm_address_to = disasm_address + d_size
                 if disasm_address_to > self._range.tail:
                     diff = disasm_address_to - self._range.tail
@@ -84,9 +81,14 @@ class DisassembleThread(QThread):
                         _debug_symbols.append(dwarf_instruction.call_address)
                         _debug_symbols_indexes.append(str(len(_instructions)))
 
-                    _instructions.append(dwarf_instruction)
-
                     single_cycle_count += 1
+                    _counter += single_cycle_count
+
+                    if 0 < self._num_instructions < _counter:
+                        should_break = True
+                        break
+
+                    _instructions.append(dwarf_instruction)
 
                     if self._num_instructions < 1:
                         if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or \
@@ -99,8 +101,7 @@ class DisassembleThread(QThread):
 
                 if should_break or single_cycle_count == 0:
                     break
-                    
-                _counter += single_cycle_count
+
                 disasm_to = disasm_from + d_size
 
             if _debug_symbols:
