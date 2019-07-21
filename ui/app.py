@@ -895,14 +895,14 @@ class AppWindow(QMainWindow):
         size = int(size, 10)
         self.dwarf.dump_memory(ptr=ptr, length=size)
 
-    def _disassemble_range(self, mem_range):
+    def _disassemble_range(self, dwarf_range):
         """ Disassemble MenuItem in Hexview was selected
         """
-        if mem_range:
+        if dwarf_range:
             if self.asm_panel is None:
                 self._create_ui_elem('disassembly')
 
-            self.asm_panel.disassemble(mem_range)
+            self.asm_panel.disassemble(dwarf_range)
             self.show_main_tab('disassembly')
 
     def _range_dblclicked(self, ptr):
@@ -985,10 +985,8 @@ class AppWindow(QMainWindow):
                     if 'pc' in context['context']:
                         if 'disassembly' not in self._ui_elems or manual:
                             from lib.types.range import Range
-                            _range = Range(self.dwarf)
-                            _range.init_with_address(int(context['context']['pc']['value'], 16))
-
-                            self._disassemble_range(_range)
+                            _range = Range.build_or_get(
+                                self.dwarf, context['context']['pc']['value'], cb=self._disassemble_range)
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])

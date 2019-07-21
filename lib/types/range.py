@@ -23,126 +23,107 @@ from lib.types.module_info import ModuleInfo
 class AsyncInitialization(QThread):
     onRangeAsyncInitializationFinish = pyqtSignal(list, name='onRangeAsyncInitializationFinish')
 
-    def __init__(self, dwarf_range, ptr, length, base, cb):
+    def __init__(self, dwarf_range, dwarf, address, cb):
         super().__init__()
         self.dwarf_range = dwarf_range
-        self.ptr = ptr
-        self.length = length
-        self.base = base
+        self.dwarf = dwarf
+        self.address = address
         self.cb = cb
 
     def run(self):
-        result = self.dwarf_range.init_with_address(self.ptr, length=self.length, base=self.base)
-        self.onRangeAsyncInitializationFinish.emit([self.cb, result])
+        self.dwarf_range.init_with_address(self.dwarf, self.address)
+        self.onRangeAsyncInitializationFinish.emit([self.dwarf, self.cb])
 
 
-class Range(object):
-    def __init__(self, dwarf):
-        super().__init__()
-
-        self.dwarf = dwarf
-
+class Range:
+    def __init__(self):
         self.base = 0
         self.size = 0
         self.tail = 0
         self.data = bytes()
         self.permissions = '---'
 
-        self.start_address = 0
-        self.start_offset = 0
-
         self.module_info = None
-
         self.read_memory_thread = None
 
-    def init_async(self, ptr, length=0, base=0, cb=None):
-        if not isinstance(ptr, str):
-            hex_ptr = hex(ptr)
-        else:
-            hex_ptr = ptr
-        self.dwarf._app_window.show_progress('reading at %s' % hex_ptr)
+        self.user_req_start_address = 0
+        self.user_req_start_offset = 0
 
-        self.read_memory_thread = AsyncInitialization(self, ptr, length, base, cb)
-        self.read_memory_thread.onRangeAsyncInitializationFinish.connect(self._on_finish_memory_read)
+    @staticmethod
+    def build_or_get(dwarf, address, cb=None):
+        address = utils.parse_ptr(address)
+        hex_address = hex(address)
+        dwarf_range = dwarf.database.get_range_info(hex_address)
+        if dwarf_range is not None:
+
+            dwarf_range.user_req_start_address = address
+            dwarf_range.user_req_start_offset = address - dwarf_range.base
+
+            if cb is not None:
+                cb(dwarf_range)
+                return 0
+            else:
+                return dwarf_range
+
+        dwarf_range = Range()
+        if cb is not None:
+            dwarf._app_window.show_progress('reading at %s' % hex_address)
+            dwarf_range.init_with_address_async(dwarf, address, cb)
+        else:
+            dwarf_range.init_with_address(dwarf, address)
+            return dwarf_range
+        return None
+
+    def init_with_address_async(self, dwarf, address, cb=None):
+        self.read_memory_thread = AsyncInitialization(self, dwarf, address, cb)
+        self.read_memory_thread.onRangeAsyncInitializationFinish.connect(self.on_finish_memory_read)
         self.read_memory_thread.start()
 
-    def _on_finish_memory_read(self, data):
-        self.dwarf._app_window.hide_progress()
-        cb = data[0]
-        init_result = data[1]
-        if cb is not None:
-            cb(self, init_result)
-
-    def init_with_address(self, address, length=0, base=0, require_data=True):
-        self.start_address = utils.parse_ptr(address)
-
-        if self.base > 0:
-            if self.base < self.start_address < self.tail:
-                self.start_offset = self.start_address - self.base
-                return -1
-
-        self.read_data(base, length, require_data=require_data)
+    def init_with_address(self, dwarf, address):
+        self.user_req_start_address = address
+        self.read_data(dwarf)
 
         if self.data is None:
             self.data = bytes()
-            return 1
-        if len(self.data) == 0:
-            return 1
-        return 0
 
-    def invalidate(self):
-        self.base = 0
-        self.size = 0
-        self.tail = 0
-        self.data = bytes()
+    def on_finish_memory_read(self, data):
+        dwarf = data[0]
+        cb = data[1]
 
-        self.start_address = 0
-        self.start_offset = 0
+        dwarf._app_window.hide_progress()
 
-    def read_data(self, base, length, require_data=True):
-        if self.start_address == 0:
-            return 1
+        if cb is not None:
+            cb(self)
 
+    def read_data(self, dwarf):
         try:
-            _range = self.dwarf.dwarf_api('getRange', self.start_address)
-        except Exception as e:
+            _range = dwarf.dwarf_api('getRange', self.user_req_start_address)
+        except Exception:
             return 1
         if _range is None or len(_range) == 0:
             return 1
 
         # setup range fields
         self.base = int(_range['base'], 16)
-        if base > 0:
-            self.base = base
 
         self.size = _range['size']
-        if 0 < length < self.size:
-            self.size = length
         self.tail = self.base + self.size
-        self.start_offset = self.start_address - self.base
+        self.user_req_start_offset = self.user_req_start_address - self.base
         self.permissions = _range['protection']
 
-        if require_data:
-            # try to get data from the database
-            self.data = self.dwarf.database.get_range_data(self.base)
-            if self.data is None:
-                self.data = self.dwarf.read_memory(self.base, self.size)
-                self.dwarf.database.put_range_data(self.base, self.permissions, self.data)
+        self.data = dwarf.read_memory(self.base, self.size)
+        dwarf.database.put_range_info(self)
 
         # get module info for this range
-        self.module_info = self.dwarf.database.get_module_info(_range['base'])
+        self.module_info = dwarf.database.get_module_info(_range['base'])
         if self.module_info is None:
-            self.module_info = ModuleInfo.build_module_info(self.dwarf, self.base, fill_ied=True)
-            self.dwarf.database.put_module_info(_range['base'], self.module_info)
+            self.module_info = ModuleInfo.build_module_info(dwarf, self.base, fill_ied=True)
+            dwarf.database.put_module_info(self.module_info.base, self.module_info)
         elif not self.module_info.have_details:
-            self.module_info.update_details(self.dwarf)
+            self.module_info.update_details(dwarf)
 
     def patch_bytes(self, _bytes, offset):
         data_bt = bytearray(self.data)
         org_bytes = bytes.fromhex(_bytes)
         data_bt[offset:offset+len(org_bytes)] = org_bytes
         self.data = bytes(data_bt)
-
-    def set_start_offset(self, offset):
-        self.start_offset = offset
-        self.start_address = self.base + offset

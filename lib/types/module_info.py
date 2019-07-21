@@ -16,6 +16,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from lib.types.function import Function
 
+
 class ModuleInfo:
 
     def __init__(self, module_base_info):

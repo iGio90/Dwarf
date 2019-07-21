@@ -57,7 +57,7 @@ class DisassembleThread(QThread):
 
         if self._range.data is not None:
             for cap_inst in self._capstone.disasm(
-                    self._range.data[self._range.start_offset:], self._range.start_address):
+                    self._range.data[self._range.user_req_start_offset:], self._range.user_req_start_address):
                 if 0 < self._num_instructions < _counter:
                     break
 
@@ -309,7 +309,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
-    def disassemble_at_address(self, ptr, length=0):
+    def disassemble_at_address(self, ptr):
         if self._running_disasm:
             return 1
 
@@ -319,9 +319,7 @@ class DisassemblyView(QAbstractScrollArea):
             # TODO: add highlighting line
             return 0
 
-        if self._range is None:
-            self._range = Range(self._app_window.dwarf)
-        self._range.init_async(ptr, length=length, cb=self._on_range_initialized)
+        self._range = Range.build_or_get(self._app_window.dwarf, ptr, cb=self._on_range_initialized)
         return 0
 
     def disassemble(self, dwarf_range, num_instructions=0):
@@ -340,8 +338,8 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.clear()
         self.viewport().update()
 
-        if len(self._history) == 0 or self._history[len(self._history) - 1] != dwarf_range.start_address:
-            self._history.append(dwarf_range.start_address)
+        if len(self._history) == 0 or self._history[len(self._history) - 1] != dwarf_range.user_req_start_address:
+            self._history.append(dwarf_range.user_req_start_address)
             if len(self._history) > 25:
                 self._history.pop(0)
 
@@ -765,10 +763,10 @@ class DisassemblyView(QAbstractScrollArea):
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
 
-    def _on_range_initialized(self, range_, result):
+    def _on_range_initialized(self, range_):
         self._reading_memory = False
-        if result <= 0:
-            self.disassemble(self._range)
+        if range_:
+            self.disassemble(range_)
 
     def mouseDoubleClickEvent(self, event):
         loc_x = event.pos().x()

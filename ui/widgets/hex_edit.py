@@ -1962,27 +1962,18 @@ class HexEditor(QAbstractScrollArea):
     # ! ************************************************************************
     from lib.utils import deprecated
     @deprecated
-    def read_memory(self, ptr, length=0, base=0):
+    def read_memory(self, ptr):
         # todo: remove it is mostly copy&pasta from old code
-        if self.range is None:
-            self.range = Range(self.app.dwarf)
-
         if '64' in self.app.dwarf.arch:
             self.is_64bit_address = True
         else:
             self.is_64bit_address = False
 
         self._addr_width_changed()
+        Range.build_or_get(self.app.dwarf, ptr, cb=self.apply_range)
 
-        self.range.init_async(ptr, length=length, base=base, cb=self._on_range_initialized)
-
-    def _on_range_initialized(self, range_, result):
-        if result > 0:
-            self.adjust()
-            self.range = None
-            self.display_error('Unable to init range at addr')
-            return 1
-
+    def apply_range(self, dwarf_range):
+        self.range = dwarf_range
         self.adjust()
         self.set_data(self.range.data)
         self.base = self.range.base
@@ -1992,9 +1983,9 @@ class HexEditor(QAbstractScrollArea):
         # self.app.get_session_ui().show_memory_panel()
 
         self.setFocus()
-        self.caret.position = int(ceil((self.range.start_address - self.base)))
+        self.caret.position = int(ceil((self.range.user_req_start_address - self.base)))
         self.adjust()
-        # scroll position in middle when jumpto or something
+        # scroll position in middle when jump to or something
         line = self.index_to_line(self.caret.position)
         scroll_y = self.verticalScrollBar().value()
         if line >= scroll_y:
@@ -2008,7 +1999,7 @@ class HexEditor(QAbstractScrollArea):
             self._hovered_line = int(ceil(self.visible_lines() / 2))
 
         # add a temp attention highlight
-        self.add_highlight(HighLight('attention', self.range.start_address, 1))
+        self.add_highlight(HighLight('attention', self.range.user_req_start_address, 1))
         self._force_repaint(True)
         return 0
 
