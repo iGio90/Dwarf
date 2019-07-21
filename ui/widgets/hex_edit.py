@@ -26,7 +26,7 @@ from PyQt5.QtGui import (QFont, QPainter, QColor, QTextOption,
                          QCursor, QPolygon, QFontMetricsF)
 from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
-from ui.dialog_input import InputDialog
+from ui.dialogs.dialog_input import InputDialog
 from lib import utils
 from lib.types.range import Range
 

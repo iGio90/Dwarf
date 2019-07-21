@@ -30,7 +30,7 @@ from lib.database import Database
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
 
-from ui.dialog_input import InputDialog
+from ui.dialogs.dialog_input import InputDialog
 
 
 class Dwarf(QObject):

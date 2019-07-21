@@ -19,7 +19,7 @@ from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, \
     QFileDialog, QSpinBox, QLabel
 
-from ui.dialog_scripts import ScriptsDialog
+from ui.dialogs.dialog_scripts import ScriptsDialog
 from ui.dialogs.dwarf_dialog import DwarfDialog
 from ui.widgets.code_editor import JsCodeEditor
 

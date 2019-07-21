@@ -112,7 +112,7 @@ class WatchersWidget(QWidget):
         self._app_window = parent
 
         if self._app_window.dwarf is None:
-            print('Watcherpanel created before Dwarf exists')
+            print('WatchersWidget created before Dwarf exists')
             return
 
         self._uppercase_hex = True

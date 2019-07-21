@@ -20,7 +20,7 @@ from PyQt5.QtCore import Qt, QMargins, pyqtSignal
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QVBoxLayout,
                              QPlainTextEdit, QSizePolicy)
 
-from ui.dialog_js_editor import JsEditorDialog
+from ui.dialogs.dialog_js_editor import JsEditorDialog
 from ui.widgets.code_editor import JsCodeEditor
 
 

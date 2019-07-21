@@ -455,9 +455,9 @@ class AppWindow(QMainWindow):
         elem_wiget = None
 
         if elem == 'watchers':
-            from ui.panel_watchers import WatchersPanel
+            from ui.session_widgets.watchers import WatchersWidget
             self.watchers_dwidget = QDockWidget('Watchers', self)
-            self.watchers_panel = WatchersPanel(self)
+            self.watchers_panel = WatchersWidget(self)
             # dont respond to dblclick mem cant be shown
             # self.watchers_panel.onItemDoubleClicked.connect(
             #    self._on_watcher_clicked)
@@ -465,44 +465,44 @@ class AppWindow(QMainWindow):
                 self._on_watcher_removeditem)
             self.watchers_panel.onItemAdded.connect(self._on_watcher_added)
             self.watchers_dwidget.setWidget(self.watchers_panel)
-            self.watchers_dwidget.setObjectName('WatchersPanel')
+            self.watchers_dwidget.setObjectName('WatchersWidget')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.watchers_dwidget)
             self.view_menu.addAction(self.watchers_dwidget.toggleViewAction())
             elem_wiget = self.watchers_panel
         elif elem == 'hooks':
-            from ui.panel_hooks import HooksPanel
+            from ui.session_widgets.hooks import HooksWidget
             self.hooks_dwiget = QDockWidget('Breakpoints', self)
-            self.hooks_panel = HooksPanel(self)
+            self.hooks_panel = HooksWidget(self)
             self.hooks_panel.onShowMemoryRequest.connect(
                 self._on_watcher_clicked)
             self.hooks_panel.onHookRemoved.connect(self._on_hook_removed)
             self.hooks_dwiget.setWidget(self.hooks_panel)
-            self.hooks_dwiget.setObjectName('HooksPanel')
+            self.hooks_dwiget.setObjectName('HooksWidget')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.hooks_dwiget)
             self.view_menu.addAction(self.hooks_dwiget.toggleViewAction())
             elem_wiget = self.hooks_panel
         elif elem == 'bookmarks':
-            from ui.panel_bookmarks import BookmarksPanel
+            from ui.session_widgets.bookmarks import BookmarksWidget
             self.bookmarks_dwiget = QDockWidget('Boomarks', self)
-            self.bookmarks_panel = BookmarksPanel(self)
+            self.bookmarks_panel = BookmarksWidget(self)
             self.bookmarks_panel.onShowMemoryRequest.connect(
                 self._on_watcher_clicked)
             self.bookmarks_dwiget.setWidget(self.bookmarks_panel)
-            self.bookmarks_dwiget.setObjectName('BookmarksPanel')
+            self.bookmarks_dwiget.setObjectName('BookmarksWidget')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.bookmarks_dwiget)
             self.view_menu.addAction(self.bookmarks_dwiget.toggleViewAction())
             elem_wiget = self.bookmarks_panel
         elif elem == 'registers':
-            from ui.panel_context import ContextPanel
+            from ui.session_widgets.context import ContextWidget
             self.registers_dock = QDockWidget('Context', self)
-            self.context_panel = ContextPanel(self)
+            self.context_panel = ContextWidget(self)
             self.registers_dock.setWidget(self.context_panel)
-            self.registers_dock.setObjectName('ContextsPanel')
+            self.registers_dock.setObjectName('ContextWidget')
             self.addDockWidget(Qt.RightDockWidgetArea, self.registers_dock)
             self.view_menu.addAction(self.registers_dock.toggleViewAction())
             elem_wiget = self.context_panel
         elif elem == 'memory':
-            from ui.panel_memory import MemoryPanel
+            from ui.panels.panel_memory import MemoryPanel
             self.memory_panel = MemoryPanel(self)
             self.memory_panel.onShowDisassembly.connect(
                 self._disassemble_range)
@@ -511,21 +511,21 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.memory_panel, 'Memory')
             elem_wiget = self.memory_panel
         elif elem == 'jvm-debugger':
-            from ui.panel_java_explorer import JavaExplorerPanel
+            from ui.panels.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
             self.main_tabs.addTab(self.java_explorer_panel, 'JVM debugger')
             self.main_tabs.tabBar().moveTab(
                 self.main_tabs.indexOf(self.java_explorer_panel), 1)
             elem_wiget = self.java_explorer_panel
         elif elem == 'jvm-inspector':
-            from ui.panel_java_inspector import JavaInspector
+            from ui.panels.panel_java_inspector import JavaInspector
             self.java_inspector_panel = JavaInspector(self)
             self.main_tabs.addTab(self.java_inspector_panel, 'JVM inspector')
             elem_wiget = self.java_inspector_panel
         elif elem == 'console':
-            from ui.panel_console import ConsolePanel
+            from ui.session_widgets.console import ConsoleWidget
             self.console_dock = QDockWidget('Console', self)
-            self.console_panel = ConsolePanel(self)
+            self.console_panel = ConsoleWidget(self)
             if self.dwarf_args.script and len(self.dwarf_args.script) > 0 and os.path.exists(self.dwarf_args.script):
                 with open(self.dwarf_args.script, 'r') as f:
                     self.console_panel.get_js_console().script_file = self.dwarf_args.script
@@ -533,25 +533,25 @@ class AppWindow(QMainWindow):
             self.dwarf.onLogToConsole.connect(self._log_js_output)
             self.dwarf.onLogEvent.connect(self._log_event)
             self.console_dock.setWidget(self.console_panel)
-            self.console_dock.setObjectName('ConsolePanel')
+            self.console_dock.setObjectName('ConsoleWidget')
             self.addDockWidget(Qt.BottomDockWidgetArea, self.console_dock)
             self.view_menu.addAction(self.console_dock.toggleViewAction())
             elem_wiget = self.console_panel
         elif elem == 'backtrace':
-            from ui.panel_backtrace import BacktracePanel
+            from ui.session_widgets.backtrace import BacktraceWidget
             self.backtrace_dock = QDockWidget('Backtrace', self)
-            self.backtrace_panel = BacktracePanel(self)
+            self.backtrace_panel = BacktraceWidget(self)
             self.backtrace_dock.setWidget(self.backtrace_panel)
-            self.backtrace_dock.setObjectName('BacktracePanel')
+            self.backtrace_dock.setObjectName('BacktraceWidget')
             self.backtrace_panel.onShowMemoryRequest.connect(
                 self._on_watcher_clicked)
             self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
             self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
             elem_wiget = self.backtrace_panel
         elif elem == 'threads':
-            from ui.panel_contexts_list import ContextsListPanel
+            from ui.session_widgets.threads import ThreadsWidget
             self.threads_dock = QDockWidget('Threads', self)
-            self.contexts_list_panel = ContextsListPanel(self)
+            self.contexts_list_panel = ThreadsWidget(self)
             self.dwarf.onThreadResumed.connect(
                 self.contexts_list_panel.resume_tid)
             self.contexts_list_panel.onItemDoubleClicked.connect(
@@ -562,7 +562,7 @@ class AppWindow(QMainWindow):
             self.view_menu.addAction(self.threads_dock.toggleViewAction())
             elem_wiget = self.contexts_list_panel
         elif elem == 'modules':
-            from ui.panel_modules import ModulesPanel
+            from ui.panels.panel_modules import ModulesPanel
             self.modules_panel = ModulesPanel(self)
             self.modules_panel.onModuleSelected.connect(
                 self._on_module_dblclicked)
@@ -573,7 +573,7 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.modules_panel, 'Modules')
             elem_wiget = self.modules_panel
         elif elem == 'ranges':
-            from ui.panel_ranges import RangesPanel
+            from ui.panels.panel_ranges import RangesPanel
             self.ranges_panel = RangesPanel(self)
             self.ranges_panel.onItemDoubleClicked.connect(
                 self._range_dblclicked)
@@ -584,14 +584,14 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.ranges_panel, 'Ranges')
             elem_wiget = self.ranges_panel
         elif elem == 'search':
-            from ui.panel_search import SearchPanel
+            from ui.panels.panel_search import SearchPanel
             self.search_panel = SearchPanel(self)
             self.search_panel.onShowMemoryRequest.connect(
                 self._on_watcher_clicked)
             self.main_tabs.addTab(self.search_panel, 'Search')
             elem_wiget = self.search_panel
         elif elem == 'data':
-            from ui.panel_data import DataPanel
+            from ui.panels.panel_data import DataPanel
             self.data_panel = DataPanel(self)
             self.main_tabs.addTab(self.data_panel, 'Data')
             elem_wiget = self.data_panel
@@ -602,12 +602,12 @@ class AppWindow(QMainWindow):
             self.main_tabs.addTab(self.asm_panel, 'Disassembly')
             elem_wiget = self.asm_panel
         elif elem == 'java-trace':
-            from ui.panel_java_trace import JavaTracePanel
+            from ui.panels.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
             self.main_tabs.addTab(self.java_trace_panel, 'JVM tracer')
             elem_wiget = self.java_trace_panel
         elif elem == 'smali':
-            from ui.panel_smali import SmaliPanel
+            from ui.panels.panel_smali import SmaliPanel
             self.smali_panel = SmaliPanel()
             self.main_tabs.addTab(self.smali_panel, 'Smali')
             elem_wiget = self.smali_panel

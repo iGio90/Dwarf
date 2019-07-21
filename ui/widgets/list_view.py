@@ -236,7 +236,7 @@ class DwarfListView(QTreeView):
                     header.resizeSection(col, width)
 
     def _on_cm_search(self):
-        from ui.dialog_input import InputDialog
+        from ui.dialogs.dialog_input import InputDialog
         accept, input_ = InputDialog.input(
             self, hint='Search something in this list', placeholder='search...', input_content=self._current_search)
 

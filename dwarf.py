@@ -19,7 +19,7 @@ import sys
 import argparse
 import shutil
 
-from ui.dialog_setup import SetupDialog
+from ui.dialogs.dialog_setup import SetupDialog
 
 
 def pip_install_package(package_name):

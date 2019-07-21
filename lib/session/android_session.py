@@ -22,7 +22,7 @@ from lib.android import AndroidDecompileUtil
 from lib.adb import Adb
 
 from ui.device_window import DeviceWindow
-from ui.apk_list import ApkListDialog
+from ui.widgets.apk_list import ApkListDialog
 from lib import utils
 
 

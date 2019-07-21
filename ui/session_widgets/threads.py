@@ -21,12 +21,12 @@ from PyQt5.QtWidgets import QTreeView, QHeaderView, QMenu
 from ui.widgets.list_view import DwarfListView
 
 
-class ContextsListPanel(DwarfListView):
+class ThreadsWidget(DwarfListView):
 
     onItemDoubleClicked = pyqtSignal(dict, name='onItemDoubleClicked')
 
     def __init__(self, parent=None):
-        super(ContextsListPanel, self).__init__(parent=parent)
+        super(ThreadsWidget, self).__init__(parent=parent)
         self._app_window = parent
         self.dwarf = parent.dwarf
 

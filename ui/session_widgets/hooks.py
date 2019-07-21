@@ -15,20 +15,19 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon, QPixmap,
-                         QFont, QKeySequence, QCursor)
+from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon, QFont, QKeySequence, QCursor)
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
                              QPushButton, QSizePolicy, QSpacerItem, QShortcut, QMenu)
 
 from ui.widgets.list_view import DwarfListView
-from ui.dialog_input import InputDialog
-from ui.dialog_input_multiline import InputMultilineDialog
+from ui.dialogs.dialog_input import InputDialog
+from ui.dialogs.dialog_input_multiline import InputMultilineDialog
 
 from lib import utils
-from lib.hook import Hook, HOOK_NATIVE, HOOK_JAVA, HOOK_ONLOAD
+from lib.hook import HOOK_NATIVE, HOOK_JAVA, HOOK_ONLOAD
 
 
-class HooksPanel(QWidget):
+class HooksWidget(QWidget):
     """ HooksPanel
 
         Signals:
@@ -42,7 +41,7 @@ class HooksPanel(QWidget):
     onHookRemoved = pyqtSignal(str, name='onHookRemoved')
 
     def __init__(self, parent=None):  # pylint: disable=too-many-statements
-        super(HooksPanel, self).__init__(parent=parent)
+        super(HooksWidget, self).__init__(parent=parent)
 
         self._app_window = parent
 

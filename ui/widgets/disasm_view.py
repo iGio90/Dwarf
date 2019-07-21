@@ -28,7 +28,7 @@ from lib import utils
 from lib.types.instruction import Instruction
 
 from lib.prefs import Prefs
-from ui.dialog_input import InputDialog
+from ui.dialogs.dialog_input import InputDialog
 from ui.widgets.list_view import DwarfListView
 
 

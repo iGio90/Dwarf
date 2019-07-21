@@ -16,10 +16,10 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 from PyQt5.QtWidgets import QTabWidget, QSplitter
 
-from ui.widget_console import DwarfConsoleWidget
+from ui.widgets.widget_console import DwarfConsoleWidget
 
 
-class ConsolePanel(QSplitter):
+class ConsoleWidget(QSplitter):
     def __init__(self, parent=None, *__args):
         super().__init__(*__args)
         self.parent = parent

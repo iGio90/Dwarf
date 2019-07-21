@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSpl
     QListWidget, QDialog
 
 from lib.kernel import FTrace
-from ui.widget_item_not_editable import NotEditableListWidgetItem
+from ui.widgets.widget_item_not_editable import NotEditableListWidgetItem
 
 
 class FTraceReadDialog(QDialog):

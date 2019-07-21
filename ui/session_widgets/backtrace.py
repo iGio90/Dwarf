@@ -23,12 +23,12 @@ from ui.widgets.list_view import DwarfListView
 from lib import utils
 
 
-class BacktracePanel(DwarfListView):
+class BacktraceWidget(DwarfListView):
 
     onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
 
     def __init__(self, parent=None):
-        super(BacktracePanel, self).__init__(parent=parent)
+        super(BacktraceWidget, self).__init__(parent=parent)
         self._app_window = parent
 
         self._app_window.dwarf.onBackTrace.connect(self.set_backtrace)

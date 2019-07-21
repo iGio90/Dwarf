@@ -15,26 +15,24 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon, QPixmap,
-                         QFont, QKeySequence, QCursor)
+from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QIcon,
+                         QFont, QKeySequence)
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QHeaderView,
                              QPushButton, QSizePolicy, QSpacerItem, QShortcut,
                              QMenu)
 
 from ui.widgets.list_view import DwarfListView
-from ui.dialog_input import InputDialog
-from ui.dialog_input_multiline import InputMultilineDialog
+from ui.dialogs.dialog_input import InputDialog
 
 from lib import utils
-from lib.hook import Hook
 
 
-class BookmarksPanel(QWidget):
+class BookmarksWidget(QWidget):
 
     onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
 
     def __init__(self, parent=None):  # pylint: disable=too-many-statements
-        super(BookmarksPanel, self).__init__(parent=parent)
+        super(BookmarksWidget, self).__init__(parent=parent)
 
         self._app_window = parent
 

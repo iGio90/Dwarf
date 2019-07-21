@@ -13,12 +13,13 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import json
 from math import ceil, floor
-from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QPoint
-from PyQt5.QtGui import QPainter, QColor, QTextOption, QFontMetrics, QFont, QPolygon, QBrush, QTextFormat, QIcon
-from PyQt5.QtWidgets import QSplitter, QListWidget, QScrollBar, QMenu, QWidget, QVBoxLayout, QPushButton, QAbstractScrollArea, QToolBar, QLabel, QSpacerItem, QSizePolicy
+from PyQt5.QtCore import Qt, QRectF, QPoint
+from PyQt5.QtGui import QPainter, QColor, QTextOption, QFontMetrics, QFont, QPolygon, QIcon
+from PyQt5.QtWidgets import QSplitter, QListWidget, QScrollBar, QMenu, QWidget, QVBoxLayout, QAbstractScrollArea, QToolBar, QLabel, \
+    QSizePolicy
 
-from ui.dialog_input import InputDialog, QHBoxLayout
-from ui.widget_item_not_editable import NotEditableListWidgetItem
+from ui.dialogs.dialog_input import InputDialog
+from ui.widgets.widget_item_not_editable import NotEditableListWidgetItem
 
 from lib import utils
 
