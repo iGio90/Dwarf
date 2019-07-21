@@ -141,7 +141,7 @@ class DisassemblyPanel(QSplitter):
     def _function_double_clicked(self, model_index):
         item = self.functions_list_model.itemFromIndex(model_index)
         address = item.data(Qt.UserRole + 2)
-        self.disasm_view.read_memory(address)
+        self.disasm_view.disassemble_at_address(address)
 
 
 class DisassemblyView(QAbstractScrollArea):
@@ -156,7 +156,6 @@ class DisassemblyView(QAbstractScrollArea):
         self._uppercase_hex = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
 
         self._app_window = parent
-        self._reading_memory = False
 
         self.setAutoFillBackground(True)
 
@@ -310,6 +309,21 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
+    def disassemble_at_address(self, ptr, length=0):
+        if self._running_disasm:
+            return 1
+
+        line_index_for_address = self.get_line_for_address(ptr)
+        if line_index_for_address >= 0:
+            self.verticalScrollBar().setValue(line_index_for_address)
+            # TODO: add highlighting line
+            return 0
+
+        if self._range is None:
+            self._range = Range(self._app_window.dwarf)
+        self._range.init_async(ptr, length=length, cb=self._on_range_initialized)
+        return 0
+
     def disassemble(self, dwarf_range, num_instructions=0):
         if self._running_disasm:
             return
@@ -318,13 +332,6 @@ class DisassemblyView(QAbstractScrollArea):
 
         if self.run_default_disassembler:
             self.start_disassemble(dwarf_range, num_instructions=num_instructions)
-
-    def get_line_for_address(self, ptr):
-        ptr = utils.parse_ptr(ptr)
-        for x in range(len(self._lines)):
-            if self._lines[x].address == ptr:
-                return x
-        return -1
 
     def start_disassemble(self, dwarf_range, num_instructions=0):
         self._running_disasm = True
@@ -363,6 +370,13 @@ class DisassemblyView(QAbstractScrollArea):
 
         self._running_disasm = False
         self._app_window.hide_progress()
+
+    def get_line_for_address(self, ptr):
+        ptr = utils.parse_ptr(ptr)
+        for x in range(len(self._lines)):
+            if self._lines[x].address == ptr:
+                return x
+        return -1
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -405,17 +419,6 @@ class DisassemblyView(QAbstractScrollArea):
             ceil((screen_y - top_gap) /
                  (self._ver_spacing + self._char_height)))
         return (data_x, data_y)
-
-    def read_memory(self, ptr, length=0):
-        if self._reading_memory:
-            return 1
-
-        if self._range is None:
-            self._range = Range(self._app_window.dwarf)
-
-        self._reading_memory = True
-        self._range.init_async(ptr, length=length, cb=self._on_range_initialized)
-        return 0
 
     # ************************************************************************
     # **************************** Drawing ***********************************
@@ -717,7 +720,7 @@ class DisassemblyView(QAbstractScrollArea):
         if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
             if len(self._history) > 1:
                 self._history.pop(len(self._history) - 1)
-                self.read_memory(self._history[len(self._history) - 1])
+                self.disassemble_at_address(self._history[len(self._history) - 1])
         elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
             self._on_cm_jump_to_address()
         elif event.key() == Qt.Key_M and event.modifiers() & Qt.ControlModifier:  # ctrl+m
@@ -797,12 +800,7 @@ class DisassemblyView(QAbstractScrollArea):
                             new_pos = _instruction.call_address
 
                         if new_pos > 0:
-                            new_line = self.get_line_for_address(new_pos)
-                            if new_line >= 0:
-                                self.verticalScrollBar().setValue(new_line)
-                                # TODO: add highlighting line
-                            else:
-                                self.read_memory(new_pos)
+                            self.disassemble_at_address(new_pos)
                         else:
                             # noone should ever view this
                             print('Error: trying to read from pos 0!')
@@ -921,4 +919,4 @@ class DisassemblyView(QAbstractScrollArea):
     def _on_cm_jump_to_address(self):
         ptr, _ = InputDialog.input_pointer(self._app_window)
         if ptr > 0:
-            self.read_memory(ptr)
+            self.disassemble_at_address(ptr)
