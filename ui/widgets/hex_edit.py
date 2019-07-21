@@ -30,6 +30,7 @@ from ui.dialog_input import InputDialog
 from lib import utils
 from lib.types.range import Range
 
+
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
@@ -288,6 +289,7 @@ class HexEditor(QAbstractScrollArea):
 
         self.app = app
 
+        self.have_context_menu = True
         self.range = None
         self.data = None
 
@@ -335,13 +337,13 @@ class HexEditor(QAbstractScrollArea):
             self._pref_bpl = 16
 
         if self._pref_bpl not in [
-                1 << e for e in range(self._min_bple, self._max_bple)
+            1 << e for e in range(self._min_bple, self._max_bple)
         ]:
             self._pref_bpl = 16
 
         self._bytes_per_line = self._pref_bpl
 
-        self._char_width = QFontMetricsF(self.font).width('#')# self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width('#')  # self.fontMetrics().width("#")
         if (self._char_width % 1) < .5:
             self.font.setLetterSpacing(QFont.AbsoluteSpacing, -(self._char_width % 1.0))
             self._char_width -= self._char_width % 1.0
@@ -369,7 +371,7 @@ class HexEditor(QAbstractScrollArea):
 
         self._hex_start = self._offset_start + self._offset_width + self._col_div
         self._hex_width = self.bytes_per_line * (
-            3 * self._char_width) - self._char_width
+                3 * self._char_width) - self._char_width
 
         self._ascii_start = self._hex_start + self._hex_width + self._col_div
         self._ascii_width = self.bytes_per_line * self._char_width
@@ -525,7 +527,7 @@ class HexEditor(QAbstractScrollArea):
         if isinstance(value, int):
             self._bytes_per_line = value
             self._hex_width = self.bytes_per_line * (
-                3 * self._char_width) - self._char_width
+                    3 * self._char_width) - self._char_width
             self._ascii_start = self._hex_start + self._hex_width + self._col_div
             self._ascii_width = self.bytes_per_line * self._char_width
             self.viewport().update()
@@ -567,8 +569,8 @@ class HexEditor(QAbstractScrollArea):
             not used atm - no hor scroll
         """
         ret = (self.bytes_per_line * 3) + self.bytes_per_line + (
-            (self._offset_width - self._offset_start) / self._char_width) * 4
-        #ret = self._bytes_per_line * 4
+                (self._offset_width - self._offset_start) / self._char_width) * 4
+        # ret = self._bytes_per_line * 4
         return ret
 
     @staticmethod
@@ -805,7 +807,7 @@ class HexEditor(QAbstractScrollArea):
                 self.caret.nibble = 0
             else:
                 _byte = (current_byte & 0x0f) | (
-                    self._hex_chars.index(text) << 4)
+                        self._hex_chars.index(text) << 4)
                 self.caret.nibble = 1
         # caret is asciitype try byteconv
         elif self.caret.mode == 'ascii':
@@ -1019,7 +1021,6 @@ class HexEditor(QAbstractScrollArea):
         self.adjust()
         self.viewChanged.emit()
 
-
     # ************************************************************************
     # **************************** Events  ***********************************
     # ************************************************************************
@@ -1048,7 +1049,7 @@ class HexEditor(QAbstractScrollArea):
         """
 
         # context menu
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.RightButton and self.have_context_menu:
             self._on_context_menu(event)
             return
 
@@ -1298,8 +1299,8 @@ class HexEditor(QAbstractScrollArea):
         jump_to = context_menu.addAction("&Jump to address")
         menu_actions[jump_to] = self.on_cm_jumpto
 
-        #write_string = context_menu.addAction("&Write string")
-        #menu_actions[write_string] = self.on_cm_writestring
+        # write_string = context_menu.addAction("&Write string")
+        # menu_actions[write_string] = self.on_cm_writestring
 
         # hide copy section when nothing selected
         if self.selection.start != self.selection.end:
@@ -1956,9 +1957,9 @@ class HexEditor(QAbstractScrollArea):
         self._hex_start = old_hex_start
         self._ascii_start = old_ascii_start
 
-    #! ************************************************************************
-    #! **************************** deprecated ********************************
-    #! ************************************************************************
+    # ! ************************************************************************
+    # ! **************************** deprecated ********************************
+    # ! ************************************************************************
     from lib.utils import deprecated
     @deprecated
     def read_memory(self, ptr, length=0, base=0):

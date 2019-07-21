@@ -44,10 +44,12 @@ class DataPanel(QSplitter):
         self.addWidget(self.editor)
 
         self.hex_view = HexEditor(self.app)
+        self.hex_view.have_context_menu = False
         self.hex_view.setVisible(False)
         self.addWidget(self.hex_view)
         #self.setStretchFactor(0, 8)
         self.setStretchFactor(1, 4)
+        self.setStretchFactor(2, 4)
 
     def clear(self):
         self._key_list_model.clear()
