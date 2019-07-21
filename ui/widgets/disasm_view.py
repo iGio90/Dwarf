@@ -56,10 +56,12 @@ class DisassembleThread(QThread):
         _debug_symbols_indexes = []
 
         if self._range.data is not None:
+
             ptr_size = self._dwarf.pointer_size
             disasm_from = self._range.start_offset
-            disasm_to = disasm_from + ptr_size
+            disasm_to = disasm_from + ptr_size * 2
             disasm_address = self._range.start_address
+
             should_break = False
             while True:
                 if 0 < self._num_instructions < _counter:
@@ -84,11 +86,13 @@ class DisassembleThread(QThread):
                                 _counter > self._max_instruction:
                             should_break = True
                             break
+
+                    disasm_from += dwarf_instruction.size
+                    disasm_address += dwarf_instruction.size
+
                 if should_break:
                     break
-                disasm_from += ptr_size
-                disasm_to += ptr_size
-                disasm_address += ptr_size
+                disasm_to = disasm_from + ptr_size * 2
 
             if _debug_symbols:
                 symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
