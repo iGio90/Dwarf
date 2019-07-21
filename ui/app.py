@@ -423,13 +423,13 @@ class AppWindow(QMainWindow):
     def _menu_github(self):
         QDesktopServices.openUrl(QUrl('https://github.com/iGio90/Dwarf'))
 
-    @pyqtSlot(name='mainMenuDocumentation')
-    def _menu_api(self):
-        QDesktopServices.openUrl(QUrl('https://igio90.github.io/Dwarf/'))
-
     @pyqtSlot(name='mainMenuApi')
+    def _menu_api(self):
+        QDesktopServices.openUrl(QUrl('http://www.giovanni-rocca.com/dwarf/javascript/'))
+
+    @pyqtSlot(name='mainMenuDocumentation')
     def _menu_documentation(self):
-        QDesktopServices.openUrl(QUrl('https://igio90.github.io/Dwarf/api'))
+        QDesktopServices.openUrl(QUrl('http://www.giovanni-rocca.com/dwarf/'))
 
     @pyqtSlot(name='mainMenuSlack')
     def _menu_slack(self):
