@@ -15,19 +15,23 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu
 
 import frida
-from lib.session import Session
+from lib.session.session import Session
 
 from ui.device_window import DeviceWindow
 from lib import utils
 
 
-class LocalSession(Session):
+class IosSession(Session):
+
+    def _is_frida_running(self):
+        # untested
+        utils.do_shell_command('ssh -p2222 mobile@127.0.0.1 ps -A | grep \'frida\'')
 
     def __init__(self, app_window):
-        super(LocalSession, self).__init__(app_window)
+        super(IosSession, self).__init__(app_window)
 
         self._app_window = app_window
-        self._device_window = DeviceWindow(self._app_window, 'local')
+        self._device_window = DeviceWindow(self._app_window, 'ios')
 
         # main menu every session needs
         self._menu = []
@@ -42,11 +46,12 @@ class LocalSession(Session):
     def non_closable(self):
         return ['memory', 'ranges', 'modules']
 
+
     @property
     def session_type(self):
         """ return session name to show in menus etc
         """
-        return 'Local'
+        return 'IOS'
 
     @property
     def main_menu(self):
@@ -126,6 +131,9 @@ class LocalSession(Session):
                 return
 
     def _on_proc_resume(self, tid=0):
+        if not self.dwarf.resumed:
+            self.dwarf.dwarf_api('resume')
+
         self.dwarf.dwarf_api('release', tid)
 
     def _on_proc_restart(self):

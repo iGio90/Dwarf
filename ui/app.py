@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QProgressBar, QTabBar,
 
 from lib import utils
 from lib.prefs import Prefs
-from lib.session_manager import SessionManager
+from lib.session.session_manager import SessionManager
 from lib.plugin_manager import PluginManager
 
 from ui.dialogs.about_dlg import AboutDialog

@@ -17,7 +17,7 @@ import frida
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QMenu, QAction, QFileDialog
 
-from lib.session import Session
+from lib.session.session import Session
 from lib.android import AndroidDecompileUtil
 from lib.adb import Adb
 

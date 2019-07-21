@@ -15,10 +15,10 @@ import json
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from lib.android_session import AndroidSession
-from lib.local_session import LocalSession
-from lib.remote_session import RemoteSession
-from lib.ios_session import IosSession
+from lib.session.android_session import AndroidSession
+from lib.session.local_session import LocalSession
+from lib.session.remote_session import RemoteSession
+from lib.session.ios_session import IosSession
 
 
 class SessionRunningException(Exception):

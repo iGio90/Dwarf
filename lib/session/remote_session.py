@@ -15,7 +15,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMenu
 
 import frida
-from lib.session import Session
+from lib.session.session import Session
 
 from ui.device_window import DeviceWindow
 from lib import utils
