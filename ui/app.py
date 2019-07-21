@@ -876,8 +876,7 @@ class AppWindow(QMainWindow):
         """
         addr, size = data
         addr = utils.parse_ptr(addr)
-        size = int(size, 10)
-        self.memory_panel.read_memory(ptr=addr, length=size)
+        self.memory_panel.read_memory(ptr=addr)
         self.show_main_tab('Memory')
 
     def _on_modulefunc_dblclicked(self, ptr):
