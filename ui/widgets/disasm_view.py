@@ -56,53 +56,26 @@ class DisassembleThread(QThread):
         _debug_symbols_indexes = []
 
         if self._range.data is not None:
-
-            d_size = self._dwarf.pointer_size * 2
-            disasm_from = self._range.start_offset
-            disasm_to = disasm_from + d_size
-            disasm_address = self._range.start_address
-
-            should_break = False
-            while True:
-                disasm_address_to = disasm_address + d_size
-                if disasm_address_to > self._range.tail:
-                    diff = disasm_address_to - self._range.tail
-                    disasm_to -= diff
-
-                single_cycle_count = 0
-
-                for cap_inst in self._capstone.disasm(
-                        self._range.data[disasm_from:disasm_to], disasm_address):
-                    dwarf_instruction = Instruction(self._dwarf, cap_inst)
-                    if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
-                        _debug_symbols.append(dwarf_instruction.jump_address)
-                        _debug_symbols_indexes.append(str(len(_instructions)))
-                    elif dwarf_instruction.is_call and dwarf_instruction.call_address:
-                        _debug_symbols.append(dwarf_instruction.call_address)
-                        _debug_symbols_indexes.append(str(len(_instructions)))
-
-                    single_cycle_count += 1
-                    _counter += 1
-
-                    if 0 < self._num_instructions < _counter:
-                        should_break = True
-                        break
-
-                    _instructions.append(dwarf_instruction)
-
-                    if self._num_instructions < 1:
-                        if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or \
-                                _counter > self._max_instruction:
-                            should_break = True
-                            break
-
-                    disasm_from += dwarf_instruction.size
-                    disasm_address += dwarf_instruction.size
-
-                if should_break or single_cycle_count == 0:
+            for cap_inst in self._capstone.disasm(
+                    self._range.data[self._range.start_offset:], self._range.start_address):
+                if 0 < self._num_instructions < _counter:
                     break
 
-                disasm_to = disasm_from + d_size
+                dwarf_instruction = Instruction(self._dwarf, cap_inst)
+                if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
+                    _debug_symbols.append(dwarf_instruction.jump_address)
+                    _debug_symbols_indexes.append(str(len(_instructions)))
+                elif dwarf_instruction.is_call and dwarf_instruction.call_address:
+                    _debug_symbols.append(dwarf_instruction.call_address)
+                    _debug_symbols_indexes.append(str(len(_instructions)))
+
+                _instructions.append(dwarf_instruction)
+
+                _counter += 1
+
+                if self._num_instructions < 1:
+                    if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or _counter > self._max_instruction:
+                        break
 
             if _debug_symbols:
                 symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
