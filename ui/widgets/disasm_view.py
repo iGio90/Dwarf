@@ -57,15 +57,22 @@ class DisassembleThread(QThread):
 
         if self._range.data is not None:
 
-            ptr_size = self._dwarf.pointer_size
+            d_size = self._dwarf.pointer_size * 2
             disasm_from = self._range.start_offset
-            disasm_to = disasm_from + ptr_size * 2
+            disasm_to = disasm_from + d_size
             disasm_address = self._range.start_address
 
             should_break = False
             while True:
                 if 0 < self._num_instructions < _counter:
                     break
+
+                disasm_address_to = disasm_address + d_size
+                if disasm_address_to > self._range.tail:
+                    diff = disasm_address_to - self._range.tail
+                    disasm_to -= diff
+
+                single_cycle_count = 0
 
                 for cap_inst in self._capstone.disasm(
                         self._range.data[disasm_from:disasm_to], disasm_address):
@@ -79,7 +86,7 @@ class DisassembleThread(QThread):
 
                     _instructions.append(dwarf_instruction)
 
-                    _counter += 1
+                    single_cycle_count += 1
 
                     if self._num_instructions < 1:
                         if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or \
@@ -90,9 +97,11 @@ class DisassembleThread(QThread):
                     disasm_from += dwarf_instruction.size
                     disasm_address += dwarf_instruction.size
 
-                if should_break:
+                if should_break or single_cycle_count == 0:
                     break
-                disasm_to = disasm_from + ptr_size * 2
+                    
+                _counter += single_cycle_count
+                disasm_to = disasm_from + d_size
 
             if _debug_symbols:
                 symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
