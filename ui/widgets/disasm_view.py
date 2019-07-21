@@ -82,7 +82,7 @@ class DisassembleThread(QThread):
                         _debug_symbols_indexes.append(str(len(_instructions)))
 
                     single_cycle_count += 1
-                    _counter += single_cycle_count
+                    _counter += 1
 
                     if 0 < self._num_instructions < _counter:
                         should_break = True
