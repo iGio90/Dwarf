@@ -49,8 +49,9 @@ class Database:
 
             for module_info in self.modules_info:
                 _module = self.modules_info[module_info]
-                if _module.base <= address <= _module.base + _module.size:
-                    return _module
+                if _module:
+                    if _module.base <= address <= _module.base + _module.size:
+                        return _module
 
         return None
 
