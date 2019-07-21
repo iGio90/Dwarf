@@ -56,26 +56,39 @@ class DisassembleThread(QThread):
         _debug_symbols_indexes = []
 
         if self._range.data is not None:
-            for cap_inst in self._capstone.disasm(
-                    self._range.data[self._range.start_offset:], self._range.start_address):
+            ptr_size = self._dwarf.pointer_size
+            disasm_from = self._range.start_offset
+            disasm_to = disasm_from + ptr_size
+            disasm_address = self._range.start_address
+            should_break = False
+            while True:
                 if 0 < self._num_instructions < _counter:
                     break
 
-                dwarf_instruction = Instruction(self._dwarf, cap_inst)
-                if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
-                    _debug_symbols.append(dwarf_instruction.jump_address)
-                    _debug_symbols_indexes.append(str(len(_instructions)))
-                elif dwarf_instruction.is_call and dwarf_instruction.call_address:
-                    _debug_symbols.append(dwarf_instruction.call_address)
-                    _debug_symbols_indexes.append(str(len(_instructions)))
+                for cap_inst in self._capstone.disasm(
+                        self._range.data[disasm_from:disasm_to], disasm_address):
+                    dwarf_instruction = Instruction(self._dwarf, cap_inst)
+                    if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
+                        _debug_symbols.append(dwarf_instruction.jump_address)
+                        _debug_symbols_indexes.append(str(len(_instructions)))
+                    elif dwarf_instruction.is_call and dwarf_instruction.call_address:
+                        _debug_symbols.append(dwarf_instruction.call_address)
+                        _debug_symbols_indexes.append(str(len(_instructions)))
 
-                _instructions.append(dwarf_instruction)
+                    _instructions.append(dwarf_instruction)
 
-                _counter += 1
+                    _counter += 1
 
-                if self._num_instructions < 1:
-                    if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or _counter > self._max_instruction:
-                        break
+                    if self._num_instructions < 1:
+                        if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or \
+                                _counter > self._max_instruction:
+                            should_break = True
+                            break
+                if should_break:
+                    break
+                disasm_from += ptr_size
+                disasm_to += ptr_size
+                disasm_address += ptr_size
 
             if _debug_symbols:
                 symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(_debug_symbols))
