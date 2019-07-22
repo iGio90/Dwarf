@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt, QSettings
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
+from PyQt5.QtWidgets import QMainWindow, QDockWidget
 
 from lib import utils
 from lib.types.range import Range
@@ -15,15 +15,26 @@ DEBUG_VIEW_MEMORY = 0
 DEBUG_VIEW_DISASSEMBLY = 1
 
 
-class QDebugCentralView(QMainWindow):
-    def __init__(self, debug_panel, flags=None):
-        super(QDebugCentralView, self).__init__(flags)
-        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
+class QDebugPanel(QMainWindow):
+    def __init__(self, app, flags=None):
+        super(QDebugPanel, self).__init__(flags)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
 
-        self.debug_panel = debug_panel
-        self.app = self.debug_panel.app
-        self.dwarf = self.app.dwarf
-        self.q_settings = self.app.q_settings
+        self.app = app
+        self.q_settings = app.q_settings
+
+        self.functions_list = DwarfListView()
+        self.functions_list_model = QStandardItemModel(0, 1)
+        self.functions_list_model.setHeaderData(0, Qt.Horizontal, '')
+        self.functions_list.setModel(self.functions_list_model)
+        self.functions_list.setHeaderHidden(True)
+        self.functions_list.doubleClicked.connect(self._function_double_clicked)
+
+        self.dock_functions_list = QDockWidget('Functions', self)
+        self.dock_functions_list.setObjectName('functions')
+        self.dock_functions_list.setWidget(self.functions_list)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
+        self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
 
         self.memory_panel_range = None
         self.disassembly_panel_range = None
@@ -46,24 +57,49 @@ class QDebugCentralView(QMainWindow):
         self.dock_disassembly_panel.setWidget(self.disassembly_panel)
         self.dock_disassembly_panel.setObjectName('disassembly')
 
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_memory_panel)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_disassembly_panel)
         if m_width >= 1920:
-            self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
-            self.addDockWidget(Qt.RightDockWidgetArea, self.dock_disassembly_panel)
+            self.splitDockWidget(self.dock_memory_panel, self.dock_disassembly_panel, Qt.Horizontal)
         else:
-            self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
-            self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_disassembly_panel)
             self.tabifyDockWidget(self.dock_memory_panel, self.dock_disassembly_panel)
+        self.resizeDocks([self.dock_functions_list], [1], Qt.Horizontal)
 
-        ui_state = self.q_settings.value('dwarf_debug_panels_ui_state')
+        ui_state = self.q_settings.value('dwarf_debug_ui_state')
         if ui_state:
             self.restoreGeometry(ui_state)
-        window_state = self.q_settings.value('dwarf_debug_panels_ui_window')
+        window_state = self.q_settings.value('dwarf_debug_ui_window')
         if window_state:
             self.restoreState(window_state)
 
-    def onCloseEvent(self):
-        self.q_settings.setValue('dwarf_debug_panels_ui_state', self.saveGeometry())
-        self.q_settings.setValue('dwarf_debug_panels_ui_window', self.saveState())
+    def closeEvent(self, event):
+        self.q_settings.setValue('dwarf_debug_ui_state', self.saveGeometry())
+        self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
+
+    def update_functions(self, functions_list=None):
+        if functions_list is None:
+            functions_list = {}
+        self.functions_list_model.setRowCount(0)
+        for module_info_base in self.app.dwarf.database.modules_info:
+            module_info = self.app.dwarf.database.modules_info[module_info_base]
+            if len(module_info.functions) > 0:
+                self.functions_list.show()
+                for function in module_info.functions:
+                    functions_list[function.name] = function.address
+
+        for function_name in sorted(functions_list.keys()):
+            function_addr = functions_list[function_name]
+            item = QStandardItem(function_name.replace('.', '_'))
+            item.setData(function_addr, Qt.UserRole + 2)
+            self.functions_list_model.appendRow([item])
+
+    def _function_double_clicked(self, model_index):
+        item = self.functions_list_model.itemFromIndex(model_index)
+        address = item.data(Qt.UserRole + 2)
+        self.jump_to_address(address, view=DEBUG_VIEW_DISASSEMBLY)
+
+    def on_context_setup(self):
+        self.memory_panel.on_context_setup()
 
     def on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos
@@ -100,7 +136,7 @@ class QDebugCentralView(QMainWindow):
                 Range.build_or_get(self.app.dwarf, address, cb=lambda: self._apply_range(address, view=view))
 
     def _apply_range(self, address, view=DEBUG_VIEW_MEMORY):
-        self.debug_panel.update_functions()
+        self.update_functions()
 
         if view == DEBUG_VIEW_MEMORY:
             self.memory_panel.set_data(
@@ -155,88 +191,3 @@ class QDebugCentralView(QMainWindow):
                     with open(_file[0], 'wb') as f:
                         f.write(data)
         dwarf_range = Range.build_or_get(self.app.dwarf, address, cb=_dump)
-
-
-class QDebugPanel(QMainWindow):
-    def __init__(self, app, flags=None):
-        super(QDebugPanel, self).__init__(flags)
-        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
-
-        self.app = app
-        self.q_settings = app.q_settings
-
-        self.functions_list = DwarfListView()
-        self.functions_list_model = QStandardItemModel(0, 1)
-        self.functions_list_model.setHeaderData(0, Qt.Horizontal, '')
-        self.functions_list.setModel(self.functions_list_model)
-        self.functions_list.setHeaderHidden(True)
-        self.functions_list.doubleClicked.connect(self._function_double_clicked)
-
-        self.dock_functions_list = QDockWidget('Functions', self)
-        self.dock_functions_list.setObjectName('functions')
-        self.dock_functions_list.setWidget(self.functions_list)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
-        self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
-
-        self.debug_central_view = QDebugCentralView(self)
-        self.debug_central_view.setObjectName('debug')
-        self.setCentralWidget(self.debug_central_view)
-
-        ui_state = self.q_settings.value('dwarf_debug_ui_state')
-        if ui_state:
-            self.restoreGeometry(ui_state)
-        window_state = self.q_settings.value('dwarf_debug_ui_window')
-        if window_state:
-            self.restoreState(window_state)
-
-    @property
-    def disassembly_panel_range(self):
-        return self.debug_central_view.disassembly_panel_range
-
-    @property
-    def memory_panel_range(self):
-        return self.debug_central_view.memory_panel_range
-
-    @property
-    def memory_panel(self):
-        return self.debug_central_view.memory_panel
-
-    def closeEvent(self, event):
-        self.q_settings.setValue('dwarf_debug_ui_state', self.saveGeometry())
-        self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
-
-        self.debug_central_view.onCloseEvent()
-
-    def update_functions(self, functions_list=None):
-        if functions_list is None:
-            functions_list = {}
-        self.functions_list_model.setRowCount(0)
-        for module_info_base in self.app.dwarf.database.modules_info:
-            module_info = self.app.dwarf.database.modules_info[module_info_base]
-            if len(module_info.functions) > 0:
-                self.functions_list.show()
-                for function in module_info.functions:
-                    functions_list[function.name] = function.address
-
-        for function_name in sorted(functions_list.keys()):
-            function_addr = functions_list[function_name]
-            item = QStandardItem(function_name.replace('.', '_'))
-            item.setData(function_addr, Qt.UserRole + 2)
-            self.functions_list_model.appendRow([item])
-
-    def _function_double_clicked(self, model_index):
-        item = self.functions_list_model.itemFromIndex(model_index)
-        address = item.data(Qt.UserRole + 2)
-        self.jump_to_address(address, view=DEBUG_VIEW_DISASSEMBLY)
-
-    def jump_to_address(self, address, view=DEBUG_VIEW_MEMORY):
-        self.debug_central_view.jump_to_address(address, view=view)
-
-    def on_context_setup(self):
-        self.debug_central_view.memory_panel.on_context_setup()
-
-    def raise_memory_panel(self):
-        self.debug_central_view.dock_memory_panel.raise_()
-
-    def raise_disassembly_panel(self):
-        self.debug_central_view.dock_disassembly_panel.raise_()
