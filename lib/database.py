@@ -22,6 +22,7 @@ class Database:
     """
 
     def __init__(self, dwarf):
+        super().__init__()
         self.modules_info = {}
         self.ranges_info = {}
 

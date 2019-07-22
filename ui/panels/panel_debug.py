@@ -15,17 +15,18 @@ DEBUG_VIEW_DISASSEMBLY = 1
 
 
 class QDebugCentralView(QMainWindow):
-    def __init__(self, app, flags=None):
+    def __init__(self, debug_panel, flags=None):
         super(QDebugCentralView, self).__init__(flags)
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
-        self.app = app
-        self.dwarf = app.dwarf
-
-        self.current_memory_address = 0
-        self.current_disassembly_address = 0
+        self.debug_panel = debug_panel
+        self.app = self.debug_panel.app
+        self.dwarf = self.app.dwarf
 
         m_width = self.app.screen_geometry.width()
+
+        self.memory_panel_range = None
+        self.disassembly_panel_range = None
 
         self.memory_panel = HexEditor(self.app)
         self.memory_panel.debug_panel = self
@@ -72,46 +73,49 @@ class QDebugCentralView(QMainWindow):
                 if self.is_address_in_view(view, address):
                     return
 
+            self.memory_panel_range = \
+                Range.build_or_get(self.app.dwarf, address, cb=lambda: self._apply_range(address, view=view))
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            self.current_disassembly_address = address
-
-            if self.current_disassembly_address > 0:
+            if self.disassembly_panel_range is not None:
                 if self.is_address_in_view(view, address):
                     return
 
-        Range.build_or_get(self.app.dwarf, address, cb=lambda x: self.apply_range(address, x, view=view))
+            self.disassembly_panel_range = \
+                Range.build_or_get(self.app.dwarf, address, cb=lambda: self._apply_range(address, view=view))
 
-    def apply_range(self, address, dwarf_range, view=DEBUG_VIEW_MEMORY):
+    def _apply_range(self, address, view=DEBUG_VIEW_MEMORY):
+        self.debug_panel.update_functions()
+
         if view == DEBUG_VIEW_MEMORY:
-            self.current_memory_address = address
-            self.memory_panel.set_data(dwarf_range.data, base=dwarf_range.base, focus_address=address)
+            self.memory_panel.set_data(
+                self.memory_panel_range.data, base=self.memory_panel_range.base, focus_address=address)
             self.raise_memory_panel()
 
-            if self.current_disassembly_address == 0:
-                self.current_disassembly_address = address
-                self.disassembly_panel.apply_range(dwarf_range)
+            if self.disassembly_panel_range is None:
+                self.disassembly_panel_range = self.memory_panel_range
+                self.disassembly_panel.apply_range(self.disassembly_panel_range)
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            self.current_disassembly_address = address
-            self.disassembly_panel.apply_range(dwarf_range)
+            self.disassembly_panel.apply_range(self.disassembly_panel_range)
             self.raise_disassembly_panel()
 
-            if self.current_memory_address == 0:
-                self.current_memory_address = address
-                self.memory_panel.set_data(dwarf_range.data, base=dwarf_range.base, focus_address=address)
+            if self.memory_panel_range is None:
+                self.memory_panel_range = self.disassembly_panel_range
+                self.memory_panel.set_data(
+                    self.memory_panel_range.data, base=self.memory_panel_range.base, focus_address=address)
 
     def is_address_in_view(self, view, address):
         if view == DEBUG_VIEW_MEMORY:
-            ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
-            if ptr_exists:
-                self.current_memory_address = address
-                self.memory_panel.caret.position = address - self.memory_panel.base
-                return True
+            if self.memory_panel_range is not None:
+                ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
+                if ptr_exists:
+                    self.memory_panel.caret.position = address - self.memory_panel.base
+                    return True
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            line_index_for_address = self.disassembly_panel.get_line_for_address(address)
-            if line_index_for_address >= 0:
-                self.current_disassembly_address = address
-                self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
-                return True
+            if self.disassembly_panel_range is not None:
+                line_index_for_address = self.disassembly_panel.get_line_for_address(address)
+                if line_index_for_address >= 0:
+                    self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
+                    return True
         return False
 
     def on_cm_jump_to_address(self, view=DEBUG_VIEW_MEMORY):
@@ -120,7 +124,7 @@ class QDebugCentralView(QMainWindow):
             self.jump_to_address(ptr, view=view)
 
     def dump_data(self, address, _len):
-        def _dump(dwarf_range):
+        def _dump():
             if address + _len > dwarf_range.tail:
                 self.display_error('length is higher than range size')
             else:
@@ -130,7 +134,7 @@ class QDebugCentralView(QMainWindow):
                     _file = QFileDialog.getSaveFileName(self.app)
                     with open(_file[0], 'wb') as f:
                         f.write(data)
-        Range.build_or_get(self.app.dwarf, address, cb=_dump)
+        dwarf_range = Range.build_or_get(self.app.dwarf, address, cb=_dump)
 
 
 class QDebugPanel(QMainWindow):
@@ -150,20 +154,17 @@ class QDebugPanel(QMainWindow):
         self.dock_functions_list = QDockWidget('Functions', self)
         self.dock_functions_list.setWidget(self.functions_list)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
-        self.dock_functions_list.hide()
 
-        self.debug_central_view = QDebugCentralView(self.app)
+        self.debug_central_view = QDebugCentralView(self)
         self.setCentralWidget(self.debug_central_view)
 
-        self.update_functions()
+    @property
+    def disassembly_panel_range(self):
+        return self.debug_central_view.disassembly_panel_range
 
     @property
-    def current_disassembly_address(self):
-        return self.debug_central_view.current_disassembly_address
-
-    @property
-    def current_memory_address(self):
-        return self.debug_central_view.current_memory_address
+    def memory_panel_range(self):
+        return self.debug_central_view.memory_panel_range
 
     @property
     def memory_panel(self):
@@ -185,11 +186,6 @@ class QDebugPanel(QMainWindow):
             item = QStandardItem(function_name.replace('.', '_'))
             item.setData(function_addr, Qt.UserRole + 2)
             self.functions_list_model.appendRow([item])
-
-        if self.functions_list_model.rowCount() > 0:
-            self.dock_functions_list.show()
-        else:
-            self.dock_functions_list.hide()
 
     def _function_double_clicked(self, model_index):
         item = self.functions_list_model.itemFromIndex(model_index)

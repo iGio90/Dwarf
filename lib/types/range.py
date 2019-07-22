@@ -60,7 +60,7 @@ class Range:
             dwarf_range.user_req_start_offset = address - dwarf_range.base
 
             if cb is not None:
-                cb(dwarf_range)
+                cb()
                 return 0
             else:
                 return dwarf_range
@@ -71,8 +71,7 @@ class Range:
             dwarf_range.init_with_address_async(dwarf, address, cb)
         else:
             dwarf_range.init_with_address(dwarf, address)
-            return dwarf_range
-        return None
+        return dwarf_range
 
     def init_with_address_async(self, dwarf, address, cb=None):
         self.read_memory_thread = AsyncInitialization(self, dwarf, address, cb)
@@ -93,7 +92,7 @@ class Range:
         dwarf._app_window.hide_progress()
 
         if cb is not None:
-            cb(self)
+            cb()
 
     def read_data(self, dwarf):
         try:
