@@ -94,7 +94,6 @@ class DisassembleThread(QThread):
 class DisassemblyView(QAbstractScrollArea):
     onDisassemble = pyqtSignal(object, name='onDisassemble')
     onShowMemoryRequest = pyqtSignal(str, int, name='onShowMemoryRequest')
-    onDisasmViewKeyPressEvent = pyqtSignal(int, int, name='onDisasmViewKeyPressEvent')
 
     def __init__(self, parent=None):
         super(DisassemblyView, self).__init__(parent=parent)
@@ -103,6 +102,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._uppercase_hex = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
 
         self._app_window = parent
+        self.debug_view = None
 
         self.setAutoFillBackground(True)
 
@@ -256,29 +256,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
-    def disassemble_at_address(self, ptr):
-        if self._running_disasm:
-            return 1
-
-        line_index_for_address = self.get_line_for_address(ptr)
-        if line_index_for_address >= 0:
-            self.verticalScrollBar().setValue(line_index_for_address)
-            # TODO: add highlighting line
-            return 0
-
-        self._range = Range.build_or_get(self._app_window.dwarf, ptr, cb=self._on_range_initialized)
-        return 0
-
-    def disassemble(self, dwarf_range, num_instructions=0):
-        if self._running_disasm:
-            return
-
-        self.onDisassemble.emit(dwarf_range)
-
-        if self.run_default_disassembler:
-            self.start_disassemble(dwarf_range, num_instructions=num_instructions)
-
-    def start_disassemble(self, dwarf_range, num_instructions=0):
+    def apply_range(self, dwarf_range, num_instructions=0):
         self._running_disasm = True
         self._app_window.show_progress('disassembling...')
 
@@ -657,27 +635,6 @@ class DisassemblyView(QAbstractScrollArea):
 
         painter.fillRect(drawing_pos_x, 0, 1, self.viewport().height(), self._ctrl_colors['divider'])
 
-    # ************************************************************************
-    # **************************** Handlers **********************************
-    # ************************************************************************
-    def keyPressEvent(self, event):
-        self.onDisasmViewKeyPressEvent.emit(event.key(), event.modifiers)
-        if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
-            if len(self._history) > 1:
-                self._history.pop(len(self._history) - 1)
-                self.disassemble_at_address(self._history[len(self._history) - 1])
-        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
-            self._on_cm_jump_to_address()
-        elif event.key() == Qt.Key_M and event.modifiers() & Qt.ControlModifier:  # ctrl+m
-            self._on_switch_mode()
-        elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
-            pass  # patch instruction
-        elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
-            pass  # patch bytes
-        else:
-            # dispatch those to super
-            super().keyPressEvent(event)
-
     def on_arch_changed(self, context=None):
         if self._app_window.dwarf.arch == 'arm64':
             self.capstone_arch = CS_ARCH_ARM64
@@ -710,11 +667,6 @@ class DisassemblyView(QAbstractScrollArea):
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
 
-    def _on_range_initialized(self, range_):
-        self._reading_memory = False
-        if range_:
-            self.disassemble(range_)
-
     def mouseDoubleClickEvent(self, event):
         loc_x = event.pos().x()
         loc_y = event.pos().y()
@@ -745,7 +697,8 @@ class DisassemblyView(QAbstractScrollArea):
                             new_pos = _instruction.call_address
 
                         if new_pos > 0:
-                            self.disassemble_at_address(new_pos)
+                            if self.debug_view is not None:
+                                self.debug_view.jump_to_address(new_pos, view=1)
                         else:
                             # noone should ever view this
                             print('Error: trying to read from pos 0!')
@@ -777,7 +730,7 @@ class DisassemblyView(QAbstractScrollArea):
 
     def mousePressEvent(self, event):
         # context menu
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.RightButton and self.debug_view is not None:
             if self._running_disasm:
                 return
             self._on_context_menu(event)
@@ -790,7 +743,7 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu = QMenu()
 
-        context_menu.addAction('Jump to address', self._on_cm_jump_to_address)
+        context_menu.addAction('Jump to address', self.debug_view.on_cm_jump_to_address)
 
         # allow mode switch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
@@ -860,8 +813,3 @@ class DisassemblyView(QAbstractScrollArea):
             else:
                 self.capstone_mode = CS_MODE_ARM
             self.disassemble(self._range)
-
-    def _on_cm_jump_to_address(self):
-        ptr, _ = InputDialog.input_pointer(self._app_window)
-        if ptr > 0:
-            self.disassemble_at_address(ptr)

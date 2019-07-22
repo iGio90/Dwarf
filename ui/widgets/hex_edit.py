@@ -1194,17 +1194,15 @@ class HexEditor(QAbstractScrollArea):
         elif key == Qt.Key_End:
             self.caret.position = len(self.data)
 
-        if self.debug_panel is not None:
-            if key == Qt.Key_G and mod & Qt.ControlModifier:  # CTRL + G
-                self.on_cm_jump_to()
-            elif key == Qt.Key_D and mod & Qt.ControlModifier:  # CTRL + D
-                self.on_cm_showasm()
-            elif text.lower() in self._hex_chars:
+        if self.debug_panel is not None and not mod & Qt.ControlModifier:
+            if text.lower() in self._hex_chars:
                 self.modify_data(text.lower())
             elif text.isalpha() or text.isdigit() or text.isspace():
                 if not self._read_only:
                     if self.caret.mode == 'ascii':
                         self.modify_data(text)
+
+        super().keyPressEvent(event)
 
         # repaint
         self._force_repaint()
@@ -1292,7 +1290,7 @@ class HexEditor(QAbstractScrollArea):
         context_menu.addSeparator()
 
         jump_to = context_menu.addAction("&Jump to address")
-        menu_actions[jump_to] = self.on_cm_jump_to
+        menu_actions[jump_to] = self.debug_panel.on_cm_jump_to_address
 
         # write_string = context_menu.addAction("&Write string")
         # menu_actions[write_string] = self.on_cm_writestring
@@ -1314,13 +1312,6 @@ class HexEditor(QAbstractScrollArea):
             if action in menu_actions:
                 if action != copy_addr:
                     menu_actions[action]()
-
-    def on_cm_jump_to(self):
-        """ ContextMenu JumpTo
-        """
-        ptr, input_ = InputDialog.input_pointer(self.app)
-        if ptr > 0:
-            self.debug_panel.jump_to_address(ptr)
 
     def on_cm_bookmark(self):
         """ ContextMenu Create Bookmark

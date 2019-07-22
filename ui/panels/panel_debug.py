@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
 
 from lib import utils
 from lib.types.range import Range
+from ui.dialogs.dialog_input import InputDialog
 from ui.widgets.disasm_view import DisassemblyView
 from ui.widgets.hex_edit import HexEditor
 from ui.widgets.list_view import DwarfListView
@@ -16,9 +17,10 @@ DEBUG_VIEW_DISASSEMBLY = 1
 class QDebugCentralView(QMainWindow):
     def __init__(self, app, flags=None):
         super(QDebugCentralView, self).__init__(flags)
-        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
         self.app = app
+        self.dwarf = app.dwarf
         self.current_address = 0
 
         m_width = self.app.screen_geometry.width()
@@ -28,6 +30,7 @@ class QDebugCentralView(QMainWindow):
         self.memory_panel.dataChanged.connect(self.on_memory_modified)
 
         self.disassembly_panel = DisassemblyView(self.app)
+        self.disassembly_panel.debug_view = self
 
         self.dock_memory_panel = QDockWidget('Memory', self)
         self.dock_memory_panel.setWidget(self.memory_panel)
@@ -63,6 +66,9 @@ class QDebugCentralView(QMainWindow):
         address = utils.parse_ptr(address)
         self.current_address = address
 
+        if self.is_address_in_current_view(address):
+            return
+
         Range.build_or_get(self.app.dwarf, address, cb=lambda x: self.apply_range(x, view=view))
 
     def apply_range(self, dwarf_range, view=DEBUG_VIEW_MEMORY):
@@ -72,7 +78,34 @@ class QDebugCentralView(QMainWindow):
             self.raise_disassembly_panel()
 
         self.memory_panel.apply_range(dwarf_range)
-        self.disassembly_panel.disassemble(dwarf_range)
+        self.disassembly_panel.apply_range(dwarf_range)
+
+    def is_address_in_current_view(self, address):
+        line_index_for_address = self.disassembly_panel.get_line_for_address(address)
+        if line_index_for_address >= 0:
+            self.verticalScrollBar().setValue(line_index_for_address)
+            return True
+        return False
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
+            if len(self._history) > 1:
+                self._history.pop(len(self._history) - 1)
+                self.disassemble_at_address(self._history[len(self._history) - 1])
+        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
+            self.on_cm_jump_to_address()
+        elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
+            pass  # patch instruction
+        elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
+            pass  # patch bytes
+        else:
+            # dispatch those to super
+            super().keyPressEvent(event)
+
+    def on_cm_jump_to_address(self):
+        ptr, _ = InputDialog.input_pointer(self.app)
+        if ptr > 0:
+            self.disassemble_at_address(ptr)
 
 
 class QDebugPanel(QMainWindow):
@@ -132,7 +165,7 @@ class QDebugPanel(QMainWindow):
     def _function_double_clicked(self, model_index):
         item = self.functions_list_model.itemFromIndex(model_index)
         address = item.data(Qt.UserRole + 2)
-        self.disasm_view.disassemble_at_address(address)
+        self.jump_to_address(address, view=DEBUG_VIEW_DISASSEMBLY)
 
     def jump_to_address(self, address, view=DEBUG_VIEW_MEMORY):
         self.debug_central_view.jump_to_address(address, view=view)
