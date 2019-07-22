@@ -356,7 +356,8 @@ class ModulesPanel(QSplitter):
             module_info = ModuleInfo.build_module_info(self._app_window.dwarf, module_name, fill_ied=True)
             self._app_window.dwarf.database.put_module_info(module_address, module_info)
         """
-        self.update_module_ui(module_info)
+        if module_info is not None:
+            self.update_module_ui(module_info)
 
         if not self._sized:
             self.setSizes([100, 100])
