@@ -99,7 +99,7 @@ class DisassemblyView(QAbstractScrollArea):
         self._uppercase_hex = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
 
         self._app_window = parent
-        self.debug_view = None
+        self.debug_panel = None
 
         self.setAutoFillBackground(True)
 
@@ -163,13 +163,6 @@ class DisassemblyView(QAbstractScrollArea):
         self._follow_jumps = True
 
         self.pos = 0
-
-        # hacky way to let plugins hook this and inject menu actions
-        self.menu_extra_menu_hooks = []
-        """
-        this is one more way for allowing plugin hooks and perform additional operation on the range object
-        """
-        self.run_default_disassembler = True
 
     # ************************************************************************
     # **************************** Properties ********************************
@@ -692,8 +685,8 @@ class DisassemblyView(QAbstractScrollArea):
                             new_pos = _instruction.call_address
 
                         if new_pos > 0:
-                            if self.debug_view is not None:
-                                self.debug_view.jump_to_address(new_pos, view=1)
+                            if self.debug_panel is not None:
+                                self.debug_panel.jump_to_address(new_pos, view=1)
                         else:
                             # noone should ever view this
                             print('Error: trying to read from pos 0!')
@@ -725,7 +718,7 @@ class DisassemblyView(QAbstractScrollArea):
 
     def mousePressEvent(self, event):
         # context menu
-        if event.button() == Qt.RightButton and self.debug_view is not None:
+        if event.button() == Qt.RightButton and self.debug_panel is not None:
             if self._running_disasm:
                 return
             self._on_context_menu(event)
@@ -736,8 +729,8 @@ class DisassemblyView(QAbstractScrollArea):
                 self._history.pop(len(self._history) - 1)
                 self.disassemble_at_address(self._history[len(self._history) - 1])
         elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
-            if self.debug_view is not None:
-                self.debug_view.on_cm_jump_to_address(view=1)
+            if self.debug_panel is not None:
+                self.debug_panel.on_cm_jump_to_address(view=1)
         elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
             pass  # patch instruction
         elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
@@ -754,24 +747,25 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu = QMenu()
 
-        context_menu.addAction('Jump to address', lambda: self.debug_view.on_cm_jump_to_address(view=1))
+        def add_default_actions():
+            context_menu.addAction('Jump to address', lambda: self.debug_panel.on_cm_jump_to_address(view=1))
 
-        # allow mode switch arm/thumb
-        if self.capstone_arch == CS_ARCH_ARM:
-            if self.capstone_mode == CS_MODE_THUMB:
-                mode_str = 'ARM'
-            else:
-                mode_str = 'THUMB'
-            entry_str = '&Switch to {0} mode'.format(mode_str)
-            context_menu.addAction(entry_str, self._on_switch_mode)
+            # allow mode switch arm/thumb
+            if self.capstone_arch == CS_ARCH_ARM:
+                if self.capstone_mode == CS_MODE_THUMB:
+                    mode_str = 'ARM'
+                else:
+                    mode_str = 'THUMB'
+                entry_str = '&Switch to {0} mode'.format(mode_str)
+                context_menu.addAction(entry_str, self._on_switch_mode)
 
         if not self._lines:
+            add_default_actions()
+
             # allow jumpto in empty panel
             glbl_pt = self.mapToGlobal(event.pos())
             context_menu.exec_(glbl_pt)
             return
-
-        context_menu.addSeparator()
 
         index = self.pixel_to_line(loc_x, loc_y)
         address = -1
@@ -779,16 +773,11 @@ class DisassemblyView(QAbstractScrollArea):
             if index + self.pos < len(self._lines):
                 if isinstance(self._lines[index + self.pos], Instruction):
                     address = self._lines[index + self.pos].address
-                    context_menu.addAction(
-                        'Copy address', lambda: utils.copy_hex_to_clipboard(address))
+                    addr_str = hex(address)
 
+                    context_menu.addAction(addr_str)
                     context_menu.addSeparator()
 
-                    if self._uppercase_hex:
-                        str_fmt = '0x{0:X}'
-                    else:
-                        str_fmt = '0x{0:x}'
-                    addr_str = str_fmt.format(address)
                     if self._app_window.watchers_panel:
                         if self._app_window.dwarf.is_address_watched(address):
                             context_menu.addAction(
@@ -803,11 +792,12 @@ class DisassemblyView(QAbstractScrollArea):
                         else:
                             context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
 
-        for fcn in self.menu_extra_menu_hooks:
-            try:
-                fcn(context_menu, address)
-            except Exception as e:
-                print('failed to add hook menu: %s' % str(e))
+                    context_menu.addSeparator()
+
+                    context_menu.addAction(
+                        'Copy address', lambda: utils.copy_hex_to_clipboard(address))
+
+        context_menu.addAction("&Jump to address", self.debug_panel.on_cm_jump_to_address)
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
@@ -821,4 +811,4 @@ class DisassemblyView(QAbstractScrollArea):
             else:
                 self.capstone_mode = CS_MODE_ARM
 
-            self.debug_view.jump_to_address(self._current_line)
+            self.debug_panel.jump_to_address(self._current_line)

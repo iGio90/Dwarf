@@ -1261,15 +1261,17 @@ class HexEditor(QAbstractScrollArea):
         """ build and show contextmenu
         """
         context_menu = QMenu()
-        menu_actions = {}
-        copy_addr = None
 
         loc_x = event.pos().x()
         loc_y = event.pos().y()
 
         show = False
+        address = 0
+        addr_str = '0'
+
         if loc_y > self._header_height + self._ver_spacing:
             # cursor in hex
+            index = 0
             if (self._hex_start - self._hor_spacing) < loc_x < self._ascii_start:
                 coord_x, coord_y = self.pixel_to_data(
                     loc_x - self._hex_start, loc_y)
@@ -1290,53 +1292,59 @@ class HexEditor(QAbstractScrollArea):
                 show = True
 
             if show:
-                if self.is_64bit_address:
-                    txt = '0x{0:016X}'.format(index + self.base)
-                else:
-                    txt = '0x{0:08X}'.format(index + self.base)
-                if txt:
-                    context_menu.addAction(txt, lambda: utils.copy_hex_to_clipboard(txt))
-                    context_menu.addSeparator()
+                address = self.base + index
+                addr_str = hex(address)
 
-            asm_view = context_menu.addAction("&Disassemble")
-            menu_actions[asm_view] = self.on_cm_show_asm
-            dump_to_file = context_menu.addAction("&Dump to file")
-            menu_actions[dump_to_file] = self.on_cm_dump_to_file
-            context_menu.addSeparator()
+                context_menu.addAction(addr_str)
+                context_menu.addSeparator()
 
-        hook_address = context_menu.addAction("&Hook address")
-        menu_actions[hook_address] = self.on_cm_hookaddress
+                context_menu.addAction("&Disassemble", self.on_cm_show_asm)
+                context_menu.addAction("&Dump to file", self.on_cm_dump_to_file)
+                context_menu.addSeparator()
 
-        bookmark = context_menu.addAction("&Create bookmark")
-        menu_actions[bookmark] = self.on_cm_bookmark
+                context_menu.addAction("Follow &pointer", self.on_cm_follow_pointer)
+                context_menu.addSeparator()
 
-        follow_pointer = context_menu.addAction("Follow &pointer")
-        menu_actions[follow_pointer] = self.on_cm_follow_pointer
-        context_menu.addSeparator()
+                if self.app.watchers_panel:
+                    if self.app.dwarf.is_address_watched(address):
+                        context_menu.addAction(
+                            'Remove watcher', lambda: self.app.watchers_panel.remove_address(addr_str))
+                    else:
+                        context_menu.addAction(
+                            'Watch address', lambda: self.app.watchers_panel.do_addwatcher_dlg(addr_str))
+                if self.app.hooks_panel:
+                    if address in self.app.dwarf.hooks:
+                        context_menu.addAction(
+                            'Remove hook', lambda: self.app.dwarf.dwarf_api('deleteHook', addr_str))
+                    else:
+                        context_menu.addAction('Hook address', lambda: self.app.dwarf.hook_native(addr_str))
 
-        jump_to = context_menu.addAction("&Jump to address")
-        menu_actions[jump_to] = self.debug_panel.on_cm_jump_to_address
+                context_menu.addSeparator()
 
         # write_string = context_menu.addAction("&Write string")
         # menu_actions[write_string] = self.on_cm_writestring
 
         # hide copy section when nothing selected
         if self.selection.start != self.selection.end:
-            copy_content = context_menu.addAction("&Copy")
-            menu_actions[copy_content] = self.on_cm_copy
+            context_menu.addAction("&Copy", self.on_cm_copy)
 
             copy_as_content = QMenu("Copy as", context_menu)
             copy_as_content.addAction('C Source')
             copy_as_content.addAction('Python Source')
             copy_as_content.addAction('JS Source')
             copy_as_content.triggered.connect(self.on_cm_copy_as)
+
             context_menu.addMenu(copy_as_content)
 
+            context_menu.addSeparator()
+
+        if show:
+            context_menu.addAction('&Copy address', lambda: utils.copy_hex_to_clipboard(hex(self.base + index)))
+
+        context_menu.addAction("&Jump to address", self.debug_panel.on_cm_jump_to_address)
+
         if not context_menu.isEmpty():
-            action = context_menu.exec_(QCursor.pos())
-            if action in menu_actions:
-                if action != copy_addr:
-                    menu_actions[action]()
+            context_menu.exec_(QCursor.pos())
 
     def on_cm_bookmark(self):
         """ ContextMenu Create Bookmark
@@ -1356,7 +1364,7 @@ class HexEditor(QAbstractScrollArea):
         else:
             self.display_error('Unable to read pointer at location.')
 
-    def on_cm_hookaddress(self):
+    def on_cm_hook_address(self):
         """ ContextMenu HookAddress
         """
         ptr = self.base + self.caret.position

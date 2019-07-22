@@ -32,7 +32,7 @@ class QDebugCentralView(QMainWindow):
         self.memory_panel.dataChanged.connect(self.on_memory_modified)
 
         self.disassembly_panel = DisassemblyView(self.app)
-        self.disassembly_panel.debug_view = self
+        self.disassembly_panel.debug_panel = self
 
         self.dock_memory_panel = QDockWidget('Memory', self)
         self.dock_memory_panel.setWidget(self.memory_panel)
@@ -68,8 +68,6 @@ class QDebugCentralView(QMainWindow):
         address = utils.parse_ptr(address)
 
         if view == DEBUG_VIEW_MEMORY:
-            self.current_memory_address = address
-
             if self.current_memory_address > 0:
                 if self.is_address_in_view(view, address):
                     return
@@ -105,11 +103,13 @@ class QDebugCentralView(QMainWindow):
         if view == DEBUG_VIEW_MEMORY:
             ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
             if ptr_exists:
+                self.current_memory_address = address
                 self.memory_panel.caret.position = address - self.memory_panel.base
                 return True
         elif view == DEBUG_VIEW_DISASSEMBLY:
             line_index_for_address = self.disassembly_panel.get_line_for_address(address)
             if line_index_for_address >= 0:
+                self.current_disassembly_address = address
                 self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
                 return True
         return False
