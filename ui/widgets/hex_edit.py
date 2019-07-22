@@ -28,7 +28,6 @@ from PyQt5.QtWidgets import (QAbstractScrollArea, QMenu)
 
 from ui.dialogs.dialog_input import InputDialog
 from lib import utils
-from lib.types.range import Range
 
 
 # pylint: disable=too-many-lines
@@ -1356,17 +1355,7 @@ class HexEditor(QAbstractScrollArea):
             self.display_error('Invalid length provided')
             _len = 0
         if _len > 0:
-            def dump(dwarf_range):
-                if self.caret.position + _len > dwarf_range.tail:
-                    self.display_error('length is higher than range size')
-                else:
-                    data = dwarf_range.data[self.caret.position:self.caret.position + _len]
-                    if data is not None:
-                        from PyQt5.QtWidgets import QFileDialog
-                        _file = QFileDialog.getSaveFileName(self.app)
-                        with open(_file[0], 'wb') as f:
-                            f.write(data)
-            Range.build_or_get(self.app.dwarf, self.caret.position, cb=dump)
+            self.debug_panel.dump_data(self.caret.position, _len)
 
     def on_cm_copy(self):
         """ copy as plain ascii/hex

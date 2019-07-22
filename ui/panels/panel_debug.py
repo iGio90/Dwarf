@@ -107,6 +107,19 @@ class QDebugCentralView(QMainWindow):
         if ptr > 0:
             self.disassemble_at_address(ptr)
 
+    def dump_data(self, address, _len):
+        def _dump(dwarf_range):
+            if address + _len > dwarf_range.tail:
+                self.display_error('length is higher than range size')
+            else:
+                data = dwarf_range.data[address:address + _len]
+                if data is not None:
+                    from PyQt5.QtWidgets import QFileDialog
+                    _file = QFileDialog.getSaveFileName(self.app)
+                    with open(_file[0], 'wb') as f:
+                        f.write(data)
+        Range.build_or_get(self.app.dwarf, address, cb=_dump)
+
 
 class QDebugPanel(QMainWindow):
     def __init__(self, app, flags=None):

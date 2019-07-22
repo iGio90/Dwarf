@@ -23,13 +23,10 @@ from PyQt5.QtWidgets import *
 from capstone import *
 from capstone.x86_const import *
 from capstone.arm64_const import *
-from lib.types.range import Range
 from lib import utils
 from lib.types.instruction import Instruction
 
 from lib.prefs import Prefs
-from ui.dialogs.dialog_input import InputDialog
-from ui.widgets.list_view import DwarfListView
 
 
 class DisassembleThread(QThread):
