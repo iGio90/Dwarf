@@ -13,26 +13,33 @@ DEBUG_VIEW_MEMORY = 0
 DEBUG_VIEW_DISASSEMBLY = 1
 
 
+class QDebugViewWrapper(QMainWindow):
+    def __init__(self, widget, flags=None):
+        super(QDebugViewWrapper, self).__init__(flags)
+        self.setCentralWidget(widget)
+
+
 class QDebugCentralView(QMainWindow):
     def __init__(self, app, flags=None):
         super(QDebugCentralView, self).__init__(flags)
 
         self.app = app
+        self.setDockNestingEnabled(True)
         self.current_address = 0
 
         m_width = self.app.screen_geometry.width()
 
         self.memory_panel = HexEditor(self.app)
         self.memory_panel.debug_panel = self
-        self.memory_panel.dataChanged.connect(self._on_memory_modified)
+        self.memory_panel.dataChanged.connect(self.on_memory_modified)
 
         self.disassembly_panel = DisassemblyView(self.app)
 
         self.dock_memory_panel = QDockWidget('Memory', self)
-        self.dock_memory_panel.setWidget(self.memory_panel)
+        self.dock_memory_panel.setWidget(QDebugViewWrapper(self.memory_panel))
 
         self.dock_disassembly_panel = QDockWidget('Disassembly', self)
-        self.dock_disassembly_panel.setWidget(self.disassembly_panel)
+        self.dock_disassembly_panel.setWidget(QDebugViewWrapper(self.disassembly_panel))
 
         if m_width >= 1920:
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
@@ -42,11 +49,7 @@ class QDebugCentralView(QMainWindow):
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_disassembly_panel)
             self.tabifyDockWidget(self.dock_memory_panel, self.dock_disassembly_panel)
 
-        dummy_widget = QWidget()
-        dummy_widget.setMaximumWidth(5)
-        self.setCentralWidget(dummy_widget)
-
-    def _on_memory_modified(self, pos, length):
+    def on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos
         data = self.memory_panel.data[pos:pos + length]
         data = [data[0]]  # todo: strange js part
@@ -83,6 +86,7 @@ class QDebugPanel(QMainWindow):
         super(QDebugPanel, self).__init__(flags)
 
         self.app = app
+        self.setDockNestingEnabled(True)
 
         self.functions_list = DwarfListView()
         self.functions_list_model = QStandardItemModel(0, 1)

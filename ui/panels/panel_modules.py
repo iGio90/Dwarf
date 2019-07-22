@@ -234,7 +234,6 @@ class ModulesPanel(QSplitter):
         if 'symbols' in module and module['symbols']:
             module_info.apply_symbols(module['symbols'])
         module_info._updated_details = True
-        self._app_window.dwarf.database.put_module_info(base.text(), module_info)
 
     def update_modules(self):
         """ DwarfApiCall updateModules

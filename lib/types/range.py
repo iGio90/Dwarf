@@ -118,7 +118,6 @@ class Range:
         self.module_info = dwarf.database.get_module_info(_range['base'])
         if self.module_info is None:
             self.module_info = ModuleInfo.build_module_info(dwarf, self.base, fill_ied=True)
-            dwarf.database.put_module_info(self.module_info.base, self.module_info)
         elif not self.module_info.have_details:
             self.module_info.update_details(dwarf)
 

@@ -58,6 +58,8 @@ class ModuleInfo:
                 if fill_ied:
                     module_info.update_details(dwarf)
 
+                dwarf.database.put_module_info(module_base_info['base'], module_info)
+
                 return module_info
         return None
 
