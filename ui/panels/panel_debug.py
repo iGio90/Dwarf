@@ -69,11 +69,17 @@ class QDebugCentralView(QMainWindow):
 
         if view == DEBUG_VIEW_MEMORY:
             self.current_memory_address = address
+
+            if self.current_memory_address > 0:
+                if self.is_address_in_view(view, address):
+                    return
+
         elif view == DEBUG_VIEW_DISASSEMBLY:
             self.current_disassembly_address = address
 
-        if self.is_address_in_view(view, address):
-            return
+            if self.current_disassembly_address > 0:
+                if self.is_address_in_view(view, address):
+                    return
 
         Range.build_or_get(self.app.dwarf, address, cb=lambda x: self.apply_range(address, x, view=view))
 
