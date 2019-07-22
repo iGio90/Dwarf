@@ -799,9 +799,6 @@ class AppWindow(QMainWindow):
         self.q_settings.setValue('dwarf_ui_state', self.saveGeometry())
         self.q_settings.setValue('dwarf_ui_window', self.saveState())
 
-        if self.debug_panel is not None:
-            self.debug_panel.onCloseEvent()
-
         if self.dwarf:
             try:
                 self.dwarf.detach()

@@ -201,7 +201,7 @@ class QDebugPanel(QMainWindow):
     def memory_panel(self):
         return self.debug_central_view.memory_panel
 
-    def onCloseEvent(self):
+    def closeEvent(self, event):
         self.q_settings.setValue('dwarf_debug_ui_state', self.saveGeometry())
         self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
 
