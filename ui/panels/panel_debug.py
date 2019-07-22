@@ -83,7 +83,7 @@ class QDebugCentralView(QMainWindow):
     def is_address_in_current_view(self, address):
         line_index_for_address = self.disassembly_panel.get_line_for_address(address)
         if line_index_for_address >= 0:
-            self.verticalScrollBar().setValue(line_index_for_address)
+            self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
             return True
         return False
 
