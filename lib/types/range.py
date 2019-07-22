@@ -127,3 +127,7 @@ class Range:
         org_bytes = bytes.fromhex(_bytes)
         data_bt[offset:offset+len(org_bytes)] = org_bytes
         self.data = bytes(data_bt)
+
+    def set_start_offset(self, offset):
+        self.user_req_start_offset = offset
+        self.user_req_start_address = self.base + offset

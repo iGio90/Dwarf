@@ -1376,7 +1376,7 @@ class HexEditor(QAbstractScrollArea):
     def on_cm_dump_to_file(self):
         """ ContextMenu DumpToFile
         """
-        accept, _input = InputDialog.input(hint='Length of bytes to dump', placeholder='1024')
+        accept, _input = InputDialog.input(hint='length of bytes to dump', placeholder='1024')
 
         if not accept:
             return
