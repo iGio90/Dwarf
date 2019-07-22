@@ -1373,7 +1373,8 @@ class HexEditor(QAbstractScrollArea):
     def on_cm_show_asm(self):
         """ ContextMenu Disassemble
         """
-        self.debug_panel.jump_to_address(self.debug_panel.current_memory_address, view=1)
+        ptr = self.base + self.caret.position
+        self.debug_panel.jump_to_address(ptr, 1)
 
     def on_cm_dump_to_file(self):
         """ ContextMenu DumpToFile

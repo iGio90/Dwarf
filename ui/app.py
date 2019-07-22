@@ -41,10 +41,9 @@ class AppWindow(QMainWindow):
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
     onSystemUIElementRemoved = pyqtSignal(str, name='onSystemUIElementRemoved')
 
-    def __init__(self, dwarf_args, screen_geometry, flags=None):
+    def __init__(self, dwarf_args, flags=None):
         super(AppWindow, self).__init__(flags)
 
-        self.screen_geometry = screen_geometry
         self.dwarf_args = dwarf_args
 
         self.session_manager = SessionManager(self)

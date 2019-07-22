@@ -23,7 +23,7 @@ class QDebugCentralView(QMainWindow):
         self.app = self.debug_panel.app
         self.dwarf = self.app.dwarf
 
-        m_width = self.app.screen_geometry.width()
+        m_width = 1920
 
         self.memory_panel_range = None
         self.disassembly_panel_range = None
@@ -69,7 +69,7 @@ class QDebugCentralView(QMainWindow):
         address = utils.parse_ptr(address)
 
         if view == DEBUG_VIEW_MEMORY:
-            if self.current_memory_address > 0:
+            if self.memory_panel_range is not None:
                 if self.is_address_in_view(view, address):
                     return
 

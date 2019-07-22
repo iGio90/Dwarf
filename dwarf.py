@@ -234,9 +234,7 @@ def run_dwarf():
         except Exception:  # pylint: disable=broad-except
             pass
 
-    geometry = qapp.desktop().screenGeometry()
-
-    app_window = AppWindow(args, geometry)
+    app_window = AppWindow(args)
     app_window.setWindowIcon(_icon)
     app_window.onRestart.connect(_on_restart)
 
