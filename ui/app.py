@@ -56,6 +56,7 @@ class AppWindow(QMainWindow):
         ]
 
         self._is_newer_dwarf = False
+        self.q_settings = QSettings("dwarf_window_pos.ini", QSettings.IniFormat)
 
         self.menu = self.menuBar()
         self.view_menu = None
@@ -237,15 +238,18 @@ class AppWindow(QMainWindow):
             'Search',
             lambda: self.show_main_tab('search'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
-        self.panels_menu.addAction(
-            'Disassembly',
-            lambda: self.show_main_tab('disassembly'),
-            shortcut=QKeySequence(Qt.CTRL + Qt.Key_F4))
+
         self.view_menu.addMenu(self.panels_menu)
+
+        self.debug_view_menu = self.view_menu.addMenu('Debug')
+
         self.view_menu.addSeparator()
+
         self.view_menu.addAction('Hide all', self._hide_all_widgets, shortcut=QKeySequence(Qt.CTRL + Qt.Key_F1))
         self.view_menu.addAction('Show all', self._show_all_widgets, shortcut=QKeySequence(Qt.CTRL + Qt.Key_F2))
+
         self.view_menu.addSeparator()
+
         self.menu.addMenu(self.view_menu)
 
         if self.dwarf_args.debug_script:
@@ -714,11 +718,10 @@ class AppWindow(QMainWindow):
         self.dwarf.onSetData.connect(self._on_set_data)
 
         self.session_manager.start_session(self.dwarf_args)
-        q_settings = QSettings("dwarf_window_pos.ini", QSettings.IniFormat)
-        ui_state = q_settings.value('dwarf_ui_state')
+        ui_state = self.q_settings.value('dwarf_ui_state')
         if ui_state:
             self.restoreGeometry(ui_state)
-        window_state = q_settings.value('dwarf_ui_window', self.saveState())
+        window_state = self.q_settings.value('dwarf_ui_window', self.saveState())
         if window_state:
             self.restoreState(window_state)
 

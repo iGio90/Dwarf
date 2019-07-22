@@ -91,6 +91,8 @@ class QDebugCentralView(QMainWindow):
         if view == DEBUG_VIEW_MEMORY:
             self.memory_panel.set_data(
                 self.memory_panel_range.data, base=self.memory_panel_range.base, focus_address=address)
+            if not self.dock_memory_panel.isVisible():
+                self.dock_memory_panel.show()
             self.raise_memory_panel()
 
             if self.disassembly_panel_range is None:
@@ -98,6 +100,8 @@ class QDebugCentralView(QMainWindow):
                 self.disassembly_panel.apply_range(self.disassembly_panel_range)
         elif view == DEBUG_VIEW_DISASSEMBLY:
             self.disassembly_panel.apply_range(self.disassembly_panel_range)
+            if not self.dock_disassembly_panel.isVisible():
+                self.dock_disassembly_panel.show()
             self.raise_disassembly_panel()
 
             if self.memory_panel_range is None:
@@ -156,6 +160,7 @@ class QDebugPanel(QMainWindow):
         self.dock_functions_list = QDockWidget('Functions', self)
         self.dock_functions_list.setWidget(self.functions_list)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
+        self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
 
         self.debug_central_view = QDebugCentralView(self)
         self.setCentralWidget(self.debug_central_view)
