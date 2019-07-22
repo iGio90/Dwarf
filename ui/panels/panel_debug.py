@@ -63,7 +63,6 @@ class QDebugPanel(QMainWindow):
             self.splitDockWidget(self.dock_memory_panel, self.dock_disassembly_panel, Qt.Horizontal)
         else:
             self.tabifyDockWidget(self.dock_memory_panel, self.dock_disassembly_panel)
-        self.resizeDocks([self.dock_functions_list], [1], Qt.Horizontal)
 
         self.restoreUiState()
 
