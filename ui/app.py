@@ -948,12 +948,12 @@ class AppWindow(QMainWindow):
 
                 if reason == 2:
                     # native on load
-                    if self.debug_panel.current_address == 0:
+                    if self.debug_panel.current_memory_address == 0:
                         base = context['moduleBase']
                         self.jump_to_address(base)
                 else:
                     if 'pc' in context['context']:
-                        if self.debug_panel.current_address == 0 or manual:
+                        if self.debug_panel.current_disassembly_address == 0 or manual:
                             self.jump_to_address(context['context']['pc']['value'], view=1)
 
         if 'backtrace' in context:

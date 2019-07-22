@@ -1011,11 +1011,33 @@ class HexEditor(QAbstractScrollArea):
 
         return js_code
 
-    def set_data(self, data):
+    def set_data(self, data, base=0, focus_address=None):
         """ Set new Data
         """
         self.data = data
+        self.base = base
         self.adjust()
+
+        if focus_address is not None:
+            self.setFocus()
+            self.caret.position = int(ceil((focus_address - self.base)))
+            self.adjust()
+            # scroll position in middle when jump to or something
+            line = self.index_to_line(self.caret.position)
+            scroll_y = self.verticalScrollBar().value()
+            if line >= scroll_y:
+                self.verticalScrollBar().setValue(line
+                                                  - (self.visible_lines() / 2))
+            if line < scroll_y:
+                self.verticalScrollBar().setValue(line
+                                                  + (self.visible_lines() / 2))
+
+            if self._hover_lines:
+                self._hovered_line = int(ceil(self.visible_lines() / 2))
+
+            # add a temp attention highlight
+            self.add_highlight(HighLight('attention', focus_address, 1))
+
         self.viewChanged.emit()
 
     # ************************************************************************
@@ -1193,15 +1215,19 @@ class HexEditor(QAbstractScrollArea):
         elif key == Qt.Key_End:
             self.caret.position = len(self.data)
 
-        if self.debug_panel is not None and not mod & Qt.ControlModifier:
-            if text.lower() in self._hex_chars:
-                self.modify_data(text.lower())
-            elif text.isalpha() or text.isdigit() or text.isspace():
-                if not self._read_only:
-                    if self.caret.mode == 'ascii':
-                        self.modify_data(text)
-
-        super().keyPressEvent(event)
+        if self.debug_panel is not None:
+            if key == Qt.Key_G and mod & Qt.ControlModifier:  # CTRL + G
+                self.debug_panel.on_cm_jump_to_address()
+            elif key == Qt.Key_D and mod & Qt.ControlModifier:  # CTRL + D
+                self.on_cm_show_asm()
+            if not mod & Qt.ControlModifier:
+                if text.lower() in self._hex_chars:
+                    if self.range is not None and not self._read_only and text:
+                        self.modify_data(text.lower())
+                elif text.isalpha() or text.isdigit() or text.isspace():
+                    if self.range is not None and not self._read_only:
+                        if self.caret.mode == 'ascii':
+                            self.modify_data(text)
 
         # repaint
         self._force_repaint()
@@ -1339,7 +1365,7 @@ class HexEditor(QAbstractScrollArea):
     def on_cm_show_asm(self):
         """ ContextMenu Disassemble
         """
-        self.debug_panel.raise_disassembly_panel()
+        self.debug_panel.jump_to_address(self.debug_panel.current_memory_address, view=1)
 
     def on_cm_dump_to_file(self):
         """ ContextMenu DumpToFile
@@ -1926,33 +1952,7 @@ class HexEditor(QAbstractScrollArea):
         self._addr_width_changed()
 
     def apply_range(self, dwarf_range):
-        self.adjust()
         self.set_data(dwarf_range.data)
-        self.base = dwarf_range.base
-
-        # todo: dont show view from here
-        # if not self.isVisible():
-        # self.app.get_session_ui().show_memory_panel()
-
-        self.setFocus()
-        self.caret.position = int(ceil((dwarf_range.user_req_start_address - self.base)))
-        self.adjust()
-        # scroll position in middle when jump to or something
-        line = self.index_to_line(self.caret.position)
-        scroll_y = self.verticalScrollBar().value()
-        if line >= scroll_y:
-            self.verticalScrollBar().setValue(line
-                                              - (self.visible_lines() / 2))
-        if line < scroll_y:
-            self.verticalScrollBar().setValue(line
-                                              + (self.visible_lines() / 2))
-
-        if self._hover_lines:
-            self._hovered_line = int(ceil(self.visible_lines() / 2))
-
-        # add a temp attention highlight
-        self.add_highlight(HighLight('attention', dwarf_range.user_req_start_address, 1))
-        self._force_repaint(True)
         return 0
 
     def on_script_destroyed(self):

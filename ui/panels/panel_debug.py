@@ -21,7 +21,9 @@ class QDebugCentralView(QMainWindow):
 
         self.app = app
         self.dwarf = app.dwarf
-        self.current_address = 0
+
+        self.current_memory_address = 0
+        self.current_disassembly_address = 0
 
         m_width = self.app.screen_geometry.width()
 
@@ -64,48 +66,52 @@ class QDebugCentralView(QMainWindow):
 
     def jump_to_address(self, address, view=DEBUG_VIEW_MEMORY):
         address = utils.parse_ptr(address)
-        self.current_address = address
 
-        if self.is_address_in_current_view(address):
+        if view == DEBUG_VIEW_MEMORY:
+            self.current_memory_address = address
+        elif view == DEBUG_VIEW_DISASSEMBLY:
+            self.current_disassembly_address = address
+
+        if self.is_address_in_view(view, address):
             return
 
-        Range.build_or_get(self.app.dwarf, address, cb=lambda x: self.apply_range(x, view=view))
+        Range.build_or_get(self.app.dwarf, address, cb=lambda x: self.apply_range(address, x, view=view))
 
-    def apply_range(self, dwarf_range, view=DEBUG_VIEW_MEMORY):
+    def apply_range(self, address, dwarf_range, view=DEBUG_VIEW_MEMORY):
         if view == DEBUG_VIEW_MEMORY:
+            self.current_memory_address = address
+            self.memory_panel.set_data(dwarf_range.data, base=dwarf_range.base, focus_address=address)
             self.raise_memory_panel()
+
+            if self.current_disassembly_address == 0:
+                self.current_disassembly_address = address
+                self.disassembly_panel.apply_range(dwarf_range)
         elif view == DEBUG_VIEW_DISASSEMBLY:
+            self.current_disassembly_address = address
+            self.disassembly_panel.apply_range(dwarf_range)
             self.raise_disassembly_panel()
 
-        self.memory_panel.apply_range(dwarf_range)
-        self.disassembly_panel.apply_range(dwarf_range)
+            if self.current_memory_address == 0:
+                self.current_memory_address = address
+                self.memory_panel.set_data(dwarf_range.data, base=dwarf_range.base, focus_address=address)
 
-    def is_address_in_current_view(self, address):
-        line_index_for_address = self.disassembly_panel.get_line_for_address(address)
-        if line_index_for_address >= 0:
-            self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
-            return True
+    def is_address_in_view(self, view, address):
+        if view == DEBUG_VIEW_MEMORY:
+            ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
+            if ptr_exists:
+                self.memory_panel.caret.position = address - self.memory_panel.base
+                return True
+        elif view == DEBUG_VIEW_DISASSEMBLY:
+            line_index_for_address = self.disassembly_panel.get_line_for_address(address)
+            if line_index_for_address >= 0:
+                self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
+                return True
         return False
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
-            if len(self._history) > 1:
-                self._history.pop(len(self._history) - 1)
-                self.disassemble_at_address(self._history[len(self._history) - 1])
-        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
-            self.on_cm_jump_to_address()
-        elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
-            pass  # patch instruction
-        elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
-            pass  # patch bytes
-        else:
-            # dispatch those to super
-            super().keyPressEvent(event)
-
-    def on_cm_jump_to_address(self):
+    def on_cm_jump_to_address(self, view=DEBUG_VIEW_MEMORY):
         ptr, _ = InputDialog.input_pointer(self.app)
         if ptr > 0:
-            self.disassemble_at_address(ptr)
+            self.jump_to_address(ptr, view=view)
 
     def dump_data(self, address, _len):
         def _dump(dwarf_range):
@@ -146,8 +152,12 @@ class QDebugPanel(QMainWindow):
         self.update_functions()
 
     @property
-    def current_address(self):
-        return self.debug_central_view.current_address
+    def current_disassembly_address(self):
+        return self.debug_central_view.current_disassembly_address
+
+    @property
+    def current_memory_address(self):
+        return self.debug_central_view.current_memory_address
 
     @property
     def memory_panel(self):

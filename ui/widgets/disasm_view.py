@@ -123,7 +123,6 @@ class DisassemblyView(QAbstractScrollArea):
 
         self._history = []
         self._lines = []
-        self._range = None
         self._longest_bytes = 0
         self._longest_mnemonic = 0
 
@@ -274,10 +273,9 @@ class DisassemblyView(QAbstractScrollArea):
             print('[DisasmView] failed to initialize capstone with %d, %d' % (self.capstone_arch, self.capstone_mode))
             return
 
-        self._range = dwarf_range
         self.disasm_thread = DisassembleThread(self._app_window)
         self.disasm_thread._num_instructions = num_instructions
-        self.disasm_thread._range = self._range
+        self.disasm_thread._range = dwarf_range
         self.disasm_thread._dwarf = self._app_window.dwarf
         self.disasm_thread._capstone = capstone
         self.disasm_thread.onFinished.connect(self._on_disasm_finished)
@@ -732,6 +730,22 @@ class DisassemblyView(QAbstractScrollArea):
                 return
             self._on_context_menu(event)
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
+            if len(self._history) > 1:
+                self._history.pop(len(self._history) - 1)
+                self.disassemble_at_address(self._history[len(self._history) - 1])
+        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
+            if self.debug_view is not None:
+                self.debug_view.on_cm_jump_to_address(view=1)
+        elif event.key() == Qt.Key_P and event.modifiers() & Qt.ControlModifier:  # ctrl+p
+            pass  # patch instruction
+        elif event.key() == Qt.Key_B and event.modifiers() & Qt.ControlModifier:  # ctrl+b
+            pass  # patch bytes
+        else:
+            # dispatch those to super
+            super().keyPressEvent(event)
+
     def _on_context_menu(self, event):
         """ build and show contextmenu
         """
@@ -740,7 +754,7 @@ class DisassemblyView(QAbstractScrollArea):
 
         context_menu = QMenu()
 
-        context_menu.addAction('Jump to address', self.debug_view.on_cm_jump_to_address)
+        context_menu.addAction('Jump to address', lambda: self.debug_view.on_cm_jump_to_address(view=1))
 
         # allow mode switch arm/thumb
         if self.capstone_arch == CS_ARCH_ARM:
@@ -799,9 +813,6 @@ class DisassemblyView(QAbstractScrollArea):
         context_menu.exec_(glbl_pt)
 
     def _on_switch_mode(self):
-        if self._range is None:
-            return
-
         if self._app_window.dwarf.arch == 'arm':
             self._lines.clear()
 
@@ -809,4 +820,5 @@ class DisassemblyView(QAbstractScrollArea):
                 self.capstone_mode = CS_MODE_THUMB
             else:
                 self.capstone_mode = CS_MODE_ARM
-            self.disassemble(self._range)
+
+            self.debug_view.jump_to_address(self._current_line)
