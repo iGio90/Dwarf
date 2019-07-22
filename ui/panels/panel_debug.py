@@ -1,3 +1,4 @@
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
@@ -23,10 +24,11 @@ class QDebugCentralView(QMainWindow):
         self.app = self.debug_panel.app
         self.dwarf = self.app.dwarf
 
-        m_width = 1920
-
         self.memory_panel_range = None
         self.disassembly_panel_range = None
+
+        sizeObject = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        print(" Screen size : "  + str(sizeObject.height()) + "x"  + str(sizeObject.width()))
 
         self.memory_panel = HexEditor(self.app)
         self.memory_panel.debug_panel = self
@@ -41,7 +43,7 @@ class QDebugCentralView(QMainWindow):
         self.dock_disassembly_panel = QDockWidget('Disassembly', self)
         self.dock_disassembly_panel.setWidget(self.disassembly_panel)
 
-        if m_width >= 1920:
+        if False:
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
             self.addDockWidget(Qt.RightDockWidgetArea, self.dock_disassembly_panel)
         else:
