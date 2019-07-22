@@ -55,17 +55,14 @@ class Range:
         hex_address = hex(address)
         dwarf_range = dwarf.database.get_range_info(hex_address)
         if dwarf_range is not None:
-
             dwarf_range.user_req_start_address = address
             dwarf_range.user_req_start_offset = address - dwarf_range.base
-
-            if cb is not None:
-                cb()
-                return dwarf_range
-            else:
-                return dwarf_range
+            cb(dwarf_range)
+            return dwarf_range
 
         dwarf_range = Range()
+        dwarf.database.put_range_info(dwarf_range)
+
         if cb is not None:
             dwarf._app_window.show_progress('reading at %s' % hex_address)
             dwarf_range.init_with_address_async(dwarf, address, cb)
@@ -92,7 +89,7 @@ class Range:
         dwarf._app_window.hide_progress()
 
         if cb is not None:
-            cb()
+            cb(self)
 
     def read_data(self, dwarf):
         try:
@@ -111,7 +108,6 @@ class Range:
         self.permissions = _range['protection']
 
         self.data = dwarf.read_memory(self.base, self.size)
-        dwarf.database.put_range_info(self)
 
         # get module info for this range
         self.module_info = dwarf.database.get_module_info(_range['base'])

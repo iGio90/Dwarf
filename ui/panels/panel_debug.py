@@ -65,6 +65,9 @@ class QDebugPanel(QMainWindow):
             self.tabifyDockWidget(self.dock_memory_panel, self.dock_disassembly_panel)
         self.resizeDocks([self.dock_functions_list], [1], Qt.Horizontal)
 
+        self.restoreUiState()
+
+    def restoreUiState(self):
         ui_state = self.q_settings.value('dwarf_debug_ui_state')
         if ui_state:
             self.restoreGeometry(ui_state)
@@ -75,6 +78,17 @@ class QDebugPanel(QMainWindow):
     def closeEvent(self, event):
         self.q_settings.setValue('dwarf_debug_ui_state', self.saveGeometry())
         self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
+
+    def showEvent(self, event):
+        main_width = self.size().width()
+        new_widths = []
+        new_widths.append(main_width * .1)
+        new_widths.append(main_width * .4)
+        new_widths.append(main_width * .5)
+        self.resizeDocks([
+            self.dock_functions_list, self.dock_memory_panel, self.dock_disassembly_panel
+        ], new_widths, Qt.Horizontal)
+        return super().showEvent(event)
 
     def update_functions(self, functions_list=None):
         if functions_list is None:
@@ -126,14 +140,14 @@ class QDebugPanel(QMainWindow):
                     return
 
             self.memory_panel_range = \
-                Range.build_or_get(self.app.dwarf, address, cb=lambda: self._apply_range(address, view=view))
+                Range.build_or_get(self.app.dwarf, address, cb=lambda x: self._apply_range(address, view=view))
         elif view == DEBUG_VIEW_DISASSEMBLY:
             if self.disassembly_panel_range is not None:
                 if self.is_address_in_view(view, address):
                     return
 
             self.disassembly_panel_range = \
-                Range.build_or_get(self.app.dwarf, address, cb=lambda: self._apply_range(address, view=view))
+                Range.build_or_get(self.app.dwarf, address, cb=lambda x: self._apply_range(address, view=view))
 
     def _apply_range(self, address, view=DEBUG_VIEW_MEMORY):
         self.update_functions()
@@ -180,7 +194,7 @@ class QDebugPanel(QMainWindow):
             self.jump_to_address(ptr, view=view)
 
     def dump_data(self, address, _len):
-        def _dump():
+        def _dump(dwarf_range):
             if address + _len > dwarf_range.tail:
                 self.display_error('length is higher than range size')
             else:
@@ -190,4 +204,4 @@ class QDebugPanel(QMainWindow):
                     _file = QFileDialog.getSaveFileName(self.app)
                     with open(_file[0], 'wb') as f:
                         f.write(data)
-        dwarf_range = Range.build_or_get(self.app.dwarf, address, cb=_dump)
+        Range.build_or_get(self.app.dwarf, address, cb=_dump)
