@@ -13,18 +13,12 @@ DEBUG_VIEW_MEMORY = 0
 DEBUG_VIEW_DISASSEMBLY = 1
 
 
-class QDebugViewWrapper(QMainWindow):
-    def __init__(self, widget, flags=None):
-        super(QDebugViewWrapper, self).__init__(flags)
-        self.setCentralWidget(widget)
-
-
 class QDebugCentralView(QMainWindow):
     def __init__(self, app, flags=None):
         super(QDebugCentralView, self).__init__(flags)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
 
         self.app = app
-        self.setDockNestingEnabled(True)
         self.current_address = 0
 
         m_width = self.app.screen_geometry.width()
@@ -36,10 +30,10 @@ class QDebugCentralView(QMainWindow):
         self.disassembly_panel = DisassemblyView(self.app)
 
         self.dock_memory_panel = QDockWidget('Memory', self)
-        self.dock_memory_panel.setWidget(QDebugViewWrapper(self.memory_panel))
+        self.dock_memory_panel.setWidget(self.memory_panel)
 
         self.dock_disassembly_panel = QDockWidget('Disassembly', self)
-        self.dock_disassembly_panel.setWidget(QDebugViewWrapper(self.disassembly_panel))
+        self.dock_disassembly_panel.setWidget(self.disassembly_panel)
 
         if m_width >= 1920:
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
@@ -84,9 +78,9 @@ class QDebugCentralView(QMainWindow):
 class QDebugPanel(QMainWindow):
     def __init__(self, app, flags=None):
         super(QDebugPanel, self).__init__(flags)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
 
         self.app = app
-        self.setDockNestingEnabled(True)
 
         self.functions_list = DwarfListView()
         self.functions_list_model = QStandardItemModel(0, 1)
