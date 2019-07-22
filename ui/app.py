@@ -41,9 +41,10 @@ class AppWindow(QMainWindow):
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
     onSystemUIElementRemoved = pyqtSignal(str, name='onSystemUIElementRemoved')
 
-    def __init__(self, dwarf_args, flags=None):
+    def __init__(self, dwarf_args, screen_geometry, flags=None):
         super(AppWindow, self).__init__(flags)
 
+        self.screen_geometry = screen_geometry
         self.dwarf_args = dwarf_args
 
         self.session_manager = SessionManager(self)
@@ -52,7 +53,7 @@ class AppWindow(QMainWindow):
         self.session_manager.sessionClosed.connect(self.session_closed)
 
         self._tab_order = [
-            'memory', 'modules', 'ranges', 'jvm-inspector', 'jvm-debugger'
+            'debug', 'modules', 'ranges', 'jvm-inspector', 'jvm-debugger'
         ]
 
         self._is_newer_dwarf = False
@@ -155,22 +156,22 @@ class AppWindow(QMainWindow):
         self.threads_dock = None
         # panels
         self.asm_panel = None
+        self.backtrace_panel = None
+        self.bookmarks_panel = None
         self.console_panel = None
         self.context_panel = None
-        self.backtrace_panel = None
+        self.debug_panel = None
         self.contexts_list_panel = None
         self.data_panel = None
         self.ftrace_panel = None
         self.hooks_panel = None
-        self.bookmarks_panel = None
-        self.smali_panel = None
         self.java_inspector_panel = None
         self.java_explorer_panel = None
         self.java_trace_panel = None
-        self.memory_panel = None
         self.modules_panel = None
         self.ranges_panel = None
         self.search_panel = None
+        self.smali_panel = None
         self.watchers_panel = None
         self.welcome_window = None
 
@@ -390,16 +391,12 @@ class AppWindow(QMainWindow):
 
         index = 0
         name = name.join(name.split()).lower()
-        if name == 'memory':
-            index = self.main_tabs.indexOf(self.memory_panel)
-        elif name == 'ranges':
+        if name == 'ranges':
             index = self.main_tabs.indexOf(self.ranges_panel)
         elif name == 'search':
             index = self.main_tabs.indexOf(self.search_panel)
         elif name == 'modules':
             index = self.main_tabs.indexOf(self.modules_panel)
-        elif name == 'disassembly':
-            index = self.main_tabs.indexOf(self.asm_panel)
         elif name == 'data':
             index = self.main_tabs.indexOf(self.data_panel)
         elif name == 'java-trace':
@@ -413,11 +410,10 @@ class AppWindow(QMainWindow):
 
         self.main_tabs.setCurrentIndex(index)
 
-    def jump_to_address(self, ptr, show_panel=True):
-        if self.memory_panel is not None:
-            if show_panel:
-                self.show_main_tab('memory')
-            self.memory_panel.read_memory(ptr)
+    def jump_to_address(self, ptr, view=0, show_panel=True):
+        if show_panel:
+            self.show_main_tab('debug')
+        self.debug_panel.jump_to_address(ptr, view=view)
 
     @pyqtSlot(name='mainMenuGitHub')
     def _menu_github(self):
@@ -501,15 +497,11 @@ class AppWindow(QMainWindow):
             self.addDockWidget(Qt.RightDockWidgetArea, self.registers_dock)
             self.view_menu.addAction(self.registers_dock.toggleViewAction())
             elem_wiget = self.context_panel
-        elif elem == 'memory':
-            from ui.panels.panel_memory import MemoryPanel
-            self.memory_panel = MemoryPanel(self)
-            self.memory_panel.onShowDisassembly.connect(
-                self._disassemble_range)
-            self.memory_panel.dataChanged.connect(self._on_memory_modified)
-            self.memory_panel.statusChanged.connect(self.set_status_text)
-            self.main_tabs.addTab(self.memory_panel, 'Memory')
-            elem_wiget = self.memory_panel
+        elif elem == 'debug':
+            from ui.panels.panel_debug import QDebugPanel
+            self.debug_panel = QDebugPanel(self)
+            self.main_tabs.addTab(self.debug_panel, 'Debug')
+            elem_wiget = self.debug_panel
         elif elem == 'jvm-debugger':
             from ui.panels.panel_java_explorer import JavaExplorerPanel
             self.java_explorer_panel = JavaExplorerPanel(self)
@@ -595,12 +587,6 @@ class AppWindow(QMainWindow):
             self.data_panel = DataPanel(self)
             self.main_tabs.addTab(self.data_panel, 'Data')
             elem_wiget = self.data_panel
-        elif elem == 'disassembly':
-            from ui.widgets.disasm_view import DisassemblyPanel
-            self.asm_panel = DisassemblyPanel(self)
-            self.asm_panel.disasm_view.onShowMemoryRequest.connect(self._on_disasm_showmem)
-            self.main_tabs.addTab(self.asm_panel, 'Disassembly')
-            elem_wiget = self.asm_panel
         elif elem == 'java-trace':
             from ui.panels.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
@@ -669,10 +655,6 @@ class AppWindow(QMainWindow):
     @property
     def java_explorer(self):
         return self.java_explorer_panel
-
-    @property
-    def memory(self):
-        return self.memory_panel
 
     @property
     def modules(self):
@@ -770,9 +752,9 @@ class AppWindow(QMainWindow):
                 self.context_panel = None
                 self.removeDockWidget(self.registers_dock)
                 self.registers_dock = None
-            elif elem == 'memory':
-                self.memory_panel.close()
-                self.memory_panel = None
+            elif elem == 'debug':
+                self.debug_panel.close()
+                self.debug_panel = None
                 self.main_tabs.removeTab(0)
                 # self.main_tabs
             elif elem == 'jvm-debugger':
@@ -843,24 +825,14 @@ class AppWindow(QMainWindow):
                 self.smali_panel.set_file('.tmp/smali/' + file_path + '.smali')
                 self.show_main_tab('smali')
         else:
-            self.memory_panel.read_memory(ptr=ptr)
-            self.show_main_tab('memory')
-
-    def _on_disasm_showmem(self, ptr, length):
-        """ Address in Disasm was clicked
-            adds temphighlight for bytes from current instruction
-        """
-        self.memory_panel.read_memory(ptr)
-        self.memory_panel.add_highlight(
-            HighLight('attention', utils.parse_ptr(ptr), length))
-        self.show_main_tab('memory')
+            self.jump_to_address(ptr)
 
     def _on_watcher_added(self, ptr):
         """ Watcher Entry was added
         """
         try:
             # set highlight
-            self.memory_panel.add_highlight(
+            self.debug_panel.memory_panel.add_highlight(
                 HighLight('watcher', ptr, self.dwarf.pointer_size))
         except HighlightExistsError:
             pass
@@ -869,22 +841,20 @@ class AppWindow(QMainWindow):
         """ Watcher Entry was removed
             remove highlight too
         """
-        self.memory_panel.remove_highlight(ptr)
+        self.debug_panel.memory_panel.remove_highlight(ptr)
 
     def _on_module_dblclicked(self, data):
         """ Module in ModulePanel was doubleclicked
         """
         addr, size = data
         addr = utils.parse_ptr(addr)
-        self.memory_panel.read_memory(ptr=addr)
-        self.show_main_tab('Memory')
+        self.jump_to_address(addr)
 
     def _on_modulefunc_dblclicked(self, ptr):
         """ Function in ModulePanel was doubleclicked
         """
         ptr = utils.parse_ptr(ptr)
-        self.memory_panel.read_memory(ptr=ptr)
-        self.show_main_tab('Memory')
+        self.jump_to_address(ptr)
 
     def _on_dumpmodule(self, data):
         """ DumpBinary MenuItem in ModulePanel was selected
@@ -908,8 +878,7 @@ class AppWindow(QMainWindow):
         """ Range in RangesPanel was doubleclicked
         """
         ptr = utils.parse_ptr(ptr)
-        self.memory_panel.read_memory(ptr=ptr)
-        self.show_main_tab('Memory')
+        self.jump_to_address(ptr)
 
     # dwarf handlers
     def _log_js_output(self, output):
@@ -955,9 +924,12 @@ class AppWindow(QMainWindow):
         # update current context tid
         # this should be on top as any further api from js needs to be executed on that thread
         reason = context['reason']
-        is_initial_hook = reason == -1
-        if manual or (self.dwarf.context_tid and not is_initial_hook):
+        is_initial_setup = reason == -1
+        if manual or (self.dwarf.context_tid and not is_initial_setup):
             self.dwarf.context_tid = context['tid']
+
+        if is_initial_setup:
+            self.debug_panel.on_context_setup()
 
         if 'context' in context:
             if not manual:
@@ -976,16 +948,13 @@ class AppWindow(QMainWindow):
 
                 if reason == 2:
                     # native on load
-                    if self.memory_panel.range is None:
+                    if self.debug_panel.current_address == 0:
                         base = context['moduleBase']
-                        self.show_main_tab('memory')
-                        self.memory_panel.read_memory(base)
+                        self.jump_to_address(base)
                 else:
                     if 'pc' in context['context']:
-                        if 'disassembly' not in self._ui_elems or manual:
-                            from lib.types.range import Range
-                            _range = Range.build_or_get(
-                                self.dwarf, context['context']['pc']['value'], cb=self._disassemble_range)
+                        if self.debug_panel.current_address == 0 or manual:
+                            self.jump_to_address(context['context']['pc']['value'], view=1)
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
@@ -995,14 +964,14 @@ class AppWindow(QMainWindow):
             # set highlight
             ptr = hook.get_ptr()
             ptr = utils.parse_ptr(ptr)
-            self.memory_panel.add_highlight(
+            self.debug_panel.memory_panel.add_highlight(
                 HighLight('hook', ptr, self.dwarf.pointer_size))
         except HighlightExistsError:
             pass
 
     def _on_hook_removed(self, ptr):
         ptr = utils.parse_ptr(ptr)
-        self.memory_panel.remove_highlight(ptr)
+        self.debug_panel.memory_panel.remove_highlight(ptr)
 
     def _on_addmodule_hook(self, data):
         ptr, name = data
@@ -1074,16 +1043,6 @@ class AppWindow(QMainWindow):
     def _on_script_loaded(self):
         # restore the loaded session if any
         self.session_manager.restore_session()
-
-    def _on_memory_modified(self, pos, length):
-        data_pos = self.memory_panel.base + pos
-        data = self.memory_panel.data[pos:pos + length]
-        data = [data[0]]  # todo: strange js part
-
-        if self.dwarf.dwarf_api('writeBytes', [data_pos, data]):
-            pass
-        else:
-            utils.show_message_box('Failed to write Memory')
 
     def on_add_bookmark(self, ptr):
         """

@@ -253,9 +253,8 @@ class HexEditor(QAbstractScrollArea):
     viewChanged = pyqtSignal(name='viewChanged')
     dataChanged = pyqtSignal(int, int, name='dataChanged')
     statusChanged = pyqtSignal(str, name='statusChanged')
-    onShowDisassembly = pyqtSignal(Range, name='onShowDisassembly')
 
-    def __init__(self, app):
+    def __init__(self, app, debug_panel=None):
         super(HexEditor, self).__init__()
 
         self.setObjectName(self.__class__.__name__)
@@ -289,8 +288,7 @@ class HexEditor(QAbstractScrollArea):
 
         self.app = app
 
-        self.have_context_menu = True
-        self.range = None
+        self.debug_panel = debug_panel
         self.data = None
 
         self.base = 0
@@ -1049,7 +1047,7 @@ class HexEditor(QAbstractScrollArea):
         """
 
         # context menu
-        if event.button() == Qt.RightButton and self.have_context_menu:
+        if event.button() == Qt.RightButton and self.debug_panel is not None:
             self._on_context_menu(event)
             return
 
@@ -1195,18 +1193,18 @@ class HexEditor(QAbstractScrollArea):
             self.caret.position = 0
         elif key == Qt.Key_End:
             self.caret.position = len(self.data)
-        elif key == Qt.Key_G and mod & Qt.ControlModifier:  # CTRL + G
-            if self.range is not None:
-                self.on_cm_jumpto()
-        elif key == Qt.Key_D and mod & Qt.ControlModifier:  # CTRL + D
-            self.on_cm_showasm()
-        elif text.lower() in self._hex_chars:
-            if self.range is not None and not self._read_only and text:
+
+        if self.debug_panel is not None:
+            if key == Qt.Key_G and mod & Qt.ControlModifier:  # CTRL + G
+                self.on_cm_jump_to()
+            elif key == Qt.Key_D and mod & Qt.ControlModifier:  # CTRL + D
+                self.on_cm_showasm()
+            elif text.lower() in self._hex_chars:
                 self.modify_data(text.lower())
-        elif text.isalpha() or text.isdigit() or text.isspace():
-            if self.range is not None and not self._read_only:
-                if self.caret.mode == 'ascii':
-                    self.modify_data(text)
+            elif text.isalpha() or text.isdigit() or text.isspace():
+                if not self._read_only:
+                    if self.caret.mode == 'ascii':
+                        self.modify_data(text)
 
         # repaint
         self._force_repaint()
@@ -1246,58 +1244,55 @@ class HexEditor(QAbstractScrollArea):
         loc_x = event.pos().x()
         loc_y = event.pos().y()
 
-        if self.range is not None:
-            if self.range:
-                show = False
-                if loc_y > self._header_height + self._ver_spacing:
-                    # cursor in hex
-                    if (self._hex_start - self._hor_spacing) < loc_x < self._ascii_start:
-                        coord_x, coord_y = self.pixel_to_data(
-                            loc_x - self._hex_start, loc_y)
-                        line = int(ceil(coord_x - (coord_x / 3)))
-                        index = int(
-                            floor(self.pos + line / 2 +
-                                  coord_y * self.bytes_per_line))
-                        show = True
-                    elif (self._ascii_start + self._ascii_width) > loc_x > self._ascii_start:
-                        # elif loc_x > self._ascii_start and
-                        # loc_x < (self._ascii_start + self._ascii_width):
-                        coord_x, coord_y = self.pixel_to_data(
-                            loc_x - self._ascii_start, loc_y)
-                        line = int(ceil(coord_x % self.bytes_per_line))
-                        index = int(
-                            floor(self.pos + line +
-                                  coord_y * self.bytes_per_line))
-                        show = True
+        show = False
+        if loc_y > self._header_height + self._ver_spacing:
+            # cursor in hex
+            if (self._hex_start - self._hor_spacing) < loc_x < self._ascii_start:
+                coord_x, coord_y = self.pixel_to_data(
+                    loc_x - self._hex_start, loc_y)
+                line = int(ceil(coord_x - (coord_x / 3)))
+                index = int(
+                    floor(self.pos + line / 2 +
+                          coord_y * self.bytes_per_line))
+                show = True
+            elif (self._ascii_start + self._ascii_width) > loc_x > self._ascii_start:
+                # elif loc_x > self._ascii_start and
+                # loc_x < (self._ascii_start + self._ascii_width):
+                coord_x, coord_y = self.pixel_to_data(
+                    loc_x - self._ascii_start, loc_y)
+                line = int(ceil(coord_x % self.bytes_per_line))
+                index = int(
+                    floor(self.pos + line +
+                          coord_y * self.bytes_per_line))
+                show = True
 
-                if show:
-                    if self.is_64bit_address:
-                        txt = '0x{0:016X}'.format(index + self.base)
-                    else:
-                        txt = '0x{0:08X}'.format(index + self.base)
-                    if txt:
-                        context_menu.addAction(txt, lambda: utils.copy_hex_to_clipboard(txt))
-                        context_menu.addSeparator()
+            if show:
+                if self.is_64bit_address:
+                    txt = '0x{0:016X}'.format(index + self.base)
+                else:
+                    txt = '0x{0:08X}'.format(index + self.base)
+                if txt:
+                    context_menu.addAction(txt, lambda: utils.copy_hex_to_clipboard(txt))
+                    context_menu.addSeparator()
 
             asm_view = context_menu.addAction("&Disassemble")
-            menu_actions[asm_view] = self.on_cm_showasm
+            menu_actions[asm_view] = self.on_cm_show_asm
             dump_to_file = context_menu.addAction("&Dump to file")
             menu_actions[dump_to_file] = self.on_cm_dump_to_file
             context_menu.addSeparator()
 
-        if self.range is not None:
-            hook_address = context_menu.addAction("&Hook address")
-            menu_actions[hook_address] = self.on_cm_hookaddress
+        hook_address = context_menu.addAction("&Hook address")
+        menu_actions[hook_address] = self.on_cm_hookaddress
 
-            bookmark = context_menu.addAction("&Create bookmark")
-            menu_actions[bookmark] = self.on_cm_bookmark
+        bookmark = context_menu.addAction("&Create bookmark")
+        menu_actions[bookmark] = self.on_cm_bookmark
 
-            follow_pointer = context_menu.addAction("Follow &pointer")
-            menu_actions[follow_pointer] = self.on_cm_followpointer
-            context_menu.addSeparator()
+        follow_pointer = context_menu.addAction("Follow &pointer")
+        menu_actions[follow_pointer] = self.on_cm_follow_pointer
+        context_menu.addSeparator()
 
         jump_to = context_menu.addAction("&Jump to address")
-        menu_actions[jump_to] = self.on_cm_jumpto
+        menu_actions[jump_to] = self.on_cm_jump_to
 
         # write_string = context_menu.addAction("&Write string")
         # menu_actions[write_string] = self.on_cm_writestring
@@ -1311,20 +1306,8 @@ class HexEditor(QAbstractScrollArea):
             copy_as_content.addAction('C Source')
             copy_as_content.addAction('Python Source')
             copy_as_content.addAction('JS Source')
-            copy_as_content.triggered.connect(self.on_cm_copyas)
+            copy_as_content.triggered.connect(self.on_cm_copy_as)
             context_menu.addMenu(copy_as_content)
-
-        """if self.range is not None:
-            paste_content = context_menu.addAction("&Paste")
-            menu_actions[paste_content] = self.on_cm_paste
-
-            # todo: make expanding menu with options
-            paste_as_content = context_menu.addAction("Paste &from")
-            menu_actions[paste_as_content] = self.on_cm_pastefrom
-
-            context_menu.addSeparator()
-            fill_content = context_menu.addAction("Fill")  # todo: needs key
-            menu_actions[fill_content] = self.on_cm_fill"""
 
         if not context_menu.isEmpty():
             action = context_menu.exec_(QCursor.pos())
@@ -1332,20 +1315,20 @@ class HexEditor(QAbstractScrollArea):
                 if action != copy_addr:
                     menu_actions[action]()
 
-    def on_cm_jumpto(self):
+    def on_cm_jump_to(self):
         """ ContextMenu JumpTo
         """
         ptr, input_ = InputDialog.input_pointer(self.app)
         if ptr > 0:
-            self.read_memory(ptr)
+            self.debug_panel.jump_to_address(ptr)
 
     def on_cm_bookmark(self):
-        """ ContextMenu JumpTo
+        """ ContextMenu Create Bookmark
         """
         ptr = self.base + self.caret.position
         self.app.on_add_bookmark(ptr)
 
-    def on_cm_followpointer(self):
+    def on_cm_follow_pointer(self):
         """ ContextMenu FollowPointer
         """
         if self.data is None:
@@ -1353,7 +1336,7 @@ class HexEditor(QAbstractScrollArea):
 
         ptr = self.read_pointer()
         if ptr is not None:
-            self.read_memory(ptr)
+            self.debug_panel.jump_to_address(ptr)
         else:
             self.display_error('Unable to read pointer at location.')
 
@@ -1363,15 +1346,10 @@ class HexEditor(QAbstractScrollArea):
         ptr = self.base + self.caret.position
         self.app.dwarf.hook_native(input_=hex(ptr))
 
-    def on_cm_showasm(self):
+    def on_cm_show_asm(self):
         """ ContextMenu Disassemble
         """
-        if self.range is None:
-            return
-
-        self.range.set_start_offset(self.caret.position)
-        self.onShowDisassembly.emit(self.range)
-        # self.app.get_session_ui().disasm(_range=self.range)
+        self.debug_panel.raise_disassembly_panel()
 
     def on_cm_dump_to_file(self):
         """ ContextMenu DumpToFile
@@ -1387,15 +1365,17 @@ class HexEditor(QAbstractScrollArea):
             self.display_error('Invalid length provided')
             _len = 0
         if _len > 0:
-            if self.caret.position + _len > self.range.tail:
-                self.display_error('Length is higher than range size')
-            else:
-                data = self.range.data[self.caret.position:self.caret.position + _len]
-                if data is not None:
-                    from PyQt5.QtWidgets import QFileDialog
-                    _file = QFileDialog.getSaveFileName(self.app)
-                    with open(_file[0], 'wb') as f:
-                        f.write(data)
+            def dump(dwarf_range):
+                if self.caret.position + _len > dwarf_range.tail:
+                    self.display_error('length is higher than range size')
+                else:
+                    data = dwarf_range.data[self.caret.position:self.caret.position + _len]
+                    if data is not None:
+                        from PyQt5.QtWidgets import QFileDialog
+                        _file = QFileDialog.getSaveFileName(self.app)
+                        with open(_file[0], 'wb') as f:
+                            f.write(data)
+            Range.build_or_get(self.app.dwarf, self.caret.position, cb=dump)
 
     def on_cm_copy(self):
         """ copy as plain ascii/hex
@@ -1414,7 +1394,7 @@ class HexEditor(QAbstractScrollArea):
             data_str = "".join(['{:02x} '.format(x) for x in data])
             pyperclip.copy(data_str)
 
-    def on_cm_copyas(self, menu):
+    def on_cm_copy_as(self, menu):
         """ copy as formatted
         """
         start = self.selection.start
@@ -1437,7 +1417,7 @@ class HexEditor(QAbstractScrollArea):
         """ paste plain ascii or hex
         """
 
-    def on_cm_pastefrom(self):
+    def on_cm_paste_from(self):
         """ paste from formated
         """
 
@@ -1957,33 +1937,25 @@ class HexEditor(QAbstractScrollArea):
         self._hex_start = old_hex_start
         self._ascii_start = old_ascii_start
 
-    # ! ************************************************************************
-    # ! **************************** deprecated ********************************
-    # ! ************************************************************************
-    from lib.utils import deprecated
-    @deprecated
-    def read_memory(self, ptr):
-        # todo: remove it is mostly copy&pasta from old code
+    def on_context_setup(self):
         if '64' in self.app.dwarf.arch:
             self.is_64bit_address = True
         else:
             self.is_64bit_address = False
 
         self._addr_width_changed()
-        Range.build_or_get(self.app.dwarf, ptr, cb=self.apply_range)
 
     def apply_range(self, dwarf_range):
-        self.range = dwarf_range
         self.adjust()
-        self.set_data(self.range.data)
-        self.base = self.range.base
+        self.set_data(dwarf_range.data)
+        self.base = dwarf_range.base
 
         # todo: dont show view from here
         # if not self.isVisible():
         # self.app.get_session_ui().show_memory_panel()
 
         self.setFocus()
-        self.caret.position = int(ceil((self.range.user_req_start_address - self.base)))
+        self.caret.position = int(ceil((dwarf_range.user_req_start_address - self.base)))
         self.adjust()
         # scroll position in middle when jump to or something
         line = self.index_to_line(self.caret.position)
@@ -1999,14 +1971,12 @@ class HexEditor(QAbstractScrollArea):
             self._hovered_line = int(ceil(self.visible_lines() / 2))
 
         # add a temp attention highlight
-        self.add_highlight(HighLight('attention', self.range.user_req_start_address, 1))
+        self.add_highlight(HighLight('attention', dwarf_range.user_req_start_address, 1))
         self._force_repaint(True)
         return 0
 
     def on_script_destroyed(self):
-        self.range = None
         self.data = None
 
     def clear_panel(self):
-        self.range = None
         self.data = None

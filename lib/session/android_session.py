@@ -88,13 +88,13 @@ class AndroidSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory', 'console',
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'debug', 'console',
                 'watchers', 'modules', 'jvm-inspector', 'jvm-debugger',
                 'ranges', 'backtrace']
 
     @property
     def non_closable(self):
-        return ['memory', 'ranges', 'modules', 'jvm-inspector', 'jvm-debugger']
+        return ['debug', 'ranges', 'modules', 'jvm-inspector', 'jvm-debugger']
 
     @property
     def session_type(self):

@@ -174,7 +174,8 @@ def run_dwarf():
     args = process_args()
 
     did_first_run = _prefs.get('did_first_run', False)
-    if False: # did_first_run:
+    if False:
+        # did_first_run:
         _prefs.put('did_first_run', True)
         SetupDialog.showDialog(_prefs)
 
@@ -233,7 +234,9 @@ def run_dwarf():
         except Exception:  # pylint: disable=broad-except
             pass
 
-    app_window = AppWindow(args)
+    geometry = qapp.desktop().screenGeometry()
+
+    app_window = AppWindow(args, geometry)
     app_window.setWindowIcon(_icon)
     app_window.onRestart.connect(_on_restart)
 

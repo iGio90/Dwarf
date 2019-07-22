@@ -76,5 +76,8 @@ class Session(QObject):
         except frida.InvalidOperationError:
             # device detached
             pass
+        except frida.PermissionDeniedError:
+            # no permissions to kill the target
+            pass
         self.onStopped.emit()
         self.onClosed.emit()

@@ -39,12 +39,12 @@ class IosSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'memory',
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'debug',
                 'console', 'watchers', 'backtrace']
 
     @property
     def non_closable(self):
-        return ['memory', 'ranges', 'modules']
+        return ['debug', 'ranges', 'modules']
 
 
     @property
