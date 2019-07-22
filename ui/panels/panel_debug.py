@@ -27,8 +27,8 @@ class QDebugCentralView(QMainWindow):
         self.memory_panel_range = None
         self.disassembly_panel_range = None
 
-        sizeObject = QtWidgets.QDesktopWidget().screenGeometry(-1)
-        print(" Screen size : "  + str(sizeObject.height()) + "x"  + str(sizeObject.width()))
+        screen_size = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        m_width = screen_size.width()
 
         self.memory_panel = HexEditor(self.app)
         self.memory_panel.debug_panel = self
@@ -43,7 +43,7 @@ class QDebugCentralView(QMainWindow):
         self.dock_disassembly_panel = QDockWidget('Disassembly', self)
         self.dock_disassembly_panel.setWidget(self.disassembly_panel)
 
-        if False:
+        if m_width >= 1920:
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
             self.addDockWidget(Qt.RightDockWidgetArea, self.dock_disassembly_panel)
         else:
