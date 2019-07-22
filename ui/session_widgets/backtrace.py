@@ -25,8 +25,6 @@ from lib import utils
 
 class BacktraceWidget(DwarfListView):
 
-    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
-
     def __init__(self, parent=None):
         super(BacktraceWidget, self).__init__(parent=parent)
         self._app_window = parent
@@ -40,9 +38,9 @@ class BacktraceWidget(DwarfListView):
 
         self.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.doubleClicked.connect(self._item_doubleclicked)
+        self.doubleClicked.connect(self._item_double_clicked)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._on_contextmenu)
+        self.customContextMenuRequested.connect(self._on_context_menu)
         self._mode = 'native'
 
     def set_backtrace(self, bt):
@@ -94,13 +92,13 @@ class BacktraceWidget(DwarfListView):
 
                 self._model.appendRow([QStandardItem(p[0]), QStandardItem(p[1].replace(')', ''))])
 
-    def _item_doubleclicked(self, model_index):
+    def _item_double_clicked(self, model_index):
         row = self._model.itemFromIndex(model_index).row()
         if row != -1:
             if self._mode == 'native':
-                self.onShowMemoryRequest.emit(self._model.item(row, 0).text())
+                self._app_window.jump_to_address(self._model.item(row, 0).text(), view=1)
 
-    def _on_contextmenu(self, pos):
+    def _on_context_menu(self, pos):
         index = self.indexAt(pos).row()
         glbl_pt = self.mapToGlobal(pos)
         context_menu = QMenu(self)

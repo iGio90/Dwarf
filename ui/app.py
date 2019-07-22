@@ -472,8 +472,6 @@ class AppWindow(QMainWindow):
             from ui.session_widgets.hooks import HooksWidget
             self.hooks_dwiget = QDockWidget('Breakpoints', self)
             self.hooks_panel = HooksWidget(self)
-            self.hooks_panel.onShowMemoryRequest.connect(
-                self._on_watcher_clicked)
             self.hooks_panel.onHookRemoved.connect(self._on_hook_removed)
             self.hooks_dwiget.setWidget(self.hooks_panel)
             self.hooks_dwiget.setObjectName('HooksWidget')
@@ -484,8 +482,6 @@ class AppWindow(QMainWindow):
             from ui.session_widgets.bookmarks import BookmarksWidget
             self.bookmarks_dwiget = QDockWidget('Boomarks', self)
             self.bookmarks_panel = BookmarksWidget(self)
-            self.bookmarks_panel.onShowMemoryRequest.connect(
-                self._on_watcher_clicked)
             self.bookmarks_dwiget.setWidget(self.bookmarks_panel)
             self.bookmarks_dwiget.setObjectName('BookmarksWidget')
             self.addDockWidget(Qt.LeftDockWidgetArea, self.bookmarks_dwiget)
@@ -538,8 +534,6 @@ class AppWindow(QMainWindow):
             self.backtrace_panel = BacktraceWidget(self)
             self.backtrace_dock.setWidget(self.backtrace_panel)
             self.backtrace_dock.setObjectName('BacktraceWidget')
-            self.backtrace_panel.onShowMemoryRequest.connect(
-                self._on_watcher_clicked)
             self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
             self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
             elem_wiget = self.backtrace_panel
@@ -581,8 +575,6 @@ class AppWindow(QMainWindow):
         elif elem == 'search':
             from ui.panels.panel_search import SearchPanel
             self.search_panel = SearchPanel(self)
-            self.search_panel.onShowMemoryRequest.connect(
-                self._on_watcher_clicked)
             self.main_tabs.addTab(self.search_panel, 'Search')
             elem_wiget = self.search_panel
         elif elem == 'data':

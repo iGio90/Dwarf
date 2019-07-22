@@ -62,8 +62,6 @@ class SearchPanel(QWidget):
     """ SearchPanel
     """
 
-    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
-
     def __init__(self, parent=None, show_progress_dlg=False):
         super(SearchPanel, self).__init__(parent=parent)
         self._app_window = parent
@@ -183,7 +181,7 @@ class SearchPanel(QWidget):
         self._result_model = QStandardItemModel(0, 1)
         self._result_model.setHeaderData(0, Qt.Horizontal, 'Address')
         self.results.setModel(self._result_model)
-        self.results.doubleClicked.connect(self._on_dblclicked)
+        self.results.doubleClicked.connect(self._on_double_clicked)
 
     def _on_setranges(self, ranges):
         """ Fills Rangelist with Data
@@ -273,10 +271,10 @@ class SearchPanel(QWidget):
         for i in range(self._ranges_model.rowCount()):
             self._ranges_model.item(i, 0).setCheckState(Qt.Unchecked)
 
-    def _on_dblclicked(self, model_index):
+    def _on_double_clicked(self, model_index):
         item = self._result_model.itemFromIndex(model_index)
         if item:
-            self.onShowMemoryRequest.emit(
+            self._app_window.jump_to_address(
                 self._result_model.item(model_index.row(), 0).text())
 
     def _on_click_search(self):

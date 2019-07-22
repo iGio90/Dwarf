@@ -36,7 +36,6 @@ class HooksWidget(QWidget):
             onHookRemoved(str) - ptr
     """
 
-    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
     onHookChanged = pyqtSignal(str, name='onHookChanged')
     onHookRemoved = pyqtSignal(str, name='onHookRemoved')
 
@@ -61,7 +60,7 @@ class HooksWidget(QWidget):
         self._app_window.dwarf.onDeleteHook.connect(self._on_hook_deleted)
 
         self._hooks_list = DwarfListView()
-        self._hooks_list.doubleClicked.connect(self._on_dblclicked)
+        self._hooks_list.doubleClicked.connect(self._on_double_clicked)
         self._hooks_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._hooks_list.customContextMenuRequested.connect(
             self._on_context_menu)
@@ -240,15 +239,14 @@ class HooksWidget(QWidget):
         if len(items) > 0:
             pass
 
-    def _on_dblclicked(self, model_index):
+    def _on_double_clicked(self, model_index):
         item = self._hooks_model.itemFromIndex(model_index)
         if model_index.column() == 3 and item.text() == 'ƒ':
             self._on_modify_logic(model_index.row())
         elif model_index.column() == 4 and item.text() == 'ƒ':
             self._on_modify_condition(model_index.row())
         else:
-            self.onShowMemoryRequest.emit(
-                self._hooks_model.item(model_index.row(), 0).text())
+            self._app_window.jump_to_address(self._hooks_model.item(model_index.row(), 0).text(), view=1)
 
     def _on_context_menu(self, pos):
         context_menu = QMenu(self)

@@ -29,8 +29,6 @@ from lib import utils
 
 class BookmarksWidget(QWidget):
 
-    onShowMemoryRequest = pyqtSignal(str, name='onShowMemoryRequest')
-
     def __init__(self, parent=None):  # pylint: disable=too-many-statements
         super(BookmarksWidget, self).__init__(parent=parent)
 
@@ -43,7 +41,7 @@ class BookmarksWidget(QWidget):
         self.bookmarks = {}
 
         self._bookmarks_list = DwarfListView()
-        self._bookmarks_list.doubleClicked.connect(self._on_dblclicked)
+        self._bookmarks_list.doubleClicked.connect(self._on_double_clicked)
         self._bookmarks_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._bookmarks_list.customContextMenuRequested.connect(
             self._on_contextmenu)
@@ -124,12 +122,12 @@ class BookmarksWidget(QWidget):
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
-    def _on_dblclicked(self, index):
+    def _on_double_clicked(self, index):
         index = self._bookmarks_list.selectionModel().currentIndex().row()
         if index != -1:
             addr = self._bookmarks_model.item(index, 0).text()
             if addr:
-                self.onShowMemoryRequest.emit(addr)
+                self._app_window.jump_to_address(addr)
 
     def _on_contextmenu(self, pos):
         context_menu = QMenu(self)
