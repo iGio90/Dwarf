@@ -804,9 +804,11 @@ class AppWindow(QMainWindow):
             detaches dwarf
         """
         # save windowstuff
-        q_settings = QSettings("dwarf_window_pos.ini", QSettings.IniFormat)
-        q_settings.setValue('dwarf_ui_state', self.saveGeometry())
-        q_settings.setValue('dwarf_ui_window', self.saveState())
+        self.q_settings.setValue('dwarf_ui_state', self.saveGeometry())
+        self.q_settings.setValue('dwarf_ui_window', self.saveState())
+
+        if self.debug_panel is not None:
+            self.debug_panel.onCloseEvent()
 
         if self.dwarf:
             try:

@@ -1222,10 +1222,10 @@ class HexEditor(QAbstractScrollArea):
                 self.on_cm_show_asm()
             if not mod & Qt.ControlModifier:
                 if text.lower() in self._hex_chars:
-                    if self.range is not None and not self._read_only and text:
+                    if not self._read_only and text:
                         self.modify_data(text.lower())
                 elif text.isalpha() or text.isdigit() or text.isspace():
-                    if self.range is not None and not self._read_only:
+                    if not self._read_only:
                         if self.caret.mode == 'ascii':
                             self.modify_data(text)
 

@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
 
@@ -23,6 +23,7 @@ class QDebugCentralView(QMainWindow):
         self.debug_panel = debug_panel
         self.app = self.debug_panel.app
         self.dwarf = self.app.dwarf
+        self.q_settings = self.app.q_settings
 
         self.memory_panel_range = None
         self.disassembly_panel_range = None
@@ -39,9 +40,11 @@ class QDebugCentralView(QMainWindow):
 
         self.dock_memory_panel = QDockWidget('Memory', self)
         self.dock_memory_panel.setWidget(self.memory_panel)
+        self.dock_memory_panel.setObjectName('memory')
 
         self.dock_disassembly_panel = QDockWidget('Disassembly', self)
         self.dock_disassembly_panel.setWidget(self.disassembly_panel)
+        self.dock_disassembly_panel.setObjectName('disassembly')
 
         if m_width >= 1920:
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
@@ -50,6 +53,17 @@ class QDebugCentralView(QMainWindow):
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel)
             self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_disassembly_panel)
             self.tabifyDockWidget(self.dock_memory_panel, self.dock_disassembly_panel)
+
+        ui_state = self.q_settings.value('dwarf_debug_panels_ui_state')
+        if ui_state:
+            self.restoreGeometry(ui_state)
+        window_state = self.q_settings.value('dwarf_debug_panels_ui_window')
+        if window_state:
+            self.restoreState(window_state)
+
+    def onCloseEvent(self):
+        self.q_settings.setValue('dwarf_debug_panels_ui_state', self.saveGeometry())
+        self.q_settings.setValue('dwarf_debug_panels_ui_window', self.saveState())
 
     def on_memory_modified(self, pos, length):
         data_pos = self.memory_panel.base + pos
@@ -149,6 +163,7 @@ class QDebugPanel(QMainWindow):
         self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
 
         self.app = app
+        self.q_settings = app.q_settings
 
         self.functions_list = DwarfListView()
         self.functions_list_model = QStandardItemModel(0, 1)
@@ -158,12 +173,21 @@ class QDebugPanel(QMainWindow):
         self.functions_list.doubleClicked.connect(self._function_double_clicked)
 
         self.dock_functions_list = QDockWidget('Functions', self)
+        self.dock_functions_list.setObjectName('functions')
         self.dock_functions_list.setWidget(self.functions_list)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
         self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
 
         self.debug_central_view = QDebugCentralView(self)
+        self.debug_central_view.setObjectName('debug')
         self.setCentralWidget(self.debug_central_view)
+
+        ui_state = self.q_settings.value('dwarf_debug_ui_state')
+        if ui_state:
+            self.restoreGeometry(ui_state)
+        window_state = self.q_settings.value('dwarf_debug_ui_window')
+        if window_state:
+            self.restoreState(window_state)
 
     @property
     def disassembly_panel_range(self):
@@ -176,6 +200,12 @@ class QDebugPanel(QMainWindow):
     @property
     def memory_panel(self):
         return self.debug_central_view.memory_panel
+
+    def onCloseEvent(self):
+        self.q_settings.setValue('dwarf_debug_ui_state', self.saveGeometry())
+        self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
+
+        self.debug_central_view.onCloseEvent()
 
     def update_functions(self, functions_list=None):
         if functions_list is None:

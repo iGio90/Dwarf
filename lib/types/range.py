@@ -61,7 +61,7 @@ class Range:
 
             if cb is not None:
                 cb()
-                return 0
+                return dwarf_range
             else:
                 return dwarf_range
 
