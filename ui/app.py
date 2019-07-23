@@ -188,6 +188,7 @@ class AppWindow(QMainWindow):
         dwarf_menu.addMenu(theme)
         dwarf_menu.addSeparator()
 
+        dwarf_bin_path = None
         if sys.platform == 'linux':
             dwarf_bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin/dwarf')
             if not os.path.exists(dwarf_bin_path):
