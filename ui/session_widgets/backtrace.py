@@ -25,6 +25,8 @@ from lib import utils
 
 class BacktraceWidget(DwarfListView):
 
+    onShowMemoryRequest = pyqtSignal(list, name='onShowMemoryRequest')
+
     def __init__(self, parent=None):
         super(BacktraceWidget, self).__init__(parent=parent)
         self._app_window = parent
@@ -96,7 +98,7 @@ class BacktraceWidget(DwarfListView):
         row = self._model.itemFromIndex(model_index).row()
         if row != -1:
             if self._mode == 'native':
-                self._app_window.jump_to_address(self._model.item(row, 0).text(), view=1)
+                self.onShowMemoryRequest.emit(['bt', self._model.item(row, 0).text()])
 
     def _on_context_menu(self, pos):
         index = self.indexAt(pos).row()
@@ -107,7 +109,7 @@ class BacktraceWidget(DwarfListView):
                 addr_item = self.model().item(index, 0).text()
                 symbol_item = self.model().item(index, 1).text()
                 # show contextmenu
-                context_menu.addAction('Jump to {0}'.format(addr_item), lambda: self.onShowMemoryRequest.emit(addr_item))
+                context_menu.addAction('Jump to {0}'.format(addr_item), lambda: self.onShowMemoryRequest.emit(['bt', addr_item]))
                 context_menu.addSeparator()
                 context_menu.addAction('Copy Address', lambda: utils.copy_hex_to_clipboard(addr_item))
                 if symbol_item and symbol_item != '-':

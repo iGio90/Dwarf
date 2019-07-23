@@ -535,6 +535,7 @@ class AppWindow(QMainWindow):
             self.backtrace_panel = BacktraceWidget(self)
             self.backtrace_dock.setWidget(self.backtrace_panel)
             self.backtrace_dock.setObjectName('BacktraceWidget')
+            self.backtrace_panel.onShowMemoryRequest.connect(self._on_showmemory_request)
             self.addDockWidget(Qt.RightDockWidgetArea, self.backtrace_dock)
             self.view_menu.addAction(self.backtrace_dock.toggleViewAction())
             elem_wiget = self.backtrace_panel
@@ -1044,3 +1045,17 @@ class AppWindow(QMainWindow):
         """
         if self.bookmarks_panel is not None:
             self.bookmarks_panel._create_bookmark(ptr=hex(ptr))
+
+    def _on_showmemory_request(self, ptr):
+        # its simple ptr show in memorypanel
+        if isinstance(ptr, str):
+            ptr = utils.parse_ptr(ptr)
+            self.jump_to_address(ptr, 0)
+
+        elif isinstance(ptr, list):
+            # TODO: extend
+            caller, ptr = ptr
+            ptr = utils.parse_ptr(ptr)
+            if caller == 'backtrace' or caller == 'bt':
+                # jumpto in disasm
+                self.jump_to_address(ptr, 1)
