@@ -57,7 +57,8 @@ class Range:
         if dwarf_range is not None:
             dwarf_range.user_req_start_address = address
             dwarf_range.user_req_start_offset = address - dwarf_range.base
-            cb(dwarf_range)
+            if cb is not None:
+                cb(dwarf_range)
             return dwarf_range
 
         dwarf_range = Range()
