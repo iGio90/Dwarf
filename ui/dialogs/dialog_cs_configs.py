@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import capstone
+from lib import disassembler
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
@@ -29,13 +29,13 @@ class CsConfigsDialog(QDialog):
 
         self.setMinimumWidth(350)
 
-        cs_objs = dir(capstone)
+        cs_objs = dir(disassembler)
 
         self.arch = QComboBox(self)
         for w in cs_objs:
             if w.startswith('CS_ARCH_'):
                 self.arch.addItem(w.replace('CS_ARCH_', '').lower())
-                if getattr(capstone, w) == arch:
+                if getattr(disassembler, w) == arch:
                     self.arch.setCurrentIndex(self.arch.count() - 1)
         arch_mode_layout.addWidget(self.arch)
 
@@ -43,7 +43,7 @@ class CsConfigsDialog(QDialog):
         for w in cs_objs:
             if w.startswith('CS_MODE_'):
                 self.mode.addItem(w.replace('CS_MODE_', '').lower())
-                if getattr(capstone, w) == mode:
+                if getattr(disassembler, w) == mode:
                     self.mode.setCurrentIndex(self.mode.count() - 1)
         arch_mode_layout.addWidget(self.mode)
 
@@ -69,5 +69,5 @@ class CsConfigsDialog(QDialog):
         result = dialog.exec_()
 
         return result == QDialog.Accepted, \
-               getattr(capstone, 'CS_ARCH_%s' % dialog.arch.currentText().upper()), \
-               getattr(capstone, 'CS_MODE_%s' % dialog.mode.currentText().upper())
+               getattr(disassembler, 'CS_ARCH_%s' % dialog.arch.currentText().upper()), \
+               getattr(disassembler, 'CS_MODE_%s' % dialog.mode.currentText().upper())

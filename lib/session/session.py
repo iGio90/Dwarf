@@ -55,7 +55,7 @@ class Session(QObject):
 
     @property
     def main_menu(self):
-        return None
+        return self._menu
 
     @property
     def session_ui_sections(self):

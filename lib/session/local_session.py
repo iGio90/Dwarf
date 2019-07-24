@@ -39,12 +39,6 @@ class LocalSession(Session):
         """
         return 'Local'
 
-    @property
-    def main_menu(self):
-        """ return our created menu
-        """
-        return self._menu
-
     def stop(self):
         # cleanup ur stuff
 

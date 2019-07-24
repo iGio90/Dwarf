@@ -14,11 +14,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import struct
-
-from capstone import *
-from capstone.arm_const import *
-
+from capstone import CS_GRP_CALL, CS_GRP_JUMP, CS_OP_IMM, CS_OP_REG, CS_OP_MEM
+from capstone.arm_const import ARM_GRP_THUMB, ARM_GRP_THUMB2, ARM_GRP_THUMB1ONLY, ARM_GRP_THUMB2DSP
 
 EXCHANGE_INSTRUCTION_SET = ['bx', 'blx']
 

@@ -27,6 +27,7 @@ from frida.core import Session
 from lib import utils
 from lib.context import Context
 from lib.database import Database
+from lib.disassembler import Disassembler
 from lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
 from lib.kernel import Kernel
 
@@ -99,6 +100,13 @@ class Dwarf(QObject):
 
         self.database = Database(self)
 
+        self.keystone_installed = False
+        try:
+            import keystone.keystone_const
+            self.keystone_installed = True
+        except:
+            pass
+
         self.java_available = False
 
         # frida device
@@ -132,16 +140,12 @@ class Dwarf(QObject):
         self.context_tid = 0
         self._platform = ''
 
+        # disassembler
+        self.disassembler = Disassembler(self)
+
         # connect to self
         self.onApplyContext.connect(self._on_apply_context)
         self.onRequestJsThreadResume.connect(self._on_request_resume_from_js)
-
-        self.keystone_installed = False
-        try:
-            import keystone.keystone_const
-            self.keystone_installed = True
-        except:
-            pass
 
     def reinitialize(self):
         self.database = Database(self)

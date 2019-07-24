@@ -98,12 +98,6 @@ class AndroidSession(Session):
         """
         return 'Android'
 
-    @property
-    def main_menu(self):
-        """ return our created menu
-        """
-        return self._menu
-
     def _setup_menu(self):
         """ Build Menus
         """

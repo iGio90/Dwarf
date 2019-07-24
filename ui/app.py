@@ -60,7 +60,6 @@ class AppWindow(QMainWindow):
 
         self.menu = self.menuBar()
         self.view_menu = None
-        self.session_menu_items = []
 
         self._initialize_ui_elements()
 
@@ -205,9 +204,9 @@ class AppWindow(QMainWindow):
             session_menu = session.main_menu
             if isinstance(session_menu, list):
                 for menu in session_menu:
-                    self.session_menu_items.append(self.menu.addMenu(menu))
+                    self.menu.addMenu(menu)
             else:
-                self.session_menu_items.append(self.menu.addMenu(session_menu))
+                self.menu.addMenu(session_menu)
 
         # plugins
         if self.plugin_manager.plugins:

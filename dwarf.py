@@ -43,8 +43,8 @@ def _check_package_version(package_name, min_version):
             import frida
             installed_version = frida.__version__
         elif package_name == 'capstone':
-            import capstone
-            installed_version = capstone.__version__
+            from lib import disassembler
+            installed_version = disassembler.__version__
         elif package_name == 'requests':
             import requests
             installed_version = requests.__version__

@@ -39,18 +39,11 @@ class IosSession(Session):
     def non_closable(self):
         return ['debug', 'ranges', 'modules']
 
-
     @property
     def session_type(self):
         """ return session name to show in menus etc
         """
         return 'IOS'
-
-    @property
-    def main_menu(self):
-        """ return our created menu
-        """
-        return self._menu
 
     def stop(self):
         # cleanup ur stuff
