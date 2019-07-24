@@ -261,6 +261,7 @@ class DisassemblyView(QAbstractScrollArea):
         try:
             capstone = Cs(self.capstone_arch, self.capstone_mode)
             capstone.detail = True
+            capstone.skipdata = True
         except CsError:
             self._running_disasm = False
             print('[DisasmView] failed to initialize capstone with %d, %d' % (self.capstone_arch, self.capstone_mode))
