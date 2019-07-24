@@ -27,12 +27,7 @@ class IosSession(Session):
 
     def __init__(self, app_window):
         super(IosSession, self).__init__(app_window)
-
-        self._app_window = app_window
         self._device_window = DeviceWindow(self._app_window, 'ios')
-
-        # main menu every session needs
-        self._menu = []
 
     @property
     def session_ui_sections(self):

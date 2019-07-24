@@ -22,12 +22,7 @@ class RemoteSession(Session):
 
     def __init__(self, app_window):
         super(RemoteSession, self).__init__(app_window)
-
-        self._app_window = app_window
         self._device_window = DeviceWindow(self._app_window, 'usb')
-
-        # main menu every session needs
-        self._menu = []
 
     @property
     def session_ui_sections(self):

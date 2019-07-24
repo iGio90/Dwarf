@@ -71,8 +71,6 @@ class AndroidSession(Session):
 
     def __init__(self, app_window):
         super(AndroidSession, self).__init__(app_window)
-        self._app_window = app_window
-
         self.adb = Adb()
 
         if not self.adb.min_required:
@@ -81,8 +79,6 @@ class AndroidSession(Session):
         if app_window.dwarf_args.package is None:
             self._device_window = DeviceWindow(self._app_window, 'usb')
 
-        # main menu every session needs
-        self._menu = []
         self._smali_thread = None
 
     @property
