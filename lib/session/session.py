@@ -12,7 +12,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import frida
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtWidgets import QMenu
 
 from lib.core import Dwarf
 
@@ -70,6 +71,22 @@ class Session(QObject):
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
+    def initialize(self):
+        # setup menu
+        self._setup_menu()
+        # all fine were done wait for ui_ready
+        self.onCreated.emit()
+
+    def _setup_menu(self):
+        """ Build Menus
+        """
+        process_menu = QMenu('&Process')
+        process_menu.addAction('Resume', self._on_proc_resume, Qt.Key_F5)
+        process_menu.addAction('Restart', self._on_proc_restart, Qt.Key_F9)
+        process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
+
+        self._menu.append(process_menu)
+
     def stop(self):
         try:
             self.dwarf.detach()
@@ -81,3 +98,15 @@ class Session(QObject):
             pass
         self.onStopped.emit()
         self.onClosed.emit()
+
+    def _on_proc_resume(self, tid=0):
+        if not self.dwarf.resumed:
+            self.dwarf.dwarf_api('resume')
+
+        self.dwarf.dwarf_api('release', tid)
+
+    def _on_proc_restart(self):
+        self.dwarf.restart_proc()
+
+    def _on_detach(self):
+        self.dwarf.detach()

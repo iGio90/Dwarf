@@ -11,9 +11,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMenu
-
 import frida
 from lib.session.session import Session
 
@@ -53,30 +50,6 @@ class RemoteSession(Session):
         """ return our created menu
         """
         return self._menu
-
-    def initialize(self, config):
-
-        # setup ui etc for android
-        self._setup_menu()
-        # all fine were done wait for ui_ready
-        self.onCreated.emit()
-
-    def _setup_menu(self):
-        """ Build Menus
-        """
-        #file_menu = QMenu('&File')
-        #self._menu.append(file_menu)
-
-        process_menu = QMenu('&Process')
-        process_menu.addAction('Resume', self._on_proc_resume, Qt.Key_F5)
-        process_menu.addAction('Restart', self._on_proc_restart, Qt.Key_F9)
-        process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
-
-        self._menu.append(process_menu)
-
-        # additional menus
-        # device_menu = QMenu('&Device')
-        # self._menu.append(device_menu)
 
     def stop(self):
         # cleanup ur stuff
@@ -124,18 +97,6 @@ class RemoteSession(Session):
                 utils.show_message_box('Failed attaching to {0}'.format(pid), str(e))
                 self.stop()
                 return
-
-    def _on_proc_resume(self, tid=0):
-        if not self.dwarf.resumed:
-            self.dwarf.dwarf_api('resume')
-
-        self.dwarf.dwarf_api('release', tid)
-
-    def _on_proc_restart(self):
-        self.dwarf.restart_proc()
-
-    def _on_detach(self):
-        self.dwarf.detach()
 
     def _on_devdlg_closed(self):
         self.stop()

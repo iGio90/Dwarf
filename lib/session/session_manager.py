@@ -73,7 +73,7 @@ class SessionManager(QObject):
                 self._session.onCreated.connect(self._session_ready)
                 self._session.onClosed.connect(self._clear_session)
                 self._session.onStopped.connect(self._session_finished)
-                self._session.initialize(config='')
+                self._session.initialize()
 
     def start_session(self, args=None):
         if self._session is not None:

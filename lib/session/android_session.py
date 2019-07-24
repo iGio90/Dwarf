@@ -108,14 +108,6 @@ class AndroidSession(Session):
         """
         return self._menu
 
-    def initialize(self, config):
-        # session supports load/save then use config
-
-        # setup ui etc for android
-        self._setup_menu()
-        # all fine were done wait for ui_ready
-        self.onCreated.emit()
-
     def _setup_menu(self):
         """ Build Menus
         """
@@ -131,12 +123,7 @@ class AndroidSession(Session):
 
         self._menu.append(file_menu)
 
-        process_menu = QMenu('&Process')
-        process_menu.addAction('Resume', self._on_proc_resume, Qt.Key_F5)
-        process_menu.addAction('Restart', self._on_proc_restart, Qt.Key_F9)
-        process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
-
-        self._menu.append(process_menu)
+        super()._setup_menu()
 
         java_menu = QMenu('&Java')
         java_menu.addAction('Trace', self._on_java_trace)
@@ -243,16 +230,6 @@ class AndroidSession(Session):
                 return
 
             self._on_java_classes()
-
-    def _on_proc_resume(self, tid=0):
-        self.dwarf.dwarf_api('release', tid)
-
-    def _on_proc_restart(self):
-        self.dwarf.restart_proc()
-
-    def _on_detach(self):
-        self.dwarf.detach()
-        self._smali_thread = None
 
     def _on_java_trace(self):
         should_request_classes = self._app_window.java_trace_panel is None
