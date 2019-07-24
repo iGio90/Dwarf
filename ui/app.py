@@ -312,7 +312,7 @@ class AppWindow(QMainWindow):
     def _on_close_tab(self, index):
         tab_text = self.main_tabs.tabText(index)
         if tab_text:
-            tab_text = tab_text.lower()
+            tab_text = tab_text.lower().replace(' ', '-')
             if tab_text in self.session_manager.session.non_closable:
                 return
             try:
@@ -402,7 +402,7 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.modules_panel)
         elif name == 'data':
             index = self.main_tabs.indexOf(self.data_panel)
-        elif name == 'java-trace':
+        elif name == 'jvm-tracer':
             index = self.main_tabs.indexOf(self.java_trace_panel)
         elif name == 'jvm-inspector':
             index = self.main_tabs.indexOf(self.java_inspector_panel)
@@ -583,7 +583,7 @@ class AppWindow(QMainWindow):
             self.data_panel = DataPanel(self)
             self.main_tabs.addTab(self.data_panel, 'Data')
             elem_wiget = self.data_panel
-        elif elem == 'java-trace':
+        elif elem == 'jvm-tracer':
             from ui.panels.panel_java_trace import JavaTracePanel
             self.java_trace_panel = JavaTracePanel(self)
             self.main_tabs.addTab(self.java_trace_panel, 'JVM tracer')
@@ -670,6 +670,10 @@ class AppWindow(QMainWindow):
             return self.session_manager.session.dwarf
         else:
             return None
+
+    @property
+    def ui_elements(self):
+        return self._ui_elems
 
     # ************************************************************************
     # **************************** Handlers **********************************

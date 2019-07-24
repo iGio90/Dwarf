@@ -146,7 +146,6 @@ class AndroidSession(Session):
                 try:
                     self.dwarf.attach(args.package, args.script, False)
                 except Exception as e:  # pylint: disable=broad-except
-                    print('-failed-')
                     print('Reason: ' + str(e))
                     print('Help: you can use -sp to force spawn')
                     self.stop()
@@ -156,7 +155,6 @@ class AndroidSession(Session):
                 try:
                     self.dwarf.spawn(args.package, args.script)
                 except Exception as e:  # pylint: disable=broad-except
-                    print('-failed-')
                     print('Reason: ' + str(e))
                     self.stop()
                     exit(0)
@@ -222,8 +220,10 @@ class AndroidSession(Session):
             self._on_java_classes()
 
     def _on_java_trace(self):
-        should_request_classes = self._app_window.java_trace_panel is None
-        self._app_window.show_main_tab('java-trace')
+        tag = 'jvm-tracer'
+        should_request_classes = \
+            self._app_window.java_trace_panel is None or tag not in self._app_window.ui_elements
+        self._app_window.show_main_tab(tag)
         if should_request_classes:
             self.dwarf.dwarf_api('enumerateJavaClasses')
 

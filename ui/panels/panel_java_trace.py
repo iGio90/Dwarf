@@ -14,12 +14,13 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 import json
 from math import ceil, floor
 from PyQt5.QtCore import Qt, QRectF, QPoint
-from PyQt5.QtGui import QPainter, QColor, QTextOption, QFontMetrics, QFont, QPolygon, QIcon
+from PyQt5.QtGui import QPainter, QColor, QTextOption, QFontMetrics, QFont, QPolygon, QIcon, QStandardItemModel, \
+    QStandardItem
 from PyQt5.QtWidgets import QSplitter, QListWidget, QScrollBar, QMenu, QWidget, QVBoxLayout, QAbstractScrollArea, QToolBar, QLabel, \
     QSizePolicy
 
 from ui.dialogs.dialog_input import InputDialog
-from ui.widgets.widget_item_not_editable import NotEditableListWidgetItem
+from ui.widgets.list_view import DwarfListView
 
 from lib import utils
 
@@ -261,14 +262,21 @@ class JavaTracePanel(QWidget):
         self.events_list = JavaTraceView(self)
         self.events_list.setVisible(False)
 
-        self.trace_list = QListWidget()
-        self.class_list = QListWidget()
+        self.trace_list = DwarfListView()
+        self.trace_list_model = QStandardItemModel(0, 1)
+        self.trace_list_model.setHeaderData(0, Qt.Horizontal, 'Traced')
+        self.trace_list.setModel(self.trace_list_model)
 
-        self.trace_list.itemDoubleClicked.connect(self.trace_list_double_click)
+        self.trace_list.doubleClicked.connect(self.trace_list_double_click)
+
+        self.class_list = DwarfListView()
+        self.class_list_model = QStandardItemModel(0, 1)
+        self.class_list_model.setHeaderData(0, Qt.Horizontal, 'Classes')
+        self.class_list.setModel(self.class_list_model)
 
         self.class_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.class_list.customContextMenuRequested.connect(self.show_class_list_menu)
-        self.class_list.itemDoubleClicked.connect(self.class_list_double_click)
+        self.class_list.doubleClicked.connect(self.class_list_double_click)
 
         self.current_class_search = ''
 
@@ -290,18 +298,18 @@ class JavaTracePanel(QWidget):
         self.setLayout(layout)
 
     def class_list_double_click(self, item):
+        item = self.class_list_model.itemFromIndex(item)
         try:
             if self.trace_classes.index(item.text()) >= 0:
                 return
         except:
             pass
         self.trace_classes.append(item.text())
-        q = NotEditableListWidgetItem(item.text())
-        self.trace_list.addItem(q)
-        self.trace_list.sortItems()
+        self.trace_list_model.appendRow([QStandardItem(item.text())])
+        self.trace_list_model.sort(0, Qt.AscendingOrder)
 
     def on_enumeration_start(self):
-        self.class_list.clear()
+        self.class_list_model.setRowCount(0)
 
     def on_enumeration_match(self, java_class):
         try:
@@ -311,18 +319,16 @@ class JavaTracePanel(QWidget):
                         return
                 except:
                     pass
-                q = NotEditableListWidgetItem(java_class)
-                self.trace_list.addItem(q)
+                self.trace_list_model.appendRow(QStandardItem(java_class))
                 self.trace_classes.append(java_class)
         except:
             pass
 
-        q = NotEditableListWidgetItem(java_class)
-        self.class_list.addItem(q)
+        self.class_list_model.appendRow([QStandardItem(java_class)])
 
     def on_enumeration_complete(self):
-        self.class_list.sortItems()
-        self.trace_list.sortItems()
+        self.class_list_model.sort(0, Qt.AscendingOrder)
+        self.trace_list_model.sort(0, Qt.AscendingOrder)
 
     def on_event(self, data):
         trace, event, clazz, data = data

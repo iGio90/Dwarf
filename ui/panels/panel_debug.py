@@ -34,6 +34,9 @@ class QDebugPanel(QMainWindow):
         self.dock_functions_list.setObjectName('functions')
         self.dock_functions_list.setWidget(self.functions_list)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
+        self.resizeDocks([
+            self.dock_functions_list
+        ], [100], Qt.Horizontal)
         self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
 
         self.memory_panel_range = None
@@ -80,10 +83,7 @@ class QDebugPanel(QMainWindow):
 
     def showEvent(self, event):
         main_width = self.size().width()
-        new_widths = []
-        new_widths.append(main_width * .1)
-        new_widths.append(main_width * .4)
-        new_widths.append(main_width * .5)
+        new_widths = [main_width * .1, main_width * .4, main_width * .5]
         self.resizeDocks([
             self.dock_functions_list, self.dock_memory_panel, self.dock_disassembly_panel
         ], new_widths, Qt.Horizontal)
