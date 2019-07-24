@@ -204,6 +204,10 @@ class Dwarf(QObject):
     def device(self):
         return self._device
 
+    @property
+    def script(self):
+        return self._script
+
     @device.setter
     def device(self, value):
         try:

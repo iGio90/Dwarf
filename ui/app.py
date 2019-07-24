@@ -380,11 +380,11 @@ class AppWindow(QMainWindow):
         self.threads_dock.show()
 
     def _menu_reload_core(self):
-        self.dwarf.load_script()
+        self.dwarf.script.exports.reload()
 
     def _menu_debug_dwarf_js(self):
         you_know_what_to_do = json.loads(
-            self.dwarf._script.exports.debugdwarfjs())
+            self.dwarf.script.exports.debugdwarfjs())
         return you_know_what_to_do
 
     def show_main_tab(self, name):
