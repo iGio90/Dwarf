@@ -174,7 +174,7 @@ class QDebugPanel(QMainWindow):
 
     def is_address_in_view(self, view, address):
         if view == DEBUG_VIEW_MEMORY:
-            if self.memory_panel_range is not None:
+            if self.memory_panel_range is not None and self.memory_panel.data:
                 ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
                 if ptr_exists:
                     self.memory_panel.caret.position = address - self.memory_panel.base
