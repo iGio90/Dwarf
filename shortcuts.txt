@@ -4,6 +4,7 @@ CTRL+W  - Add new Watcher
 CTRL+N  - New Native Hook
 CTRL+J  - New Java Hook
 CTRL+O  - New Onload Hook
+CTRL+B  - New Bookmark
 
 In Lists: CTRL+F  - Search in List
 
