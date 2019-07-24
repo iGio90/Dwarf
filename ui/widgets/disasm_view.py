@@ -636,8 +636,8 @@ class DisassemblyView(QAbstractScrollArea):
             context_menu.addAction('Jump to address', lambda: self.debug_panel.on_cm_jump_to_address(view=1))
 
             # allow mode switch arm/thumb
-            if self.capstone_arch == CS_ARCH_ARM:
-                if self.capstone_mode == CS_MODE_THUMB:
+            if self._app_window.dwarf.disassembler.capstone_arch == CS_ARCH_ARM:
+                if self._app_window.dwarf.disassembler.capstone_mode == CS_MODE_THUMB:
                     mode_str = 'ARM'
                 else:
                     mode_str = 'THUMB'
