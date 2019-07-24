@@ -92,7 +92,7 @@ class BookmarksWidget(QWidget):
         self._bold_font.setBold(True)
 
         shortcut_addnative = QShortcut(
-            QKeySequence(Qt.CTRL + Qt.Key_A), self._app_window,
+            QKeySequence(Qt.CTRL + Qt.Key_B), self._app_window,
             self._create_bookmark)
         shortcut_addnative.setAutoRepeat(False)
 
