@@ -124,4 +124,4 @@ class Disassembler:
 
         self._capstone = Cs(self.capstone_arch, self.capstone_mode)
         self._capstone.detail = True
-        self._capstone.skipdata = True
+        # self._capstone.skipdata = True
