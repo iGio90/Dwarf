@@ -364,7 +364,6 @@ class Dwarf(QObject):
 
         if was_error:
             utils.show_message_box(error_msg)
-            self._on_destroyed()
         return 1
 
     def dump_keywords(self):
