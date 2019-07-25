@@ -18,7 +18,7 @@ DEBUG_VIEW_DISASSEMBLY = 1
 class QDebugPanel(QMainWindow):
     def __init__(self, app, flags=None):
         super(QDebugPanel, self).__init__(flags)
-        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks)
+        self.setDockOptions(QMainWindow.AnimatedDocks | QMainWindow.AllowNestedDocks | QMainWindow.AllowTabbedDocks)
 
         self.app = app
         self.q_settings = app.q_settings
