@@ -58,7 +58,7 @@ def _check_package_version(package_name, min_version):
             installed_version = installed_version.split('.')
             _min_version = min_version.split('.')
             needs_update = False
-            if (int(installed_version[0]) < int(_min_version[0])):
+            if int(installed_version[0]) < int(_min_version[0]):
                 needs_update = True
             elif (int(installed_version[0]) <= int(_min_version[0])) and (
                     int(installed_version[1]) < int(_min_version[1])):
@@ -92,7 +92,7 @@ def process_args():
 
     parser.add_argument(
         "-t",
-        "--type",
+        "--target",
         type=str,
         help="SessionType - android, ios, local, remote - default: local")
 
@@ -103,23 +103,19 @@ def process_args():
         help="Path to an additional script to load with dwarf and frida js api"
     )
 
-    parser.add_argument(
-        "-p", "--package", help="Attach Dwarf to given packagename")
-    # parser.add_argument("-a", "--attach", type=int, help="Attach Dwarf to given pid")
-
     parser.add_argument("-dev", "--device", help="DeviceSerial adb devices")
 
     parser.add_argument(
         "-bs", "--break-start", action='store_true', help="break at start")
 
     parser.add_argument(
-        "-sp", "--spawn", action='store_true', help="force spawn")
-
-    parser.add_argument(
         "-ds",
         "--debug-script",
         action='store_true',
         help="debug outputs from frida script")
+
+    parser.add_argument('any', nargs='?', default='', help='path/pid/package')
+    parser.add_argument('args', nargs='*', default=[''], help='arguments')
 
     args = parser.parse_args()
     return args
@@ -233,6 +229,16 @@ def run_dwarf():
 
         except Exception:  # pylint: disable=broad-except
             pass
+
+    try:
+        # parse target as pid
+        args.pid = int(args.any)
+    except:
+        args.pid = 0
+
+    # default to local if not specified
+    if args.target is None:
+        args.target = 'local'
 
     app_window = AppWindow(args)
     app_window.setWindowIcon(_icon)

@@ -117,7 +117,7 @@ class AppWindow(QMainWindow):
         self.plugin_manager = PluginManager(self)
         self.plugin_manager.reload_plugins()
 
-        if self.dwarf_args.package is None:
+        if dwarf_args.any == '':
             self.welcome_window = WelcomeDialog(self)
             self.welcome_window.setModal(True)
             self.welcome_window.onIsNewerVersion.connect(
@@ -132,18 +132,8 @@ class AppWindow(QMainWindow):
             self.hide()
             self.welcome_window.show()
         else:
-            if dwarf_args.package is not None:
-                if dwarf_args.type is None:
-                    # no device given check if package is local path
-                    if os.path.exists(dwarf_args.package):
-                        print('* Starting new LocalSession')
-                        self._start_session('local')
-                    else:
-                        print('use -t to set sessiontype')
-                        exit(0)
-                else:
-                    print('* Starting new Session')
-                    self._start_session(dwarf_args.type)
+            print('* Starting new Session')
+            self._start_session(dwarf_args.target)
 
     def _initialize_ui_elements(self):
         # dockwidgets
@@ -688,8 +678,7 @@ class AppWindow(QMainWindow):
     def _restore_session(self, session_data):
         if 'session' in session_data:
             session_type = session_data['session']
-            self.dwarf_args.package = session_data['package']
-            self.dwarf_args.spawn = True
+            self.dwarf_args.any = session_data['package']
             self._start_session(session_type, session_data=session_data)
 
     def session_created(self):
@@ -790,7 +779,7 @@ class AppWindow(QMainWindow):
 
         # close if it was a commandline session
         if self.welcome_window is None:
-            if self.dwarf_args.package:
+            if self.dwarf_args.any != '':
                 self.close()
 
     # ui handler

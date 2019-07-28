@@ -30,7 +30,7 @@ from lib import utils
 
 class DeviceWindow(DwarfDialog):
     onSelectedProcess = pyqtSignal(list, name='onSelectedProcess')
-    onSpwanSelected = pyqtSignal(list, name='onSpawnSelected')
+    onSpawnSelected = pyqtSignal(list, name='onSpawnSelected')
     onClosed = pyqtSignal(name='onClosed')
 
     def __init__(self, parent=None, device='local'):
@@ -57,8 +57,11 @@ class DeviceWindow(DwarfDialog):
                 self.title = 'Android Session'
                 self.device = None
             elif device == 'ios':
-                self.title = 'IOS Session'
+                self.title = 'iOS Session'
                 self.device = frida.get_usb_device()
+            elif device == 'remote':
+                self.title = 'Remote Session'
+                self.device = frida.get_remote_device()
             else:
                 self.device = frida.get_local_device()
         except frida.TimedOutError:
@@ -161,7 +164,7 @@ class DeviceWindow(DwarfDialog):
     def _spawn_selected(self, spawn):
         if spawn[1]:
             self.accept()
-            self.onSpwanSelected.emit([self.device, spawn[1], self.spawn_list.break_at_start])
+            self.onSpawnSelected.emit([self.device, spawn[1], self.spawn_list.break_at_start])
 
     def _on_spawn_error(self, error_str):
         utils.show_message_box('Failed to refresh Spawnlist', error_str)

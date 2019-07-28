@@ -15,7 +15,9 @@ import frida
 from PyQt5.QtCore import QObject, pyqtSignal, Qt
 from PyQt5.QtWidgets import QMenu
 
+from lib import utils
 from lib.core import Dwarf
+from ui.device_window import DeviceWindow
 
 
 class SessionUINotReadyException(Exception):
@@ -37,6 +39,9 @@ class Session(QObject):
         # main menu every session needs
         self._menu = []
 
+        if self._app_window.dwarf_args.any == '':
+            self._device_window = DeviceWindow(self._app_window, self.device_manager_type)
+
     # ************************************************************************
     # **************************** Properties ********************************
     # ************************************************************************
@@ -54,6 +59,10 @@ class Session(QObject):
         return self._session_type
 
     @property
+    def device_manager_type(self):
+        return ''
+
+    @property
     def main_menu(self):
         return self._menu
 
@@ -63,6 +72,10 @@ class Session(QObject):
 
     @property
     def non_closable(self):
+        return None
+
+    @property
+    def frida_device(self):
         return None
 
     def set_config(self, config):
@@ -90,6 +103,39 @@ class Session(QObject):
 
         self._menu.append(process_menu)
 
+    def start(self, args):
+        self.dwarf.onScriptDestroyed.connect(self.stop)
+        if args.any == '':
+            self._device_window.onSelectedProcess.connect(self._on_proc_selected)
+            self._device_window.onSpawnSelected.connect(self._on_spawn_selected)
+            self._device_window.onClosed.connect(self._on_device_dialog_closed)
+            self._device_window.show()
+        else:
+            if not args.device:
+                self.dwarf.device = self.frida_device
+            else:
+                self.dwarf.device = frida.get_device(id=args.device)
+
+            if args.pid > 0:
+                print('* Trying to attach to {0}'.format(args.pid))
+                try:
+                    self.dwarf.attach(args.pid, args.script, False)
+                except Exception as e:  # pylint: disable=broad-except
+                    print('-failed-')
+                    print('Reason: ' + str(e))
+                    print('Help: you can use -sp to force spawn')
+                    self.stop()
+                    exit(0)
+            else:
+                print('* Trying to spawn {0}'.format(args.any))
+                try:
+                    self.dwarf.spawn(args.any, args=args.args, script=args.script)
+                except Exception as e:  # pylint: disable=broad-except
+                    print('-failed-')
+                    print('Reason: ' + str(e))
+                    self.stop()
+                    exit(0)
+
     def stop(self):
         try:
             self.dwarf.detach()
@@ -113,3 +159,21 @@ class Session(QObject):
 
     def _on_detach(self):
         self.dwarf.detach()
+
+    def _on_proc_selected(self, data):
+        device, pid = data
+        if device:
+            self.dwarf.device = device
+        if pid:
+            try:
+                self.dwarf.attach(pid)
+            except Exception as e:
+                utils.show_message_box('Failed attaching to {0}'.format(pid), str(e))
+                self.stop()
+                return
+
+    def _on_spawn_selected(self, data):
+        pass
+
+    def _on_device_dialog_closed(self):
+        self.stop()
