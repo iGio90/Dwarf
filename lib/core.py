@@ -673,7 +673,11 @@ class Dwarf(QObject):
             str_fmt = ('@thread {0} starting new thread with target fn := {1}'.format(parts[1], parts[2]))
             self.log_event(str_fmt)
         elif cmd == 'release':
-            str_fmt = ('releasing := {0}'.format(parts[1]))
+            reason = 0
+            if len(parts) > 1:
+                reason = int(parts[2])
+            p = 'releasing' if reason is not 3 else 'stepping'
+            str_fmt = (p + ' := {0}'.format(parts[1]))
             self.log_event(str_fmt)
             if parts[1] in self.contexts:
                 del self.contexts[parts[1]]

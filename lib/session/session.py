@@ -88,6 +88,9 @@ class Session(QObject):
         process_menu.addAction('Restart', self._on_proc_restart, Qt.Key_F9)
         process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
 
+        process_menu.addSeparator()
+        process_menu.addAction('Step', lambda: self.dwarf.dwarf_api('step'), Qt.Key_F7)
+
         self._menu.append(process_menu)
 
     def stop(self):
