@@ -24,6 +24,6 @@ env
 *.ai
 plugins
 scripts
-.r2pipe
+.r2pipe*
 .ranges
 bin
