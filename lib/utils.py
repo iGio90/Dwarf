@@ -227,7 +227,8 @@ def create_launcher():
         if not os.path.exists('bin'):
             os.mkdir('bin')
 
-        os.system('echo "python%s dwarf.py" > bin/dwarf' % pyver)
+        with open(os.path.join('bin', 'dwarf'), 'w') as f:
+            f.write('python%s dwarf.py "$@"' % pyver)
         os.system('chmod a+x bin/dwarf')
 
         bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin')

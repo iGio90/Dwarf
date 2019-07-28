@@ -371,14 +371,21 @@ class Dwarf(QObject):
         with open('.keywords.json', 'w') as f:
             f.write(json.dumps(kw))
 
-    def spawn(self, package, script=None, break_at_start=False):
+    def spawn(self, package, args=None, script=None, break_at_start=False):
         if self.device is None:
             raise self.NoDeviceAssignedError('No Device assigned')
+
+        if args is None:
+            args = []
 
         if self._process is not None:
             self.detach()
         try:
-            self._pid = self.device.spawn(package)
+            if self.device.type == 'local':
+                self._pid = self.device.spawn([package] + args)
+            else:
+                # args not supported in remote targets
+                self._pid = self.device.spawn(package)
             self._package = package
             self._process = self.device.attach(self._pid)
             self._process.on('detached', self._on_detached)
