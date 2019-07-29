@@ -42,23 +42,6 @@ class SmaliThread(QThread):
         if not self._package_name:
             self.onError.emit()
             return
-
-        _path = self._adb.package_path(self._package_name)
-        if not os.path.exists('.tmp'):
-            os.mkdir('.tmp')
-
-        if _path:
-            self._adb.pull(_path, '.tmp/base.apk')
-            if os.path.exists('.tmp/base.apk'):
-                _baksmali_cmd = 'd2j-baksmali.sh'
-                if os.name == 'nt':
-                    _baksmali_cmd = _baksmali_cmd.replace('.sh', '.bat')
-                try:
-                    utils.do_shell_command(_baksmali_cmd + ' .tmp/base.apk -o .tmp/smali')
-                    self.onFinished.emit()
-                except:
-                    # no d2j
-                    self.onError.emit()
         else:
             self.onError.emit()
 
@@ -165,13 +148,6 @@ class AndroidSession(Session):
             self.adb.device = device.id
             self.dwarf.device = device
         if package_name:
-            # smalistuff
-            if self._smali_thread is None:
-                self._app_window.show_progress('Baksmali ' + package_name + ' ...')
-                self._smali_thread = SmaliThread(self, device.id, package_name)
-                self._smali_thread.onError.connect(self._app_window.hide_progress)
-                self._smali_thread.onFinished.connect(self._app_window.hide_progress)
-                self._smali_thread.start()
             try:
                 self.dwarf.spawn(package_name, break_at_start=break_at_start)
             except Exception as e:

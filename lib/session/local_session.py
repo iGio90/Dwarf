@@ -24,7 +24,8 @@ class LocalSession(Session):
     @property
     def session_ui_sections(self):
         # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'debug', 'console', 'watchers', 'backtrace']
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'debug', 'console',
+                'watchers', 'backtrace', 'ranges', 'modules']
 
     @property
     def non_closable(self):

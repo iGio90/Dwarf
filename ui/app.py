@@ -70,8 +70,6 @@ class AppWindow(QMainWindow):
         # load external assets
         _app = QApplication.instance()
 
-        self.remove_tmp_dir()
-
         # themes
         self.prefs = Prefs()
         utils.set_theme(self.prefs.get('dwarf_ui_theme', 'black'), self.prefs)
@@ -321,10 +319,6 @@ class AppWindow(QMainWindow):
 
     def _on_dwarf_updated(self):
         self.onRestart.emit()
-
-    def remove_tmp_dir(self):
-        if os.path.exists('.tmp'):
-            shutil.rmtree('.tmp', ignore_errors=True)
 
     def _execute_tool(self, qaction):
         if qaction:
@@ -708,7 +702,6 @@ class AppWindow(QMainWindow):
         self.showMaximized()
 
     def session_stopped(self):
-        self.remove_tmp_dir()
         self.menu.clear()
 
         self.main_tabs.clear()
@@ -800,11 +793,6 @@ class AppWindow(QMainWindow):
         """
         if '.' in ptr:  # java_hook
             file_path = ptr.replace('.', os.path.sep)
-            if os.path.exists('.tmp/smali/' + file_path + '.smali'):
-                if self.smali_panel is None:
-                    self._create_ui_elem('smali')
-                self.smali_panel.set_file('.tmp/smali/' + file_path + '.smali')
-                self.show_main_tab('smali')
         else:
             self.jump_to_address(ptr)
 
