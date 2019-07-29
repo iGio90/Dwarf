@@ -57,7 +57,6 @@ class BacktraceWidget(DwarfListView):
         if bt['type'] == 'native':
             self._mode = 'native'
             self._model.setHeaderData(0, Qt.Horizontal, 'Address')
-            self._model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
             self._model.setHeaderData(1, Qt.Horizontal, 'Symbol')
 
             bt = bt['bt']
@@ -69,7 +68,7 @@ class BacktraceWidget(DwarfListView):
 
                 addr_item = QStandardItem()
                 addr_item.setText(addr)
-                addr_item.setTextAlignment(Qt.AlignCenter)
+                addr_item.setForeground(Qt.red)
 
                 name = a['name']
                 if name is None:
