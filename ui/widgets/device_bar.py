@@ -21,7 +21,8 @@ import requests
 
 from PyQt5.Qt import (Qt, QSize, QRect, pyqtSignal, QThread, QMargins, QTimer)
 from PyQt5.QtGui import QFont, QPixmap, QIcon
-from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem, QSizePolicy, QStyle, qApp, QComboBox)
+from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QListView, QSpacerItem,
+                             QSizePolicy, QStyle, qApp, QComboBox)
 
 from lib import utils
 from lib.adb import Adb
@@ -136,7 +137,6 @@ class FridaUpdateThread(QThread):
                 self.onError.emit('Failed to open frida.xz')
                 return
 
-
             self.onStatusUpdate.emit('Mounting devices filesystem')
             # mount system rw
             if self._adb.mount_system():
@@ -156,7 +156,7 @@ class FridaUpdateThread(QThread):
                 # copy file note: mv give sometimes a invalid id error
                 self._adb.su_cmd('cp /sdcard/frida-server ' + _device_path + '/frida-server')
                 # remove file
-                self._adb.su_cmd('rm ' + _device_path + '/frida') # remove old named file
+                self._adb.su_cmd('rm ' + _device_path + '/frida')  # remove old named file
                 self._adb.su_cmd('rm /sdcard/frida-server')
 
                 # just to make sure
@@ -179,8 +179,6 @@ class FridaUpdateThread(QThread):
             return
 
         self.onFinished.emit()
-
-
 
 
 class DevicesUpdateThread(QThread):
@@ -467,8 +465,8 @@ class DeviceBar(QWidget):
         self.update_label.setText(text)
 
     def _frida_updated(self):
-        #self._timer_step = 3
-        #self.is_waiting = True
+        # self._timer_step = 3
+        # self.is_waiting = True
         self._on_devices_finished()
 
     def _on_start_btn(self):
@@ -476,7 +474,7 @@ class DeviceBar(QWidget):
             self._start_btn.setVisible(False)
             qApp.processEvents()
             if self._adb.start_frida():
-                #self.onDeviceUpdated.emit(self._device_id)
+                # self.onDeviceUpdated.emit(self._device_id)
                 self._on_devices_finished()
             else:
                 self._start_btn.setVisible(True)
@@ -487,6 +485,5 @@ class DeviceBar(QWidget):
             qApp.processEvents()
             if self._adb.start_frida(restart=True):
                 self._restart_btn.setVisible(True)
-                #self.onDeviceUpdated.emit(self._device_id)
+                # self.onDeviceUpdated.emit(self._device_id)
                 self._on_devices_finished()
-

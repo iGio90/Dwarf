@@ -29,6 +29,7 @@ from lib.prefs import Prefs
 
 VERSION = sys.version_info
 
+
 def do_shell_command(cmd, timeout=60):
     """ Execute cmd
     """
@@ -186,11 +187,13 @@ def deprecated(func):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emmitted
     when the function is used."""
+
     def newFunc(*args, **kwargs):
         import warnings
         warnings.warn("Call to deprecated function %s." % func.__name__,
                       category=DeprecationWarning)
         return func(*args, **kwargs)
+
     newFunc.__name__ = func.__name__
     newFunc.__doc__ = func.__doc__
     newFunc.__dict__.update(func.__dict__)
@@ -219,7 +222,7 @@ def set_theme(theme, prefs=None):
 
 
 def create_launcher():
-    if sys.platform == 'linux':
+    if sys.platform == 'linux' or sys.platform == 'darwin':
         pyver = ''
         if sys.version_info[0] == 3:
             pyver = '3'

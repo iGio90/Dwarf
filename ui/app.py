@@ -178,7 +178,7 @@ class AppWindow(QMainWindow):
         dwarf_menu.addMenu(theme)
         dwarf_menu.addSeparator()
 
-        if sys.platform == 'linux':
+        if sys.platform == 'linux' or sys.platform == 'darwin':
             dwarf_bin_path = os.path.join('/'.join(os.path.realpath(__file__).split('/')[:-2]), 'bin/dwarf')
             if not os.path.exists(dwarf_bin_path):
                 dwarf_menu.addAction('Create launcher', utils.create_launcher)
