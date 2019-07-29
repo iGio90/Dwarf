@@ -61,10 +61,6 @@ class SetupDialog(DwarfDialog):
                 self.launcher_box.addWidget(launcher_label)
                 self.launcher_box.addWidget(QLabel('Create dwarf alias and add to $path (dwarf --version)'))
 
-                self.btn_launcher_create = QPushButton('Create launcher')
-                self.btn_launcher_create.clicked.connect(self.create_launcher)
-                self.btn_launcher_create.setContentsMargins(0, 15, 0, 0)
-
                 self.launcher_box.addWidget(self.btn_launcher_create)
                 box.addLayout(self.launcher_box)
 
@@ -78,11 +74,6 @@ class SetupDialog(DwarfDialog):
         box.addLayout(buttons)
 
         self.setLayout(box)
-
-    def create_launcher(self):
-        utils.create_launcher()
-        self.btn_launcher_create.setEnabled(False)
-        self.btn_launcher_create.setText('Launcher created')
 
     def theme_checked(self, checkState, theme):
         utils.set_theme(theme, prefs=self.prefs)
