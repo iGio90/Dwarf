@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMainWindow, QDockWidget
+from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
 
 from lib import utils
 from lib.types.range import Range
@@ -60,8 +60,8 @@ class QDebugPanel(QMainWindow):
         self.dock_disassembly_panel.setWidget(self.disassembly_panel)
         self.dock_disassembly_panel.setObjectName('disassembly')
 
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_memory_panel)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_disassembly_panel)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_memory_panel, Qt.Horizontal)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_disassembly_panel, Qt.Horizontal)
         if m_width >= 1920:
             self.splitDockWidget(self.dock_memory_panel, self.dock_disassembly_panel, Qt.Horizontal)
         else:
@@ -82,6 +82,7 @@ class QDebugPanel(QMainWindow):
         self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
 
     def showEvent(self, event):
+        self.setCentralWidget(QWidget())
         main_width = self.size().width()
         new_widths = [main_width * .1, main_width * .4, main_width * .5]
         self.resizeDocks([
