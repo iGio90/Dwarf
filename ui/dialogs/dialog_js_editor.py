@@ -57,7 +57,7 @@ class JsEditorDialog(DwarfDialog):
             # default size
             self.editor_font.setPointSize(11)
 
-        self.input_widget = JsCodeEditor()
+        self.input_widget = JsCodeEditor(completer=False)
         self.input_widget.setMinimumSize(800, 450)
         self.input_widget.line_numbers = True
         self.input_widget.setFont(self.editor_font)
