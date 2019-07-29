@@ -82,7 +82,6 @@ class QDebugPanel(QMainWindow):
         self.q_settings.setValue('dwarf_debug_ui_window', self.saveState())
 
     def showEvent(self, event):
-        self.setCentralWidget(QWidget())
         main_width = self.size().width()
         new_widths = [main_width * .1, main_width * .4, main_width * .5]
         self.resizeDocks([
