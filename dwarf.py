@@ -19,8 +19,6 @@ import sys
 import argparse
 import shutil
 
-from ui.dialogs.dialog_setup import SetupDialog
-
 
 def pip_install_package(package_name):
     try:
@@ -171,6 +169,7 @@ def run_dwarf():
 
     did_first_run = _prefs.get('did_first_run', False)
     if False:
+        from ui.dialogs.dialog_setup import SetupDialog
         # did_first_run:
         _prefs.put('did_first_run', True)
         SetupDialog.showDialog(_prefs)
