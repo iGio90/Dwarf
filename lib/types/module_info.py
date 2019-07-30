@@ -99,8 +99,11 @@ class ModuleInfo:
         self._updated_details = True
 
         symbols = dwarf.dwarf_api('enumerateSymbols', self.base)
-        self.apply_symbols(symbols)
+        if symbols is not None:
+            self.apply_symbols(symbols)
         imports = dwarf.dwarf_api('enumerateImports', self.base)
-        self.apply_imports(imports)
+        if imports is not None:
+            self.apply_imports(imports)
         exports = dwarf.dwarf_api('enumerateExports', self.base)
-        self.apply_exports(exports)
+        if exports is not None:
+            self.apply_exports(exports)

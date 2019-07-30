@@ -920,6 +920,14 @@ class AppWindow(QMainWindow):
                     if self.debug_panel.memory_panel_range is None:
                         base = context['moduleBase']
                         self.jump_to_address(base)
+                elif reason == 3:
+                    # step
+                    # we make the frontend believe we are in the real step pc instead of the frida space
+                    context['context']['pc'] = context['ptr']
+                    if 'rip' in context['context']:
+                        context['context']['rip'] = context['ptr']
+
+                    self.jump_to_address(context['ptr'], view=1)
                 else:
                     if 'pc' in context['context']:
                         if self.debug_panel.disassembly_panel_range is None or manual:
