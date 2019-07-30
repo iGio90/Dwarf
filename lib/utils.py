@@ -79,6 +79,11 @@ def parse_ptr(ptr):
 
 
 def resource_path(relative_path):
+    if True:
+        return relative_path
+
+    # this code is for pyinstaller
+
     """get path to resource
     """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
