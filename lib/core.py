@@ -711,6 +711,7 @@ class Dwarf(QObject):
             value = parts[2]
             self.onContextChanged.emit(str(context_property), value)
         elif cmd == 'set_data':
+            import capstone
             if data is not None:
                 self.onSetData.emit(['raw', parts[1], data])
             else:
