@@ -661,10 +661,6 @@ class Dwarf(QObject):
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':
             self.log(parts[1])
-        elif cmd == 'native_tracer':
-            tid = int(parts[1])
-            data = json.loads(parts[2])
-            print(tid, data)
         elif cmd == 'native_on_load_callback':
             data = json.loads(parts[2])
             str_fmt = ('Hook native onload {0} @thread := {1}'.format(data['module'], parts[1]))
