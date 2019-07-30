@@ -102,9 +102,9 @@ class Session(QObject):
         process_menu.addAction('Detach', self._on_detach, Qt.Key_F10)
 
         process_menu.addSeparator()
-        process_menu.addAction('Step', lambda: self.dwarf.dwarf_api('step'), Qt.Key_F7)
-        process_menu.addAction('Step call', lambda: self.dwarf.dwarf_api('step', 'call'), Qt.Key_F8)
-        process_menu.addAction('Step block', lambda: self.dwarf.dwarf_api('step', 'block'))
+        process_menu.addAction('Step', lambda: self.dwarf.dwarf_api('_step'), Qt.Key_F7)
+        process_menu.addAction('Step call', lambda: self.dwarf.dwarf_api('_step', 'call'), Qt.Key_F8)
+        process_menu.addAction('Step block', lambda: self.dwarf.dwarf_api('_step', 'block'))
 
         self._menu.append(process_menu)
 
