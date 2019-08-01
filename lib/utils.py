@@ -86,7 +86,7 @@ def resource_path(relative_path):
         subs = 2
     else:
         subs = 3
-    base_path = '/'.join(base_path.split('/')[:-subs])
+    base_path = os.sep.join(base_path.split(os.sep)[:-subs])
     return os.path.join(base_path, relative_path)
 
 
