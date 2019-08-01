@@ -96,20 +96,20 @@ QStatusBar {
     padding: 5px 0;
 }
 
-    QStatusBar > * {
-        background-color: #111;
-    }
+QStatusBar > * {
+    background-color: #111;
+}
 
-    QStatusBar::item {
-        border: none;
-        border-right: 1px solid #080808;
-    }
+QStatusBar::item {
+    border: none;
+    border-right: 1px solid #080808;
+}
 
-    QStatusBar > QLabel {
-        border: none;
-        padding: 0 10px;
-        font-weight: bold;
-    }
+QStatusBar > QLabel {
+    border: none;
+    padding: 0 10px;
+    font-weight: bold;
+}
 
 /* ComboBox */
 QComboBox {
@@ -121,39 +121,35 @@ QComboBox {
     font-size: 12px;
 }
 
-    QComboBox:hover {
-        border-color: #333;
-    }
+QComboBox:hover {
+    border-color: #333;
+}
 
-    QComboBox QAbstractItemView {
-        background-color: #080808;
-        border-top: 0;
-        border-radius: 2px;
-        selection-background-color: #222;
-    }
+QComboBox QAbstractItemView {
+    background-color: #080808;
+    border-top: 0;
+    border-radius: 2px;
+    selection-background-color: #222;
+}
 
-    QComboBox QListView
-    {
-        padding: 5px 10px;
-        border-style: none;
-        background-color: #080808;
-    }
+QComboBox QListView
+{
+    padding: 5px 10px;
+    border-style: none;
+    background-color: #080808;
+}
 
 
-    QComboBox::drop-down
-    {
-        width: 20px;
-        border: 1px;
-        border-color:#111;
-        border-left-style:solid;
-        border-top-style: none;
-        border-bottom-style: none;
-        border-right-style: none;
-    }
-
-    QComboBox::down-arrow {
-        image: url(assets/expand.png);
-    }
+QComboBox::drop-down
+{
+    width: 20px;
+    border: 1px;
+    border-color:#111;
+    border-left-style:solid;
+    border-top-style: none;
+    border-bottom-style: none;
+    border-right-style: none;
+}
 
 
 /* Button */

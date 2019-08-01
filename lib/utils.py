@@ -79,19 +79,15 @@ def parse_ptr(ptr):
 
 
 def resource_path(relative_path):
-    if True:
-        return relative_path
-
-    # this code is for pyinstaller
-
     """get path to resource
     """
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    # its /lib/ now so move one up os.pardir
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(base_path, relative_path)
+    base_path = os.path.abspath(__file__)
+    if base_path.endswith('.py'):
+        subs = 2
     else:
-        return os.path.join(base_path, os.pardir, relative_path)
+        subs = 3
+    base_path = '/'.join(base_path.split('/')[:-subs])
+    return os.path.join(base_path, relative_path)
 
 
 def show_message_box(text, details=None):
@@ -209,8 +205,8 @@ def set_theme(theme, prefs=None):
     if theme:
         theme = theme.replace(os.pardir, '').replace('.', '')
         theme = theme.join(theme.split()).lower()
-        theme_style = 'assets/' + theme + '_style.qss'
-        if not os.path.exists(resource_path(theme_style)):
+        theme_style = resource_path('assets/' + theme + '_style.qss')
+        if not os.path.exists(theme_style):
             return
 
         if prefs is not None:
@@ -219,8 +215,12 @@ def set_theme(theme, prefs=None):
         try:
             _app = QApplication.instance()
             with open(theme_style) as stylesheet:
-                _app.setStyleSheet(_app.styleSheet() + '\n' +
-                                   stylesheet.read())
+                # path stylesheet absolute path for local setup
+                base_path = resource_path('')
+                style_content = stylesheet.read()
+                style_content = style_content.replace("assets/", "%s/assets/" % base_path)
+
+                _app.setStyleSheet(_app.styleSheet() + '\n' + style_content)
         except Exception as e:
             pass
             # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)

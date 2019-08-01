@@ -448,7 +448,7 @@ class AppWindow(QMainWindow):
             elem_wiget = self.watchers_panel
         elif elem == 'hooks':
             from ui.session_widgets.hooks import HooksWidget
-            self.hooks_dwiget = QDockWidget('Breakpoints', self)
+            self.hooks_dwiget = QDockWidget('Hooks', self)
             self.hooks_panel = HooksWidget(self)
             self.hooks_panel.onHookRemoved.connect(self._on_hook_removed)
             self.hooks_dwiget.setWidget(self.hooks_panel)

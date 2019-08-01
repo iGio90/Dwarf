@@ -231,10 +231,11 @@ class WelcomeDialog(QDialog):
 
         random.seed(a=None, version=2)
 
-        self.update_commits_thread = DwarfCommitsThread(parent)
-        self.update_commits_thread.on_update_available.connect(
-            self._on_dwarf_isupdate)
-        self.update_commits_thread.start()
+        if not str(__file__).endswith('.pyc'):
+            self.update_commits_thread = DwarfCommitsThread(parent)
+            self.update_commits_thread.on_update_available.connect(
+                self._on_dwarf_isupdate)
+            self.update_commits_thread.start()
         # center
         self.setGeometry(
             QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),

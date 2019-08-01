@@ -19,6 +19,7 @@ import os
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+
 VIEW_BACKTRACE = 'view_backtrace'
 VIEW_CONTEXT = 'view_context'
 VIEW_HOOKS = 'view_hooks'
@@ -41,7 +42,7 @@ class Prefs(QObject):
         super(Prefs, self).__init__()
 
         self._prefs = {}
-        self._prefs_file = '.dwarf'
+        self._prefs_file = os.path.join(os.path.expanduser('~'), '.dwarf')
 
         if os.path.exists(self._prefs_file):
             with open(self._prefs_file, 'r') as f:

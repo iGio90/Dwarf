@@ -16,6 +16,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import os
 import binascii
+import sys
+
 import frida
 import json
 
@@ -307,10 +309,12 @@ class Dwarf(QObject):
 
     def load_script(self, script=None, spawned=False, break_at_start=False):
         try:
-            if not os.path.exists('lib/core.js'):
+            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+            core_path = os.path.join(base_path, 'core.js')
+            if not os.path.exists(core_path):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
-            with open('lib/core.js', 'r') as core_script:
+            with open(core_path, 'r') as core_script:
                 script_content = core_script.read()
 
             self._script = self._process.create_script(script_content, runtime='v8')
