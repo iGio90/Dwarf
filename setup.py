@@ -1,31 +1,32 @@
-import platform
-import sys
+from setuptools import setup, find_packages
 
-from cx_Freeze import setup, Executable
+from dwarf.dwarf import __version__
 
+setup(
 
-def getTargetName():
-    myOS = platform.system()
-    if myOS == 'Linux':
-        return "dwarf"
-    elif myOS == 'Windows':
-        return "dwarf.exe"
-    else:
-        return "dwarf.dmg"
-
-
-build_exe_options = {
-    "packages": ["os", "lib", "ui", "requests", "capstone", "queue", "frida", "pyperclip"],
-    "include_msvcr": True,
-    'include_files': ['assets']
-}
-
-base = None
-if sys.platform == "win32":
-    base = "Win32GUI"
-
-setup(name="Dwarf",
-      version="1.0",
-      description='Full featured multi arch/os debugger built on top of PyQt5 and frida',
-      options={"build_exe": build_exe_options},
-      executables=[Executable("dwarf.py", base=base, targetName=getTargetName())])
+    # Package info
+    name = 'dwarf',
+    version = __version__,
+    packages = find_packages(),
+    python_requires='>=3',
+    package_data={
+        '': ['assets/*'],
+        '': ['assets/icons/*']
+    },
+    zip_safe=False,
+    include_package_data=True,
+    # Dependencies
+    install_requires = [
+        'capstone>=4.0.1',
+        'requests>=2.18.4',
+        'frida>=12.6.11',
+        'PyQt5>=5.11.3',
+        'pyperclip>=1.7.0'
+    ],
+    # Script info
+    entry_points = {
+        'console_scripts': [
+            'dwarf = dwarf.dwarf:main'
+        ]
+    }
+)

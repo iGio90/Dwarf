@@ -27,3 +27,4 @@ scripts
 .r2pipe*
 .ranges
 bin
+dwarf.egg-info
