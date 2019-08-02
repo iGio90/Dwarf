@@ -70,3 +70,4 @@ build_resources.py
 *.qrc
 ### windows ###
 desktop.ini
+Dwarf.iml

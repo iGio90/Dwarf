@@ -236,8 +236,16 @@ function Dwarf() {
                     } else if (typeof hook.logic === 'function') {
                         logic = hook.logic;
                     }
+
                     if (isDefined(logic)) {
-                        var ret = logic.call(that, context);
+                        var ret;
+
+                        if (isDefined(hook.interceptorArgs)) {
+                            ret = logic.call(that, hook.interceptorArgs);
+                        } else {
+                            ret = logic.call(that, context);
+                        }
+
                         if (typeof ret !== 'undefined') {
                             shouldSleep = ret !== -1;
                         }
@@ -2188,6 +2196,8 @@ function Hook() {
     this.logic = null;
 
     this.interceptor = null;
+    this.interceptorArgs = null;
+
     this.javaOverloads = {};
     this.bytes = [];
 
@@ -2760,7 +2770,9 @@ var InterceptorWrapper = function () {
                 hook.interceptor = Interceptor.attach(hook.nativePtr, function (args) {
                     this.detach = hook.interceptor.detach;
                     const tid = Process.getCurrentThreadId();
+
                     getDwarf().native_contexts[tid] = this.context;
+                    hook.interceptorArgs = args;
 
                     getDwarf().breakpoint(REASON_BREAKPOINT, hook.nativePtr, this.context, hook, null);
 
@@ -2771,9 +2783,12 @@ var InterceptorWrapper = function () {
                     onEnter: function (args) {
                         this.detach = hook.interceptor.detach;
                         this.tid = Process.getCurrentThreadId();
+
                         getDwarf().native_contexts[this.tid] = this.context;
+                        hook.interceptorArgs = args;
+
                         if (isDefined(logic['onEnter'])) {
-                            logic['onEnter'].call(this, this.context);
+                            logic['onEnter'].call(this, args);
                         }
                     },
                     onLeave: function (retval) {

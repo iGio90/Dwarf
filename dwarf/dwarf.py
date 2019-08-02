@@ -19,7 +19,7 @@ import sys
 import argparse
 import shutil
 
-import dwarf.resources
+import dwarf.resources # pylint: disable=unused-import
 
 __version__ = '1.0.0'
 
@@ -175,12 +175,14 @@ def run_dwarf():
 
     args = process_args()
 
+    """
     did_first_run = _prefs.get('did_first_run', False)
     if False:
         from dwarf.ui.dialogs.dialog_setup import SetupDialog
         # did_first_run:
         _prefs.put('did_first_run', True)
         SetupDialog.showDialog(_prefs)
+    """
 
     if not local_update_disabled:
         _git = Git()
@@ -242,7 +244,7 @@ def run_dwarf():
     try:
         # parse target as pid
         args.pid = int(args.any)
-    except:
+    except ValueError:
         args.pid = 0
 
     # default to local if not specified

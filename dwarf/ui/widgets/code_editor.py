@@ -483,8 +483,9 @@ class JsCodeEditor(QPlainTextEdit):
 
     def keyPressEvent(self, event):
         tc = self.textCursor()
+
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or event.key() == Qt.Key_Tab:
-            if self.completer.popup().isVisible():
+            if self.completer and self.completer.popup().isVisible():
                 self.completer.insertText.emit(self.completer.getSelected())
                 self.completer.setCompletionMode(QCompleter.PopupCompletion)
                 event.ignore()
@@ -496,7 +497,7 @@ class JsCodeEditor(QPlainTextEdit):
         cr = self.cursorRect()
 
         if self.completer:
-            if len(tc.selectedText()) > 0:
+            if tc.selectedText():
                 self.completer.setCompletionPrefix(tc.selectedText())
                 popup = self.completer.popup()
                 #popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
