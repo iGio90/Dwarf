@@ -88,6 +88,7 @@ class DisassemblyView(QAbstractScrollArea):
         self.setMouseTracking(True)
         self.current_jump = -1
         self._current_line = -1
+        self.highlighted_line = -1
 
         self._display_jumps = True
         self._follow_jumps = True
@@ -525,12 +526,20 @@ class DisassemblyView(QAbstractScrollArea):
             if i > self.visible_lines():
                 break
 
-            if i == self._current_line:
+            if i == self._current_line and i != self.highlighted_line:
                 y_pos = self._header_height + (i * (self._char_height + self._ver_spacing))
                 y_pos += (self._char_height * 0.5)
                 y_pos -= self._ver_spacing
                 painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(),
                                  self._char_height + 2, self._ctrl_colors['line'])
+
+            if i == self.highlighted_line:
+                y_pos = self._header_height + (i * (self._char_height + self._ver_spacing))
+                y_pos += (self._char_height * 0.5)
+                y_pos -= self._ver_spacing
+                painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(),
+                                 self._char_height + 2, self._ctrl_colors['selection_bg'])
+
             self.paint_line(painter, i + 1, line)
 
         painter.setPen(self._line_pen)
