@@ -218,7 +218,7 @@ def set_theme(theme, prefs=None):
                 # path stylesheet absolute path for local setup
                 base_path = resource_path('')
                 style_content = stylesheet.read()
-                style_content = style_content.replace("assets/", "%s/assets/" % base_path)
+                style_content = style_content.replace("assets" + os.sep, "%s%sassets%s" % (os.sep, base_path, os.sep))
 
                 _app.setStyleSheet(_app.styleSheet() + '\n' + style_content)
         except Exception as e:
