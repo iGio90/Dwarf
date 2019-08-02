@@ -15,11 +15,11 @@ def getTargetName():
 
 
 build_exe_options = {
-    "packages": ["os", "lib", "ui", "requests", "capstone", "queue", "frida", "pyperclip"],
+    "packages": ["os", "lib", "ui", "requests", "capstone", "queue", "frida", "pyperclip",
+                 "idna", "six", "appdirs", "pkg_resources"],
     "include_msvcr": True,
     'include_files': ['assets']
 }
-
 base = None
 if sys.platform == "win32":
     base = "Win32GUI"
