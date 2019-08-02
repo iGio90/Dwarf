@@ -360,7 +360,10 @@ class DisassemblyView(QAbstractScrollArea):
                     break
 
     def paint_line(self, painter, num_line, line):
-        painter.setPen(self._ctrl_colors['foreground'])
+        if num_line - 1 == self.highlighted_line:
+            painter.setPen(self._ctrl_colors['selection_fg'])
+        else:
+            painter.setPen(self._ctrl_colors['foreground'])
         drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width)
         drawing_pos_y = num_line * (self._char_height + self._ver_spacing)
         drawing_pos_y += self._header_height
@@ -412,7 +415,10 @@ class DisassemblyView(QAbstractScrollArea):
             self._char_width)
         drawing_pos_x += (len(str_fmt.format(line.address)) * int(self._char_width))
 
-        painter.setPen(QColor('#444'))
+        if num_line - 1 == self.highlighted_line:
+            painter.setPen(self._ctrl_colors['selection_fg'])
+        else:
+            painter.setPen(QColor('#444'))
         drawing_pos_x += int(self._char_width)
         for byte in line.bytes:
             painter.drawText(drawing_pos_x, drawing_pos_y, '{0:02x}'.format(byte))
@@ -422,11 +428,16 @@ class DisassemblyView(QAbstractScrollArea):
                 (self._app_window.dwarf.pointer_size * 2) * int(self._char_width)) + (self._longest_bytes + 2) * (
                                 int(self._char_width) * 3)
         painter.setPen(QColor('#39c'))
+        if num_line - 1 == self.highlighted_line:
+            painter.setPen(self._ctrl_colors['selection_fg'])
         painter.drawText(drawing_pos_x, drawing_pos_y, line.mnemonic)
         if line.is_jump or line.is_call:
             painter.setPen(self._jump_color)
         else:
             painter.setPen(self._ctrl_colors['foreground'])
+
+        if num_line - 1 == self.highlighted_line:
+            painter.setPen(self._ctrl_colors['selection_fg'])
 
         drawing_pos_x += (self._longest_mnemonic + 1) * int(self._char_width)
         if line.operands and not line.is_jump and not line.is_call:
@@ -440,11 +451,16 @@ class DisassemblyView(QAbstractScrollArea):
                 else:
                     painter.setPen(self._ctrl_colors['foreground'])
 
+                if num_line - 1 == self.highlighted_line:
+                    painter.setPen(self._ctrl_colors['selection_fg'])
+
                 painter.drawText(drawing_pos_x, drawing_pos_y, ops_str[a])
                 drawing_pos_x += len(ops_str[a] * int(self._char_width))
 
                 if len(line.operands) > 1 and a < len(line.operands) - 1:
                     painter.setPen(self._ctrl_colors['foreground'])
+                    if num_line - 1 == self.highlighted_line:
+                        painter.setPen(self._ctrl_colors['selection_fg'])
                     painter.drawText(drawing_pos_x, drawing_pos_y, ', ')
                     drawing_pos_x += 2 * int(self._char_width)
                 # if ops_str[a].startswith('0x') and not line.string:
@@ -471,7 +487,10 @@ class DisassemblyView(QAbstractScrollArea):
             drawing_pos_x += (len(line.symbol_name) + 1) * int(self._char_width)
 
         if line.string and not line.is_jump and not line.is_call:
-            painter.setPen(QColor('#aaa'))
+            if num_line - 1 == self.highlighted_line:
+                painter.setPen(self._ctrl_colors['selection_fg'])
+            else:
+                painter.setPen(QColor('#aaa'))
             painter.drawText(drawing_pos_x, drawing_pos_y, ' ; "' + line.string + '"')
 
     def paint_wait(self, painter):
