@@ -19,12 +19,13 @@ import os
 import inspect
 import importlib.util
 
+from dwarf.lib.utils import home_path
+
 
 class PluginManager:
     def __init__(self, app):
         self._app = app
-        self._plugins_path = os.path.join(
-            os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2]), 'plugins')
+        self._plugins_path = os.path.join(home_path(), 'plugins')
 
         self._plugins = {}
 
