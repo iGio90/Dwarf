@@ -14,7 +14,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-
+import sys
 import os
 import inspect
 import importlib.util
@@ -26,6 +26,7 @@ class PluginManager:
     def __init__(self, app):
         self._app = app
         self._plugins_path = os.path.join(home_path(), 'plugins')
+        sys.path.append(self._plugins_path)
 
         self._plugins = {}
 
