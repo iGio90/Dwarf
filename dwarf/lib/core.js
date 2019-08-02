@@ -2638,7 +2638,7 @@ rpc.exports = {
             map.push(name);
 
             // second level
-            if (typeof global[name] !== 'undefined') {
+            if (isDefined(global[name])) {
                 Object.getOwnPropertyNames(global[name]).forEach(function (sec_name) {
                     map.push(sec_name);
                 });

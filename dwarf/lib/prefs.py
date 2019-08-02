@@ -39,10 +39,13 @@ class Prefs(QObject):
     prefsChanged = pyqtSignal(name='prefsChanged')
 
     def __init__(self):
-        super(Prefs, self).__init__()
+        super().__init__()
+
+        from pathlib import Path
+        home_path = str(Path.home()) + os.sep + '.dwarf' + os.sep
 
         self._prefs = {}
-        self._prefs_file = '.dwarf'
+        self._prefs_file = home_path + 'preferences.json'
 
         if os.path.exists(self._prefs_file):
             with open(self._prefs_file, 'r') as f:

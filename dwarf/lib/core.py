@@ -309,12 +309,10 @@ class Dwarf(QObject):
 
     def load_script(self, script=None, spawned=False, break_at_start=False):
         try:
-            base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-            core_path = os.path.join(base_path, 'core.js')
-            if not os.path.exists(core_path):
+            if not os.path.exists(utils.resource_path('lib/core.js')):
                 raise self.CoreScriptNotFoundError('core.js not found!')
 
-            with open(core_path, 'r') as core_script:
+            with open(utils.resource_path('lib/core.js'), 'r') as core_script:
                 script_content = core_script.read()
 
             self._script = self._process.create_script(script_content, runtime='v8')
@@ -329,6 +327,9 @@ class Dwarf(QObject):
             is_debug = self._app_window.dwarf_args.debug_script
             # this break_at_start have same behavior from args or from the checkbox i added
             self._script.exports.init(break_at_start, is_debug, spawned)
+
+            if not os.path.exists(utils.home_path() + 'keywords.json'):
+                self.dump_keywords()
 
             if script is not None:
                 if os.path.exists(script):
@@ -372,7 +373,7 @@ class Dwarf(QObject):
 
     def dump_keywords(self):
         kw = sorted(self._script.exports.keywords())
-        with open('.keywords.json', 'w') as f:
+        with open(utils.home_path() + 'keywords.json', 'w') as f:
             f.write(json.dumps(kw))
 
     def spawn(self, package, args=None, script=None, break_at_start=False):

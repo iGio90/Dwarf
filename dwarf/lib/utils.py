@@ -21,11 +21,9 @@ import sys
 
 import pyperclip
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QFile, QTextStream
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QSizePolicy, QApplication
-
-from dwarf.lib.prefs import Prefs
 
 VERSION = sys.version_info
 
@@ -77,17 +75,28 @@ def parse_ptr(ptr):
         ptr = 0
     return ptr
 
+def home_path():
+    from pathlib import Path
+    dwarf_home = str(Path.home()) + os.sep + '.dwarf' + os.sep
+    if not os.path.exists(dwarf_home):
+        os.mkdir(dwarf_home)
+    return dwarf_home
 
 def resource_path(relative_path):
     """get path to resource
     """
-    base_path = os.path.abspath(__file__)
-    if base_path.endswith('.py'):
-        subs = 2
+    res_path = None
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    # its /lib/ now so move one up os.pardir
+    if hasattr(sys, '_MEIPASS'):
+        res_path = os.path.join(base_path, relative_path)
     else:
-        subs = 3
-    base_path = os.sep.join(base_path.split(os.sep)[:-subs])
-    return os.path.join(base_path, relative_path)
+        res_path = os.path.join(base_path, os.pardir, relative_path)
+
+    if res_path and os.path.exists(res_path):
+        return res_path
+    else:
+        return ':' + relative_path
 
 
 def show_message_box(text, details=None):
@@ -131,6 +140,7 @@ def copy_str_to_clipboard(text):
 def copy_hex_to_clipboard(hex_str):
     """ Helper for copying hexstr in prefered style
     """
+    from dwarf.lib.prefs import Prefs
     _prefs = Prefs()
     uppercase = (_prefs.get('dwarf_ui_hexstyle', 'upper').lower() == 'upper')
     if isinstance(hex_str, str):
@@ -207,19 +217,17 @@ def set_theme(theme, prefs=None):
         theme = theme.join(theme.split()).lower()
         theme_style = resource_path('assets' + os.sep + theme + '_style.qss')
         if not os.path.exists(theme_style):
-            return
+            theme_style = ':/assets/' + theme + '_style.qss'
 
         if prefs is not None:
             prefs.put('dwarf_ui_theme', theme)
 
         try:
             _app = QApplication.instance()
-            with open(theme_style) as stylesheet:
-                # path stylesheet absolute path for local setup
-                base_path = resource_path('')
-                style_content = stylesheet.read()
-
-                _app.setStyleSheet(_app.styleSheet() + '\n' + style_content)
+            style_s = QFile(theme_style)
+            style_s.open(QFile.ReadOnly)
+            style_content = QTextStream(style_s).readAll()
+            _app.setStyleSheet(_app.styleSheet() + '\n' + style_content)
         except Exception as e:
             pass
             # err = self.dwarf.spawn(dwarf_args.package, dwarf_args.script)

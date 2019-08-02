@@ -21,7 +21,7 @@ from PyQt5.QtCore import QRegExp, Qt, QRect, QSize, pyqtSignal
 from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat, QColor, QPainter, QTextCursor
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QCompleter
 
-from dwarf.lib.utils import get_os_monospace_font
+from dwarf.lib.utils import get_os_monospace_font, home_path
 
 
 class DwarfCompleter(QCompleter):
@@ -371,7 +371,7 @@ class JsCodeEditor(QPlainTextEdit):
         self._show_linenums = show_linenumes
 
         keywords = []
-        keywords_path = '.keywords.json'
+        keywords_path = home_path() + 'keywords.json'
         if os.path.exists(keywords_path):
             with open(keywords_path, 'r') as f:
                 try:

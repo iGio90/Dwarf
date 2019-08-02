@@ -35,8 +35,6 @@ from dwarf.ui.dialogs.detached import QDialogDetached
 from dwarf.ui.welcome_window import WelcomeDialog
 from dwarf.ui.widgets.hex_edit import HighLight, HighlightExistsError
 
-import dwarf.resources
-
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
@@ -57,7 +55,7 @@ class AppWindow(QMainWindow):
         ]
 
         self._is_newer_dwarf = False
-        self.q_settings = QSettings("dwarf_window_pos.ini", QSettings.IniFormat)
+        self.q_settings = QSettings(utils.home_path() + "dwarf_window_pos.ini", QSettings.IniFormat)
 
         self.menu = self.menuBar()
         self.view_menu = None
@@ -79,17 +77,27 @@ class AppWindow(QMainWindow):
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):
             QFontDatabase.addApplicationFont(
                 utils.resource_path('assets/Anton.ttf'))
+        else:
+            QFontDatabase.addApplicationFont(':/assets/Anton.ttf')
+
         if os.path.exists(utils.resource_path('assets/OpenSans-Regular.ttf')):
             QFontDatabase.addApplicationFont(
                 utils.resource_path('assets/OpenSans-Regular.ttf'))
-            font = QFont("OpenSans", 9, QFont.Normal)
-            # TODO: add settingsdlg
-            font_size = self.prefs.get('dwarf_ui_font_size', 12)
-            font.setPixelSize(font_size)
-            _app.setFont(font)
-            if os.path.exists(utils.resource_path('assets/OpenSans-Bold.ttf')):
-                QFontDatabase.addApplicationFont(
-                    utils.resource_path('assets/OpenSans-Bold.ttf'))
+        else:
+            QFontDatabase.addApplicationFont(':/assets/OpenSans-Regular.ttf')
+
+        if os.path.exists(utils.resource_path('assets/OpenSans-Bold.ttf')):
+            QFontDatabase.addApplicationFont(
+                utils.resource_path('assets/OpenSans-Bold.ttf'))
+        else:
+            QFontDatabase.addApplicationFont(':/assets/OpenSans-Bold.ttf')
+
+        font = QFont("OpenSans", 9, QFont.Normal)
+        # TODO: add settingsdlg
+        font_size = self.prefs.get('dwarf_ui_font_size', 12)
+        font.setPixelSize(font_size)
+        _app.setFont(font)
+
 
         # mainwindow statusbar
         self.progressbar = QProgressBar()

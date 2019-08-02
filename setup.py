@@ -11,7 +11,8 @@ setup(
     python_requires='>=3',
     package_data={
         '': ['assets/*'],
-        '': ['assets/icons/*']
+        '': ['assets/icons/*'],
+        '': ['lib/core.js']
     },
     zip_safe=False,
     include_package_data=True,

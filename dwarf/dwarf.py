@@ -19,6 +19,8 @@ import sys
 import argparse
 import shutil
 
+import dwarf.resources
+
 __version__ = '1.0.0'
 
 def pip_install_package(package_name):
@@ -154,14 +156,19 @@ def run_dwarf():
 
     # set icon
     _icon = None
-    if os.name == "nt" and os.path.exists(
-            utils.resource_path('assets/dwarf.ico')):
-        _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
-        qapp.setWindowIcon(_icon)
+    if os.name == "nt":
+        if os.path.exists(utils.resource_path('assets/dwarf.ico')):
+            _icon = QIcon(utils.resource_path('assets/dwarf.ico'))
+        else:
+            _icon = QIcon(':/assets/dwarf.ico')
     else:
         if os.path.exists(utils.resource_path('assets/dwarf.png')):
             _icon = QIcon(utils.resource_path('assets/dwarf.png'))
-            qapp.setWindowIcon(_icon)
+        else:
+            _icon = QIcon(':/assets/dwarf.png')
+
+    if _icon:
+        qapp.setWindowIcon(_icon)
 
     _prefs = Prefs()
     local_update_disabled = _prefs.get('disable_local_frida_update', False)
@@ -201,24 +208,26 @@ def run_dwarf():
         # windows stuff
         import ctypes
         try:
-            # write ini to show folder with dwarficon
-            folder_stuff = "[.ShellClassInfo]\n"
-            folder_stuff += "IconResource=assets\\dwarf.ico,0\n"
-            folder_stuff += "[ViewState]\n"
-            folder_stuff += "Mode=\n"
-            folder_stuff += "Vid=\n"
-            folder_stuff += "FolderType=Generic\n"
-            try:
-                with open('desktop.ini', 'w') as ini:
-                    ini.writelines(folder_stuff)
+            if os.path.exists(utils.resource_path('assets/dwarf.ico')):
+                # write ini to show folder with dwarficon
+                folder_stuff = "[.ShellClassInfo]\n"
+                folder_stuff += "IconResource=assets\\dwarf.ico,0\n"
+                folder_stuff += "[ViewState]\n"
+                folder_stuff += "Mode=\n"
+                folder_stuff += "Vid=\n"
+                folder_stuff += "FolderType=Generic\n"
+                try:
+                    ini_path = os.path.dirname(os.path.abspath(__file__)) + os.pardir + os.sep + 'desktop.ini'
+                    with open(ini_path, 'w') as ini:
+                        ini.writelines(folder_stuff)
 
-                # set fileattributes to hidden + systemfile
-                ctypes.windll.kernel32.SetFileAttributesW(
-                    r'desktop.ini', 0x02 | 0x04
-                )  # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
-            except PermissionError:
-                # its hidden+system already
-                pass
+                    # set fileattributes to hidden + systemfile
+                    ctypes.windll.kernel32.SetFileAttributesW(
+                        ini_path, 0x02 | 0x04
+                    )  # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
+                except PermissionError:
+                    # its hidden+system already
+                    pass
 
             # fix for showing dwarf icon in windows taskbar instead of pythonicon
             _appid = u'iGio90.dwarf.debugger'
@@ -241,7 +250,9 @@ def run_dwarf():
         args.target = 'local'
 
     app_window = AppWindow(args)
-    app_window.setWindowIcon(_icon)
+    if _icon:
+        app_window.setWindowIcon(_icon)
+
     app_window.onRestart.connect(_on_restart)
 
     try:
