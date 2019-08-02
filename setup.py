@@ -26,6 +26,7 @@ setup(
     version=DWARF_VERSION,
     author="Giovanni Rocca (iGio90)",
     author_email="giovanni.rocca.90@gmail.com",
+    license='GPLv3+',
     description=
     "Full featured multi arch/os debugger built on top of PyQt5 and frida",
     long_description=
@@ -45,8 +46,19 @@ setup(
     # Script info
     entry_points={'console_scripts': ['dwarf = dwarf.dwarf:main']},
     classifiers=[
+        "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
         "LICENSE :: OSI APPROVED :: GNU LESSER GENERAL PUBLIC LICENSE V3 OR LATER (LGPLV3+)",
         "Operating System :: OS Independent",
+        "Operating System :: OS Independent",
+        "Operating System :: POSIX",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: MacOS :: MacOS X",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "Topic :: Software Development :: Debuggers",
+        "Topic :: Software Development :: Disassemblers",
+        "Topic :: Security"
     ]
 )
