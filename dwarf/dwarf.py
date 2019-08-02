@@ -19,8 +19,6 @@ import sys
 import argparse
 import shutil
 
-import dwarf.resources # pylint: disable=unused-import
-
 DWARF_VERSION = '1.0.0'
 
 __version__ = DWARF_VERSION
@@ -145,6 +143,8 @@ def run_dwarf():
     from PyQt5.QtCore import Qt
     from PyQt5.QtGui import QIcon
     from PyQt5.QtWidgets import QApplication
+
+    import dwarf.resources # pylint: disable=unused-import
 
     qapp = QApplication([])
 
