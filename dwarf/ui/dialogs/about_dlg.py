@@ -20,6 +20,7 @@ from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QTextEdit
 from dwarf.ui.dialogs.dwarf_dialog import DwarfDialog
 
+from dwarf.dwarf import DWARF_VERSION
 from dwarf.lib import utils
 
 
@@ -27,7 +28,7 @@ class AboutDialog(DwarfDialog):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        self.title = "About"
+        self.title = 'About'
         self.modal = True
 
         self._gplv3 = """GNU GENERAL PUBLIC LICENSE
@@ -676,6 +677,7 @@ class AboutDialog(DwarfDialog):
         v_box.addLayout(head)
 
         v_box.addWidget(QLabel('Copyright (C) 2019 Giovanni Rocca (iGio90)'))
+        v_box.addWidget(QLabel('Version: ' + DWARF_VERSION))
 
         license_text = QTextEdit()
         # replace tabbed

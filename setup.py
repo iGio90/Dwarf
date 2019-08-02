@@ -17,13 +17,13 @@
 """
 from setuptools import setup, find_packages
 
-from dwarf.dwarf import __version__
+from dwarf.dwarf import DWARF_VERSION
 
 setup(
 
     # Package info
     name='dwarf',
-    version=__version__,
+    version=DWARF_VERSION,
     packages=find_packages(),
     python_requires='>=3',
     package_data={'': ['assets/*', 'assets/icons/*', 'lib/core.js']},

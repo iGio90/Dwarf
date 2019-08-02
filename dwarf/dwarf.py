@@ -21,7 +21,9 @@ import shutil
 
 import dwarf.resources # pylint: disable=unused-import
 
-__version__ = '1.0.0'
+DWARF_VERSION = '1.0.0'
+
+__version__ = DWARF_VERSION
 
 def pip_install_package(package_name):
     try:
