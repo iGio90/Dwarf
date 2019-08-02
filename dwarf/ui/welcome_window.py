@@ -59,11 +59,12 @@ class DwarfCommitsThread(QThread):
                     'error: git not available on your system')
                 return
         _git = Git()
-        data = _git.get_dwarf_commits()
+        data = _git.get_dwarf_releases()
         if data is None:
             self.on_status_text.emit('Failed to fetch commit list. Try later.')
             return
 
+        # TODO: check for dev/release version and updated version
         most_recent_remote_commit = ''
         most_recent_local_commit = utils.do_shell_command(
             'git log -1 master --pretty=format:%H')

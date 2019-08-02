@@ -26,6 +26,7 @@ from dwarf.lib import utils
 
 class Git(object):
     CACHE_PATH = '.git_cache'
+    DWARF_CACHE = CACHE_PATH + '/dwarf'
     DWARF_COMMITS_CACHE = CACHE_PATH + '/dwarf_commits'
     DWARF_SCRIPTS_CACHE = CACHE_PATH + '/dwarf_scripts'
     FRIDA_CACHE = CACHE_PATH + '/frida'
@@ -64,6 +65,10 @@ class Git(object):
                     'data': data
                 }))
         return data
+
+    def get_dwarf_releases(self):
+        return self._open_cache(
+            Git.DWARF_CACHE, 'https://api.github.com/repos/iGio90/dwarf/releases')
 
     def get_dwarf_commits(self):
         return self._open_cache(
