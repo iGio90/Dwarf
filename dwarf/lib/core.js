@@ -328,7 +328,13 @@ function Dwarf() {
             var dontLog = false;
             if (Process.platform === 'windows') {
                 // hide SetThreadName - https://github.com/frida/glib/blob/master/glib/gthread-win32.c#L579
-                if (ptr(exception['context']['eax']).readInt() === 0x406d1388) {
+                var reg = null;
+                if (Process.arch === 'x64') {
+                    reg = exception['context']['rax'];
+                } else if (Process.arch === 'ia32') {
+                    reg = exception['context']['eax'];
+                }
+                if (reg !== null && reg.readInt() === 0x406d1388) {
                     dontLog = true;
                 }
             }
@@ -562,6 +568,9 @@ function Dwarf() {
                 for (var reg in ctx) {
                     var val = ctx[reg];
                     var isValidPtr = false;
+                    if (DEBUG) {
+                        _log('[' + tid + '] getting register information:', reg, val);
+                    }
                     var ts = api.getAddressTs(val);
                     isValidPtr = ts[0] > 0;
                     newCtx[reg] = {
@@ -855,12 +864,12 @@ function Dwarf() {
 
                     if (call_constructors) {
                         function attach_call_constructors() {
-                            var intr = Interceptor.attach(call_constructors,  {
-                                onEnter: function (args) {
-                                    intr.detach();
+                            var intr = wrappedInterceptor.attach(call_constructors, function (args) {
+                                intr.detach();
+                                try {
                                     getDwarf().breakModuleLoading.apply(this, [args[4].readUtf8String()]);
-                                    attach_call_constructors();
-                                }
+                                } catch (e) {}
+                                attach_call_constructors();
                             });
                         }
 

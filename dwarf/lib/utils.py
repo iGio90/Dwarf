@@ -75,12 +75,14 @@ def parse_ptr(ptr):
         ptr = 0
     return ptr
 
+
 def home_path():
     from pathlib import Path
     dwarf_home = str(Path.home()) + os.sep + '.dwarf' + os.sep
     if not os.path.exists(dwarf_home):
         os.mkdir(dwarf_home)
     return dwarf_home
+
 
 def resource_path(relative_path):
     """get path to resource
