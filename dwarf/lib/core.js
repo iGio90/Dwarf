@@ -296,6 +296,10 @@ function Dwarf() {
     };
 
     this.breakModuleLoading = function (moduleName) {
+        if (!isString(moduleName)) {
+            return;
+        }
+
         var m = Process.findModuleByName(moduleName);
         if (m === null) {
             m = {'name': moduleName, 'base': '0x0', 'size': 0, 'path':'', 'imports': [], 'exports': [], 'symbols':[]};
