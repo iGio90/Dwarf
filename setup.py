@@ -24,6 +24,14 @@ setup(
     # Package info
     name='dwarf',
     version=DWARF_VERSION,
+    author="Giovanni Rocca (iGio90)",
+    author_email="giovanni.rocca.90@gmail.com",
+    description=
+    "Full featured multi arch/os debugger built on top of PyQt5 and frida",
+    long_description=
+    "A debugger for reverse engineers, crackers and security analyst. Or you can call it damn, why are raspberries so fluffy or yet, duck warriors are rich as fuck. Whatever you like! Built on top of pyqt5, frida and some terrible code.",
+    long_description_content_type="text/markdown",
+    url="https://github.com/iGio90/Dwarf",
     packages=find_packages(),
     python_requires='>=3',
     package_data={'': ['assets/*', 'assets/icons/*', 'lib/core.js']},
@@ -35,4 +43,10 @@ setup(
         'PyQt5==5.11.3', 'pyperclip==1.7.0'
     ],
     # Script info
-    entry_points={'console_scripts': ['dwarf = dwarf.dwarf:main']})
+    entry_points={'console_scripts': ['dwarf = dwarf.dwarf:main']},
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "LICENSE :: OSI APPROVED :: GNU LESSER GENERAL PUBLIC LICENSE V3 OR LATER (LGPLV3+)",
+        "Operating System :: OS Independent",
+    ]
+)
