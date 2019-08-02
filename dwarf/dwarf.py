@@ -211,7 +211,7 @@ def run_dwarf():
             if os.path.exists(utils.resource_path('assets/dwarf.ico')):
                 # write ini to show folder with dwarficon
                 folder_stuff = "[.ShellClassInfo]\n"
-                folder_stuff += "IconResource=assets\\dwarf.ico,0\n"
+                folder_stuff += "IconResource=dwarf\\assets\\dwarf.ico,0\n"
                 folder_stuff += "[ViewState]\n"
                 folder_stuff += "Mode=\n"
                 folder_stuff += "Vid=\n"
@@ -223,7 +223,7 @@ def run_dwarf():
 
                     # set fileattributes to hidden + systemfile
                     ctypes.windll.kernel32.SetFileAttributesW(
-                        ini_path, 0x02 | 0x04
+                        ini_path, 0x02 | 0x04 | ~0x20
                     )  # FILE_ATTRIBUTE_HIDDEN = 0x02 | FILE_ATTRIBUTE_SYSTEM = 0x04
                 except PermissionError:
                     # its hidden+system already
