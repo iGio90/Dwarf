@@ -6,7 +6,7 @@ Built on top of pyqt5, frida and some terrible code.
 
 <p align="center">
   <br>
-  <img src="assets/dwarf.png">
+  <img src="dwarf/assets/dwarf.png">
   <br>
   <br>
   <br>  
