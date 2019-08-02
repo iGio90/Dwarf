@@ -217,7 +217,8 @@ def run_dwarf():
                 folder_stuff += "Vid=\n"
                 folder_stuff += "FolderType=Generic\n"
                 try:
-                    ini_path = os.path.dirname(os.path.abspath(__file__)) + os.pardir + os.sep + 'desktop.ini'
+                    ini_path = os.path.dirname(os.path.abspath(__file__)) + os.sep + os.pardir + os.sep + 'desktop.ini'
+                    print(ini_path)
                     with open(ini_path, 'w') as ini:
                         ini.writelines(folder_stuff)
 

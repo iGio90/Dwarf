@@ -68,3 +68,5 @@ bin
 dwarf.egg-info
 build_resources.py
 *.qrc
+### windows ###
+desktop.ini
