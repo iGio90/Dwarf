@@ -71,7 +71,7 @@ class DisassemblyView(QAbstractScrollArea):
             'divider': QColor('#666'),
             'line': QColor('#111'),
             'selection_fg': QColor(Qt.white),
-            'selection_bg': QColor('#8f3130')
+            'selection_bg': QColor('#630000')
         }
 
         self._jump_color = QColor('#39a')
