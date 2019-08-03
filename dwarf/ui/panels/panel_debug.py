@@ -183,6 +183,7 @@ class QDebugPanel(QMainWindow):
             if self.disassembly_panel_range is not None:
                 line_index_for_address = self.disassembly_panel.get_line_for_address(address)
                 if line_index_for_address >= 0:
+                    self.disassembly_panel.highlighted_line = line_index_for_address
                     self.disassembly_panel.verticalScrollBar().setValue(line_index_for_address)
                     return True
         return False

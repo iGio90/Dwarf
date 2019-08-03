@@ -300,9 +300,25 @@ function Dwarf() {
             return;
         }
 
+        //TODO: add blacklisted modules somewhere
+        if (Process.platform === 'windows') {
+            if (moduleName === 'ntdll.dll') {
+                return;
+            }
+        } else if (Process.platform === 'linux') {
+            if (javaHelper !== null) {
+                if (javaHelper._sdk <= 23) {
+                    if (moduleName === 'app_process') {
+                        return;
+                    }
+                }
+            }
+        }
+
         var m = Process.findModuleByName(moduleName);
         if (m === null) {
             m = {'name': moduleName, 'base': '0x0', 'size': 0, 'path':'', 'imports': [], 'exports': [], 'symbols':[]};
+            return;
         } else {
             m = api.enumerateModuleInfo(m);
         }
