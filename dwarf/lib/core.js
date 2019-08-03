@@ -646,7 +646,7 @@ function Dwarf() {
 
         if (!isArm64 && arch !== 'x64') {
             console.log('stalker is not supported on current arch: ' + arch);
-            return 1;
+            return null;
         }
 
         const tid = Process.getCurrentThreadId();
@@ -2797,7 +2797,6 @@ var InterceptorWrapper = function () {
 
             if (typeof logic === 'function') {
                 hook.interceptor = Interceptor.attach(hook.nativePtr, function (args) {
-                    this.detach = hook.interceptor.detach;
                     const tid = Process.getCurrentThreadId();
 
                     getDwarf().native_contexts[tid] = this.context;
@@ -2810,7 +2809,6 @@ var InterceptorWrapper = function () {
             } else if (typeof logic === 'object') {
                 hook.interceptor = Interceptor.attach(hook.nativePtr, {
                     onEnter: function (args) {
-                        this.detach = hook.interceptor.detach;
                         this.tid = Process.getCurrentThreadId();
 
                         getDwarf().native_contexts[this.tid] = this.context;
@@ -2884,7 +2882,12 @@ var InterceptorWrapper = function () {
         for (var hook in getDwarf().hooks) {
             api.deleteHook(hook);
         }
-        return Interceptor.detachAll();
+        for (var hook in getDwarf().nativeOnLoads) {
+            api.deleteHook(hook);
+        }
+        for (var hook in getDwarf().javaOnLoads) {
+            api.deleteHook(hook);
+        }
     };
     this.flush = function () {
         return Interceptor.flush();
