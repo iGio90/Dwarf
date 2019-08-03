@@ -1316,8 +1316,8 @@ function DwarfApi() {
 
     this.evaluateFunction = function (w) {
         try {
-            var fn = new Function('Interceptor', 'Thread', w);
-            return fn.apply(this, [DwarfInterceptor, DwarfThread]);
+            var fn = new Function('var Interceptor = DwarfInterceptor; var Thread = DwarfThread;\n' + w);
+            return fn.apply(this, []);
         } catch (e) {
             _log_err('evaluateFunction', e);
             return '';
