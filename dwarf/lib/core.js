@@ -1344,7 +1344,7 @@ function DwarfApi() {
 
     this.findModule = function (module) {
         var _module;
-        if (isString(module)) {
+        if (isString(module) && module.substring(0, 2) !== '0x') {
             _module = Process.findModuleByName(module);
             if (isDefined(_module)) {
                 return _module;
@@ -1370,7 +1370,7 @@ function DwarfApi() {
             }
         } else {
             _module = Process.findModuleByAddress(ptr(module));
-            if(!isDefined(_module)) {
+            if (!isDefined(_module)) {
                 _module = {};
             }
             return _module;
