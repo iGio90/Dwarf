@@ -83,6 +83,8 @@ class RangesPanel(DwarfListView):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._on_contextmenu)
 
+        self.update_ranges()
+
     # ************************************************************************
     # **************************** Properties ********************************
     # ************************************************************************

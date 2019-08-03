@@ -870,6 +870,8 @@ class AppWindow(QMainWindow):
             self.show_main_tab('ranges')
             # forward only now to panel it connects after creation
             self.ranges_panel.set_ranges(ranges)
+        else:
+            self.show_main_tab('ranges')
 
     def _on_setmodules(self, modules):
         """ Dwarf wants to set Modules
@@ -879,8 +881,7 @@ class AppWindow(QMainWindow):
         if self.modules_panel is None:
             self._create_ui_elem('modules')
             self.modules_panel.set_modules(modules)
-
-        if self.modules_panel is not None:
+        else:
             self.show_main_tab('modules')
 
     def _manually_apply_context(self, context):
