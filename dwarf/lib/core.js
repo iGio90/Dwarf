@@ -636,15 +636,15 @@ function Dwarf() {
         }
 
         const tid = Process.getCurrentThreadId();
-        const context = getDwarf().native_contexts[tid];
-
-        if (!isDefined(context)) {
-            console.log('cant start stalker outside a valid native context');
-            return null;
-        }
 
         var stalkerInfo = getDwarf().stalker_info[tid];
         if (!isDefined(stalkerInfo)) {
+            const context = getDwarf().native_contexts[tid];
+            if (!isDefined(context)) {
+                console.log('cant start stalker outside a valid native context');
+                return null;
+            }
+
             stalkerInfo = new StalkerInfo(tid);
             getDwarf().stalker_info[tid] = stalkerInfo;
 
