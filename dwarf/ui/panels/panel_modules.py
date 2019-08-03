@@ -196,6 +196,11 @@ class ModulesPanel(QSplitter):
         for module in modules:
             self.add_module(module)
 
+        self.modules_list.resizeColumnToContents(0)
+        self.modules_list.resizeColumnToContents(1)
+        self.modules_list.resizeColumnToContents(2)
+        self.modules_list.resizeColumnToContents(3)
+
     def on_module_loaded(self, data):
         module = data[0]
         self.add_module(module)
