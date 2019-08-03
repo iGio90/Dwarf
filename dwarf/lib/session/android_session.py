@@ -11,10 +11,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import os
-
 import frida
-from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QMenu, QAction, QFileDialog
 
 from dwarf.lib.session.session import Session
@@ -23,27 +20,6 @@ from dwarf.lib.adb import Adb
 
 from dwarf.ui.widgets.apk_list import ApkListDialog
 from dwarf.lib import utils
-
-
-class SmaliThread(QThread):
-    onFinished = pyqtSignal(name='onFinished')
-    onError = pyqtSignal(name='onError')
-
-    def __init__(self, parent=None, device_id=None, package_name=None):
-        super(SmaliThread, self).__init__(parent)
-        self._adb = Adb()
-        self._adb.device = device_id
-        self._package_name = package_name
-
-    def run(self):
-        if self._adb.device is None:
-            return
-
-        if not self._package_name:
-            self.onError.emit()
-            return
-        else:
-            self.onError.emit()
 
 
 class AndroidSession(Session):
@@ -57,8 +33,6 @@ class AndroidSession(Session):
 
         if not self.adb.min_required:
             utils.show_message_box(self.adb.get_states_string())
-
-        self._smali_thread = None
 
     @property
     def session_type(self):
@@ -99,7 +73,7 @@ class AndroidSession(Session):
 
     def start(self, args):
         super().start(args)
-        self.adb.device = self.dwarf.device
+        self.adb.device = self.dwarf.device.id
 
     def decompile_apk(self):
         apk_dlg = ApkListDialog(self._app_window)

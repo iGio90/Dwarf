@@ -256,8 +256,7 @@ class Adb(QObject):
     def available(self):
         """ Returns True if adb and dev/emu and (su or root) is True
         """
-        return self._adb_available and self._dev_emu and (self._is_root
-                                                          or self._is_su)
+        return self._adb_available and self._dev_emu and (self._is_root or self._is_su)
 
     def non_root_available(self):
         """ Returns True if adb and dev/emu is True
@@ -375,6 +374,14 @@ class Adb(QObject):
                 found = True
 
         return found
+
+    def get_data_path_for_package(self, package):
+        """ the data path for the given package
+        """
+        ret = self._do_adb_command('shell pm list packages -f %s' % package)
+        if ret is None:
+            ret = ''
+        return ret
 
     def get_frida_version(self):
         """ Returns version from 'frida --version'

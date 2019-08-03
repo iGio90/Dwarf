@@ -538,7 +538,13 @@ function Dwarf() {
             "reason": reason
         };
 
-        if (reason === REASON_BREAKPOINT_NATIVE_ONLOAD) {
+        if (reason === REASON_SET_INITIAL_CONTEXT) {
+            data['arch'] = Process.arch;
+            data['platform'] = Process.platform;
+            data['java'] = Java.available;
+            data['pid'] = Process.id;
+            data['pointerSize'] = Process.pointerSize;
+        } else if (reason === REASON_BREAKPOINT_NATIVE_ONLOAD) {
             data['module'] = hook.module;
             data['moduleBase'] = hook.moduleBase;
             data['moduleEntry'] = hook.moduleEntry;
@@ -623,14 +629,6 @@ function Dwarf() {
                 bt = { 'bt': api.javaBacktrace(), 'type': 'java' };
                 data['backtrace'] = bt;
             }
-        } else {
-            data['arch'] = Process.arch;
-            data['platform'] = Process.platform;
-            data['java'] = Java.available;
-            data['pid'] = Process.id;
-            data['pointerSize'] = Process.pointerSize;
-            //data['modules'] = api.enumerateModules();
-            //data['ranges'] = Process.enumerateRanges('---');
         }
 
         if (DEBUG) {
@@ -1924,20 +1922,13 @@ function DwarfApi() {
         if (Java.available) {
             Java.performNow(function () {
                 var Intent = Java.use('android.content.Intent');
-                var ActivityThread = Java.use('android.app.ActivityThread');
-                var Context = Java.use('android.content.Context');
 
-                var ctx = Java.cast(ActivityThread.currentApplication().getApplicationContext(), Context);
-                var intent = ctx.getPackageManager().getLaunchIntentForPackage(
-                    ctx.getPackageName());
+                var ctx = javaHelper.getApplicationContext();
+                var intent = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP['value']);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK['value']);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK['value']);
                 ctx.startActivity(intent);
-
-                Intent.$dispose();
-                ActivityThread.$dispose();
-                Context.$dispose();
             });
         }
     };
