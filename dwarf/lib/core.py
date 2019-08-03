@@ -67,6 +67,7 @@ class Dwarf(QObject):
     onWatcherRemoved = pyqtSignal(str, name='onWatcherRemoved')
     # ranges + modules
     onSetRanges = pyqtSignal(list, name='onSetRanges')
+    onSearchableRanges = pyqtSignal(list, name='onSearchableRanges')
     onSetModules = pyqtSignal(list, name='onSetModules')
     onLogToConsole = pyqtSignal(str, name='onLogToConsole')
     onLogEvent = pyqtSignal(str, name='onLogEvent')
@@ -726,6 +727,8 @@ class Dwarf(QObject):
             self.onSetModules.emit(modules)
         elif cmd == 'update_ranges':
             self.onSetRanges.emit(json.loads(parts[2]))
+        elif cmd == 'update_searchable_ranges':
+            self.onSearchableRanges.emit(json.loads(parts[2]))
         elif cmd == 'watcher':
             exception = json.loads(parts[1])
             self.log_event('watcher hit op %s address %s @thread := %s' %

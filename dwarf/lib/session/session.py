@@ -68,11 +68,7 @@ class Session(QObject):
 
     @property
     def session_ui_sections(self):
-        return None
-
-    @property
-    def non_closable(self):
-        return None
+        return ['hooks', 'bookmarks', 'threads', 'registers', 'console', 'watchers', 'backtrace', 'debug']
 
     @property
     def frida_device(self):

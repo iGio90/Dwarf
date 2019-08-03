@@ -22,16 +22,6 @@ class RemoteSession(Session):
         super(RemoteSession, self).__init__(app_window)
 
     @property
-    def session_ui_sections(self):
-        # what sections we want in session_ui
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'debug',
-                'console', 'watchers', 'backtrace']
-
-    @property
-    def non_closable(self):
-        return ['debug', 'ranges', 'modules']
-
-    @property
     def session_type(self):
         """ return session name to show in menus etc
         """

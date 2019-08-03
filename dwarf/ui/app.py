@@ -35,6 +35,7 @@ from dwarf.ui.dialogs.detached import QDialogDetached
 from dwarf.ui.welcome_window import WelcomeDialog
 from dwarf.ui.widgets.hex_edit import HighLight, HighlightExistsError
 
+
 class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
@@ -97,7 +98,6 @@ class AppWindow(QMainWindow):
         font_size = self.prefs.get('dwarf_ui_font_size', 12)
         font.setPixelSize(font_size)
         _app.setFont(font)
-
 
         # mainwindow statusbar
         self.progressbar = QProgressBar()
@@ -229,6 +229,14 @@ class AppWindow(QMainWindow):
             'Search',
             lambda: self.show_main_tab('search'),
             shortcut=QKeySequence(Qt.CTRL + Qt.Key_F3))
+        self.panels_menu.addAction(
+            'Modules',
+            lambda: self.show_main_tab('modules')
+        )
+        self.panels_menu.addAction(
+            'Ranges',
+            lambda: self.show_main_tab('ranges')
+        )
 
         self.view_menu.addMenu(self.panels_menu)
 
@@ -304,8 +312,6 @@ class AppWindow(QMainWindow):
         tab_text = self.main_tabs.tabText(index)
         if tab_text:
             tab_text = tab_text.lower().replace(' ', '-')
-            if tab_text in self.session_manager.session.non_closable:
-                return
             try:
                 self._ui_elems.remove(tab_text)
             except ValueError:  # recheck ValueError: list.remove(x): x not in list
@@ -313,18 +319,6 @@ class AppWindow(QMainWindow):
             self.main_tabs.removeTab(index)
 
             self.onSystemUIElementRemoved.emit(tab_text)
-
-    def _handle_tab_change(self):
-        for index in range(self.main_tabs.count()):
-            tab_name = self.main_tabs.tabText(index).lower().replace(' ', '-')
-            if tab_name in self.session_manager.session.non_closable:
-                self.main_tabs.tabBar().setTabButton(index, QTabBar.RightSide,
-                                                     None)
-
-                if tab_name in self._tab_order:
-                    should_index = self._tab_order.index(tab_name)
-                    if index != should_index:
-                        self.main_tabs.tabBar().moveTab(index, should_index)
 
     def _on_dwarf_updated(self):
         self.onRestart.emit()
@@ -582,9 +576,6 @@ class AppWindow(QMainWindow):
             elem_wiget = self.smali_panel
         else:
             print('no handler for elem: ' + elem)
-
-        # make tabs unclosable and sort
-        self._handle_tab_change()
 
         if elem_wiget is not None:
             self.onSystemUIElementCreated.emit(elem, elem_wiget)

@@ -2052,6 +2052,15 @@ function DwarfApi() {
         }
     };
 
+    this.updateSearchableRanges = function () {
+        try {
+            loggedSend('update_searchable_ranges:::' + Process.getCurrentThreadId() + ':::' +
+                JSON.stringify(Process.enumerateRanges('r--')))
+        } catch (e) {
+            _log_err('updateSearchableRanges', e);
+        }
+    };
+
     this.writeBytes = function (pt, what) {
         try {
             pt = ptr(pt);
