@@ -187,21 +187,22 @@ class DisassemblyView(QAbstractScrollArea):
         self._lines.append(instruction)
         self.adjust()
 
-    def apply_range(self, dwarf_range, num_instructions=0):
+    def disasm(self, base, data, offset, num_instructions=0):
         self._app_window.show_progress('disassembling...')
 
         self._lines.clear()
         self.viewport().update()
 
-        if len(self._history) == 0 or self._history[len(self._history) - 1] != dwarf_range.user_req_start_address:
-            self._history.append(dwarf_range.user_req_start_address)
+        h = base + offset
+        if len(self._history) == 0 or self._history[len(self._history) - 1] != h:
+            self._history.append(h)
             if len(self._history) > 25:
                 self._history.pop(0)
 
         self._longest_bytes = 0
 
         self._app_window.dwarf.disassembler.disasm(
-            dwarf_range, self._on_disasm_finished, num_instructions=num_instructions)
+            base, data, offset, self._on_disasm_finished, num_instructions=num_instructions)
 
     def _on_disasm_finished(self, instructions):
         if isinstance(instructions, list):

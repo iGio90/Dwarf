@@ -160,9 +160,13 @@ class QDebugPanel(QMainWindow):
 
             if self.disassembly_panel_range is None:
                 self.disassembly_panel_range = self.memory_panel_range
-                self.disassembly_panel.apply_range(self.disassembly_panel_range)
+                self.disassembly_panel.disasm(
+                    self.disassembly_panel_range.base, self.disassembly_panel_range.data,
+                    self.disassembly_panel_range.user_req_start_offset)
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            self.disassembly_panel.apply_range(self.disassembly_panel_range)
+            self.disassembly_panel.disasm(
+                self.disassembly_panel_range.base, self.disassembly_panel_range.data,
+                self.disassembly_panel_range.user_req_start_offset)
             if not self.dock_disassembly_panel.isVisible():
                 self.dock_disassembly_panel.show()
             self.raise_disassembly_panel()
