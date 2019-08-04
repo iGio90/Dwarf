@@ -1,10 +1,9 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMainWindow, QDockWidget, QWidget
+from PyQt5.QtWidgets import QMainWindow, QDockWidget
 
 from dwarf.lib import utils
-from dwarf.lib.types.range import Range
 from dwarf.ui.dialogs.dialog_input import InputDialog
 from dwarf.ui.widgets.disasm_view import DisassemblyView
 from dwarf.ui.widgets.hex_edit import HexEditor
@@ -38,9 +37,6 @@ class QDebugPanel(QMainWindow):
             self.dock_functions_list
         ], [100], Qt.Horizontal)
         self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
-
-        self.memory_panel_range = None
-        self.disassembly_panel_range = None
 
         screen_size = QtWidgets.QDesktopWidget().screenGeometry(-1)
         m_width = screen_size.width()
@@ -134,57 +130,46 @@ class QDebugPanel(QMainWindow):
         address = utils.parse_ptr(address)
 
         if view == DEBUG_VIEW_MEMORY:
-            if self.memory_panel_range is not None:
+            if self.memory_panel.number_of_lines() > 0:
                 if self.is_address_in_view(view, address):
                     return
-
-            self.memory_panel_range = \
-                Range.build_or_get(self.app.dwarf, address, cb=lambda x: self._apply_range(address, view=view))
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            if self.disassembly_panel_range is not None:
+            if self.disassembly_panel.number_of_lines() > 0:
                 if self.is_address_in_view(view, address):
                     return
 
-            self.disassembly_panel_range = \
-                Range.build_or_get(self.app.dwarf, address, cb=lambda x: self._apply_range(address, view=view))
+        self.app.dwarf.read_range_async(
+            address, lambda base, data, offset: self._apply_data(base, data, offset, view=view))
 
-    def _apply_range(self, address, view=DEBUG_VIEW_MEMORY):
+    def _apply_data(self, base, data, offset, view=DEBUG_VIEW_MEMORY):
         self.update_functions()
 
         if view == DEBUG_VIEW_MEMORY:
-            self.memory_panel.set_data(
-                self.memory_panel_range.data, base=self.memory_panel_range.base, focus_address=address)
+            self.memory_panel.set_data(data, base=base, offset=offset)
             if not self.dock_memory_panel.isVisible():
                 self.dock_memory_panel.show()
             self.raise_memory_panel()
 
-            if self.disassembly_panel_range is None:
-                self.disassembly_panel_range = self.memory_panel_range
-                self.disassembly_panel.disasm(
-                    self.disassembly_panel_range.base, self.disassembly_panel_range.data,
-                    self.disassembly_panel_range.user_req_start_offset)
+            if self.disassembly_panel.number_of_lines() == 0:
+                self.disassembly_panel.disasm(base, data, offset)
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            self.disassembly_panel.disasm(
-                self.disassembly_panel_range.base, self.disassembly_panel_range.data,
-                self.disassembly_panel_range.user_req_start_offset)
+            self.disassembly_panel.disasm(base, data, offset)
             if not self.dock_disassembly_panel.isVisible():
                 self.dock_disassembly_panel.show()
             self.raise_disassembly_panel()
 
-            if self.memory_panel_range is None:
-                self.memory_panel_range = self.disassembly_panel_range
-                self.memory_panel.set_data(
-                    self.memory_panel_range.data, base=self.memory_panel_range.base, focus_address=address)
+            if self.memory_panel.number_of_lines() == 0:
+                self.memory_panel.set_data(data, base=base, offset=offset)
 
     def is_address_in_view(self, view, address):
         if view == DEBUG_VIEW_MEMORY:
-            if self.memory_panel_range is not None and self.memory_panel.data:
+            if self.memory_panel.data:
                 ptr_exists = self.memory_panel.base <= address <= self.memory_panel.base + len(self.memory_panel.data)
                 if ptr_exists:
                     self.memory_panel.caret.position = address - self.memory_panel.base
                     return True
         elif view == DEBUG_VIEW_DISASSEMBLY:
-            if self.disassembly_panel_range is not None:
+            if self.disassembly_panel.visible_lines() > 0:
                 line_index_for_address = self.disassembly_panel.get_line_for_address(address)
                 if line_index_for_address >= 0:
                     self.disassembly_panel.highlighted_line = line_index_for_address
@@ -198,14 +183,10 @@ class QDebugPanel(QMainWindow):
             self.jump_to_address(ptr, view=view)
 
     def dump_data(self, address, _len):
-        def _dump(dwarf_range):
-            if address + _len > dwarf_range.tail:
-                self.display_error('length is higher than range size')
-            else:
-                data = dwarf_range.data[address:address + _len]
-                if data is not None:
-                    from PyQt5.QtWidgets import QFileDialog
-                    _file = QFileDialog.getSaveFileName(self.app)
-                    with open(_file[0], 'wb') as f:
-                        f.write(data)
-        Range.build_or_get(self.app.dwarf, address, cb=_dump)
+        def _dump(ptr, data):
+            if data is not None:
+                from PyQt5.QtWidgets import QFileDialog
+                _file = QFileDialog.getSaveFileName(self.app)
+                with open(_file[0], 'wb') as f:
+                    f.write(data)
+        self.app.dwarf.read_memory_async(address, _len, _dump)

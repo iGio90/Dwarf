@@ -540,7 +540,7 @@ class AppWindow(QMainWindow):
             self.modules_panel.onModuleFuncSelected.connect(
                 self._on_modulefunc_dblclicked)
             self.modules_panel.onAddHook.connect(self._on_addmodule_hook)
-            self.modules_panel.onDumpBinary.connect(self._on_dumpmodule)
+            self.modules_panel.onDumpBinary.connect(self._on_dump_module)
             self.main_tabs.addTab(self.modules_panel, 'Modules')
             elem_wiget = self.modules_panel
         elif elem == 'ranges':
@@ -548,7 +548,7 @@ class AppWindow(QMainWindow):
             self.ranges_panel = RangesPanel(self)
             self.ranges_panel.onItemDoubleClicked.connect(
                 self._range_dblclicked)
-            self.ranges_panel.onDumpBinary.connect(self._on_dumpmodule)
+            self.ranges_panel.onDumpBinary.connect(self._on_dump_module)
             # connect to watcherpanel func
             self.ranges_panel.onAddWatcher.connect(
                 self.watchers_panel.do_addwatcher_dlg)
@@ -825,23 +825,13 @@ class AppWindow(QMainWindow):
         ptr = utils.parse_ptr(ptr)
         self.jump_to_address(ptr)
 
-    def _on_dumpmodule(self, data):
+    def _on_dump_module(self, data):
         """ DumpBinary MenuItem in ModulePanel was selected
         """
         ptr, size = data
         ptr = utils.parse_ptr(ptr)
         size = int(size, 10)
         self.dwarf.dump_memory(ptr=ptr, length=size)
-
-    def _disassemble_range(self, dwarf_range):
-        """ Disassemble MenuItem in Hexview was selected
-        """
-        if dwarf_range:
-            if self.asm_panel is None:
-                self._create_ui_elem('disassembly')
-
-            self.asm_panel.disassemble(dwarf_range)
-            self.show_main_tab('disassembly')
 
     def _range_dblclicked(self, ptr):
         """ Range in RangesPanel was doubleclicked
@@ -931,7 +921,7 @@ class AppWindow(QMainWindow):
                     self.jump_to_address(context['ptr'], view=1)
                 else:
                     if 'pc' in context['context']:
-                        if self.debug_panel.disassembly_panel_range is None or manual:
+                        if self.debug_panel.disassembly_panel.number_of_lines() == 0 or manual:
                             self.jump_to_address(context['context']['pc']['value'], view=1)
 
         if 'backtrace' in context:

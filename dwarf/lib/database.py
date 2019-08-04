@@ -14,27 +14,15 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-from dwarf.lib import utils
 
 
 class Database:
     """ DwarfDatabase
     """
 
-    def __init__(self, dwarf):
+    def __init__(self):
         super().__init__()
         self.modules_info = {}
-        self.ranges_info = {}
-
-        dwarf.onThreadResumed.connect(self._clean_ranges_cache)
-
-    def _clean_ranges_cache(self):
-        # files will be cleaned on next db creation. to cleanup cache is enough to remove info from the map
-        # we clean only ranges with writable permissions
-        for _range_address in list(self.ranges_info.keys()):
-            perm = self.ranges_info[_range_address].permissions
-            if 'w' in perm:
-                del self.ranges_info[_range_address]
 
     def get_module_info(self, address):
         address = self.sanify_address(address)
@@ -52,25 +40,10 @@ class Database:
 
         return None
 
-    def get_range_info(self, address):
-        address = utils.parse_ptr(address)
-
-        for hex_base in self.ranges_info:
-            dwarf_range = self.ranges_info[hex_base]
-            if address > dwarf_range.base:
-                if address < dwarf_range.tail:
-                    return dwarf_range
-                return None
-        return None
-
     def put_module_info(self, address, module_info):
         address = self.sanify_address(address)
         self.modules_info[address] = module_info
         return module_info
-
-    def put_range_info(self, dwarf_range):
-        base = hex(dwarf_range.base)
-        self.ranges_info[base] = dwarf_range
 
     @staticmethod
     def sanify_address(address):

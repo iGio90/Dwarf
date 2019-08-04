@@ -31,6 +31,7 @@ from dwarf.lib.context import Context
 from dwarf.lib.database import Database
 from dwarf.lib.disassembler import Disassembler
 from dwarf.lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
+from dwarf.lib.io import IO
 from dwarf.lib.kernel import Kernel
 
 from dwarf.ui.dialogs.dialog_input import InputDialog
@@ -101,7 +102,8 @@ class Dwarf(QObject):
         super(Dwarf, self).__init__(parent=parent)
         self._app_window = parent
 
-        self.database = Database(self)
+        self.database = Database()
+        self.io = IO(self)
 
         self.keystone_installed = False
         try:
@@ -151,7 +153,8 @@ class Dwarf(QObject):
         self.onRequestJsThreadResume.connect(self._on_request_resume_from_js)
 
     def reinitialize(self):
-        self.database = Database(self)
+        self.database = Database()
+        self.io = IO(self)
 
         self._pid = 0
         self._package = None
@@ -536,28 +539,22 @@ class Dwarf(QObject):
         self.onLogEvent.emit(str(what))
 
     def read_memory(self, ptr, length):
-        if length > 1024 * 1024:
-            position = 0
-            next_size = 1024 * 1024
-            data = bytearray()
-            while True:
-                try:
-                    data += self.dwarf_api('readBytes', [ptr + position, next_size])
-                except:
-                    return None
-                position += next_size
-                diff = length - position
-                if diff > 1024 * 1024:
-                    next_size = 1024 * 1024
-                elif diff > 0:
-                    next_size = diff
-                else:
-                    break
-            ret = bytes(data)
-            del data
-            return ret
-        else:
-            return self.dwarf_api('readBytes', [ptr, length])
+        return self.io.read(ptr, length)
+
+    def read_memory_async(self, ptr, length, callback):
+        """
+        def callback(ptr, data):
+        """
+        self.io.read_async(ptr, length, callback)
+
+    def read_range(self, ptr):
+        return self.io.read_range(ptr)
+
+    def read_range_async(self, ptr, callback):
+        """
+        def callback(base, data, offset):
+        """
+        self.io.read_range_async(ptr, callback)
 
     def remove_watcher(self, ptr):
         return self.dwarf_api('removeWatcher', ptr)

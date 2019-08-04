@@ -858,32 +858,30 @@ class HexEditor(QAbstractScrollArea):
 
         return js_code
 
-    def set_data(self, data, base=0, focus_address=None):
+    def set_data(self, data, base=0, offset=None):
         """ Set new Data
         """
         self.data = data
         self.base = base
         self.adjust()
 
-        if focus_address is not None:
+        if offset is not None:
             self.setFocus()
-            self.caret.position = int(ceil((focus_address - self.base)))
+            self.caret.position = int(ceil(offset))
             self.adjust()
             # scroll position in middle when jump to or something
             line = self.index_to_line(self.caret.position)
             scroll_y = self.verticalScrollBar().value()
             if line >= scroll_y:
-                self.verticalScrollBar().setValue(line
-                                                  - (self.visible_lines() / 2))
+                self.verticalScrollBar().setValue(int(line - (self.visible_lines() / 2)))
             if line < scroll_y:
-                self.verticalScrollBar().setValue(line
-                                                  + (self.visible_lines() / 2))
+                self.verticalScrollBar().setValue(int(line + (self.visible_lines() / 2)))
 
             if self._hover_lines:
                 self._hovered_line = int(ceil(self.visible_lines() / 2))
 
             # add a temp attention highlight
-            self.add_highlight(HighLight('attention', focus_address, 1))
+            self.add_highlight(HighLight('attention', base + offset, 1))
 
         self.viewChanged.emit()
 
@@ -1806,10 +1804,6 @@ class HexEditor(QAbstractScrollArea):
             self.is_64bit_address = False
 
         self._addr_width_changed()
-
-    def apply_range(self, dwarf_range):
-        self.set_data(dwarf_range.data)
-        return 0
 
     def on_script_destroyed(self):
         self.data = None

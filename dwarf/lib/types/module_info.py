@@ -35,7 +35,6 @@ class ModuleInfo:
         # frida objects
         self.exports = []
         self.imports = []
-        self.symbols = []
 
     @property
     def have_details(self):
@@ -77,13 +76,9 @@ class ModuleInfo:
 
     def apply_imports(self, imports):
         self.imports = imports
-        for import_ in imports:
-            self.parse_symbol(import_)
 
     def apply_exports(self, exports):
         self.exports = exports
-        for export in exports:
-            self.parse_symbol(export)
 
     def parse_symbol(self, symbol):
         type_ = symbol['type']

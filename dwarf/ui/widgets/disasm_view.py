@@ -234,6 +234,9 @@ class DisassemblyView(QAbstractScrollArea):
         self.verticalScrollBar().setPageStep(self.visible_lines())
         self.viewport().update()
 
+    def number_of_lines(self):
+        return len(self._lines)
+
     def visible_lines(self):
         """ returns number of lines that fits viewport
         """
