@@ -23,6 +23,7 @@ import json
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from dwarf.lib.types.module_info import ModuleInfo
 
 from frida.core import Session
 
@@ -678,6 +679,10 @@ class Dwarf(QObject):
             if module is not None:
                 str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], module['name']))
                 self.log_event(str_fmt)
+
+                module_info = ModuleInfo.build_module_info_with_data(module)
+                self.database.put_module_info(module_info.base, module_info)
+
                 self.onModuleLoaded.emit([module])
         elif cmd == 'new_thread':
             str_fmt = ('@thread {0} starting new thread with target fn := {1}'.format(parts[1], parts[2]))

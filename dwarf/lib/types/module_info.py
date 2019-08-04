@@ -37,9 +37,21 @@ class ModuleInfo:
         self.imports = []
         self.symbols = []
 
+        if 'imports' in module_base_info:
+            self.apply_imports(module_base_info['imports'])
+        if 'exports' in module_base_info:
+            self.apply_exports(module_base_info['exports'])
+        if 'symbols' in module_base_info:
+            self.apply_symbols(module_base_info['symbols'])
+
     @property
     def have_details(self):
         return self._updated_details
+
+    @staticmethod
+    def build_module_info_with_data(data):
+        module_info = ModuleInfo(data)
+        return module_info
 
     @staticmethod
     def build_module_info(dwarf, name_or_address, fill_ied=False):
