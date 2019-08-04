@@ -908,7 +908,7 @@ class AppWindow(QMainWindow):
 
                 if reason == 2:
                     # native on load
-                    if self.debug_panel.memory_panel_range is None:
+                    if self.debug_panel.memory_panel.number_of_lines() == 0:
                         base = context['moduleBase']
                         self.jump_to_address(base)
                 elif reason == 3:
