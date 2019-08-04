@@ -35,6 +35,7 @@ class ModuleInfo:
         # frida objects
         self.exports = []
         self.imports = []
+        self.symbols = []
 
     @property
     def have_details(self):
@@ -79,14 +80,16 @@ class ModuleInfo:
 
     def apply_exports(self, exports):
         self.exports = exports
+        for export in exports:
+            self.parse_symbol(export, exported=True)
 
-    def parse_symbol(self, symbol):
+    def parse_symbol(self, symbol, exported=False):
         type_ = symbol['type']
         if type_ == 'function':
             # needs to check if address is in symbol. i saw this
             # {'name': '_ZN15QXcbIntegrationC1ERK11QStringListRiPPc', 'type': 'function'}
             if 'address' in symbol and symbol['address'] not in self.functions_map:
-                f = Function(symbol)
+                f = Function(symbol, exported=exported)
                 self.functions.append(f)
                 self.functions_map[symbol['address']] = f
 

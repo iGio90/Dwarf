@@ -14,7 +14,11 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+
+
 class Function:
-    def __init__(self, symbol):
+    def __init__(self, symbol, exported=False):
         self.name = symbol['name']
         self.address = symbol['address']
+
+        self.exported = exported

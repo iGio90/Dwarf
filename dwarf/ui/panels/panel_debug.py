@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMainWindow, QDockWidget
+from dwarf.lib.types.module_info import ModuleInfo
 
 from dwarf.lib import utils
 from dwarf.ui.dialogs.dialog_input import InputDialog
@@ -142,6 +143,9 @@ class QDebugPanel(QMainWindow):
             address, lambda base, data, offset: self._apply_data(base, data, offset, view=view))
 
     def _apply_data(self, base, data, offset, view=DEBUG_VIEW_MEMORY):
+        # make sure we have that module in db before updating functions
+        ModuleInfo.build_module_info(self.app.dwarf, base, fill_ied=True)
+
         self.update_functions()
 
         if view == DEBUG_VIEW_MEMORY:
