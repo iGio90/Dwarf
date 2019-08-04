@@ -158,7 +158,7 @@ function Dwarf() {
             reason = REASON_BREAKPOINT;
         }
 
-        if (!isDefined(p) && isDefined(context)) {
+        if (!isDefined(p) && !isDefined(context)) {
             context = getDwarf().native_contexts[tid];
             if (isDefined(context)) {
                 p = context.pc;
