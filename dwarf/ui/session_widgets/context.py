@@ -288,8 +288,9 @@ class ContextWidget(QTabWidget):
             context_sub_menu.addAction('Argument', lambda: utils.copy_str_to_clipboard(argument.text()))
             if _class.text():
                 context_sub_menu.addAction('Class', lambda: utils.copy_str_to_clipboard(_class.text()))
-            if value.text():
-                context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(value.text()))
+            if value:
+                if value.text():
+                    context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(value.text()))
             context_menu.addMenu(context_sub_menu)
             context_menu.exec_(glbl_pt)
 
