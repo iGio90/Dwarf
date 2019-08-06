@@ -17,7 +17,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
 import json
 import os
-import shutil
 import sys
 
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSettings, QUrl

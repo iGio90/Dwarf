@@ -156,6 +156,7 @@ def run_dwarf():
 
     qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
     qapp.setApplicationName("dwarf")
+    qapp.setApplicationDisplayName('Dwarf')
 
     # set icon
     _icon = None
