@@ -106,17 +106,18 @@ class Session(QObject):
 
     def start(self, args):
         self.dwarf.onScriptDestroyed.connect(self.stop)
+        
+        if not args.device:
+            self.dwarf.device = self.frida_device
+        else:
+            self.dwarf.device = frida.get_device(id=args.device)
+
         if args.any == '':
             self._device_window.onSelectedProcess.connect(self._on_proc_selected)
             self._device_window.onSpawnSelected.connect(self._on_spawn_selected)
             self._device_window.onClosed.connect(self._on_device_dialog_closed)
             self._device_window.show()
         else:
-            if not args.device:
-                self.dwarf.device = self.frida_device
-            else:
-                self.dwarf.device = frida.get_device(id=args.device)
-
             if args.pid > 0:
                 print('* Trying to attach to {0}'.format(args.pid))
                 try:
