@@ -55,7 +55,7 @@ class HighLight(QObject):
     """ Highlight
 
         what:   default='attention'
-                allowed='attention', 'hook', 'changed', 'edited',\
+                allowed='attention', 'breakpoint', 'changed', 'edited',\
                         'patched', 'pointer', 'search', 'string'
                 'attention, changed': are removed after x sec
 
@@ -63,7 +63,7 @@ class HighLight(QObject):
         length: len bytes to highlight
 
         usage:
-            hexedit.add_highlight(Highlight('hook', 0x482358a, 8))
+            hexedit.add_highlight(Highlight('breakpoint', 0x482358a, 8))
             hexedit.remove_highlight(address) # it checks if address is in addr+len
             hexedit.clear_highlights()
     """
@@ -123,8 +123,8 @@ class HexEditor(QAbstractScrollArea):
         self._highlight_colors = {
             'attention': QColor('#ff3388'),
             'changed': QColor('#ff3388'),
-            'hook': QColor('#009688'),
-            'watcher': QColor('#4fc3f7'),
+            'breakpoint': QColor('#009688'),
+            'watchpoint': QColor('#4fc3f7'),
             'edited': QColor('#ff5722'),
             'patched': QColor('#ff5722'),
             'string': QColor('#8bc34a'),
@@ -1150,19 +1150,19 @@ class HexEditor(QAbstractScrollArea):
                 context_menu.addAction("Follow &pointer", self.on_cm_follow_pointer)
                 context_menu.addSeparator()
 
-                if self.app.watchers_panel:
+                if self.app.watchpoints_panel:
                     if self.app.dwarf.is_address_watched(address):
                         context_menu.addAction(
-                            'Remove watcher', lambda: self.app.watchers_panel.remove_address(addr_str))
+                            'Remove watchpoint', lambda: self.app.watchpoints_panel.remove_address(addr_str))
                     else:
                         context_menu.addAction(
-                            'Watch address', lambda: self.app.watchers_panel.do_addwatcher_dlg(addr_str))
-                if self.app.hooks_panel:
-                    if address in self.app.dwarf.hooks:
+                            'Watch address', lambda: self.app.watchpoints_panel.do_addwatchpoint_dlg(addr_str))
+                if self.app.breakpoints_panel:
+                    if address in self.app.dwarf.breakpoints:
                         context_menu.addAction(
-                            'Remove hook', lambda: self.app.dwarf.dwarf_api('deleteHook', addr_str))
+                            'Remove breakpoint', lambda: self.app.dwarf.dwarf_api('deleteBreakpoint', addr_str))
                     else:
-                        context_menu.addAction('Hook address', lambda: self.app.dwarf.hook_native(addr_str))
+                        context_menu.addAction('Breakpoint address', lambda: self.app.dwarf.breakpoint_native(addr_str))
 
                 context_menu.addSeparator()
 
@@ -1209,11 +1209,11 @@ class HexEditor(QAbstractScrollArea):
         else:
             self.display_error('Unable to read pointer at location.')
 
-    def on_cm_hook_address(self):
-        """ ContextMenu HookAddress
+    def on_cm_breakpoint_address(self):
+        """ ContextMenu BreakpointAddress
         """
         ptr = self.base + self.caret.position
-        self.app.dwarf.hook_native(input_=hex(ptr))
+        self.app.dwarf.breakpoint_native(input_=hex(ptr))
 
     def on_cm_show_asm(self):
         """ ContextMenu Disassemble

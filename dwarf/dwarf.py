@@ -23,6 +23,7 @@ DWARF_VERSION = '1.0.0'
 
 __version__ = DWARF_VERSION
 
+
 def pip_install_package(package_name):
     try:
         from dwarf.lib.utils import do_shell_command
@@ -144,7 +145,7 @@ def run_dwarf():
     from PyQt5.QtGui import QIcon
     from PyQt5.QtWidgets import QApplication
 
-    import dwarf.resources # pylint: disable=unused-import
+    import dwarf.resources  # pylint: disable=unused-import
 
     qapp = QApplication([])
 

@@ -1,4 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
+from dwarf.lib.types.module_info import ModuleInfo
+
 from dwarf.lib import utils
 
 
@@ -103,6 +105,11 @@ class IO:
 
     def read_range_async(self, ptr, callback):
         ptr = utils.parse_ptr(ptr)
+
+        if hex(ptr) in self.refs:
+            # already reading this range
+            return
+
         reader = Reader(self, ptr, 0)
         reader.ioReaderFinish.connect(lambda x: self._on_io_reader_range_finish(x[0], x[1], x[2], callback))
         self.refs[hex(ptr)] = reader

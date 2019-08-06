@@ -121,7 +121,7 @@ class JavaInspector(QWidget):
             if class_item:
                 class_name = class_item.text()
                 if class_name:
-                    self._hook_class(class_name)
+                    self._breakpoint_class(class_name)
 
     def _method_dblclicked(self):
         """ Function DoubleClicked
@@ -135,16 +135,16 @@ class JavaInspector(QWidget):
                 class_name = class_item.text()
                 method_name = method_item.text()
                 if class_name and method_name:
-                    self._app_window.dwarf.hook_java(class_name + '.'
-                                                     + method_name)
+                    self._app_window.dwarf.breakpoint_java(class_name + '.'
+                                                           + method_name)
 
-    def _hook_class(self, class_name):
+    def _breakpoint_class(self, class_name):
         if class_name:
-            self._app_window.dwarf.hook_java(class_name)
+            self._app_window.dwarf.breakpoint_java(class_name)
 
-    def _hook_class_functions(self, class_name):
+    def _breakpoint_class_functions(self, class_name):
         if class_name:
-            self._app_window.dwarf.dwarf_api('hookAllJavaMethods', class_name)
+            self._app_window.dwarf.dwarf_api('breakpointAllJavaMethods', class_name)
 
     def _on_class_contextmenu(self, pos):
         """ Modules ContextMenu
@@ -154,10 +154,10 @@ class JavaInspector(QWidget):
         context_menu = QMenu(self)
         if index != -1:
             context_menu.addAction(
-                'Hook constructor', lambda: self._hook_class(
+                'Breakpoint constructor', lambda: self._breakpoint_class(
                     self._javaclass_model.item(index, 0).text()))
             context_menu.addAction(
-                'Hook all methods', lambda: self._hook_class_functions(
+                'Breakpoint all methods', lambda: self._breakpoint_class_functions(
                     self._javaclass_model.item(index, 0).text()))
             context_menu.addSeparator()
 
@@ -169,15 +169,14 @@ class JavaInspector(QWidget):
         context_menu.addAction('Refresh', self.update_classes)
         context_menu.exec_(glbl_pt)
 
-    def _hook_method(self, method_name):
+    def _breakpoint_method(self, method_name):
         class_index = self._java_classes.selectionModel().currentIndex().row()
         if class_index:
             class_item = self._javaclass_model.item(class_index, 0)
             if class_item:
                 class_name = class_item.text()
                 if class_name and method_name:
-                    self._app_window.dwarf.hook_java(class_name + '.'
-                                                     + method_name)
+                    self._app_window.dwarf.breakpoint_java(class_name + '.' + method_name)
 
     def _cm_refresh_methods(self):
         index = self._java_classes.selectionModel().currentIndex().row()
@@ -195,7 +194,7 @@ class JavaInspector(QWidget):
         context_menu = QMenu(self)
         if index != -1:
             context_menu.addAction(
-                'Hook method', lambda: self._hook_method(
+                'Breakpoint method', lambda: self._breakpoint_method(
                     self._javamethod_model.item(index, 0).text()))
             context_menu.addSeparator()
 

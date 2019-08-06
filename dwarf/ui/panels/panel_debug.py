@@ -139,12 +139,12 @@ class QDebugPanel(QMainWindow):
                 if self.is_address_in_view(view, address):
                     return
 
+        self.app.show_progress('reading data...')
         self.app.dwarf.read_range_async(
             address, lambda base, data, offset: self._apply_data(base, data, offset, view=view))
 
     def _apply_data(self, base, data, offset, view=DEBUG_VIEW_MEMORY):
-        # make sure we have that module in db before updating functions
-        ModuleInfo.build_module_info(self.app.dwarf, base, fill_ied=True)
+        self.app.hide_progress()
 
         self.update_functions()
 

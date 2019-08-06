@@ -22,8 +22,8 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 VIEW_BACKTRACE = 'view_backtrace'
 VIEW_CONTEXT = 'view_context'
-VIEW_HOOKS = 'view_hooks'
-VIEW_WATCHERS = 'view_watchers'
+VIEW_BREAKPOINTS = 'view_breakpoints'
+VIEW_WATCHERS = 'view_watchpoints'
 
 
 class Prefs(QObject):

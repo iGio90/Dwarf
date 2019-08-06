@@ -144,8 +144,8 @@ class AppWindow(QMainWindow):
 
     def _initialize_ui_elements(self):
         # dockwidgets
-        self.watchers_dwidget = None
-        self.hooks_dwiget = None
+        self.watchpoints_dwidget = None
+        self.breakpoint_dwiget = None
         self.bookmarks_dwiget = None
         self.registers_dock = None
         self.console_dock = None
@@ -161,7 +161,7 @@ class AppWindow(QMainWindow):
         self.contexts_list_panel = None
         self.data_panel = None
         self.ftrace_panel = None
-        self.hooks_panel = None
+        self.breakpoints_panel = None
         self.java_inspector_panel = None
         self.java_explorer_panel = None
         self.java_trace_panel = None
@@ -169,7 +169,7 @@ class AppWindow(QMainWindow):
         self.ranges_panel = None
         self.search_panel = None
         self.smali_panel = None
-        self.watchers_panel = None
+        self.watchpoints_panel = None
         self.welcome_window = None
 
         self._ui_elems = []
@@ -342,8 +342,8 @@ class AppWindow(QMainWindow):
             utils.set_theme(qaction.text(), self.prefs)
 
     def _hide_all_widgets(self):
-        self.watchers_dwidget.hide()
-        self.hooks_dwiget.hide()
+        self.watchpoints_dwidget.hide()
+        self.breakpoint_dwiget.hide()
         self.bookmarks_dwiget.hide()
         self.registers_dock.hide()
         self.console_dock.hide()
@@ -351,8 +351,8 @@ class AppWindow(QMainWindow):
         self.threads_dock.hide()
 
     def _show_all_widgets(self):
-        self.watchers_dwidget.show()
-        self.hooks_dwiget.show()
+        self.watchpoints_dwidget.show()
+        self.breakpoint_dwiget.show()
         self.bookmarks_dwiget.show()
         self.registers_dock.show()
         self.console_dock.show()
@@ -434,31 +434,31 @@ class AppWindow(QMainWindow):
 
         elem_wiget = None
 
-        if elem == 'watchers':
-            from dwarf.ui.session_widgets.watchers import WatchersWidget
-            self.watchers_dwidget = QDockWidget('Watchers', self)
-            self.watchers_panel = WatchersWidget(self)
+        if elem == 'watchpoints':
+            from dwarf.ui.session_widgets.watchpoints import WatchpointsWidget
+            self.watchpoints_dwidget = QDockWidget('Watchpoints', self)
+            self.watchpoints_panel = WatchpointsWidget(self)
             # dont respond to dblclick mem cant be shown
-            # self.watchers_panel.onItemDoubleClicked.connect(
-            #    self._on_watcher_clicked)
-            self.watchers_panel.onItemRemoved.connect(
-                self._on_watcher_removeditem)
-            self.watchers_panel.onItemAdded.connect(self._on_watcher_added)
-            self.watchers_dwidget.setWidget(self.watchers_panel)
-            self.watchers_dwidget.setObjectName('WatchersWidget')
-            self.addDockWidget(Qt.LeftDockWidgetArea, self.watchers_dwidget)
-            self.view_menu.addAction(self.watchers_dwidget.toggleViewAction())
-            elem_wiget = self.watchers_panel
-        elif elem == 'hooks':
-            from dwarf.ui.session_widgets.hooks import HooksWidget
-            self.hooks_dwiget = QDockWidget('Hooks', self)
-            self.hooks_panel = HooksWidget(self)
-            self.hooks_panel.onHookRemoved.connect(self._on_hook_removed)
-            self.hooks_dwiget.setWidget(self.hooks_panel)
-            self.hooks_dwiget.setObjectName('HooksWidget')
-            self.addDockWidget(Qt.LeftDockWidgetArea, self.hooks_dwiget)
-            self.view_menu.addAction(self.hooks_dwiget.toggleViewAction())
-            elem_wiget = self.hooks_panel
+            # self.watchpoints_panel.onItemDoubleClicked.connect(
+            #    self._on_watchpoint_clicked)
+            self.watchpoints_panel.onItemRemoved.connect(
+                self._on_watchpoint_removeditem)
+            self.watchpoints_panel.onItemAdded.connect(self._on_watchpoint_added)
+            self.watchpoints_dwidget.setWidget(self.watchpoints_panel)
+            self.watchpoints_dwidget.setObjectName('WatchpointsWidget')
+            self.addDockWidget(Qt.LeftDockWidgetArea, self.watchpoints_dwidget)
+            self.view_menu.addAction(self.watchpoints_dwidget.toggleViewAction())
+            elem_wiget = self.watchpoints_panel
+        elif elem == 'breakpoints':
+            from dwarf.ui.session_widgets.breakpoints import BreakpointsWidget
+            self.breakpoint_dwiget = QDockWidget('breakpoint', self)
+            self.breakpoints_panel = BreakpointsWidget(self)
+            self.breakpoints_panel.onBreakpointRemoved.connect(self._on_breakpoint_removed)
+            self.breakpoint_dwiget.setWidget(self.breakpoints_panel)
+            self.breakpoint_dwiget.setObjectName('breakpointWidget')
+            self.addDockWidget(Qt.LeftDockWidgetArea, self.breakpoint_dwiget)
+            self.view_menu.addAction(self.breakpoint_dwiget.toggleViewAction())
+            elem_wiget = self.breakpoints_panel
         elif elem == 'bookmarks':
             from dwarf.ui.session_widgets.bookmarks import BookmarksWidget
             self.bookmarks_dwiget = QDockWidget('Boomarks', self)
@@ -539,7 +539,7 @@ class AppWindow(QMainWindow):
                 self._on_module_dblclicked)
             self.modules_panel.onModuleFuncSelected.connect(
                 self._on_modulefunc_dblclicked)
-            self.modules_panel.onAddHook.connect(self._on_addmodule_hook)
+            self.modules_panel.onAddBreakpoint.connect(self._on_addmodule_breakpoint)
             self.modules_panel.onDumpBinary.connect(self._on_dump_module)
             self.main_tabs.addTab(self.modules_panel, 'Modules')
             elem_wiget = self.modules_panel
@@ -549,9 +549,9 @@ class AppWindow(QMainWindow):
             self.ranges_panel.onItemDoubleClicked.connect(
                 self._range_dblclicked)
             self.ranges_panel.onDumpBinary.connect(self._on_dump_module)
-            # connect to watcherpanel func
-            self.ranges_panel.onAddWatcher.connect(
-                self.watchers_panel.do_addwatcher_dlg)
+            # connect to watchpointpanel func
+            self.ranges_panel.onAddWatchpoint.connect(
+                self.watchpoints_panel.do_addwatchpoint_dlg)
             self.main_tabs.addTab(self.ranges_panel, 'Ranges')
             elem_wiget = self.ranges_panel
         elif elem == 'search':
@@ -619,8 +619,8 @@ class AppWindow(QMainWindow):
         return self.ftrace_panel
 
     @property
-    def hooks(self):
-        return self.hooks_panel
+    def breakpoint(self):
+        return self.breakpoints_panel
 
     @property
     def java_inspector(self):
@@ -639,8 +639,8 @@ class AppWindow(QMainWindow):
         return self.ranges_panel
 
     @property
-    def watchers(self):
-        return self.watchers_panel
+    def watchpoints(self):
+        return self.watchpoints_panel
 
     @property
     def dwarf(self):
@@ -681,13 +681,13 @@ class AppWindow(QMainWindow):
         self.dwarf.onProcessDetached.connect(self._on_detached)
         self.dwarf.onScriptLoaded.connect(self._on_script_loaded)
 
-        # hookup
         self.dwarf.onSetRanges.connect(self._on_setranges)
         self.dwarf.onSetModules.connect(self._on_setmodules)
 
-        self.dwarf.onAddNativeHook.connect(self._on_add_hook)
+        self.dwarf.onAddNativeBreakpoint.connect(self._on_add_breakpoint)
         self.dwarf.onApplyContext.connect(self._apply_context)
         self.dwarf.onThreadResumed.connect(self.on_tid_resumed)
+        self.dwarf.onHitModuleInitializationBreakpoint.connect(self._on_hit_module_initialization_breakpoint)
 
         self.dwarf.onSetData.connect(self._on_set_data)
 
@@ -711,17 +711,17 @@ class AppWindow(QMainWindow):
             self.java_trace_panel = None
 
         for elem in self._ui_elems:
-            if elem == 'watchers':
-                self.watchers_panel.clear_list()
-                self.watchers_panel.close()
-                self.watchers_panel = None
-                self.removeDockWidget(self.watchers_dwidget)
-                self.watchers_dwidget = None
-            elif elem == 'hooks':
-                self.hooks_panel.close()
-                self.hooks_panel = None
-                self.removeDockWidget(self.hooks_dwiget)
-                self.hooks_dwiget = None
+            if elem == 'watchpoints':
+                self.watchpoints_panel.clear_list()
+                self.watchpoints_panel.close()
+                self.watchpoints_panel = None
+                self.removeDockWidget(self.watchpoints_dwidget)
+                self.watchpoints_dwidget = None
+            elif elem == 'breakpoint':
+                self.breakpoints_panel.close()
+                self.breakpoints_panel = None
+                self.removeDockWidget(self.breakpoint_dwiget)
+                self.breakpoint_dwiget = None
             elif elem == 'registers':
                 self.context_panel.close()
                 self.context_panel = None
@@ -735,7 +735,7 @@ class AppWindow(QMainWindow):
             elif elem == 'jvm-debugger':
                 self.java_explorer_panel.close()
                 self.java_explorer_panel = None
-                self.removeDockWidget(self.watchers_dwidget)
+                self.removeDockWidget(self.watchpoints_dwidget)
             elif elem == 'console':
                 self.console_panel.close()
                 self.console_panel = None
@@ -787,27 +787,27 @@ class AppWindow(QMainWindow):
                 pass
         super().closeEvent(event)
 
-    def _on_watcher_clicked(self, ptr):
-        """ Address in Watcher/Hookpanel was clicked
+    def _on_watchpoint_clicked(self, ptr):
+        """ Address in Watchpoint/Breakpointpanel was clicked
             show Memory
         """
-        if '.' in ptr:  # java_hook
+        if '.' in ptr:  # java_breakpoint
             file_path = ptr.replace('.', os.path.sep)
         else:
             self.jump_to_address(ptr)
 
-    def _on_watcher_added(self, ptr):
-        """ Watcher Entry was added
+    def _on_watchpoint_added(self, ptr):
+        """ Watchpoint Entry was added
         """
         try:
             # set highlight
             self.debug_panel.memory_panel.add_highlight(
-                HighLight('watcher', ptr, self.dwarf.pointer_size))
+                HighLight('watchpoint', ptr, self.dwarf.pointer_size))
         except HighlightExistsError:
             pass
 
-    def _on_watcher_removeditem(self, ptr):
-        """ Watcher Entry was removed
+    def _on_watchpoint_removeditem(self, ptr):
+        """ Watchpoint Entry was removed
             remove highlight too
         """
         self.debug_panel.memory_panel.remove_highlight(ptr)
@@ -853,7 +853,7 @@ class AppWindow(QMainWindow):
 
     def _on_setranges(self, ranges):
         """ Dwarf wants to set Ranges
-            only hooked up to switch tab or create ui
+            only breakpointed up to switch tab or create ui
             its connected in panel after creation
         """
         if self.ranges_panel is None:
@@ -865,7 +865,7 @@ class AppWindow(QMainWindow):
 
     def _on_setmodules(self, modules):
         """ Dwarf wants to set Modules
-            only hooked up to switch tab or create ui
+            only breakpointed up to switch tab or create ui
             its connected in panel after creation
         """
         if self.modules_panel is None:
@@ -879,6 +879,13 @@ class AppWindow(QMainWindow):
         perform additional operation if the context has been manually applied from the context list
         """
         self._apply_context(context, manual=True)
+
+    def _on_hit_module_initialization_breakpoint(self, data):
+        if self.debug_panel.memory_panel.number_of_lines() == 0:
+            data = data[1]
+            module_base = int(data['moduleBase'], 16)
+            entry = int(data['moduleEntry'], 16)
+            self.jump_to_address(module_base + entry)
 
     def _apply_context(self, context, manual=False):
         # update current context tid
@@ -899,18 +906,16 @@ class AppWindow(QMainWindow):
             if is_java:
                 if self.java_explorer_panel is None:
                     self._create_ui_elem('jvm-debugger')
-                self.context_panel.set_context(context['ptr'], 1,
-                                               context['context'])
-                self.java_explorer_panel._set_handle_arg(-1)
+                self.context_panel.set_context(context['ptr'], 1, context['context'])
+                self.java_explorer_panel.init()
                 self.show_main_tab('jvm-debugger')
             else:
                 self.context_panel.set_context(context['ptr'], 0, context['context'])
 
-                if reason == 2:
-                    # native on load
-                    if self.debug_panel.memory_panel.number_of_lines() == 0:
-                        base = context['moduleBase']
-                        self.jump_to_address(base)
+                if reason == 0:
+                    if 'pc' in context['context']:
+                        if self.debug_panel.disassembly_panel.number_of_lines() == 0 or manual:
+                            self.jump_to_address(context['context']['pc']['value'], view=1)
                 elif reason == 3:
                     # step
                     # we make the frontend believe we are in the real step pc instead of the frida space
@@ -919,31 +924,27 @@ class AppWindow(QMainWindow):
                         context['context']['rip'] = context['ptr']
 
                     self.jump_to_address(context['ptr'], view=1)
-                else:
-                    if 'pc' in context['context']:
-                        if self.debug_panel.disassembly_panel.number_of_lines() == 0 or manual:
-                            self.jump_to_address(context['context']['pc']['value'], view=1)
 
         if 'backtrace' in context:
             self.backtrace_panel.set_backtrace(context['backtrace'])
 
-    def _on_add_hook(self, hook):
+    def _on_add_breakpoint(self, breakpoint):
         try:
             # set highlight
-            ptr = hook.get_ptr()
+            ptr = breakpoint.get_target()
             ptr = utils.parse_ptr(ptr)
             self.debug_panel.memory_panel.add_highlight(
-                HighLight('hook', ptr, self.dwarf.pointer_size))
+                HighLight('breakpoint', ptr, self.dwarf.pointer_size))
         except HighlightExistsError:
             pass
 
-    def _on_hook_removed(self, ptr):
+    def _on_breakpoint_removed(self, ptr):
         ptr = utils.parse_ptr(ptr)
         self.debug_panel.memory_panel.remove_highlight(ptr)
 
-    def _on_addmodule_hook(self, data):
+    def _on_addmodule_breakpoint(self, data):
         ptr, name = data
-        self.dwarf.hook_native(ptr, own_input=name)
+        self.dwarf.breakpoint_native(ptr, own_input=name)
 
     def on_tid_resumed(self, tid):
         if self.dwarf:

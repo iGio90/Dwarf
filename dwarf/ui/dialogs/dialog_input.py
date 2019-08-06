@@ -59,7 +59,7 @@ class InputDialog(DwarfDialog):
             label.setAttribute(Qt.WA_TranslucentBackground, True)  # keep this
             box.addWidget(label)
 
-        # wtf this hack to prevent segfault on adding hook with shortcuts from hooks panel.
+        # wtf this hack to prevent segfault on adding breakpoint with shortcuts from breakpoints panel.
         # use qtextedit instead of qlineedit won't cause issues
         self.input_widget = InputDialogTextEdit(self)
 

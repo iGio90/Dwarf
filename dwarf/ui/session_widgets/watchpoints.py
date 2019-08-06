@@ -26,14 +26,14 @@ from dwarf.ui.dialogs.dialog_input import InputDialogTextEdit
 from dwarf.ui.widgets.list_view import DwarfListView
 
 
-class AddWatcherDialog(QDialog):
-    """ UserInterface for adding Memwatchers
+class AddWatchpointDialog(QDialog):
+    """ UserInterface for adding watchpoints
     """
 
     def __init__(self, parent=None, ptr=None):
-        super(AddWatcherDialog, self).__init__(parent=parent)
+        super(AddWatchpointDialog, self).__init__(parent=parent)
 
-        self.setWindowTitle('Add Watcher')
+        self.setWindowTitle('Add Watchpoint')
         self.setSizeGripEnabled(False)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -85,8 +85,8 @@ class AddWatcherDialog(QDialog):
         return super().keyPressEvent(event)
 
 
-class WatchersWidget(QWidget):
-    """ WatchersWidget
+class WatchpointsWidget(QWidget):
+    """ WatchpointsWidget
 
         Signals:
             onItemSelected(addr_str) - item dblclicked
@@ -108,42 +108,42 @@ class WatchersWidget(QWidget):
     onItemRemoved = pyqtSignal(int, name='onItemRemoved')
 
     def __init__(self, parent=None):  # pylint: disable=too-many-statements
-        super(WatchersWidget, self).__init__(parent=parent)
+        super(WatchpointsWidget, self).__init__(parent=parent)
         self._app_window = parent
 
         if self._app_window.dwarf is None:
-            print('WatchersWidget created before Dwarf exists')
+            print('WatchpointsWidget created before Dwarf exists')
             return
 
         self._uppercase_hex = True
         self.setAutoFillBackground(True)
 
         # connect to dwarf
-        self._app_window.dwarf.onWatcherAdded.connect(self._on_watcher_added)
-        self._app_window.dwarf.onWatcherRemoved.connect(
-            self._on_watcher_removed)
+        self._app_window.dwarf.onWatchpointAdded.connect(self._on_watchpoint_added)
+        self._app_window.dwarf.onWatchpointRemoved.connect(
+            self._on_watchpoint_removed)
 
         # setup our model
-        self._watchers_model = QStandardItemModel(0, 5)
-        self._watchers_model.setHeaderData(0, Qt.Horizontal, 'Address')
-        self._watchers_model.setHeaderData(1, Qt.Horizontal, 'R')
-        self._watchers_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
+        self._watchpoints_model = QStandardItemModel(0, 5)
+        self._watchpoints_model.setHeaderData(0, Qt.Horizontal, 'Address')
+        self._watchpoints_model.setHeaderData(1, Qt.Horizontal, 'R')
+        self._watchpoints_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter,
                                            Qt.TextAlignmentRole)
-        self._watchers_model.setHeaderData(2, Qt.Horizontal, 'W')
-        self._watchers_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
+        self._watchpoints_model.setHeaderData(2, Qt.Horizontal, 'W')
+        self._watchpoints_model.setHeaderData(2, Qt.Horizontal, Qt.AlignCenter,
                                            Qt.TextAlignmentRole)
-        self._watchers_model.setHeaderData(3, Qt.Horizontal, 'X')
-        self._watchers_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter,
+        self._watchpoints_model.setHeaderData(3, Qt.Horizontal, 'X')
+        self._watchpoints_model.setHeaderData(3, Qt.Horizontal, Qt.AlignCenter,
                                            Qt.TextAlignmentRole)
-        self._watchers_model.setHeaderData(4, Qt.Horizontal, 'S')
-        self._watchers_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter,
+        self._watchpoints_model.setHeaderData(4, Qt.Horizontal, 'S')
+        self._watchpoints_model.setHeaderData(4, Qt.Horizontal, Qt.AlignCenter,
                                            Qt.TextAlignmentRole)
 
         # setup ui
         v_box = QVBoxLayout(self)
         v_box.setContentsMargins(0, 0, 0, 0)
         self.list_view = DwarfListView()
-        self.list_view.setModel(self._watchers_model)
+        self.list_view.setModel(self._watchpoints_model)
         self.list_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
         self.list_view.header().setSectionResizeMode(
             1, QHeaderView.ResizeToContents | QHeaderView.Fixed)
@@ -227,17 +227,17 @@ class WatchersWidget(QWidget):
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
-    def do_addwatcher_dlg(self, ptr=None):  # pylint: disable=too-many-branches
-        """ Shows AddWatcherDialog
+    def do_addwatchpoint_dlg(self, ptr=None):  # pylint: disable=too-many-branches
+        """ Shows AddWatchpointDialog
         """
-        watcher_dlg = AddWatcherDialog(self, ptr)
-        if watcher_dlg.exec_() == QDialog.Accepted:
-            mem_r = watcher_dlg.acc_read.isChecked()
-            mem_w = watcher_dlg.acc_write.isChecked()
-            mem_x = watcher_dlg.acc_execute.isChecked()
-            mem_s = watcher_dlg.singleshot.isChecked()
+        watchpoint_dlg = AddWatchpointDialog(self, ptr)
+        if watchpoint_dlg.exec_() == QDialog.Accepted:
+            mem_r = watchpoint_dlg.acc_read.isChecked()
+            mem_w = watchpoint_dlg.acc_write.isChecked()
+            mem_x = watchpoint_dlg.acc_execute.isChecked()
+            mem_s = watchpoint_dlg.singleshot.isChecked()
 
-            ptr = watcher_dlg.text_field.toPlainText()
+            ptr = watchpoint_dlg.text_field.toPlainText()
 
             if ptr:
                 if isinstance(ptr, str):
@@ -299,7 +299,7 @@ class WatchersWidget(QWidget):
         if not from_api:
             # function was called directly so add it to dwarf
             if not self._app_window.dwarf.is_address_watched(ptr):
-                self._app_window.dwarf.dwarf_api('addWatcher', [ptr, flags])
+                self._app_window.dwarf.dwarf_api('putWatchpoint', [ptr, flags])
                 return
 
         # show header
@@ -329,7 +329,7 @@ class WatchersWidget(QWidget):
             singleshot.setIcon(self._dot_icon)
 
         # add items as new row on top
-        self._watchers_model.insertRow(
+        self._watchpoints_model.insertRow(
             0, [addr, read, write, execute, singleshot])
 
     def remove_address(self, ptr, from_api=False):
@@ -339,8 +339,8 @@ class WatchersWidget(QWidget):
             ptr = utils.parse_ptr(ptr)
 
         if not from_api:
-            # called somewhere so remove watcher in dwarf too
-            self._app_window.dwarf.dwarf_api('removeWatcher', ptr)
+            # called somewhere so remove watchpoint in dwarf too
+            self._app_window.dwarf.dwarf_api('removeWatchpoint', ptr)
             return
 
         str_frmt = ''
@@ -385,45 +385,44 @@ class WatchersWidget(QWidget):
         index = self.list_view.indexAt(pos).row()
         glbl_pt = self.list_view.mapToGlobal(pos)
         context_menu = QMenu(self)
-        context_menu.addAction('Add watcher', self._on_additem_clicked)
+        context_menu.addAction('Add watchpoint', self._on_additem_clicked)
         if index != -1:
             context_menu.addSeparator()
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
-                    self._watchers_model.item(index, 0).text()))
+                    self._watchpoints_model.item(index, 0).text()))
             context_menu.addAction(
                 'Jump to address', lambda: self._app_window.jump_to_address(
-                    self._watchers_model.item(index, 0).text()))
+                    self._watchpoints_model.item(index, 0).text()))
             context_menu.addAction(
-                'Delete watcher', lambda: self.remove_address(
-                    self._watchers_model.item(index, 0).text()))
+                'Delete watchpoint', lambda: self.remove_address(
+                    self._watchpoints_model.item(index, 0).text()))
             if self.list_view.search_enabled:
                 context_menu.addSeparator()
                 context_menu.addAction('Search', self.list_view._on_cm_search)
         context_menu.exec_(glbl_pt)
 
     def _on_item_dblclick(self, model_index):
-        row = self._watchers_model.itemFromIndex(model_index).row()
+        row = self._watchpoints_model.itemFromIndex(model_index).row()
         if row != -1:
-            ptr = self._watchers_model.item(row, 0).text()
+            ptr = self._watchpoints_model.item(row, 0).text()
             self.onItemDoubleClicked.emit(ptr)
 
     def _on_additem_clicked(self):
         if self._app_window.dwarf.pid == 0:
             return
 
-        self.do_addwatcher_dlg()
+        self.do_addwatchpoint_dlg()
 
-    def _on_watcher_added(self, ptr, flags):
-        """ Callback from Dwarf after Watcher is added
+    def _on_watchpoint_added(self, watchpoint):
+        """ Callback from Dwarf after Watchpoint is added
         """
-        ptr = utils.parse_ptr(ptr)
-        # add to watcherslist
-        self.add_address(ptr, flags, from_api=True)
-        self.onItemAdded.emit(ptr)
+        # add to watchpointslist
+        self.add_address(watchpoint.address, watchpoint.flags, from_api=True)
+        self.onItemAdded.emit(watchpoint.address)
 
-    def _on_watcher_removed(self, ptr):
-        """ Callback from Dwarf after watcher is removed
+    def _on_watchpoint_removed(self, ptr):
+        """ Callback from Dwarf after watchpoint is removed
         """
         ptr = utils.parse_ptr(ptr)
         # remove from list

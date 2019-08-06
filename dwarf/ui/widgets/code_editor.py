@@ -63,11 +63,11 @@ class JsHighlighter(QSyntaxHighlighter):
         self._known_m = keywords
 
         self._known = [
-            'log', 'addWatcher', 'deleteHook', 'enumerateJavaClasses',
+            'log', 'addWatchpoint', 'deleteBreakpoint', 'enumerateJavaClasses',
             'enumerateJavaMethods', 'findExport', 'getAddressTs',
-            'hookAllJavaMethods', 'hookJava', 'hookNative',
-            'hookNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
-            'nativeBacktrace', 'release', 'resume', 'removeWatcher', 'restart',
+            'breakpointAllJavaMethods', 'breakpointJava', 'breakpointNative',
+            'breakpointNativeOnLoad', 'javaBacktrace', 'isAddressWatched',
+            'nativeBacktrace', 'release', 'resume', 'removeWatchpoint', 'restart',
             'setData', 'startNativeTracer', 'stopNativeTracer',
             "prototype",
             "create",

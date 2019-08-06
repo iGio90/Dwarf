@@ -397,26 +397,26 @@ class DisassemblyView(QAbstractScrollArea):
         painter.drawText(drawing_pos_x, drawing_pos_y, str_fmt.format(line.address))
 
         is_watched = False
-        is_hooked = False
+        is_breakpointed = False
 
         if self._app_window.dwarf.is_address_watched(line.address):
             is_watched = True
 
-        if line.address in self._app_window.dwarf.hooks:
-            is_hooked = True
+        if line.address in self._app_window.dwarf.breakpoints:
+            is_breakpointed = True
 
-        if is_watched or is_hooked:
+        if is_watched or is_breakpointed:
             if is_watched:
                 height = self._char_height
                 y_pos = drawing_pos_y
                 y_pos -= self._base_line - (self._char_height * 0.5)
                 y_pos += (self._char_height * 0.5)
-                if is_hooked:
+                if is_breakpointed:
                     y_pos -= (self._char_height * 0.5)
                     height *= 0.5
                 painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height,
                                  QColor('greenyellow'))
-            if is_hooked:
+            if is_breakpointed:
                 height = self._char_height
                 y_pos = drawing_pos_y
                 y_pos -= self._base_line - (self._char_height * 0.5)
@@ -706,19 +706,19 @@ class DisassemblyView(QAbstractScrollArea):
                     context_menu.addAction(addr_str)
                     context_menu.addSeparator()
 
-                    if self._app_window.watchers_panel:
+                    if self._app_window.watchpoints_panel:
                         if self._app_window.dwarf.is_address_watched(address):
                             context_menu.addAction(
-                                'Remove watcher', lambda: self._app_window.watchers_panel.remove_address(addr_str))
+                                'Remove watchpoint', lambda: self._app_window.watchpoints_panel.remove_address(addr_str))
                         else:
                             context_menu.addAction(
-                                'Watch address', lambda: self._app_window.watchers_panel.do_addwatcher_dlg(addr_str))
-                    if self._app_window.hooks_panel:
-                        if address in self._app_window.dwarf.hooks:
+                                'Watch address', lambda: self._app_window.watchpoints_panel.do_addwatchpoint_dlg(addr_str))
+                    if self._app_window.breakpoints_panel:
+                        if address in self._app_window.dwarf.breakpoints:
                             context_menu.addAction(
-                                'Remove hook', lambda: self._app_window.dwarf.dwarf_api('deleteHook', addr_str))
+                                'Remove breakpoint', lambda: self._app_window.dwarf.dwarf_api('deleteBreakpoint', addr_str))
                         else:
-                            context_menu.addAction('Hook address', lambda: self._app_window.dwarf.hook_native(addr_str))
+                            context_menu.addAction('Breakpoint address', lambda: self._app_window.dwarf.breakpoint_native(addr_str))
 
                     context_menu.addSeparator()
 

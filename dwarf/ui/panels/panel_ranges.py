@@ -29,12 +29,12 @@ class RangesPanel(DwarfListView):
         Signals:
             onItemDoubleClicked(str) - only fired when prot has +r
             onDumpBinary([ptr, size#int]) - MenuItem DumpBinary
-            onAddWatcher(str) - MenuItem AddWatcher
+            onAddWatchpoint(str) - MenuItem AddWatchpoint
     """
 
     onItemDoubleClicked = pyqtSignal(str, name='onItemDoubleClicked')
     onDumpBinary = pyqtSignal(list, name='onDumpBinary')
-    onAddWatcher = pyqtSignal(str, name='onAddWatcher')
+    onAddWatchpoint = pyqtSignal(str, name='onAddWatchpoint')
 
     def __init__(self, parent=None):
         super(RangesPanel, self).__init__(parent=parent)
@@ -187,7 +187,7 @@ class RangesPanel(DwarfListView):
                 context_menu.addSeparator()
 
             context_menu.addAction(
-                'Add Watcher', lambda: self._on_addwatcher(
+                'Add Watchpoint', lambda: self._on_addwatchpoint(
                     self._ranges_model.item(index, 0).text()))
 
             context_menu.addAction(
@@ -239,8 +239,8 @@ class RangesPanel(DwarfListView):
         size = size.replace(',', '')
         self.onDumpBinary.emit([ptr, size])
 
-    def _on_addwatcher(self, ptr):
-        """ MenuItem AddWatcher
+    def _on_addwatchpoint(self, ptr):
+        """ MenuItem AddWatchpoint
         """
         if isinstance(ptr, int):
             str_fmt = '0x{0:X}'
@@ -250,7 +250,7 @@ class RangesPanel(DwarfListView):
 
         if not self._app_window.dwarf.dwarf_api('isAddressWatched', int(
                 ptr, 16)):
-            self.onAddWatcher.emit(ptr)
+            self.onAddWatchpoint.emit(ptr)
 
     def _on_parse_elf(self, elf_path):
         from dwarf.ui.dialogs.elf_info_dlg import ElfInfo

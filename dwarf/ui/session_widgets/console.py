@@ -64,7 +64,10 @@ class ConsoleWidget(QSplitter):
 
     def js_callback(self, text):
         # the output in the logs is handled in dwarf_api
-        self.parent.dwarf.dwarf_api('evaluate', text)
+        result = self.parent.dwarf.dwarf_api('evaluate', text)
+        if result:
+            time_prefix = len(str(result).split('\n')) < 2
+            self.js_console.log(result, time_prefix=time_prefix)
 
     def py_callback(self, text):
         try:

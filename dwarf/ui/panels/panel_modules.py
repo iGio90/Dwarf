@@ -31,14 +31,14 @@ class ModulesPanel(QSplitter):
     """ ModulesPanel
 
         Signals:
-            onAddHook([ptr, funcname]) - MenuItem AddHook
+            onAddBreakpoint([ptr, funcname]) - MenuItem AddBreakpoint
             onDumpBinary([ptr, size#int]) - MenuItem DumpBinary
             onModuleSelected([ptr, size#int]) - ModuleDoubleClicked
             onModuleFuncSelected(ptr) - FunctionDoubleClicked
     """
     # pylint: disable=too-many-instance-attributes
 
-    onAddHook = pyqtSignal(list, name='onAddHook')
+    onAddBreakpoint = pyqtSignal(list, name='onAddBreakpoint')
     onDumpBinary = pyqtSignal(list, name='onDumpBinary')
     onModuleSelected = pyqtSignal(list, name='onModuleSelected')
     onModuleFuncSelected = pyqtSignal(str, name='onModuleFuncSelected')
@@ -474,7 +474,7 @@ class ModulesPanel(QSplitter):
             func_name = self.imports_model.item(index, 0).text()
             addr = self.imports_model.item(index, 1).text()
             context_menu.addAction(
-                'Add Hook', lambda: self._add_hook(addr, func_name))
+                'Add Breakpoint', lambda: self._add_breakpoint(addr, func_name))
             context_menu.addSeparator()
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
@@ -505,7 +505,7 @@ class ModulesPanel(QSplitter):
             func_name = self.exports_model.item(index, 0).text()
             addr = self.exports_model.item(index, 1).text()
             context_menu.addAction(
-                'Add Hook', lambda: self._add_hook(addr, func_name))
+                'Add Breakpoint', lambda: self._add_breakpoint(addr, func_name))
             context_menu.addSeparator()
             context_menu.addAction(
                 'Copy address', lambda: utils.copy_hex_to_clipboard(
@@ -536,17 +536,17 @@ class ModulesPanel(QSplitter):
         size = size.replace(',', '')
         self.onDumpBinary.emit([ptr, size])
 
-    def _add_hook(self, ptr, name=None):
-        """ MenuItem AddHook
+    def _add_breakpoint(self, ptr, name=None):
+        """ MenuItem AddBreakpoint
         """
         if name is None:
             name = ptr
         if isinstance(ptr, str):
             if ptr.startswith('0x') or ptr.startswith('#'):
-                self.onAddHook.emit([ptr, name])
+                self.onAddBreakpoint.emit([ptr, name])
         elif isinstance(ptr, int):
             str_fmt = '0x{0:x}'
-            self.onAddHook.emit(str_fmt.format([ptr, name]))
+            self.onAddBreakpoint.emit(str_fmt.format([ptr, name]))
 
     def _on_parse_elf(self, elf_path):
         from dwarf.ui.dialogs.elf_info_dlg import ElfInfo

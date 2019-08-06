@@ -140,7 +140,7 @@ class BookmarksWidget(QWidget):
                 'Jump to address', lambda: self._app_window.jump_to_address(
                     self._bookmarks_model.item(index, 0).text()))
 
-            # todo: add hook address menu
+            # todo: add breakpoint address menu
 
             context_menu.addSeparator()
             context_menu.addAction(

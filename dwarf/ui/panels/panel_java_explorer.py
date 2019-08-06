@@ -207,17 +207,24 @@ class JavaExplorerPanel(QWidget):
                 [handle_item, QStandardItem(str(value))])
 
     def _set_handle(self, handle):
-        data = self._app_window.dwarf.dwarf_api('javaExplorer', handle)
+        data = self._app_window.dwarf.dwarf_api('jvmExplorer', handle)
         if not data:
             return
         self._handle_history.append({'handle': handle})
         self._set_data(data)
 
     def _set_handle_arg(self, arg):
-        data = self._app_window.dwarf.dwarf_api('javaExplorer', arg)
+        data = self._app_window.dwarf.dwarf_api('jvmExplorer', arg)
         if not data:
             return
         self._handle_history.append({'handle': arg})
+        self._set_data(data)
+
+    def init(self):
+        data = self._app_window.dwarf.dwarf_api('jvmExplorer')
+        if not data:
+            return
+        self._handle_history.append({'handle': None})
         self._set_data(data)
 
     def clear_panel(self):
@@ -235,7 +242,10 @@ class JavaExplorerPanel(QWidget):
         if isinstance(data, int):
             self._set_handle_arg(data)
         else:
-            self._set_handle(data)
+            if data is not None:
+                self._set_handle(data)
+            else:
+                self.init()
 
     # ************************************************************************
     # **************************** Handlers **********************************
@@ -256,7 +266,8 @@ class JavaExplorerPanel(QWidget):
                 self._set_handle(field_handle)
 
     def keyPressEvent(self, event): # pylint: disable=invalid-name
-        if event.key() == Qt.Key_Backspace:
+        key = event.key()
+        if key == Qt.Key_Backspace or key == Qt.Key_Escape:
             self._back()
 
         return super().keyPressEvent(event)

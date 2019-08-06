@@ -15,8 +15,6 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import os
-import binascii
-import sys
 
 import frida
 import json
@@ -31,7 +29,8 @@ from dwarf.lib import utils
 from dwarf.lib.context import Context
 from dwarf.lib.database import Database
 from dwarf.lib.disassembler import Disassembler
-from dwarf.lib.hook import Hook, HOOK_ONLOAD, HOOK_NATIVE, HOOK_JAVA, HOOK_WATCHER
+from dwarf.lib.types.breakpoint import Breakpoint, BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION
+from dwarf.lib.types.watchpoint import Watchpoint
 from dwarf.lib.io import IO
 from dwarf.lib.kernel import Kernel
 
@@ -56,17 +55,17 @@ class Dwarf(QObject):
     # script related
     onScriptLoaded = pyqtSignal(name='onScriptLoaded')
     onScriptDestroyed = pyqtSignal(name='onScriptDestroyed')
-    # hook related
-    onAddNativeHook = pyqtSignal(Hook, name='onAddNativeHook')
-    onAddJavaHook = pyqtSignal(Hook, name='onAddJavaHook')
-    onAddNativeOnLoadHook = pyqtSignal(Hook, name='onAddNativeOnLoadHook')
-    onAddJavaOnLoadHook = pyqtSignal(Hook, name='onAddJavaOnLoadHook')
-    onDeleteHook = pyqtSignal(list, name='onDeleteHook')
-    onHitNativeOnLoad = pyqtSignal(list, name='onHitNativeOnLoad')
-    onHitJavaOnLoad = pyqtSignal(str, name='onHitJavaOnLoad')
-    # watcher related
-    onWatcherAdded = pyqtSignal(str, int, name='onWatcherAdded')
-    onWatcherRemoved = pyqtSignal(str, name='onWatcherRemoved')
+    # breakpoint related
+    onAddNativeBreakpoint = pyqtSignal(Breakpoint, name='onAddNativeBreakpoint')
+    onAddJavaBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaBreakpoint')
+    onAddModuleInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddModuleInitializationBreakpoint')
+    onAddJavaClassInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaClassInitializationBreakpoint')
+    onDeleteBreakpoint = pyqtSignal(list, name='onDeleteBreakpoint')
+    onHitModuleInitializationBreakpoint = pyqtSignal(list, name='onHitModuleInitializationBreakpoint')
+    onHitJavaClassInitializationBreakpoint = pyqtSignal(str, name='onHitJavaClassInitializationBreakpoint')
+    # watchpoint related
+    onWatchpointAdded = pyqtSignal(Watchpoint, name='onWatchpointAdded')
+    onWatchpointRemoved = pyqtSignal(str, name='onWatchpointRemoved')
     # ranges + modules
     onSetRanges = pyqtSignal(list, name='onSetRanges')
     onSearchableRanges = pyqtSignal(list, name='onSearchableRanges')
@@ -129,15 +128,12 @@ class Dwarf(QObject):
         # kernel
         self._kernel = Kernel(self)
 
-        # hooks
-        self.hooks = {}
-        self.native_on_loads = {}
-        self.java_on_loads = {}
-        self.java_hooks = {}
-        self.watchers = {}
-        self.temporary_input = ''
-        self.native_pending_args = None
-        self.java_pending_args = None
+        # breakpoints
+        self.breakpoints = {}
+        self.java_breakpoints = {}
+        self.module_initialization_breakpoints = {}
+        self.java_class_initialization_breakpoints = {}
+        self.watchpoints = {}
 
         # context
         self._arch = ''
@@ -173,14 +169,11 @@ class Dwarf(QObject):
         self._process = None
         self._script = None
 
-        # hooks
-        self.hooks = {}
-        self.native_on_loads = {}
-        self.java_on_loads = {}
-        self.java_hooks = {}
-        self.temporary_input = ''
-        self.native_pending_args = None
-        self.java_pending_args = None
+        # breakpoints
+        self.breakpoints = {}
+        self.java_breakpoints = {}
+        self.module_initialization_breakpoints = {}
+        self.java_class_initialization_breakpoints = {}
 
         self.context_tid = 0
 
@@ -246,7 +239,7 @@ class Dwarf(QObject):
     # ************************************************************************
     def is_address_watched(self, ptr):
         ptr = utils.parse_ptr(ptr)
-        if hex(ptr) in self.watchers:
+        if hex(ptr) in self.watchpoints:
             return True
 
         return False
@@ -419,12 +412,12 @@ class Dwarf(QObject):
                 # already resumed from other loc
                 pass
 
-    def add_watcher(self, ptr=None):
+    def add_watchpoint(self, ptr=None):
         if ptr is None:
             ptr, input = InputDialog.input_pointer(self._app_window)
             if ptr == 0:
                 return
-        return self.dwarf_api('addWatcher', ptr)
+        return self.dwarf_api('addWatchpoint', ptr)
 
     def dump_memory(self, file_path=None, ptr=0, length=0):
         if ptr == 0:
@@ -456,7 +449,7 @@ class Dwarf(QObject):
         if self.pid and self._pid == 0 or self.process is None:
             return
 
-        # when tid is 0 we want to execute the api in the current hooked thread
+        # when tid is 0 we want to execute the api in the current breakpointed thread
         # however, when we release from menu, what we want to do is to release multiple contexts at once
         # so that we pass 0 as tid.
         # we check here and setup special rules for release api
@@ -483,7 +476,7 @@ class Dwarf(QObject):
             self.log_event(str(e))
             return None
 
-    def hook_java(self, input_=None, pending_args=None):
+    def breakpoint_java(self, input_=None, pending_args=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(
                 self._app_window, hint='insert java class or method',
@@ -492,21 +485,17 @@ class Dwarf(QObject):
                 return
         self.java_pending_args = pending_args
         input_ = input_.replace(' ', '')
-        self.dwarf_api('hookJava', input_)
+        self.dwarf_api('putBreakpoint', input_)
 
-    def hook_native(self, input_=None, pending_args=None, own_input=None):
+    def breakpoint_native(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             ptr, input_ = InputDialog.input_pointer(self._app_window)
         else:
             ptr = utils.parse_ptr(self._app_window.dwarf.dwarf_api('evaluatePtr', input_))
         if ptr > 0:
-            self.temporary_input = input_
-            if own_input is not None:
-                self.temporary_input = own_input
-            self.native_pending_args = pending_args
-            self.dwarf_api('hookNative', ptr)
+            self.dwarf_api('putBreakpoint', ptr)
 
-    def hook_native_on_load(self, input_=None):
+    def breakpoint_module_initialization(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(self._app_window, hint='insert module name', placeholder='libtarget.so')
             if not accept:
@@ -514,12 +503,12 @@ class Dwarf(QObject):
             if len(input_) == 0:
                 return
 
-        if input_ in self._app_window.dwarf.native_on_loads:
+        if input_ in self.module_initialization_breakpoints:
             return
 
-        self.dwarf_api('hookNativeOnLoad', input_)
+        self.dwarf_api('putModuleInitializationBreakpoint', input_)
 
-    def hook_java_on_load(self, input_=None):
+    def breakpoint_java_class_initialization(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             accept, input_ = InputDialog.input(
                 self._app_window, hint='insert class name', placeholder='com.android.mytargetclass')
@@ -528,10 +517,10 @@ class Dwarf(QObject):
             if len(input_) == 0:
                 return
 
-        if input_ in self._app_window.dwarf.native_on_loads:
+        if input_ in self.java_class_initialization_breakpoints:
             return
 
-        self.dwarf_api('hookJavaOnLoad', input_)
+        self.dwarf_api('putJavaClassInitializationBreakpoint', input_)
 
     def log(self, what):
         self.onLogToConsole.emit(str(what))
@@ -557,8 +546,8 @@ class Dwarf(QObject):
         """
         self.io.read_range_async(ptr, callback)
 
-    def remove_watcher(self, ptr):
-        return self.dwarf_api('removeWatcher', ptr)
+    def remove_watchpoint(self, ptr):
+        return self.dwarf_api('removeWatchpoint', ptr)
 
     def search(self, start, size, pattern):
         # sanify args
@@ -615,66 +604,55 @@ class Dwarf(QObject):
                 self.app.get_ftrace_panel().append_data(parts[1])
         elif cmd == 'enable_kernel':
             self._app_window.get_menu().enable_kernel_menu()
-        elif cmd == 'hook_java_callback':
-            h = Hook(HOOK_JAVA)
-            h.set_ptr(1)
-            h.set_input(parts[1])
-            if self.java_pending_args:
-                h.set_condition(self.java_pending_args['condition'])
-                h.set_logic(self.java_pending_args['logic'])
-                self.java_pending_args = None
-            self.java_hooks[h.get_input()] = h
-            self.onAddJavaHook.emit(h)
-        elif cmd == 'hook_java_on_load_callback':
-            h = Hook(HOOK_JAVA)
-            h.set_ptr(0)
-            h.set_input(parts[1])
-            self.java_on_loads[parts[1]] = h
-            self.onAddJavaOnLoadHook.emit(h)
-        elif cmd == 'hook_native_callback':
-            h = Hook(HOOK_NATIVE)
-            h.set_ptr(int(parts[1], 16))
-            h.set_input(self.temporary_input)
-            h.set_bytes(binascii.unhexlify(parts[2]))
-            self.temporary_input = ''
-            h.set_condition(parts[4])
-            h.set_logic(parts[3])
-            h.internalHook = parts[5] == 'true'
-            h.set_debug_symbol(json.loads(parts[6]))
-            self.native_pending_args = None
-            if not h.internal_hook:
-                self.hooks[h.get_ptr()] = h
-                self.onAddNativeHook.emit(h)
-        elif cmd == 'hook_native_on_load_callback':
-            h = Hook(HOOK_ONLOAD)
-            h.set_ptr(0)
-            h.set_input(parts[1])
-            self.native_on_loads[parts[1]] = h
-            self.onAddNativeOnLoadHook.emit(h)
-        elif cmd == 'hook_deleted':
+        elif cmd == 'breakpoint_java_callback':
+            b = Breakpoint(BREAKPOINT_JAVA)
+            b.set_target(parts[1])
+            if len(parts) > 2:
+                b.set_condition(parts[2])
+            self.java_breakpoints[parts[1]] = b
+            self.onAddJavaBreakpoint.emit(b)
+        elif cmd == 'java_class_initialization_callback':
+            b = Breakpoint(BREAKPOINT_INITIALIZATION)
+            b.set_target(parts[1])
+            b.set_debug_symbol(parts[1])
+            self.java_class_initialization_breakpoints[parts[1]] = b
+            self.onAddJavaClassInitializationBreakpoint.emit(b)
+        elif cmd == 'breakpoint_native_callback':
+            b = Breakpoint(BREAKPOINT_NATIVE)
+            b.set_target(int(parts[1], 16))
+            if len(parts) > 2:
+                b.set_condition(parts[2])
+            self.breakpoints[b.get_target()] = b
+            self.onAddNativeBreakpoint.emit(b)
+        elif cmd == 'module_initialization_callback':
+            b = Breakpoint(BREAKPOINT_INITIALIZATION)
+            b.set_target(parts[1])
+            self.module_initialization_breakpoints[parts[1]] = b
+            self.onAddModuleInitializationBreakpoint.emit(b)
+        elif cmd == 'breakpoint_deleted':
             if parts[1] == 'java':
-                self.java_hooks.pop(parts[2])
-            elif parts[1] == 'native_on_load':
-                self.native_on_loads.pop(parts[2])
-            elif parts[1] == 'java_on_load':
-                self.java_on_loads.pop(parts[2])
+                self.java_breakpoints.pop(parts[2])
+            elif parts[1] == 'module_initialization':
+                self.module_initialization_breakpoints.pop(parts[2])
+            elif parts[1] == 'java_class_initialization':
+                self.java_class_initialization_breakpoints.pop(parts[2])
             else:
-                self.hooks.pop(utils.parse_ptr(parts[2]))
-            self.onDeleteHook.emit(parts)
-        elif cmd == 'java_on_load_callback':
-            str_fmt = ('Hook java onload {0} @thread := {1}'.format(parts[1], parts[2]))
+                self.breakpoints.pop(utils.parse_ptr(parts[2]))
+            self.onDeleteBreakpoint.emit(parts)
+        elif cmd == 'breakpoint_java_class_initialization_callback':
+            str_fmt = ('Breakpoint java class initialization {0} @thread := {1}'.format(parts[1], parts[2]))
             self.log_event(str_fmt)
-            self.onHitJavaOnLoad.emit(parts[1])
+            self.onHitJavaClassInitializationBreakpoint.emit(parts[1])
         elif cmd == 'java_trace':
             self.onJavaTraceEvent.emit(parts)
         elif cmd == 'log':
             self.log(parts[1])
-        elif cmd == 'native_on_load_callback':
+        elif cmd == 'breakpoint_module_initialization_callback':
             data = json.loads(parts[2])
-            str_fmt = ('Hook native onload {0} @thread := {1}'.format(data['module'], parts[1]))
+            str_fmt = ('Breakpoint module initialization {0} @thread := {1}'.format(data['module'], parts[1]))
             self.log_event(str_fmt)
-            self.onHitNativeOnLoad.emit([parts[1], data])
-        elif cmd == 'native_on_load_module_loading':
+            self.onHitModuleInitializationBreakpoint.emit([parts[1], data])
+        elif cmd == 'module_initialized':
             module = json.loads(parts[2])
             if module is not None:
                 str_fmt = ('@thread {0} loading module := {1}'.format(parts[1], module['name']))
@@ -719,7 +697,6 @@ class Dwarf(QObject):
             value = parts[2]
             self.onContextChanged.emit(str(context_property), value)
         elif cmd == 'set_data':
-            import capstone
             if data is not None:
                 self.onSetData.emit(['raw', parts[1], data])
             else:
@@ -729,32 +706,29 @@ class Dwarf(QObject):
             pass
         elif cmd == 'update_modules':
             modules = json.loads(parts[2])
-            # todo update onloads bases
             self.onSetModules.emit(modules)
         elif cmd == 'update_ranges':
             self.onSetRanges.emit(json.loads(parts[2]))
         elif cmd == 'update_searchable_ranges':
             self.onSearchableRanges.emit(json.loads(parts[2]))
-        elif cmd == 'watcher':
+        elif cmd == 'watchpoint':
             exception = json.loads(parts[1])
-            self.log_event('watcher hit op %s address %s @thread := %s' %
+            self.log_event('watchpoint hit op %s address %s @thread := %s' %
                            (exception['memory']['operation'], exception['memory']['address'], parts[2]))
-        elif cmd == 'watcher_added':
+        elif cmd == 'watchpoint_added':
             ptr = utils.parse_ptr(parts[1])
             hex_ptr = hex(ptr)
             flags = int(parts[2])
 
-            h = Hook(HOOK_WATCHER)
-            h.set_ptr(ptr)
-            h.set_logic(flags)
-            h.set_debug_symbol(json.loads(parts[3]))
-            self.watchers[hex_ptr] = h
+            w = Watchpoint(ptr, flags)
+            w.set_debug_symbol(json.loads(parts[3]))
+            self.watchpoints[hex_ptr] = w
 
-            self.onWatcherAdded.emit(hex_ptr, flags)
-        elif cmd == 'watcher_removed':
+            self.onWatchpointAdded.emit(w)
+        elif cmd == 'watchpoint_removed':
             hex_ptr = hex(utils.parse_ptr(parts[1]))
-            self.watchers.pop(hex_ptr)
-            self.onWatcherRemoved.emit(hex_ptr)
+            self.watchpoints.pop(hex_ptr)
+            self.onWatchpointRemoved.emit(hex_ptr)
         elif cmd == 'memoryscan_result':
             if parts[1] == '':
                 self.onMemoryScanResult.emit([])
@@ -771,11 +745,6 @@ class Dwarf(QObject):
             self.java_available = context_data['java']
             str_fmt = ('injected into := {0:d}'.format(self.pid))
             self.log_event(str_fmt)
-
-            # unlock java on loads
-            if self.java_available:
-                self._app_window.hooks_panel.new_menu.addAction(
-                    'Java class loading', self._app_window.hooks_panel._on_add_java_on_load)
         elif 'context' in context_data:
             context = Context(context_data['context'])
             self.contexts[str(context_data['tid'])] = context
@@ -792,7 +761,7 @@ class Dwarf(QObject):
                 name = context_data['ptr']
 
             if context_data['reason'] == 0:
-                self.log_event('hook %s %s @thread := %d' % (name, sym, context_data['tid']))
+                self.log_event('breakpoint %s %s @thread := %d' % (name, sym, context_data['tid']))
 
         if not reason == -1 and self.context_tid == 0:
             self.context_tid = context_data['tid']

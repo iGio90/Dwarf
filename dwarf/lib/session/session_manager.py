@@ -97,10 +97,10 @@ class SessionManager(QObject):
         if self._session is not None:
             self.sessionStopped.emit()
 
-    def _get_session_restore_ptr(self, hook):
-        module = hook['debugSymbols']['moduleName']
+    def _get_session_restore_ptr(self, breakpoint):
+        module = breakpoint['debugSymbols']['moduleName']
         if module is not None and module != '':
-            name = hook['debugSymbols']['name']
+            name = breakpoint['debugSymbols']['name']
         else:
             return 0
         add = 0

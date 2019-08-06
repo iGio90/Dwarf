@@ -68,18 +68,21 @@ class ThreadsWidget(DwarfListView):
 
         pc_col = QStandardItem()
         if not is_java:
-            pc = int(data['ptr'], 16)
-            if 'arm' in self.dwarf.arch:
-                # dethumbify
-                if pc & 1 == 1:
-                    pc -= 1
-
-            if self._uppercase_hex:
-                str_fmt = '0x{0:X}'
+            if data['reason'] == 2:
+                pc_col.setText(data['ptr'])
             else:
-                str_fmt = '0x{0:x}'
+                pc = int(data['ptr'], 16)
+                if 'arm' in self.dwarf.arch:
+                    # dethumbify
+                    if pc & 1 == 1:
+                        pc -= 1
 
-            pc_col.setText(str_fmt.format(pc))
+                if self._uppercase_hex:
+                    str_fmt = '0x{0:X}'
+                else:
+                    str_fmt = '0x{0:x}'
+
+                pc_col.setText(str_fmt.format(pc))
         else:
             parts = data['ptr'].split('.')
             pc_col.setText(parts[len(parts) - 1])

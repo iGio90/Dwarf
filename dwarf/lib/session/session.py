@@ -68,7 +68,7 @@ class Session(QObject):
 
     @property
     def session_ui_sections(self):
-        return ['hooks', 'bookmarks', 'threads', 'registers', 'console', 'watchers', 'backtrace', 'debug']
+        return ['breakpoints', 'bookmarks', 'threads', 'registers', 'console', 'watchpoints', 'backtrace', 'debug']
 
     @property
     def frida_device(self):
