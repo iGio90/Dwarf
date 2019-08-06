@@ -120,6 +120,9 @@ def process_args():
     parser.add_argument('args', nargs='*', default=[''], help='arguments')
 
     args = parser.parse_args()
+
+    print(args)
+
     return args
 
 

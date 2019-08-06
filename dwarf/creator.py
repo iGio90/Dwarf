@@ -105,7 +105,7 @@ def main():
         else:
             target = input('target package: ')
 
-    dwarf_launcher = 'dwarf -t %s -s agent.js -sp %s' % (session_type, target)
+    dwarf_launcher = 'dwarf -sp -s agent.js -t %s -sp %s' % (session_type, target)
     injector_exe = 'dwarf'
     if os.name == 'nt':
         injector_exe += '.bat'
