@@ -40,8 +40,8 @@ setup(
     include_package_data=True,
     # Dependencies
     install_requires=[
-        'capstone==4.0.1', 'requests==2.22.0', 'frida==12.6.11',
-        'PyQt5==5.11.3', 'pyperclip==1.7.0'
+        'capstone>=4.0.1', 'requests>=2.22.0', 'frida>=12.6.12',
+        'PyQt5>=5.11.3', 'pyperclip>=1.7.0'
     ],
     # Script info
     entry_points={'console_scripts': ['dwarf = dwarf.dwarf:main']},

@@ -127,7 +127,7 @@ class BookmarksWidget(QWidget):
         if index != -1:
             addr = self._bookmarks_model.item(index, 0).text()
             if addr:
-                self._app_window.jump_to_address(addr)
+                self._app_window.jump_to_address(addr, view=1)
 
     def _on_contextmenu(self, pos):
         context_menu = QMenu(self)
@@ -159,9 +159,7 @@ class BookmarksWidget(QWidget):
         context_menu.exec(global_pt)
 
     # + button
-    def _create_bookmark(self, index=-1, ptr=''):
-        note = ''
-
+    def _create_bookmark(self, index=-1, ptr='', note=''):
         if ptr == '':
             if isinstance(index, int) and index >= 0:
                 ptr = self._bookmarks_model.item(index, 0).text()
@@ -170,14 +168,7 @@ class BookmarksWidget(QWidget):
             ptr, _ = InputDialog.input_pointer(
                 parent=self._app_window, input_content=ptr)
         else:
-            if not isinstance(ptr, int):
-                try:
-                    if ptr.startswith('0x'):
-                        ptr = int(ptr, 16)
-                    else:
-                        ptr = int(ptr)
-                except ValueError:
-                    ptr = 0
+            ptr = utils.parse_ptr(ptr)
 
         if ptr > 0:
             ptr = hex(ptr)
@@ -191,8 +182,10 @@ class BookmarksWidget(QWidget):
             else:
                 index = -1
 
-            accept, note = InputDialog.input(
-                hint='Insert notes for %s' % ptr, input_content=note)
+            accept = note != ''
+            if note == '':
+                accept, note = InputDialog.input(
+                    hint='Insert notes for %s' % ptr, input_content=note)
             if accept:
                 if index < 0:
                     self.insert_bookmark(ptr, note)
@@ -213,6 +206,9 @@ class BookmarksWidget(QWidget):
             QStandardItem(note)
         ])
         self._bookmarks_list.resizeColumnToContents(0)
+
+    def is_address_bookmarked(self, ptr):
+        return utils.parse_ptr(ptr) in self.bookmarks
 
     # shortcuts/menu
     def _on_delete_bookmark(self, index):

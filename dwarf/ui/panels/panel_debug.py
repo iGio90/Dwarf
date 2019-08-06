@@ -23,22 +23,6 @@ class QDebugPanel(QMainWindow):
         self.app = app
         self.q_settings = app.q_settings
 
-        self.functions_list = DwarfListView()
-        self.functions_list_model = QStandardItemModel(0, 1)
-        self.functions_list_model.setHeaderData(0, Qt.Horizontal, '')
-        self.functions_list.setModel(self.functions_list_model)
-        self.functions_list.setHeaderHidden(True)
-        self.functions_list.doubleClicked.connect(self._function_double_clicked)
-
-        self.dock_functions_list = QDockWidget('Functions', self)
-        self.dock_functions_list.setObjectName('functions')
-        self.dock_functions_list.setWidget(self.functions_list)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock_functions_list)
-        self.resizeDocks([
-            self.dock_functions_list
-        ], [100], Qt.Horizontal)
-        self.app.debug_view_menu.addAction(self.dock_functions_list.toggleViewAction())
-
         screen_size = QtWidgets.QDesktopWidget().screenGeometry(-1)
         m_width = screen_size.width()
 
@@ -80,33 +64,25 @@ class QDebugPanel(QMainWindow):
 
     def showEvent(self, event):
         main_width = self.size().width()
-        new_widths = [main_width * .1, main_width * .4, main_width * .5]
-        self.resizeDocks([
-            self.dock_functions_list, self.dock_memory_panel, self.dock_disassembly_panel
-        ], new_widths, Qt.Horizontal)
+        new_widths = [main_width * .4, main_width * .5]
+        self.resizeDocks([self.dock_memory_panel, self.dock_disassembly_panel], new_widths, Qt.Horizontal)
         return super().showEvent(event)
 
     def update_functions(self, functions_list=None):
         if functions_list is None:
             functions_list = {}
-        self.functions_list_model.setRowCount(0)
         for module_info_base in self.app.dwarf.database.modules_info:
             module_info = self.app.dwarf.database.modules_info[module_info_base]
             if len(module_info.functions) > 0:
-                self.functions_list.show()
                 for function in module_info.functions:
                     functions_list[function.name] = function.address
 
         for function_name in sorted(functions_list.keys()):
             function_addr = functions_list[function_name]
-            item = QStandardItem(function_name.replace('.', '_'))
-            item.setData(function_addr, Qt.UserRole + 2)
-            self.functions_list_model.appendRow([item])
 
-    def _function_double_clicked(self, model_index):
-        item = self.functions_list_model.itemFromIndex(model_index)
-        address = item.data(Qt.UserRole + 2)
-        self.jump_to_address(address, view=DEBUG_VIEW_DISASSEMBLY)
+            function_name = function_name.replace('.', '_')
+            if not self.app.bookmarks_panel.is_address_bookmarked(function_addr):
+                self.app.bookmarks_panel._create_bookmark(ptr=function_addr, note=function_name)
 
     def on_context_setup(self):
         self.memory_panel.on_context_setup()
