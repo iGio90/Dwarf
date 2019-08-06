@@ -359,7 +359,7 @@ class ModulesPanel(QSplitter):
         module_info = self._app_window.dwarf.database.get_module_info(module_address)
         if module_info is not None:
             if not module_info.have_details:
-                module_info.update_details(self._app_window.dwarf)
+                module_info = ModuleInfo.build_module_info(self._app_window.dwarf, module_name, fill_ied=True)
         else:
             module_info = ModuleInfo.build_module_info(self._app_window.dwarf, module_name, fill_ied=True)
 

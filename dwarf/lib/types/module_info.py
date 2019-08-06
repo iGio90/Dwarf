@@ -55,20 +55,20 @@ class ModuleInfo:
 
     @staticmethod
     def build_module_info(dwarf, name_or_address, fill_ied=False):
-        module_base_info = dwarf.dwarf_api('findModule', name_or_address)
+        module_base_info = dwarf.dwarf_api('findModule', [name_or_address, fill_ied])
 
         if module_base_info:
             db_module_info = dwarf.database.get_module_info(module_base_info['base'])
             if db_module_info:
                 if not db_module_info.have_details and fill_ied:
-                    db_module_info.update_details(dwarf)
+                    db_module_info.update_details(module_base_info)
                 return db_module_info
 
             if module_base_info:
                 module_info = ModuleInfo(module_base_info)
 
                 if fill_ied:
-                    module_info.update_details(dwarf)
+                    module_info.update_details(module_base_info)
 
                 dwarf.database.put_module_info(module_base_info['base'], module_info)
 
@@ -105,15 +105,9 @@ class ModuleInfo:
                 self.functions.append(f)
                 self.functions_map[symbol['address']] = f
 
-    def update_details(self, dwarf):
+    def update_details(self, base_info):
         self._updated_details = True
 
-        symbols = dwarf.dwarf_api('enumerateSymbols', self.base)
-        if symbols is not None:
-            self.apply_symbols(symbols)
-        imports = dwarf.dwarf_api('enumerateImports', self.base)
-        if imports is not None:
-            self.apply_imports(imports)
-        exports = dwarf.dwarf_api('enumerateExports', self.base)
-        if exports is not None:
-            self.apply_exports(exports)
+        self.apply_symbols(base_info['symbols'])
+        self.apply_imports(base_info['imports'])
+        self.apply_exports(base_info['exports'])

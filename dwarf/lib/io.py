@@ -32,9 +32,6 @@ class Reader(QThread):
         try:
             _range = self.dwarf.dwarf_api('getRange', self.ptr)
             if _range:
-                # make sure we have module info
-                ModuleInfo.build_module_info(self.dwarf, self.ptr, fill_ied=True)
-
                 if _range['protection'][0] == 'r':
                     base = utils.parse_ptr(_range['base'])
                     self.ptr = base

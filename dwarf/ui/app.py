@@ -883,8 +883,7 @@ class AppWindow(QMainWindow):
         if self.debug_panel.memory_panel.number_of_lines() == 0:
             data = data[1]
             module_base = int(data['moduleBase'], 16)
-            entry = int(data['moduleEntry'], 16)
-            self.jump_to_address(module_base + entry)
+            self.jump_to_address(module_base)
 
     def _apply_context(self, context, manual=False):
         # update current context tid
