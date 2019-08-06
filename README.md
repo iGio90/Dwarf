@@ -13,7 +13,7 @@ Built on top of pyqt5, frida and some terrible code.
   <a href="http://www.giovanni-rocca.com/dwarf/">What is Dwarf</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/features/">Features</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/setup/">Setup</a> |
-  <a href="http://www.giovanni-rocca.com/dwarf/javascript/">Javascript</a> |
+  <a href="https://igio90.github.io/Dwarf/">Javascript</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/examples/">Examples</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/screenshots/">Screenshots</a> |
   <a href="https://github.com/iGio90/Dwarf/blob/master/LICENSE">License</a> |

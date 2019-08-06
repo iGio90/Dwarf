@@ -405,7 +405,7 @@ class AppWindow(QMainWindow):
 
     @pyqtSlot(name='mainMenuApi')
     def _menu_api(self):
-        QDesktopServices.openUrl(QUrl('http://www.giovanni-rocca.com/dwarf/javascript/'))
+        QDesktopServices.openUrl(QUrl('https://igio90.github.io/Dwarf/'))
 
     @pyqtSlot(name='mainMenuDocumentation')
     def _menu_documentation(self):
