@@ -633,9 +633,11 @@ class Dwarf(QObject):
             if parts[1] == 'java':
                 self.java_breakpoints.pop(parts[2])
             elif parts[1] == 'module_initialization':
-                self.module_initialization_breakpoints.pop(parts[2])
+                if parts[2] in self.module_initialization_breakpoints:
+                    self.module_initialization_breakpoints.pop(parts[2])
             elif parts[1] == 'java_class_initialization':
-                self.java_class_initialization_breakpoints.pop(parts[2])
+                if parts[2] in self.java_class_initialization_breakpoints:
+                    self.java_class_initialization_breakpoints.pop(parts[2])
             else:
                 self.breakpoints.pop(utils.parse_ptr(parts[2]))
             self.onDeleteBreakpoint.emit(parts)
