@@ -391,9 +391,9 @@ class Adb(QObject):
 
         result = self.su_cmd('frida --version')
         if result:
-            if result and 'frida: not found' in result:
+            if result and ('frida: not found' in result or 'No such file' in result):
                 result = self.su_cmd('frida-server --version')
-                if result and 'frida-server: not found' in result:
+                if result and ('frida-server: not found' in result or 'No such file' in result):
                     result = None
                 elif result:
                     check_ver = result.split('.')
