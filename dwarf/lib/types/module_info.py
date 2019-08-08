@@ -108,6 +108,9 @@ class ModuleInfo:
     def update_details(self, base_info):
         self._updated_details = True
 
-        self.apply_symbols(base_info['symbols'])
-        self.apply_imports(base_info['imports'])
-        self.apply_exports(base_info['exports'])
+        if 'symbols' in base_info:
+            self.apply_symbols(base_info['symbols'])
+        if 'imports' in base_info:
+            self.apply_imports(base_info['imports'])
+        if 'exports':
+            self.apply_exports(base_info['exports'])
