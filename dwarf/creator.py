@@ -36,7 +36,7 @@ def main():
             "watch": "frida-compile src/agent.ts -o agent.js -w"
         },
         "devDependencies": {
-            "@types/dwarf-typings": "git://github.com/iGio90/DwarfTypings.git"
+            "@types/dwarf-typings": "git://github.com/iGio90/DwarfTypings.git",
             "@types/frida-gum": "^13.0.0",
             "@types/node": "^12.0.4",
             "frida-compile": "^9.0.2"
