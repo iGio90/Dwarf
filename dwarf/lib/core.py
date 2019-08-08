@@ -388,15 +388,18 @@ class Dwarf(QObject):
         if self._process is not None:
             self.detach()
         try:
-            if self.device.type == 'local':
-                self._pid = self.device.spawn([package] + args)
+            if package == '-':
+                self.attach([os.getpid()], script=script)
             else:
-                # args not supported in remote targets
-                self._pid = self.device.spawn(package)
-            self._package = package
-            self._process = self.device.attach(self._pid)
-            self._process.on('detached', self._on_detached)
-            self._spawned = True
+                if self.device.type == 'local':
+                    self._pid = self.device.spawn([package] + args)
+                else:
+                    # args not supported in remote targets
+                    self._pid = self.device.spawn(package)
+                self._package = package
+                self._process = self.device.attach(self._pid)
+                self._process.on('detached', self._on_detached)
+                self._spawned = True
         except Exception as e:
             raise Exception('Frida Error: ' + str(e))
 

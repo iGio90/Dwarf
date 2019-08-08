@@ -100,7 +100,7 @@ def main():
     while len(target.replace(' ', '')) == 0:
         if session_type == 'local':
             target = input('target binary and arguments: ')
-            if not os.path.exists(target):
+            if not os.path.exists(target.split(' ')[0]):
                 target = ''
         else:
             target = input('target package: ')
