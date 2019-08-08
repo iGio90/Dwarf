@@ -50,7 +50,6 @@ setup(
         "Programming Language :: Python :: 3",
         "LICENSE :: OSI APPROVED :: GNU LESSER GENERAL PUBLIC LICENSE V3 OR LATER (LGPLV3+)",
         "Operating System :: OS Independent",
-        "Operating System :: OS Independent",
         "Operating System :: POSIX",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS :: MacOS X",
