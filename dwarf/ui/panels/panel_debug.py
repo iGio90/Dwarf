@@ -68,22 +68,6 @@ class QDebugPanel(QMainWindow):
         self.resizeDocks([self.dock_memory_panel, self.dock_disassembly_panel], new_widths, Qt.Horizontal)
         return super().showEvent(event)
 
-    def update_functions(self, functions_list=None):
-        if functions_list is None:
-            functions_list = {}
-        for module_info_base in self.app.dwarf.database.modules_info:
-            module_info = self.app.dwarf.database.modules_info[module_info_base]
-            if len(module_info.functions) > 0:
-                for function in module_info.functions:
-                    functions_list[function.name] = function.address
-
-        for function_name in sorted(functions_list.keys()):
-            function_addr = functions_list[function_name]
-
-            function_name = function_name.replace('.', '_')
-            if not self.app.bookmarks_panel.is_address_bookmarked(function_addr):
-                self.app.bookmarks_panel._create_bookmark(ptr=function_addr, note=function_name)
-
     def on_context_setup(self):
         self.memory_panel.on_context_setup()
 
@@ -121,8 +105,6 @@ class QDebugPanel(QMainWindow):
 
     def _apply_data(self, base, data, offset, view=DEBUG_VIEW_MEMORY):
         self.app.hide_progress()
-
-        self.update_functions()
 
         if view == DEBUG_VIEW_MEMORY:
             self.memory_panel.set_data(data, base=base, offset=offset)
