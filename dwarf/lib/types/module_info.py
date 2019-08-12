@@ -61,14 +61,14 @@ class ModuleInfo:
             db_module_info = dwarf.database.get_module_info(module_base_info['base'])
             if db_module_info:
                 if not db_module_info.have_details and fill_ied:
-                    db_module_info.update_details(module_base_info)
+                    db_module_info.update_details(dwarf, module_base_info)
                 return db_module_info
 
             if module_base_info:
                 module_info = ModuleInfo(module_base_info)
 
                 if fill_ied:
-                    module_info.update_details(module_base_info)
+                    module_info.update_details(dwarf, module_base_info)
 
                 dwarf.database.put_module_info(module_base_info['base'], module_info)
 
@@ -105,12 +105,14 @@ class ModuleInfo:
                 self.functions.append(f)
                 self.functions_map[symbol['address']] = f
 
-    def update_details(self, base_info):
+    def update_details(self, dwarf, base_info):
+        details = dwarf.dwarf_api('enumerateModuleInfo', base_info['name'])
+
         self._updated_details = True
 
-        if 'symbols' in base_info:
-            self.apply_symbols(base_info['symbols'])
-        if 'imports' in base_info:
-            self.apply_imports(base_info['imports'])
-        if 'exports':
-            self.apply_exports(base_info['exports'])
+        if 'symbols' in details:
+            self.apply_symbols(details['symbols'])
+        if 'imports' in details:
+            self.apply_imports(details['imports'])
+        if 'exports' in details:
+            self.apply_exports(details['exports'])
