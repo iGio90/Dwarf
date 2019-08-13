@@ -142,12 +142,12 @@ class Dwarf(QObject):
         self.context_tid = 0
         self._platform = ''
 
-        # disassembler
-        self.disassembler = Disassembler(self)
-
         # connect to self
         self.onApplyContext.connect(self._on_apply_context)
         self.onRequestJsThreadResume.connect(self._on_request_resume_from_js)
+        
+        # disassembler
+        self.disassembler = Disassembler(self)
 
     def reinitialize(self):
         self.database = Database()
