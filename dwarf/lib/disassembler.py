@@ -1,3 +1,22 @@
+"""
+    Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.
+    If not, see <https://www.gnu.org/licenses/>
+"""
+
+
 import json
 
 from capstone import *
@@ -8,60 +27,104 @@ from dwarf.lib.types.instruction import Instruction
 
 
 class DisassembleThread(QThread):
+    """ Disasm Thread
+    """
     onFinished = pyqtSignal(list, name='onFinished')
     onError = pyqtSignal(str, name='onError')
 
-    def __init__(self, dwarf, capstone, base, data, offset, num_instructions=0):
+    def __init__(self, dwarf, capstone, base, data, offset, num_instructions=-1, max_instructions=1024, stop_on_first_return=False):
         super().__init__()
         self._dwarf = dwarf
         self._base = base
         self._data = data
         self._offset = offset
         self._capstone = capstone
+        # TODO: remove - only there to keep working - change in disasm() calls
+        if num_instructions == 0:
+            num_instructions = -1
+            stop_on_first_return = True
+        # end remove
         self._num_instructions = num_instructions
-        self._max_instruction = 1024
+        self._max_instructions = max_instructions
+        self._stop_on_ret = stop_on_first_return
 
-        self._counter = 0
-        self._instructions = []
+    def run(self):
+        """ dont call this - use start
+        """
+        if not self._data:
+            self.onError.emit('No Data')
+            return
 
-        self._debug_symbols = []
-        self._debug_symbols_indexes = []
+        if not self._capstone:
+            self.onError.emit('No Capstone')
+            return
+
+        if not self._dwarf:
+            self.onError.emit('No Dwarf')
+            return
+
+        if not self._num_instructions or not self._max_instructions:
+            self.onError.emit('Nothing todo...')
+            return
+
+        instructions_count = 0
+
+        instructions = []
+        debug_symbols = []
+        debug_symbols_indexes = []
 
         for cap_inst in self._capstone.disasm(
                 self._data[self._offset:], self._base + self._offset):
-            self._counter += 1
-
-            if 0 < self._num_instructions < self._counter:
-                break
 
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
             if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
-                self._debug_symbols.append(dwarf_instruction.jump_address)
-                self._debug_symbols_indexes.append(str(len(self._instructions)))
+                debug_symbols.append(dwarf_instruction.jump_address)
+                debug_symbols_indexes.append(str(len(instructions)))
             elif dwarf_instruction.is_call and dwarf_instruction.call_address:
-                self._debug_symbols.append(dwarf_instruction.call_address)
-                self._debug_symbols_indexes.append(str(len(self._instructions)))
+                debug_symbols.append(dwarf_instruction.call_address)
+                debug_symbols_indexes.append(str(len(instructions)))
 
-            if self._num_instructions < 1:
-                if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET) or \
-                        self._counter > self._max_instruction:
+            instructions.append(dwarf_instruction)
+
+            instructions_count += 1
+
+            # num_instructions set and reached?
+            if self._num_instructions > 0 and instructions_count >= self._num_instructions:
+                break
+
+            # stop on first return?
+            if self._stop_on_ret:
+                # is return -> stop TODO: unsafe when using -1 on num_instr and max_instr
+                if cap_inst.group(CS_GRP_RET) or cap_inst.group(ARM64_GRP_RET):
                     break
 
-            self._instructions.append(dwarf_instruction)
+            # TODO: add stop_on_function_end via function epilogue
 
-    def run(self):
-        if len(self._debug_symbols) > 0:
-            symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(self._debug_symbols))
+            # max instructions set and reached?
+            if self._max_instructions > 0 and self._num_instructions == -1:
+                if instructions_count >= self._max_instructions:
+                    break
+
+        if debug_symbols:
+            symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(debug_symbols))
             if symbols:
-                for i in range(len(symbols)):
-                    symbol = symbols[i]
-                    instruction = self._instructions[int(self._debug_symbols_indexes[i])]
-                    instruction.symbol_name = symbol['name']
-                    instruction.symbol_module = '-'
-                    if 'moduleName' in symbol:
-                        instruction.symbol_module = symbol['moduleName']
+                for index, symbol in enumerate(symbols):
+                    inst_index = None
+                    try:
+                        inst_index = int(debug_symbols_indexes[index])
+                    except ValueError:
+                        pass
 
-        self.onFinished.emit(self._instructions)
+                    if inst_index is not None:
+                        instruction = instructions[inst_index]
+                        instruction.symbol_name = ''
+                        instruction.symbol_module = '-'
+                        if 'name' in symbol:
+                            instruction.symbol_name = symbol['name']
+                        if 'moduleName' in symbol:
+                            instruction.symbol_module = symbol['moduleName']
+
+        self.onFinished.emit(instructions)
 
 
 class Disassembler:
@@ -80,10 +143,11 @@ class Disassembler:
 
         self.on_arch_changed()
 
-    def disasm(self, base, data, offset, callback, num_instructions=0):
+    def disasm(self, base, data, offset, callback, num_instructions=-1):
         self._disasm_thread = DisassembleThread(
             self.dwarf, self._capstone, base, data, offset, num_instructions=num_instructions)
         self._disasm_thread.onFinished.connect(callback)
+        # TODO: handle onError
         self._disasm_thread.start(QThread.HighestPriority)
 
     def on_arch_changed(self):
