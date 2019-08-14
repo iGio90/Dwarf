@@ -72,10 +72,17 @@ class DisassembleThread(QThread):
         instructions = []
         debug_symbols = []
         debug_symbols_indexes = []
+        
+        # create new cs instance
+        thread_capstone = Cs(self._capstone.arch, self._capstone.mode)
+        thread_capstone.detail = self._capstone.detail
+        
+        start_off = self._offset
+        start_vaddr = self._base + self._offset
+        
+        data = bytes(self._data[start_off:])
 
-        for cap_inst in self._capstone.disasm(
-                self._data[self._offset:], self._base + self._offset):
-
+        for cap_inst in thread_capstone.disasm(data, start_vaddr):
             dwarf_instruction = Instruction(self._dwarf, cap_inst)
             if dwarf_instruction.is_jump and dwarf_instruction.jump_address:
                 debug_symbols.append(dwarf_instruction.jump_address)
