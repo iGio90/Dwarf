@@ -22,6 +22,12 @@ class ModuleInfo:
     def __init__(self, module_base_info):
         self._updated_details = False
 
+        if not module_base_info:
+            return None
+
+        if not 'name' in module_base_info:
+            return None
+
         self.name = module_base_info['name']
         self.base = int(module_base_info['base'], 16)
         self.size = module_base_info['size']
@@ -37,12 +43,13 @@ class ModuleInfo:
         self.imports = []
         self.symbols = []
 
-        if 'imports' in module_base_info:
-            self.apply_imports(module_base_info['imports'])
-        if 'exports' in module_base_info:
-            self.apply_exports(module_base_info['exports'])
-        if 'symbols' in module_base_info:
+        if 'symbols' in module_base_info and isinstance(module_base_info['symbols'], list):
             self.apply_symbols(module_base_info['symbols'])
+        if 'imports' in module_base_info and isinstance(module_base_info['imports'], list):
+            self.apply_imports(module_base_info['imports'])
+        if 'exports' in module_base_info and isinstance(module_base_info['exports'], list):
+            self.apply_exports(module_base_info['exports'])
+
 
     @property
     def have_details(self):
@@ -110,9 +117,9 @@ class ModuleInfo:
 
         self._updated_details = True
 
-        if 'symbols' in details:
+        if 'symbols' in details and isinstance(details['symbols'], list):
             self.apply_symbols(details['symbols'])
-        if 'imports' in details:
+        if 'imports' in details and isinstance(details['imports'], list):
             self.apply_imports(details['imports'])
-        if 'exports' in details:
+        if 'exports' in details and isinstance(details['exports'], list):
             self.apply_exports(details['exports'])
