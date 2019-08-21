@@ -371,7 +371,7 @@ class ModulesPanel(QSplitter):
             self._sized = True
 
     def update_module_ui(self, module_info):
-        if len(module_info.imports) > 0:
+        if module_info.imports:
             self.set_imports(module_info.imports)
             self.imports_list.setVisible(True)
             self.imports_list.resizeColumnToContents(0)
@@ -380,7 +380,7 @@ class ModulesPanel(QSplitter):
         else:
             self.imports_list.setVisible(False)
 
-        if len(module_info.exports) > 0:
+        if module_info.exports:
             self.set_exports(module_info.exports)
             self.exports_list.setVisible(True)
             self.exports_list.resizeColumnToContents(0)
@@ -388,7 +388,7 @@ class ModulesPanel(QSplitter):
         else:
             self.exports_list.setVisible(False)
 
-        if len(module_info.symbols) > 0:
+        if module_info.symbols:
             self.set_symbols(module_info.symbols)
             self.symbols_list.setVisible(True)
             self.symbols_list.resizeColumnToContents(0)
