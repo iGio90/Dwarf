@@ -1,6 +1,4 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from dwarf.lib.types.module_info import ModuleInfo
-
 from dwarf.lib import utils
 
 
@@ -70,7 +68,10 @@ class Reader(QThread):
             del data
             return ret
         else:
-            return bytes(self.dwarf.dwarf_api('readBytes', [self.ptr, self.length]))
+            r = self.dwarf.dwarf_api('readBytes', [self.ptr, self.length])
+            if not r:
+                r = bytes()
+            return r
 
 
 class IO:
