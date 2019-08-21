@@ -391,17 +391,27 @@ class Adb(QObject):
 
         result = self.su_cmd('frida --version')
         if result:
-            if result and ('frida: not found' in result or 'No such file' in result):
+            if result and 'frida: not found' in result:
                 result = self.su_cmd('frida-server --version')
-                if result and ('frida-server: not found' in result or 'No such file' in result):
+                if result and 'frida-server: not found' in result:
                     result = None
                 elif result:
-                    check_ver = result.split('.')
-                    if len(check_ver) == 3:
-                        self._alternate_frida_name = True
+                    self._alternate_frida_name = True
+        else:
+            return None
 
-        if result:
-            return result.join(result.split())
+        check_ver = result.split('.')
+        if len(check_ver) == 3:
+            try:
+                v_major = int(check_ver[0])
+                v_minor = int(check_ver[1])
+                v_patch = int(check_ver[2])
+
+                if v_major > 12 and v_minor > 5:
+                    if result:
+                        return result.join(result.split())
+            except ValueError:
+                return None
 
         return None
 
