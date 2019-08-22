@@ -168,6 +168,11 @@ class Adb(QObject):
                 if res != 'Permissive' and res != 'Disabled':
                     self._do_adb_command('shell setenforce 0')
 
+            # nox fix
+            res = self.su_cmd('mount -o ro,remount /system')
+            if res and 'invalid' in res:
+                self._alternate_su_binary = True
+
             # no su -> try if the user is already root
             # on some emulators user is root
             if not self._is_su and self._dev_emu:
@@ -256,7 +261,8 @@ class Adb(QObject):
     def available(self):
         """ Returns True if adb and dev/emu and (su or root) is True
         """
-        return self._adb_available and self._dev_emu and (self._is_root or self._is_su)
+        return self._adb_available and self._dev_emu and (self._is_root
+                                                          or self._is_su)
 
     def non_root_available(self):
         """ Returns True if adb and dev/emu is True
@@ -375,14 +381,6 @@ class Adb(QObject):
 
         return found
 
-    def get_data_path_for_package(self, package):
-        """ the data path for the given package
-        """
-        ret = self._do_adb_command('shell pm list packages -f %s' % package)
-        if ret is None:
-            ret = ''
-        return ret
-
     def get_frida_version(self):
         """ Returns version from 'frida --version'
         """
@@ -391,17 +389,28 @@ class Adb(QObject):
 
         result = self.su_cmd('frida --version')
         if result:
-            if result and ('frida: not found' in result or 'No such file' in result):
+            if 'frida: not found' or 'No such file or directory' in result:
                 result = self.su_cmd('frida-server --version')
-                if result and ('frida-server: not found' in result or 'No such file' in result):
+                if result and 'frida-server: not found' in result:
                     result = None
                 elif result:
-                    check_ver = result.split('.')
-                    if len(check_ver) == 3:
-                        self._alternate_frida_name = True
+                    self._alternate_frida_name = True
+        else:
+            return None
 
-        if result:
-            return result.join(result.split())
+        result = result.replace('\r', '').replace('\n', '')
+        check_ver = result.split('.')
+        if len(check_ver) == 3:
+            try:
+                v_major = int(check_ver[0])
+                v_minor = int(check_ver[1])
+                v_patch = int(check_ver[2])
+
+                if v_major >= 12 and v_minor >= 5:
+                    if result:
+                        return result.join(result.split())
+            except ValueError:
+                return None
 
         return None
 
@@ -482,6 +491,7 @@ class Adb(QObject):
             return None
 
         res = self.su_cmd('mount -o rw,remount /system')
+
         if '/system' and '/proc/mounts' in res:
             res = self._do_adb_command('shell mount | grep system')
             if res is '':
