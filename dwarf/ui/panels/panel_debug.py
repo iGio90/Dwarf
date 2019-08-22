@@ -1,14 +1,11 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMainWindow, QDockWidget
-from dwarf.lib.types.module_info import ModuleInfo
 
 from dwarf.lib import utils
 from dwarf.ui.dialogs.dialog_input import InputDialog
 from dwarf.ui.widgets.disasm_view import DisassemblyView
 from dwarf.ui.widgets.hex_edit import HexEditor
-from dwarf.ui.widgets.list_view import DwarfListView
 
 
 DEBUG_VIEW_MEMORY = 0

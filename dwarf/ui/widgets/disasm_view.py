@@ -725,7 +725,7 @@ class DisassemblyView(QAbstractScrollArea):
                     context_menu.addAction(
                         'Copy address', lambda: utils.copy_hex_to_clipboard(address))
 
-        context_menu.addAction("&Jump to address", self.debug_panel.on_cm_jump_to_address)
+        context_menu.addAction("&Jump to address", lambda: self.debug_panel.on_cm_jump_to_address(view=1))
 
         glbl_pt = self.mapToGlobal(event.pos())
         context_menu.exec_(glbl_pt)
