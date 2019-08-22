@@ -655,7 +655,7 @@ class DisassemblyView(QAbstractScrollArea):
         if event.key() == Qt.Key_Backspace or event.key() == Qt.Key_Escape:
             if len(self._history) > 1:
                 self._history.pop(len(self._history) - 1)
-                self.disassemble_at_address(self._history[len(self._history) - 1])
+                self.debug_panel.jump_to_address(self._history[len(self._history) - 1], view=1)
         elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:  # ctrl+g
             if self.debug_panel is not None:
                 self.debug_panel.on_cm_jump_to_address(view=1)
