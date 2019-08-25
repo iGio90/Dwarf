@@ -82,6 +82,7 @@ class Dwarf(QObject):
     onEnumerateJavaClassesComplete = pyqtSignal(name='onEnumerateJavaClassesComplete')
     onEnumerateJavaMethodsComplete = pyqtSignal(list, name='onEnumerateJavaMethodsComplete')
     # objc
+    onEnumerateObjCModules = pyqtSignal(list, name='onEnumerateObjCModules')
     onEnumerateObjCClassesStart = pyqtSignal(name='onEnumerateObjCClassesStart')
     onEnumerateObjCMethodsStart = pyqtSignal(name='onEnumerateObjCMethodsStart')
     onEnumerateObjCClassesMatch = pyqtSignal(str, name='onEnumerateObjCClassesMatch')
@@ -609,6 +610,9 @@ class Dwarf(QObject):
             self.onEnumerateJavaClassesComplete.emit()
         elif cmd == 'enumerate_java_methods_complete':
             self.onEnumerateJavaMethodsComplete.emit([parts[1], json.loads(parts[2])])
+        elif cmd == 'enumerate_objc_modules':
+            modules = json.loads(parts[1])
+            self.onEnumerateObjCModules.emit(modules)
         elif cmd == 'enumerate_objc_classes_start':
             self.onEnumerateObjCClassesStart.emit()
         elif cmd == 'enumerate_objc_classes_match':

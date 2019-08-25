@@ -28,6 +28,7 @@ class ObjCInspector(QWidget):
 
         self._app_window = parent
 
+        self._app_window.dwarf.onEnumerateObjCModules.connect(self._on_enumerate_objc_modules)
         self._app_window.dwarf.onEnumerateObjCMethodsStart.connect(
             self._on_method_enumeration_start)
         self._app_window.dwarf.onEnumerateObjCMethodsMatch.connect(
@@ -41,6 +42,19 @@ class ObjCInspector(QWidget):
             self._on_class_enumeration_match)
         self._app_window.dwarf.onEnumerateObjCClassesComplete.connect(
             self._on_class_enumeration_complete)
+
+        self._ObjC_modules = DwarfListView(self)
+        self._ObjCmodule_model = QStandardItemModel(0, 1)
+        self._ObjCmodule_model.setHeaderData(0, Qt.Horizontal, 'Modules')
+        self._ObjC_modules.setModel(self._ObjCmodule_model)
+        self._ObjC_modules.selectionModel().selectionChanged.connect(
+            self._module_clicked)
+        self._ObjC_modules.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self._ObjC_modules.setContextMenuPolicy(Qt.CustomContextMenu)
+        self._ObjC_modules.customContextMenuRequested.connect(
+            self._on_module_contextmenu)
+        self._ObjC_modules.doubleClicked.connect(self._class_dblclicked)
 
         self._ObjC_classes = DwarfListView(self)
         self._ObjCclass_model = QStandardItemModel(0, 1)
@@ -68,6 +82,7 @@ class ObjCInspector(QWidget):
 
         h_box = QHBoxLayout()
         h_box.setContentsMargins(0, 0, 0, 0)
+        h_box.addWidget(self._ObjC_modules)
         h_box.addWidget(self._ObjC_classes)
         h_box.addWidget(self._ObjC_methods)
         self.setLayout(h_box)
@@ -75,10 +90,10 @@ class ObjCInspector(QWidget):
     # ************************************************************************
     # **************************** Functions *********************************
     # ************************************************************************
-    def update_classes(self):
+    def update_classes(self, module_name):
         """ Refresh Classeslist
         """
-        self._app_window.dwarf.dwarf_api('enumerateObjCClasses')
+        self._app_window.dwarf.dwarf_api('enumerateObjCClasses', module_name)
 
     def update_methods(self, class_name):
         """ Refresh Methodslist
@@ -90,6 +105,14 @@ class ObjCInspector(QWidget):
     # ************************************************************************
     # **************************** Handlers **********************************
     # ************************************************************************
+    def _module_clicked(self):
+        index = self._ObjC_modules.selectionModel().currentIndex().row()
+        _module = self._ObjCmodule_model.item(index, 0)
+        if _module is None:
+            return
+
+        self._app_window.dwarf.dwarf_api('enumerateObjCClasses', _module.text())
+
     def _class_clicked(self):
         index = self._ObjC_classes.selectionModel().currentIndex().row()
         _class = self._ObjCclass_model.item(index, 0)
@@ -100,6 +123,7 @@ class ObjCInspector(QWidget):
 
     def _on_class_enumeration_start(self):
         self._ObjC_classes.clear()
+        self._ObjC_methods.clear()
 
     def _on_method_enumeration_start(self):
         self._ObjC_methods.clear()
@@ -155,7 +179,7 @@ class ObjCInspector(QWidget):
             self._app_window.dwarf.dwarf_api('breakpointAllObjCMethods', class_name)
 
     def _on_class_contextmenu(self, pos):
-        """ Modules ContextMenu
+        """ Class ContextMenu
         """
         index = self._ObjC_classes.indexAt(pos).row()
         glbl_pt = self._ObjC_classes.mapToGlobal(pos)
@@ -174,7 +198,7 @@ class ObjCInspector(QWidget):
                 context_menu.addAction(
                     'Search', self._ObjC_classes._on_cm_search)
 
-        context_menu.addAction('Refresh', self.update_classes)
+        context_menu.addAction('Refresh', self._cm_refresh_classes)
         context_menu.exec_(glbl_pt)
 
     def _breakpoint_method(self, method_name):
@@ -195,7 +219,7 @@ class ObjCInspector(QWidget):
         self.update_methods(_class.text())
 
     def _on_method_contextmenu(self, pos):
-        """ Modules ContextMenu
+        """ Method ContextMenu
         """
         index = self._ObjC_methods.indexAt(pos).row()
         glbl_pt = self._ObjC_methods.mapToGlobal(pos)
@@ -213,3 +237,41 @@ class ObjCInspector(QWidget):
 
         context_menu.addAction('Refresh', self._cm_refresh_methods)
         context_menu.exec_(glbl_pt)
+
+    def _cm_refresh_classes(self):
+        index = self._ObjC_modules.selectionModel().currentIndex().row()
+        _module = self._ObjCmodule_model.item(index, 0)
+        if _module is None:
+            return
+
+        self.update_classes(_module.text())
+
+    def _enumerate_objc_modules(self):
+        """ DwarfApiCall enumerateObjCModules
+        """
+        return self._app_window.dwarf.dwarf_api('enumerateObjCModules')
+
+    def _on_module_contextmenu(self, pos):
+        """ Module ContextMenu
+        """
+        index = self._ObjC_modules.indexAt(pos).row()
+        glbl_pt = self._ObjC_modules.mapToGlobal(pos)
+        context_menu = QMenu(self)
+
+        context_menu.addAction('Refresh', self._enumerate_objc_modules)
+        context_menu.exec_(glbl_pt)
+
+    def _on_enumerate_objc_modules(self, modules):
+        """ Fills the ModulesList with data
+        """
+        if self._ObjC_modules is None:
+            return
+
+        self._ObjC_modules.clear()
+        for module in modules:
+            self.add_module(module)
+
+    def add_module(self, module):
+        _module_name = QStandardItem()
+        _module_name.setText(module)
+        self._ObjCmodule_model.appendRow(_module_name)
