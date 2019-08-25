@@ -81,6 +81,13 @@ class Dwarf(QObject):
     onEnumerateJavaClassesMatch = pyqtSignal(str, name='onEnumerateJavaClassesMatch')
     onEnumerateJavaClassesComplete = pyqtSignal(name='onEnumerateJavaClassesComplete')
     onEnumerateJavaMethodsComplete = pyqtSignal(list, name='onEnumerateJavaMethodsComplete')
+    # objc
+    onEnumerateObjCClassesStart = pyqtSignal(name='onEnumerateObjCClassesStart')
+    onEnumerateObjCMethodsStart = pyqtSignal(name='onEnumerateObjCMethodsStart')
+    onEnumerateObjCClassesMatch = pyqtSignal(str, name='onEnumerateObjCClassesMatch')
+    onEnumerateObjCMethodsMatch = pyqtSignal(str, name='onEnumerateObjCMethodsMatch')
+    onEnumerateObjCClassesComplete = pyqtSignal(name='onEnumerateObjCClassesComplete')
+    onEnumerateObjCMethodsComplete = pyqtSignal(name='onEnumerateObjCMethodsComplete')
     # trace
     onJavaTraceEvent = pyqtSignal(list, name='onJavaTraceEvent')
     onSetData = pyqtSignal(list, name='onSetData')
@@ -602,6 +609,18 @@ class Dwarf(QObject):
             self.onEnumerateJavaClassesComplete.emit()
         elif cmd == 'enumerate_java_methods_complete':
             self.onEnumerateJavaMethodsComplete.emit([parts[1], json.loads(parts[2])])
+        elif cmd == 'enumerate_objc_classes_start':
+            self.onEnumerateObjCClassesStart.emit()
+        elif cmd == 'enumerate_objc_classes_match':
+            self.onEnumerateObjCClassesMatch.emit(parts[1])
+        elif cmd == 'enumerate_objc_classes_complete':
+            self.onEnumerateObjCClassesComplete.emit()
+        elif cmd == 'enumerate_objc_methods_start':
+            self.onEnumerateObjCMethodsStart.emit()
+        elif cmd == 'enumerate_objc_methods_match':
+            self.onEnumerateObjCMethodsMatch.emit(parts[1])
+        elif cmd == 'enumerate_objc_methods_complete':
+            self.onEnumerateObjCMethodsComplete.emit()
         elif cmd == 'ftrace':
             if self.app.get_ftrace_panel() is not None:
                 self.app.get_ftrace_panel().append_data(parts[1])

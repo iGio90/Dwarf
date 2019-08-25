@@ -40,3 +40,22 @@ class IosSession(Session):
     @property
     def frida_device(self):
         return frida.get_usb_device()
+        
+    def _on_spawn_selected(self, data):
+        device, package_name, break_at_start = data
+        if device:
+            self.dwarf.device = device
+        if package_name:
+            try:
+                self.dwarf.spawn(package_name, break_at_start=break_at_start)
+            except Exception as e:
+                utils.show_message_box('Failed spawning {0}'.format(package_name), str(e))
+                self.stop()
+                return
+
+            self._on_objc_classes()
+
+    def _on_objc_classes(self):
+        self._app_window.show_main_tab('objc-inspector')
+        self.dwarf.dwarf_api('enumerateObjCClasses')
+
