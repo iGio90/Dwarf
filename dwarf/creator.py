@@ -105,7 +105,7 @@ def main():
         else:
             target = input('target package: ')
 
-    dwarf_launcher = 'dwarf -sp -s agent.js -t %s %s' % (session_type, target)
+    dwarf_launcher = 'npm run build\ndwarf -sp -s agent.js -t %s %s' % (session_type, target)
     injector_exe = 'dwarf'
     if os.name == 'nt':
         injector_exe += '.bat'
@@ -117,7 +117,6 @@ def main():
 
     print('')
     print("project create at %s. edit src/agent.ts" % path)
-    print("run `npm run watch` in the project path to automatically build the agent while you code it")
     print('use %s in current path to start Dwarf' % injector_exe)
     print('')
     exit(0)
