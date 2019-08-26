@@ -942,7 +942,7 @@ class AppWindow(QMainWindow):
 
     def _on_addmodule_breakpoint(self, data):
         ptr, name = data
-        self.dwarf.breakpoint_native(ptr, input_=name)
+        self.dwarf.breakpoint_native(input_=ptr)
 
     def on_tid_resumed(self, tid):
         if self.dwarf:
