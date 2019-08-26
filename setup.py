@@ -44,7 +44,12 @@ setup(
         'PyQt5>=5.11.3', 'pyperclip>=1.7.0'
     ],
     # Script info
-    entry_points={'console_scripts': ['dwarf = dwarf.dwarf:main', 'dwarf-creator = dwarf.creator:main']},
+    entry_points={'console_scripts':
+        [
+            'dwarf = dwarf.dwarf:main',
+            'dwarf-creator = dwarf.creator:main',
+            'dwarf-injector = dwarf.injector:main'
+        ]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",

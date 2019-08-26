@@ -19,6 +19,7 @@ import os
 
 
 def main():
+    from dwarf.color import Color
     from io import open
     import json
 
@@ -58,7 +59,7 @@ def main():
     }
 
     current_path = os.getcwd()
-    path = input("project path (%s): " % current_path)
+    path = input("%s (%s):\n" % (Color.colorify('project path', 'red bold'), Color.colorify(current_path, 'bold')))
     if len(path) == 0:
         path = current_path
     if not os.path.exists(path):
@@ -66,7 +67,8 @@ def main():
         exit(1)
 
     current_project_name = current_path.split(os.sep)[-1]
-    project_name = input("project name (%s): " % current_project_name)
+    project_name = input("%s (%s):\n" % (
+        Color.colorify('project name', 'red bold'), Color.colorify(current_project_name, 'bold')))
     if len(project_name) == 0:
         project_name = current_project_name
     package_template["name"] = project_name
@@ -82,7 +84,16 @@ def main():
     with open(os.path.join(agent_path, "agent.ts"), 'w', encoding='utf-8') as f:
         f.write(agent_template)
 
-    session_type = input('what\'s the session type? L:local A:android I:iOS R:remote (L): ')
+    print('%s (%s)' % (Color.colorify('Session type', 'red bold'), Color.colorify('local', 'bold')))
+    print('[%s] %s (%s)' % (
+        Color.colorify('*', 'green bold'), Color.colorify('L', 'red bold'), Color.colorify('local', 'bold')))
+    print('[%s] %s (%s)' % (
+        Color.colorify('*', 'green bold'), Color.colorify('A', 'red bold'), Color.colorify('android', 'bold')))
+    print('[%s] %s (%s)' % (
+        Color.colorify('*', 'green bold'), Color.colorify('I', 'red bold'), Color.colorify('iOS', 'bold')))
+    print('[%s] %s (%s)' % (
+        Color.colorify('*', 'green bold'), Color.colorify('R', 'red bold'), Color.colorify('remote', 'bold')))
+    session_type = input('')
     if session_type:
         session_type = session_type.lower()
         if session_type == 'a':
@@ -99,11 +110,14 @@ def main():
     target = ''
     while len(target.replace(' ', '')) == 0:
         if session_type == 'local':
-            target = input('target binary and arguments: ')
+            target = input('%s (%s)\n' % (
+                Color.colorify('target binary and arguments', 'red bold'),
+                Color.colorify('/bin/cat /etc/hosts', 'bold')))
             if not os.path.exists(target.split(' ')[0]):
                 target = ''
         else:
-            target = input('target package: ')
+            target = input('%s (%s)\n' % (
+                Color.colorify('target package', 'red bold'), Color.colorify('com.whatsapp', 'bold')))
 
     dwarf_launcher = 'npm run build\ndwarf -sp -s agent.js -t %s %s' % (session_type, target)
     injector_exe = 'dwarf'
