@@ -167,12 +167,12 @@ class ObjCInspector(QWidget):
                 class_name = class_item.text()
                 method_name = method_item.text()
                 if class_name and method_name:
-                    self._app_window.dwarf.breakpoint_ObjC(class_name + '.'
+                    self._app_window.dwarf.breakpoint_objc(class_name + '.'
                                                            + method_name)
 
     def _breakpoint_class(self, class_name):
         if class_name:
-            self._app_window.dwarf.breakpoint_ObjC(class_name)
+            self._app_window.dwarf.breakpoint_objc(class_name)
 
     def _breakpoint_class_functions(self, class_name):
         if class_name:
@@ -208,7 +208,7 @@ class ObjCInspector(QWidget):
             if class_item:
                 class_name = class_item.text()
                 if class_name and method_name:
-                    self._app_window.dwarf.breakpoint_ObjC(class_name + '.' + method_name)
+                    self._app_window.dwarf.breakpoint_objc(class_name + '.' + method_name)
 
     def _cm_refresh_methods(self):
         index = self._ObjC_classes.selectionModel().currentIndex().row()

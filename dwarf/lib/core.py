@@ -498,6 +498,16 @@ class Dwarf(QObject):
         input_ = input_.replace(' ', '')
         self.dwarf_api('putBreakpoint', input_)
 
+    def breakpoint_objc(self, input_=None, pending_args=None):
+        if input_ is None or not isinstance(input_, str):
+            accept, input_ = InputDialog.input(
+                self._app_window, hint='insert obj class or method',
+                placeholder='com.package.class or com.package.class.method') #todo
+            if not accept:
+                return
+        self.objc_pending_args = pending_args
+        self.dwarf_api('putBreakpoint', input_)
+
     def breakpoint_native(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             ptr, input_ = InputDialog.input_pointer(self._app_window)
@@ -711,7 +721,9 @@ class Dwarf(QObject):
             # there are cases in which we want to release the thread from a js api so we need to call this
             self.onRequestJsThreadResume.emit(int(parts[1]))
         elif cmd == 'set_context':
-            data = json.loads(parts[1])
+            #data = json.loads(parts[1])
+            # WORKAROUND: Some ObjC Methods have multiple ':' in name. Restoring ':::'
+            data = json.loads(":::".join(parts[1:]))
             if 'modules' in data:
                 self.onSetModules.emit(data['modules'])
             if 'ranges' in data:
