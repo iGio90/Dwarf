@@ -93,8 +93,18 @@ def main():
         Color.colorify('*', 'green bold'), Color.colorify('I', 'red bold'), Color.colorify('iOS', 'bold')))
     print('[%s] %s (%s)' % (
         Color.colorify('*', 'green bold'), Color.colorify('R', 'red bold'), Color.colorify('remote', 'bold')))
+    print('')
+    print('append %s to use dwarf-injector (%s | %s)' % (
+        Color.colorify('i', 'white bold'),
+        Color.colorify('ai', 'green bold'),
+        Color.colorify('android inject', 'bold')))
     session_type = input('')
+
+    inject = False
     if session_type:
+        if len(session_type) > 1:
+            inject = session_type[1] == 'i'
+            session_type = session_type[0]
         session_type = session_type.lower()
         if session_type == 'a':
             session_type = 'android'
@@ -119,7 +129,10 @@ def main():
             target = input('%s (%s)\n' % (
                 Color.colorify('target package', 'red bold'), Color.colorify('com.whatsapp', 'bold')))
 
-    dwarf_launcher = 'npm run build\ndwarf -sp -s agent.js -t %s %s' % (session_type, target)
+    binary = 'dwarf'
+    if inject:
+        binary += '-injector'
+    dwarf_launcher = 'npm run build\n%s -sp -s agent.js -t %s %s' % (binary, session_type, target)
     injector_exe = 'dwarf'
     if os.name == 'nt':
         injector_exe += '.bat'
