@@ -444,9 +444,9 @@ class Dwarf(QObject):
                     return
                 file_path = r[0]
             data = self.read_memory(ptr, length)
-            if data is not None:
+            if data is not None and len(data) > 1:
                 with open(file_path, 'wb') as f:
-                    f.write(data)
+                    f.write(data[1])
 
     def dwarf_api(self, api, args=None, tid=0):
         if self.pid and self._pid == 0 or self.process is None:
