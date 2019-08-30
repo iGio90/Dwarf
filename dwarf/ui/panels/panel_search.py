@@ -383,8 +383,8 @@ class SearchPanel(QWidget):
     def _on_show_results(self):
         if self._search_results:
             self.results.clear()
-            if self._app_window.memory_panel:
-                self._app_window.memory_panel.remove_highlights('search')
+            if self._app_window.debug_panel.memory_panel:
+                self._app_window.debug_panel.memory_panel.remove_highlights('search')
             selected_index = self.ranges.selectionModel().currentIndex().row()
             if selected_index is not None:
                 item_txt = self._ranges_model.item(selected_index, 3).text()
