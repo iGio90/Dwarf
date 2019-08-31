@@ -73,7 +73,7 @@ class QDebugPanel(QMainWindow):
         data = self.memory_panel.data[pos:pos + length]
         data = [data[0]]  # todo: strange js part
 
-        if self.dwarf.dwarf_api('writeBytes', [data_pos, data]):
+        if self.app.dwarf.dwarf_api('writeBytes', [data_pos, data]):
             pass
         else:
             utils.show_message_box('Failed to write Memory')
