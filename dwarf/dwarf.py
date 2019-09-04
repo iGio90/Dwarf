@@ -156,7 +156,7 @@ def run_dwarf():
     qapp.setLayoutDirection(Qt.LeftToRight)
 
     qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
-    qapp.setApplicationName("dwarf")
+    qapp.setApplicationName("Dwarf")
     qapp.setApplicationDisplayName('Dwarf')
 
     # set icon

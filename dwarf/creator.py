@@ -141,6 +141,8 @@ def main():
         f.write(dwarf_launcher)
 
     os.system("cd %s && npm install" % path)
+    if os.name != 'nt':
+        os.system("cd %s && chmod a+x dwarf" % path)
 
     print('')
     print("project create at %s. edit src/agent.ts" % path)
