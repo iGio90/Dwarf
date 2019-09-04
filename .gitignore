@@ -70,3 +70,5 @@ build_resources.py
 ### windows ###
 desktop.ini
 Dwarf.iml
+.dwarf_last_session
+dwarf_window_pos.ini
