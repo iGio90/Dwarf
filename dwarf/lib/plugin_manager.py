@@ -38,7 +38,10 @@ class PluginManager:
         for _, directories, _ in os.walk(self._plugins_path):
             for directory in [x for x in directories if x != '__pycache__']:
                 plugin_dir = os.path.join(self._plugins_path, directory)
-                plugin_file = os.path.join(plugin_dir, 'plugin.py')
+                if self._app is None:
+                    plugin_file = os.path.join(plugin_dir, 'injector_plugin.py')
+                else:
+                    plugin_file = os.path.join(plugin_dir, 'plugin.py')
 
                 if plugin_file and os.path.exists(plugin_file):
                     spec = importlib.util.spec_from_file_location('', location=plugin_file)
@@ -70,12 +73,15 @@ class PluginManager:
 
                             if _has_required_funcs:
                                 try:
-                                    _instance = _class(self._app)
-
+                                    if self._app is not None:
+                                        _instance = _class(self._app)
+                                    else:
+                                        _instance = _class()
                                     plugin_info = _instance.__get_plugin_info__()
                                     if 'name' not in plugin_info:
                                         print(
-                                            'failed to load plugin "%s": missing name in __get_plugin_info__' % plugin_file)
+                                            'failed to load plugin "%s": '
+                                            'missing name in __get_plugin_info__' % plugin_file)
                                         continue
                                     _instance.name = plugin_info['name']
                                     self._plugins[_instance.name] = _instance

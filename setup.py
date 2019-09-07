@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     # Dependencies
     install_requires=[
-        'capstone>=4.0.1', 'requests>=2.22.0', 'frida>=12.6.12',
+        'capstone>=4.0.1', 'requests>=2.22.0', 'frida>=12.6.23',
         'PyQt5>=5.11.3', 'pyperclip>=1.7.0'
     ],
     # Script info

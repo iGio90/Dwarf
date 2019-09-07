@@ -345,7 +345,7 @@ class Dwarf(QObject):
                 try:
                     self.dwarf_api('evaluateFunction', plugin_instance.__get_agent__())
                 except Exception as e:
-                    pass
+                    print('error loading plugin script', e)
 
             # resume immediately
             self.resume_proc()

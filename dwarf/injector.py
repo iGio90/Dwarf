@@ -15,6 +15,7 @@
     along with this program.
     If not, see <https://www.gnu.org/licenses/>
 """
+from dwarf.lib.plugin_manager import PluginManager
 
 
 def main():
@@ -160,14 +161,16 @@ def main():
 
                     _script.exports.api(0, 'evaluateFunction', [user_script])
 
-            """
-            for plugin in self._app_window.plugin_manager.plugins:
-                plugin_instance = self._app_window.plugin_manager.plugins[plugin]
+            plugin_manager = PluginManager(None)
+            plugin_manager.reload_plugins()
+
+            for plugin in plugin_manager.plugins:
+                plugin_instance = plugin_manager.plugins[plugin]
                 try:
-                    self.dwarf_api('evaluateFunction', plugin_instance.__get_agent__())
+                    _script.exports.api(0, 'evaluateFunction', plugin_instance.__get_agent__())
                 except Exception as e:
                     pass
-            """
+
             return 0
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'

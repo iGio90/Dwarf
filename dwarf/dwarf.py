@@ -80,7 +80,7 @@ def _check_package_version(package_name, min_version):
 
 
 def _check_dependencies():
-    _check_package_version('frida', '12.5.1')
+    _check_package_version('frida', '12.6.23')
     _check_package_version('requests', '2.18.4')
     _check_package_version('pyqt5', '5.11.3')
     _check_package_version('pyperclip', '1.7.0')
