@@ -29,7 +29,7 @@ from dwarf.lib import utils
 from dwarf.lib.context import Context
 from dwarf.lib.database import Database
 from dwarf.lib.disassembler import Disassembler
-from dwarf.lib.types.breakpoint import Breakpoint, BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION
+from dwarf.lib.types.breakpoint import Breakpoint, BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION, BREAKPOINT_OBJC
 from dwarf.lib.types.watchpoint import Watchpoint
 from dwarf.lib.io import IO
 from dwarf.lib.kernel import Kernel
@@ -58,6 +58,7 @@ class Dwarf(QObject):
     # breakpoint related
     onAddNativeBreakpoint = pyqtSignal(Breakpoint, name='onAddNativeBreakpoint')
     onAddJavaBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaBreakpoint')
+    onAddObjCBreakpoint = pyqtSignal(Breakpoint, name='onAddObjCBreakpoint')
     onAddModuleInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddModuleInitializationBreakpoint')
     onAddJavaClassInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaClassInitializationBreakpoint')
     onDeleteBreakpoint = pyqtSignal(list, name='onDeleteBreakpoint')
@@ -139,6 +140,7 @@ class Dwarf(QObject):
         # breakpoints
         self.breakpoints = {}
         self.java_breakpoints = {}
+        self.objc_breakpoints = {}
         self.module_initialization_breakpoints = {}
         self.java_class_initialization_breakpoints = {}
         self.watchpoints = {}
@@ -647,6 +649,15 @@ class Dwarf(QObject):
                 b.set_condition(parts[2])
             self.java_breakpoints[parts[1]] = b
             self.onAddJavaBreakpoint.emit(b)
+        elif cmd == 'breakpoint_objc_callback':
+            b = Breakpoint(BREAKPOINT_OBJC)
+            # WORKAROUND: Some ObjC Methods have multiple ':' in name. Restoring ':::': 
+            target = ":::".join(parts[1:-1])
+            b.set_target(target)
+            if parts[-1] != '':
+                b.set_condition(parts[-1])
+            self.objc_breakpoints[target] = b
+            self.onAddObjCBreakpoint.emit(b)
         elif cmd == 'java_class_initialization_callback':
             b = Breakpoint(BREAKPOINT_INITIALIZATION)
             b.set_target(parts[1])
@@ -668,6 +679,8 @@ class Dwarf(QObject):
         elif cmd == 'breakpoint_deleted':
             if parts[1] == 'java':
                 self.java_breakpoints.pop(parts[2])
+            elif parts[1] == 'objc':
+                self.objc_breakpoints.pop(":::".join(parts[2:]))
             elif parts[1] == 'module_initialization':
                 if parts[2] in self.module_initialization_breakpoints:
                     self.module_initialization_breakpoints.pop(parts[2])
