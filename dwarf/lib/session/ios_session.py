@@ -12,6 +12,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 import frida
+from PyQt5.QtWidgets import QMenu, QAction
 
 from dwarf.lib.session.session import Session
 from dwarf.lib import utils
@@ -40,3 +41,34 @@ class IosSession(Session):
     @property
     def frida_device(self):
         return frida.get_usb_device()
+
+    def _setup_menu(self):
+        """ Build Menus
+        """
+        super()._setup_menu()
+
+        obcj_menu = QMenu('&ObjC')
+        obcj_menu.addAction('Inspector', self._on_objc_modules)
+        self._menu.append(obcj_menu)
+		
+    def _on_proc_selected(self, data):
+        super()._on_proc_selected(data)
+
+    def _on_spawn_selected(self, data):
+        device, package_name, break_at_start = data
+        if device:
+            self.dwarf.device = device
+        if package_name:
+            try:
+                self.dwarf.spawn(package_name, break_at_start=break_at_start)
+            except Exception as e:
+                utils.show_message_box('Failed spawning {0}'.format(package_name), str(e))
+                self.stop()
+                return
+
+            self._on_objc_modules()
+
+    def _on_objc_modules(self):
+        self._app_window.show_main_tab('objc-inspector')
+        self.dwarf.dwarf_api('enumerateObjCModules')
+

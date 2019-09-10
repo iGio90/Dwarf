@@ -24,7 +24,7 @@ from dwarf.ui.widgets.list_view import DwarfListView
 from dwarf.ui.dialogs.dialog_input import InputDialog
 
 from dwarf.lib import utils
-from dwarf.lib.types.breakpoint import BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION
+from dwarf.lib.types.breakpoint import BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION, BREAKPOINT_OBJC
 
 
 class BreakpointsWidget(QWidget):
@@ -50,6 +50,7 @@ class BreakpointsWidget(QWidget):
         # connect to dwarf
         self._app_window.dwarf.onApplyContext.connect(self._on_apply_context)
         self._app_window.dwarf.onAddJavaBreakpoint.connect(self._on_add_breakpoint)
+        self._app_window.dwarf.onAddObjCBreakpoint.connect(self._on_add_breakpoint)
         self._app_window.dwarf.onAddNativeBreakpoint.connect(self._on_add_breakpoint)
         self._app_window.dwarf.onAddModuleInitializationBreakpoint.connect(self._on_add_breakpoint)
         self._app_window.dwarf.onAddJavaClassInitializationBreakpoint.connect(self._on_add_breakpoint)
@@ -178,13 +179,18 @@ class BreakpointsWidget(QWidget):
         elif breakpoint.breakpoint_type == BREAKPOINT_INITIALIZATION:
             type_.setText('C')
             type_.setToolTip('Initialization breakpoint')
+        elif breakpoint.breakpoint_type == BREAKPOINT_OBJC:
+            type_.setText('O')
+            type_.setToolTip('ObjC breakpoint')
         else:
             type_.setText('U')
             type_.setToolTip('Unknown Type')
 
         addr = QStandardItem()
 
-        if breakpoint.breakpoint_type == BREAKPOINT_JAVA:
+        if breakpoint.breakpoint_type == BREAKPOINT_JAVA :
+            addr.setText(breakpoint.get_target())
+        elif breakpoint.breakpoint_type == BREAKPOINT_OBJC :
             addr.setText(breakpoint.get_target())
         elif breakpoint.breakpoint_type == BREAKPOINT_INITIALIZATION:
             addr.setText(breakpoint.get_target())
@@ -297,6 +303,9 @@ class BreakpointsWidget(QWidget):
         elif breakpoint_type == 'J':
             target = self._breakpoints_model.item(num_row, 0).text()
             self._app_window.dwarf.dwarf_api('removeBreakpoint', target)
+        elif breakpoint_type == 'O':
+            target = self._breakpoints_model.item(num_row, 0).text()
+            self._app_window.dwarf.dwarf_api('removeBreakpoint', target)
         elif breakpoint_type == 'C':
             item = self._breakpoints_model.item(num_row, 0)
             target = item.text()
@@ -316,7 +325,7 @@ class BreakpointsWidget(QWidget):
 
         additional = None
 
-        if _type == 'java' or _type == 'java_class_initialization':
+        if _type == 'objc' or _type == 'java' or _type == 'java_class_initialization':
             str_frmt = _val
             item_index = 0
         elif _type == 'module_initialization':

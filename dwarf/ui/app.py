@@ -161,6 +161,7 @@ class AppWindow(QMainWindow):
         self.data_panel = None
         self.ftrace_panel = None
         self.breakpoints_panel = None
+        self.objc_inspector_panel = None
         self.java_inspector_panel = None
         self.java_explorer_panel = None
         self.java_trace_panel = None
@@ -388,6 +389,8 @@ class AppWindow(QMainWindow):
             index = self.main_tabs.indexOf(self.java_inspector_panel)
         elif name == 'jvm-debugger':
             index = self.main_tabs.indexOf(self.java_explorer_panel)
+        elif name == 'objc-inspector':
+            index = self.main_tabs.indexOf(self.objc_inspector_panel)
         elif name == 'smali':
             index = self.main_tabs.indexOf(self.smali_panel)
 
@@ -493,6 +496,11 @@ class AppWindow(QMainWindow):
             self.java_inspector_panel = JavaInspector(self)
             self.main_tabs.addTab(self.java_inspector_panel, 'JVM inspector')
             elem_wiget = self.java_inspector_panel
+        elif elem == 'objc-inspector':
+            from dwarf.ui.panels.panel_objc_inspector import ObjCInspector
+            self.objc_inspector_panel = ObjCInspector(self)
+            self.main_tabs.addTab(self.objc_inspector_panel, 'ObjC inspector')
+            elem_wiget = self.objc_inspector_panel
         elif elem == 'console':
             from dwarf.ui.session_widgets.console import ConsoleWidget
             self.console_dock = QDockWidget('Console', self)
@@ -624,6 +632,10 @@ class AppWindow(QMainWindow):
     @property
     def java_inspector(self):
         return self.java_inspector_panel
+
+    @property
+    def objc_inspector(self):
+        return self.objc_inspector_panel
 
     @property
     def java_explorer(self):

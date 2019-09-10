@@ -18,6 +18,7 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 BREAKPOINT_NATIVE = 0
 BREAKPOINT_JAVA = 1
 BREAKPOINT_INITIALIZATION = 2
+BREAKPOINT_OBJC = 3
 
 
 class Breakpoint(object):

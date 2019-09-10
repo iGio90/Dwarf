@@ -29,7 +29,7 @@ from dwarf.lib import utils
 from dwarf.lib.context import Context
 from dwarf.lib.database import Database
 from dwarf.lib.disassembler import Disassembler
-from dwarf.lib.types.breakpoint import Breakpoint, BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION
+from dwarf.lib.types.breakpoint import Breakpoint, BREAKPOINT_NATIVE, BREAKPOINT_JAVA, BREAKPOINT_INITIALIZATION, BREAKPOINT_OBJC
 from dwarf.lib.types.watchpoint import Watchpoint
 from dwarf.lib.io import IO
 from dwarf.lib.kernel import Kernel
@@ -58,6 +58,7 @@ class Dwarf(QObject):
     # breakpoint related
     onAddNativeBreakpoint = pyqtSignal(Breakpoint, name='onAddNativeBreakpoint')
     onAddJavaBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaBreakpoint')
+    onAddObjCBreakpoint = pyqtSignal(Breakpoint, name='onAddObjCBreakpoint')
     onAddModuleInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddModuleInitializationBreakpoint')
     onAddJavaClassInitializationBreakpoint = pyqtSignal(Breakpoint, name='onAddJavaClassInitializationBreakpoint')
     onDeleteBreakpoint = pyqtSignal(list, name='onDeleteBreakpoint')
@@ -81,6 +82,14 @@ class Dwarf(QObject):
     onEnumerateJavaClassesMatch = pyqtSignal(str, name='onEnumerateJavaClassesMatch')
     onEnumerateJavaClassesComplete = pyqtSignal(name='onEnumerateJavaClassesComplete')
     onEnumerateJavaMethodsComplete = pyqtSignal(list, name='onEnumerateJavaMethodsComplete')
+    # objc
+    onEnumerateObjCModules = pyqtSignal(list, name='onEnumerateObjCModules')
+    onEnumerateObjCClassesStart = pyqtSignal(name='onEnumerateObjCClassesStart')
+    onEnumerateObjCMethodsStart = pyqtSignal(name='onEnumerateObjCMethodsStart')
+    onEnumerateObjCClassesMatch = pyqtSignal(str, name='onEnumerateObjCClassesMatch')
+    onEnumerateObjCMethodsMatch = pyqtSignal(str, name='onEnumerateObjCMethodsMatch')
+    onEnumerateObjCClassesComplete = pyqtSignal(name='onEnumerateObjCClassesComplete')
+    onEnumerateObjCMethodsComplete = pyqtSignal(name='onEnumerateObjCMethodsComplete')
     # trace
     onJavaTraceEvent = pyqtSignal(list, name='onJavaTraceEvent')
     onSetData = pyqtSignal(list, name='onSetData')
@@ -131,6 +140,7 @@ class Dwarf(QObject):
         # breakpoints
         self.breakpoints = {}
         self.java_breakpoints = {}
+        self.objc_breakpoints = {}
         self.module_initialization_breakpoints = {}
         self.java_class_initialization_breakpoints = {}
         self.watchpoints = {}
@@ -490,6 +500,16 @@ class Dwarf(QObject):
         input_ = input_.replace(' ', '')
         self.dwarf_api('putBreakpoint', input_)
 
+    def breakpoint_objc(self, input_=None, pending_args=None):
+        if input_ is None or not isinstance(input_, str):
+            accept, input_ = InputDialog.input(
+                self._app_window, hint='insert obj class or method',
+                placeholder='com.package.class or com.package.class.method') #todo
+            if not accept:
+                return
+        self.objc_pending_args = pending_args
+        self.dwarf_api('putBreakpoint', input_)
+
     def breakpoint_native(self, input_=None):
         if input_ is None or not isinstance(input_, str):
             ptr, input_ = InputDialog.input_pointer(self._app_window)
@@ -602,6 +622,21 @@ class Dwarf(QObject):
             self.onEnumerateJavaClassesComplete.emit()
         elif cmd == 'enumerate_java_methods_complete':
             self.onEnumerateJavaMethodsComplete.emit([parts[1], json.loads(parts[2])])
+        elif cmd == 'enumerate_objc_modules':
+            modules = json.loads(parts[1])
+            self.onEnumerateObjCModules.emit(modules)
+        elif cmd == 'enumerate_objc_classes_start':
+            self.onEnumerateObjCClassesStart.emit()
+        elif cmd == 'enumerate_objc_classes_match':
+            self.onEnumerateObjCClassesMatch.emit(parts[1])
+        elif cmd == 'enumerate_objc_classes_complete':
+            self.onEnumerateObjCClassesComplete.emit()
+        elif cmd == 'enumerate_objc_methods_start':
+            self.onEnumerateObjCMethodsStart.emit()
+        elif cmd == 'enumerate_objc_methods_match':
+            self.onEnumerateObjCMethodsMatch.emit(parts[1])
+        elif cmd == 'enumerate_objc_methods_complete':
+            self.onEnumerateObjCMethodsComplete.emit()
         elif cmd == 'ftrace':
             if self.app.get_ftrace_panel() is not None:
                 self.app.get_ftrace_panel().append_data(parts[1])
@@ -614,6 +649,15 @@ class Dwarf(QObject):
                 b.set_condition(parts[2])
             self.java_breakpoints[parts[1]] = b
             self.onAddJavaBreakpoint.emit(b)
+        elif cmd == 'breakpoint_objc_callback':
+            b = Breakpoint(BREAKPOINT_OBJC)
+            # WORKAROUND: Some ObjC Methods have multiple ':' in name. Restoring ':::': 
+            target = ":::".join(parts[1:-1])
+            b.set_target(target)
+            if parts[-1] != '':
+                b.set_condition(parts[-1])
+            self.objc_breakpoints[target] = b
+            self.onAddObjCBreakpoint.emit(b)
         elif cmd == 'java_class_initialization_callback':
             b = Breakpoint(BREAKPOINT_INITIALIZATION)
             b.set_target(parts[1])
@@ -635,6 +679,8 @@ class Dwarf(QObject):
         elif cmd == 'breakpoint_deleted':
             if parts[1] == 'java':
                 self.java_breakpoints.pop(parts[2])
+            elif parts[1] == 'objc':
+                self.objc_breakpoints.pop(":::".join(parts[2:]))
             elif parts[1] == 'module_initialization':
                 if parts[2] in self.module_initialization_breakpoints:
                     self.module_initialization_breakpoints.pop(parts[2])
@@ -688,7 +734,9 @@ class Dwarf(QObject):
             # there are cases in which we want to release the thread from a js api so we need to call this
             self.onRequestJsThreadResume.emit(int(parts[1]))
         elif cmd == 'set_context':
-            data = json.loads(parts[1])
+            #data = json.loads(parts[1])
+            # WORKAROUND: Some ObjC Methods have multiple ':' in name. Restoring ':::'
+            data = json.loads(":::".join(parts[1:]))
             if 'modules' in data:
                 self.onSetModules.emit(data['modules'])
             if 'ranges' in data:
