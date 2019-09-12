@@ -78,12 +78,15 @@ def main():
             except frida.ProcessNotFoundError as error:
                 raise Exception('Frida Error: ' + str(error))
 
-        if not isinstance(pid, list):
-            raise Exception('Error pid!=list')
+        if isinstance(pid, list):
+            pid = pid[0]
+
+        if not isinstance(pid, int):
+            raise Exception('Error pid!=int')
 
         try:
-            _process = device.attach(pid[0])
-            _pid = pid[0]
+            _process = device.attach(pid)
+            _pid = pid
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
             was_error = True
