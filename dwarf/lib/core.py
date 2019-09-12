@@ -274,13 +274,19 @@ class Dwarf(QObject):
             except frida.ProcessNotFoundError as error:
                 raise Exception('Frida Error: ' + str(error))
 
-        if not isinstance(pid, list):
-            raise Exception('Error pid!=list')
+        if isinstance(pid, list):
+            pid = pid[0]
+            name = pid[1]
+        else:
+            name = ''
+
+        if not isinstance(pid, int):
+            raise Exception('Error pid!=int')
 
         try:
-            self._process = self.device.attach(pid[0])
+            self._process = self.device.attach(pid)
             self._process.on('detached', self._on_detached)
-            self._pid = pid[0]
+            self._pid = pid
         except frida.ProcessNotFoundError:
             error_msg = 'Process not found (ProcessNotFoundError)'
             was_error = True
@@ -304,7 +310,7 @@ class Dwarf(QObject):
         if was_error:
             raise Exception(error_msg)
 
-        self.onProcessAttached.emit([self.pid, pid[1]])
+        self.onProcessAttached.emit([self.pid, name])
         self.load_script(script=script)
 
     def detach(self):
