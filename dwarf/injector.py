@@ -25,6 +25,8 @@ def main():
     import sys
     from dwarf.lib import utils
 
+    plugin_manager = PluginManager(None)
+
     def process_args():
         """ process commandline params
         """
@@ -66,6 +68,7 @@ def main():
         """ Attach to pid
         """
 
+        _process = None
         was_error = False
         error_msg = ''
         pid = args.pid
@@ -113,6 +116,8 @@ def main():
         load_script(args, _process)
 
     def spawn(args, device):
+        _process = None
+        _pid = 0
         package = args.any
         package_args = args.args
 
@@ -139,6 +144,14 @@ def main():
         load_script(args, _process, spawned=True)
         device.resume(_pid)
 
+    def on_message(message, payload):
+        for plugin in plugin_manager.plugins:
+            plugin_instance = plugin_manager.plugins[plugin]
+            try:
+                plugin_instance.on_frida_message(message, payload)
+            except:
+                pass
+
     def load_script(args, proc, spawned=False):
         try:
             if not os.path.exists(utils.resource_path('lib/core.js')):
@@ -149,7 +162,7 @@ def main():
                 script_content = core_script.read()
 
             _script = proc.create_script(script_content, runtime='v8')
-            #_script.on('message', _on_message)
+            _script.on('message', on_message)
             #_script.on('destroyed', _on_script_destroyed)
             _script.load()
 
@@ -157,22 +170,22 @@ def main():
             # this break_at_start have same behavior from args or from the checkbox i added
             _script.exports.init(args.break_start, is_debug, spawned)
 
+            plugin_manager.reload_plugins()
+
+            for plugin in plugin_manager.plugins:
+                plugin_instance = plugin_manager.plugins[plugin]
+                try:
+                    _script.exports.api(0, 'evaluateFunction', [plugin_instance.__get_agent__()])
+                    plugin_instance.set_script(_script)
+                except Exception as e:
+                    pass
+
             if args.script is not None:
                 if os.path.exists(args.script):
                     with open(args.script, 'r') as script_file:
                         user_script = script_file.read()
 
                     _script.exports.api(0, 'evaluateFunction', [user_script])
-
-            plugin_manager = PluginManager(None)
-            plugin_manager.reload_plugins()
-
-            for plugin in plugin_manager.plugins:
-                plugin_instance = plugin_manager.plugins[plugin]
-                try:
-                    _script.exports.api(0, 'evaluateFunction', plugin_instance.__get_agent__())
-                except Exception as e:
-                    pass
 
             return 0
         except frida.ProcessNotFoundError:
