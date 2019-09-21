@@ -275,8 +275,11 @@ class Dwarf(QObject):
                 raise Exception('Frida Error: ' + str(error))
 
         if isinstance(pid, list):
+            if len(pid) > 1:
+                name = pid[1]
+            else:
+                name = ''
             pid = pid[0]
-            name = pid[1]
         else:
             name = ''
 
