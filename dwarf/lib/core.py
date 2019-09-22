@@ -352,19 +352,19 @@ class Dwarf(QObject):
             if not os.path.exists(utils.home_path() + 'keywords.json'):
                 self.dump_keywords()
 
+            for plugin in self._app_window.plugin_manager.plugins:
+                plugin_instance = self._app_window.plugin_manager.plugins[plugin]
+                try:
+                    self.dwarf_api('evaluateFunction', plugin_instance.__get_agent__())
+                except Exception as e:
+                    pass
+
             if script is not None:
                 if os.path.exists(script):
                     with open(script, 'r') as script_file:
                         user_script = script_file.read()
 
                     self.dwarf_api('evaluateFunction', user_script)
-
-            for plugin in self._app_window.plugin_manager.plugins:
-                plugin_instance = self._app_window.plugin_manager.plugins[plugin]
-                try:
-                    self.dwarf_api('evaluateFunction', plugin_instance.__get_agent__())
-                except Exception as e:
-                    print('error loading plugin script', e)
 
             # resume immediately
             self.resume_proc()
