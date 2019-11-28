@@ -46,6 +46,11 @@ class AndroidSession(Session):
 
     @property
     def frida_device(self):
+        version = frida.__version__.split('.')
+        if len(version) == 3:
+            if int(version[0]) >= 12 and int(version[1]) >= 7:
+                return frida.get_usb_device(timeout=60)
+
         return frida.get_usb_device()
 
     def _setup_menu(self):
