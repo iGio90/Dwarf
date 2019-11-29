@@ -3314,7 +3314,7 @@ function () {
     value: function init() {
       var clone = (0, _assign["default"])({}, Interceptor);
 
-      clone.attach = function attach(target, callbacks) {
+      clone.attach = function attach(target, callbacks, data) {
         target.readU8();
         var replacement;
 
@@ -3344,7 +3344,7 @@ function () {
           }
         }
 
-        return Interceptor['_attach'](target, replacement);
+        return Interceptor['_attach'](target, replacement, data);
       };
 
       global['Interceptor'] = clone;
