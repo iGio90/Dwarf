@@ -102,7 +102,9 @@ class AndroidSession(Session):
             result = QFileDialog.getSaveFileName(caption='Location to save ' + package,
                                                  directory='./' + package + '.apk', filter='*.apk')
             if result and result[0]:
-                self.adb.pull(path, result[0])
+                self.adb.su_cmd('cp ' + path + ' /sdcard/' + package + '.apk')
+                self.adb.pull('/sdcard/' + package + '.apk', result[0])
+                self.adb.su_cmd('rm /sdcard/' + package + '.apk')
 
     def _on_proc_selected(self, data):
         super()._on_proc_selected(data)
