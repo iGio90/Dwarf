@@ -30,7 +30,9 @@ class AndroidDecompileUtil(object):
     def decompile(adb, apk_path):
         if not os.path.exists('.decompile'):
             os.mkdir('.decompile')
-        adb.pull(apk_path, '.decompile/base.apk')
+        adb.su_cmd('cp ' + apk_path + ' /sdcard/dwarf-decompile.apk')
+        adb.pull('/sdcard/dwarf-decompile.apk', '.decompile/base.apk')
+        adb.su_cmd('rm /sdcard/dwarf-decompile.apk')
         dex2jar = 'd2j-dex2jar.sh'
         if os.name == 'nt':
             dex2jar = 'd2j-dex2jar.bat'
@@ -39,15 +41,26 @@ class AndroidDecompileUtil(object):
         except:
             utils.show_message_box('failed to find %s' % dex2jar)
             return
-        utils.do_shell_command(dex2jar + ' .decompile/base.apk -o .decompile/base.jar -f')
+        utils.do_shell_command(
+            dex2jar + ' .decompile/base.apk -o .decompile/base.jar -f')
         if not external_tools.tool_exist('luyten.jar'):
-            external_tools.get_tool('https://github.com/deathmarine/Luyten/releases/download/v0.5.3/luyten-0.5.3.jar',
-                                    'luyten.jar')
+            if os.name == 'nt':
+                external_tools.get_tool(
+                    'https://github.com/deathmarine/Luyten/releases/download/v0.5.4_Rebuilt_with_Latest_depenencies/luyten-0.5.4.exe',
+                    'luyten.exe')
+            else:
+                external_tools.get_tool(
+                    'https://github.com/deathmarine/Luyten/releases/download/v0.5.4_Rebuilt_with_Latest_depenencies/luyten-0.5.4.jar',
+                    'luyten.jar')
         java_version = utils.do_shell_command('java -version')
-        try:
-            java_version.index('java version')
-        except:
-            utils.show_message_box('failed to find java')
-            return
 
-        utils.do_shell_command('java -jar tools/luyten.jar .decompile/base.jar &')
+        try:
+            if os.name == 'nt':
+                utils.do_shell_command(
+                    'tools/luyten.exe .decompile/base.jar &')
+            else:
+                utils.do_shell_command(
+                    'java -jar tools/luyten.jar .decompile/base.jar &')
+        except:
+            pass
+
