@@ -728,7 +728,7 @@ class AppWindow(QMainWindow):
                 self.watchpoints_panel = None
                 self.removeDockWidget(self.watchpoints_dwidget)
                 self.watchpoints_dwidget = None
-            elif elem == 'breakpoint':
+            elif elem == 'breakpoints':
                 self.breakpoints_panel.close()
                 self.breakpoints_panel = None
                 self.removeDockWidget(self.breakpoint_dwiget)
