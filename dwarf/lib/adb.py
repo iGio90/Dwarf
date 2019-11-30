@@ -493,10 +493,15 @@ class Adb(QObject):
 
         res = self.su_cmd('mount -o rw,remount /system')
 
+        if res and 'su: invalid option' in res:
+            res = self.su_cmd('\'mount -o rw,remount /system\'')
+
         if '/system' and '/proc/mounts' in res:
             res = self._do_adb_command('shell mount | grep system')
             if res is '':
                 res = self.su_cmd('mount -o rw,remount /')
+                if res and 'su: invalid option' in res:
+                    res = self.su_cmd('\'mount -o rw,remount /\'')
                 if res == '':
                     if self._check_mounted_system():
                         is_mounted = True
@@ -514,6 +519,7 @@ class Adb(QObject):
             is_mounted = self._check_mounted_system()
 
         return is_mounted
+
 
     def install(self, path):
         """ Install apk
