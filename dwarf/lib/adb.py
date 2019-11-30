@@ -41,6 +41,8 @@ class Adb(QObject):
         self._alternate_su_binary = False
         self._alternate_frida_name = False
 
+        self._syspart_name = '/system'
+
         self._check_min_required()
 
     # ************************************************************************
@@ -60,6 +62,7 @@ class Adb(QObject):
             if isinstance(value, str):
                 self._device_serial = value
                 self._check_requirements()
+                print(self.get_states_string())
         except ValueError:
             self._device_serial = None
 
@@ -130,7 +133,7 @@ class Adb(QObject):
                     date_res = date_res.split(' ')
                     res_year = int(date_res[len(date_res) - 1])
                 except ValueError:
-                    return # TODO: raise exceptions
+                    return  # TODO: raise exceptions
 
             # try some su command to check for su binary
             res = self._do_adb_command('shell su -c date')
@@ -152,14 +155,22 @@ class Adb(QObject):
                         # check if both date results matches otherwise its no valid result
                         res_len = len(su_res)
                         date_len = len(date_res)
-                        if su_res[res_len - 1] == date_res[date_len - 1]: # year
-                            if su_res[res_len - 2] == date_res[date_len - 2]: # timezone
-                                if su_res[res_len - 4] == date_res[date_len - 4]: # day
-                                    if su_res[res_len - 5] == date_res[date_len - 5]: # month
+                        if su_res[res_len - 1] == date_res[date_len -
+                                                           1]:  # year
+                            if su_res[res_len - 2] == date_res[date_len -
+                                                               2]:  # timezone
+                                if su_res[res_len - 4] == date_res[date_len -
+                                                                   4]:  # day
+                                    if su_res[res_len - 5] == date_res[
+                                            date_len - 5]:  # month
                                         self._is_root = True
 
                 except ValueError:
                     pass
+
+            res = self._do_adb_command('shell mount | grep system')
+            if '/system_root' in res:
+                self._syspart_name = '/system_root'
 
             # check status of selinux
             res = self._do_adb_command('shell getenforce')
@@ -169,15 +180,14 @@ class Adb(QObject):
                     self._do_adb_command('shell setenforce 0')
 
             # nox fix
-            res = self.su_cmd('mount -o ro,remount /system')
+            res = self.su_cmd('mount -o ro,remount ' + self._syspart_name)
             if res and 'invalid' in res:
                 self._alternate_su_binary = True
 
             # no su -> try if the user is already root
             # on some emulators user is root
             if not self._is_su and self._dev_emu:
-                res = self._do_adb_command(
-                    'shell mount -o ro,remount /system')
+                res = self._do_adb_command('shell mount -o ro,remount ' + self._syspart_name)
                 if res or res == '':
                     if res and 'not user mountable' in res:
                         # no root user
@@ -293,12 +303,12 @@ class Adb(QObject):
             if self._alternate_frida_name:
                 pid = self.su_cmd('pidof -s frida-server')
                 if pid:
-                    pid = pid.join(pid.split()) # remove \r\n
+                    pid = pid.join(pid.split())  # remove \r\n
                     self.su_cmd('kill -9 %s' % pid)
             else:
                 pid = self.su_cmd('pidof -s frida')
                 if pid:
-                    pid = pid.join(pid.split()) # remove \r\n
+                    pid = pid.join(pid.split())  # remove \r\n
                     self.su_cmd('kill -9 %s' % pid)
         else:
             if self._oreo_plus:
@@ -361,7 +371,7 @@ class Adb(QObject):
                 pid = self.su_cmd('pidof -s frida')
             if pid:
                 try:
-                    pid = int(pid.join(pid.split())) # remove \r\n
+                    pid = int(pid.join(pid.split()))  # remove \r\n
                     if pid:
                         return True
                 except ValueError:
@@ -392,11 +402,10 @@ class Adb(QObject):
             if 'frida: not found' in result or 'No such file or directory' in result:
                 result = self._do_adb_command('shell frida-server --version')
                 if result and 'frida-server: not found' in result:
-                    result = None
+                    return None
                 elif result:
                     self._alternate_frida_name = True
         else:
-            print('Failed to get fridaversion.')
             return None
 
         result = result.replace('\r', '').replace('\n', '')
@@ -491,31 +500,24 @@ class Adb(QObject):
         if not self.available():
             return None
 
-        res = self.su_cmd('mount -o rw,remount /system')
+        res = self.su_cmd('mount -o rw,remount ' + self._syspart_name)
 
-        if '/system' and '/proc/mounts' in res:
-            res = self._do_adb_command('shell mount | grep system')
-
-            if '/system_root' in res:
-                res = self.su_cmd('mount -o rw,remount /system_root')
-
-            if res is '':
-                res = self.su_cmd('mount -o rw,remount /')
-                if res == '':
-                    if self._check_mounted_system():
-                        is_mounted = True
-                    else:
-                        # try if androidsdk emu
-                        # adb root on real dev -> 'is not allowed to run as root in production builds'
-                        res = self._do_adb_command('root')
-                        res = self._do_adb_command('remount')
-                        if res == 'remount succeeded':
-                            is_mounted = self._check_mounted_system()
-                        else:
-                            is_mounted = False
-
-        elif res == '':
+        if res == '':
             is_mounted = self._check_mounted_system()
+        else:
+            res = self.su_cmd('mount -o rw,remount /')
+            if res == '':
+                if self._check_mounted_system():
+                    is_mounted = True
+                else:
+                    # try if androidsdk emu
+                    # adb root on real dev -> 'is not allowed to run as root in production builds'
+                    res = self._do_adb_command('root')
+                    res = self._do_adb_command('remount')
+                    if res == 'remount succeeded':
+                        is_mounted = self._check_mounted_system()
+                    else:
+                        is_mounted = False
 
         return is_mounted
 
@@ -565,10 +567,10 @@ class Adb(QObject):
                     'shell su -c ' + cmd, timeout=timeout)
 
                 if ret_val and 'su: invalid option' in ret_val:
-                    ret_val = self._do_adb_command('shell su -c "' + cmd + '"', timeout=timeout)
+                    ret_val = self._do_adb_command(
+                        'shell su -c "' + cmd + '"', timeout=timeout)
 
         elif self._is_root:
             ret_val = self._do_adb_command('shell ' + cmd, timeout=timeout)
 
         return ret_val
-
