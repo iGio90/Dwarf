@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QVBoxLayout,
 
 from dwarf.ui.dialogs.dialog_js_editor import JsEditorDialog
 from dwarf.ui.widgets.code_editor import JsCodeEditor
+from dwarf.lib.utils import get_os_monospace_font
 
 
 class DwarfConsoleInput(JsCodeEditor):
@@ -103,6 +104,7 @@ class DwarfConsoleWidget(QWidget):
 
         # use textedit to allow copy contents
         self.output = QPlainTextEdit()
+        self.output.setFont(get_os_monospace_font())
         self.output.setReadOnly(True)
         self.output.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -149,12 +151,12 @@ class DwarfConsoleWidget(QWidget):
             html_text = what.replace('\n', '<br>')
 
         self.output.appendHtml(
-            '<pre><p>' + (self.timestamp() if time_prefix else '') + html_text + '</p></pre>')
+            '<font color="#999"><p>' + (self.timestamp() if time_prefix else '') + html_text + '</p></font>')
         self.output.verticalScrollBar().setValue(self.output.verticalScrollBar().maximum())
 
     def timestamp(self):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")
-        return '<font color="yellowgreen" size="2" style="font-style:italic">' + timestamp + '</font>&nbsp;&nbsp;'
+        return '<font color="yellowgreen">' + timestamp + '</font>&nbsp;&nbsp;'
 
     def clear(self):
         self.output.setPlainText('')

@@ -148,16 +148,16 @@ def run_dwarf():
 
     import dwarf.resources  # pylint: disable=unused-import
 
+    QApplication.setDesktopSettingsAware(True)
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    QApplication.setLayoutDirection(Qt.LeftToRight)
+
+    QApplication.setOrganizationName("https://github.com/iGio90/Dwarf")
+    QApplication.setApplicationName("Dwarf")
+    QApplication.setApplicationDisplayName('Dwarf')
+
     qapp = QApplication([])
-
-    qapp.setDesktopSettingsAware(True)
-    qapp.setAttribute(Qt.AA_EnableHighDpiScaling)
-    qapp.setAttribute(Qt.AA_UseHighDpiPixmaps)
-    qapp.setLayoutDirection(Qt.LeftToRight)
-
-    qapp.setOrganizationName("https://github.com/iGio90/Dwarf")
-    qapp.setApplicationName("Dwarf")
-    qapp.setApplicationDisplayName('Dwarf')
 
     # set icon
     _icon = None

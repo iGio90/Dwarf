@@ -187,7 +187,7 @@ class AppWindow(QMainWindow):
 
         if self._is_newer_dwarf:
             dwarf_menu.addAction('Update', self._update_dwarf)
-        dwarf_menu.addAction('Close', self.session_manager.session.stop)
+        dwarf_menu.addAction('Close', self.close)
         self.menu.addMenu(dwarf_menu)
 
         session = self.session_manager.session
@@ -787,6 +787,9 @@ class AppWindow(QMainWindow):
 
             detaches dwarf
         """
+        if self.session_manager.session:
+            self.session_manager.session.stop()
+
         # save windowstuff
         self.q_settings.setValue('dwarf_ui_state', self.saveGeometry())
         self.q_settings.setValue('dwarf_ui_window', self.saveState())
@@ -1007,7 +1010,8 @@ class AppWindow(QMainWindow):
         reason = data[1]
 
         if reason == 'application-requested':
-            self.session_manager.session.stop()
+            if self.session_manager.session:
+                self.session_manager.session.stop()
             return 0
 
         if self.dwarf is not None:
