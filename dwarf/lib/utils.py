@@ -25,16 +25,15 @@ from PyQt5.QtCore import Qt, QFile, QTextStream
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QSizePolicy, QApplication
 
-VERSION = sys.version_info
-
 
 def do_shell_command(cmd, timeout=60):
     """ Execute cmd
     """
     try:
         # capture output is only supported in py 3.7
-        if VERSION.minor >= 7:
-            result = subprocess.run(cmd.split(' '), timeout=timeout, capture_output=True)
+        if sys.version_info.minor >= 7:
+            result = subprocess.run(
+                cmd.split(' '), timeout=timeout, capture_output=True)
         else:
             result = subprocess.run(
                 cmd.split(' '),
@@ -88,7 +87,8 @@ def resource_path(relative_path):
     """get path to resource
     """
     res_path = None
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(
+        os.path.abspath(__file__)))
     # its /lib/ now so move one up os.pardir
     if hasattr(sys, '_MEIPASS'):
         res_path = os.path.join(base_path, relative_path)
@@ -168,28 +168,29 @@ def safe_read_map(map, key, default):
 
 
 def progress_dialog(message):
-    progress_dialog = QProgressDialog()
-    progress_dialog.setFixedSize(300, 50)
-    progress_dialog.setAutoFillBackground(True)
-    progress_dialog.setWindowModality(Qt.WindowModal)
-    progress_dialog.setWindowTitle('Please wait')
-    progress_dialog.setLabelText(message)
-    progress_dialog.setSizeGripEnabled(False)
-    progress_dialog.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-    progress_dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-    progress_dialog.setWindowFlag(Qt.WindowCloseButtonHint, False)
-    progress_dialog.setModal(True)
-    progress_dialog.setCancelButton(None)
-    progress_dialog.setRange(0, 0)
-    progress_dialog.setMinimumDuration(0)
-    progress_dialog.setAutoClose(False)
-    return progress_dialog
+    prgr_dialog = QProgressDialog()
+    prgr_dialog.setFixedSize(300, 50)
+    prgr_dialog.setAutoFillBackground(True)
+    prgr_dialog.setWindowModality(Qt.WindowModal)
+    prgr_dialog.setWindowTitle('Please wait')
+    prgr_dialog.setLabelText(message)
+    prgr_dialog.setSizeGripEnabled(False)
+    prgr_dialog.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    prgr_dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+    prgr_dialog.setWindowFlag(Qt.WindowCloseButtonHint, False)
+    prgr_dialog.setModal(True)
+    prgr_dialog.setCancelButton(None)
+    prgr_dialog.setRange(0, 0)
+    prgr_dialog.setMinimumDuration(0)
+    prgr_dialog.setAutoClose(False)
+    return prgr_dialog
 
 
 def is_connected():
     try:
         socket.setdefaulttimeout(2)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
+            ("8.8.8.8", 53))
         return True
     except:
         return False
