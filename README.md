@@ -4,6 +4,15 @@ A debugger for reverse engineers, crackers and security analyst.
 Or you can call it damn, why are raspberries so fluffy or yet, duck warriors are rich as fuck. Whatever you like!
 Built on top of pyqt5, frida and some terrible code.
 
+### Installation
+```
+pip3 install dwarf-debugger
+```
+Development
+```
+pip3 install https://github.com/iGio90/Dwarf/archive/master.zip
+```
+
 <p align="center">
   <br>
   <img src="dwarf_debugger/assets/dwarf.png">
