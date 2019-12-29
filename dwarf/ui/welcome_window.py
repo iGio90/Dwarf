@@ -14,10 +14,12 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-
+import sys
 import os
 import random
 import json
+
+import requests
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QFontMetrics
@@ -48,7 +50,6 @@ class DwarfCommitsThread(QThread):
         super().__init__(parent)
 
     def run(self):
-        return
         self.on_status_text.emit('fetching commit list...')
 
         try:
@@ -60,7 +61,7 @@ class DwarfCommitsThread(QThread):
                     'error: git not available on your system')
                 return
         _git = Git()
-        data = _git.get_dwarf_releases()
+        data = _git.get_dwarf_commits()
         if data is None:
             self.on_status_text.emit('Failed to fetch commit list. Try later.')
             return
@@ -234,11 +235,16 @@ class WelcomeDialog(QDialog):
 
         random.seed(a=None, version=2)
 
-        """if not str(__file__).endswith('.pyc'):
+        self._base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        path_to_gitignore = os.path.join(self._base_path, os.pardir, os.pardir, '.gitignore')
+        is_git_version = os.path.exists(path_to_gitignore)
+
+        if is_git_version and os.path.isfile(path_to_gitignore):
             self.update_commits_thread = DwarfCommitsThread(parent)
             self.update_commits_thread.on_update_available.connect(
                 self._on_dwarf_isupdate)
-            self.update_commits_thread.start()"""
+            self.update_commits_thread.start()
+
         # center
         self.setGeometry(
             QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),
@@ -252,7 +258,7 @@ class WelcomeDialog(QDialog):
 
         # updatebar on top
         self.update_bar = UpdateBar(self)
-        #self.update_bar.onUpdateNowClicked.connect(self._update_dwarf)
+        self.update_bar.onUpdateNowClicked.connect(self._update_dwarf)
         self.update_bar.setVisible(False)
         main_wrap.addWidget(self.update_bar)
 
@@ -352,14 +358,31 @@ class WelcomeDialog(QDialog):
         main_wrap.addLayout(h_box)
         self.setLayout(main_wrap)
 
+
     def _on_dwarf_isupdate(self):
-        return
+        if not utils.is_connected():
+            return
+
         self.update_bar.setVisible(True)
         self.setFixedHeight(self.height() + self.update_bar.height())
         self.onIsNewerVersion.emit()
 
     def _update_dwarf(self):
-        return
+        path_to_version = os.path.join(self._base_path, os.pardir, os.pardir, 'version')
+        if not os.path.exists(path_to_version):
+            if utils.is_connected():
+                try:
+                    # file exists in dwarf >2.0.0 wich means update from 1.x to 2.x
+                    request = requests.get('https://raw.githubusercontent.com/iGio90/Dwarf/master/version')
+                    if request.ok:
+                        utils.show_message_box('This update will break your Dwarf installation!\nSee GitHub for more infos')
+                        from PyQt5.QtCore import QUrl
+                        from PyQt5.QtGui import QDesktopServices
+                        QDesktopServices.openUrl(QUrl('https://github.com/iGio90/Dwarf'))
+                        return
+                except:
+                    pass
+
         self._update_thread = DwarfUpdateThread(self)
         self._update_thread.on_finished.connect(self._update_finished)
         if not self._update_thread.isRunning():
