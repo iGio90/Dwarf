@@ -48,6 +48,7 @@ class DwarfCommitsThread(QThread):
         super().__init__(parent)
 
     def run(self):
+        return
         self.on_status_text.emit('fetching commit list...')
 
         try:
@@ -110,6 +111,7 @@ class DwarfUpdateThread(QThread):
         super().__init__(parent)
 
     def run(self):
+        return
         self.on_status_text.emit('updating dwarf...')
 
         try:
@@ -232,11 +234,11 @@ class WelcomeDialog(QDialog):
 
         random.seed(a=None, version=2)
 
-        if not str(__file__).endswith('.pyc'):
+        """if not str(__file__).endswith('.pyc'):
             self.update_commits_thread = DwarfCommitsThread(parent)
             self.update_commits_thread.on_update_available.connect(
                 self._on_dwarf_isupdate)
-            self.update_commits_thread.start()
+            self.update_commits_thread.start()"""
         # center
         self.setGeometry(
             QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),
@@ -250,7 +252,7 @@ class WelcomeDialog(QDialog):
 
         # updatebar on top
         self.update_bar = UpdateBar(self)
-        self.update_bar.onUpdateNowClicked.connect(self._update_dwarf)
+        #self.update_bar.onUpdateNowClicked.connect(self._update_dwarf)
         self.update_bar.setVisible(False)
         main_wrap.addWidget(self.update_bar)
 
@@ -351,11 +353,13 @@ class WelcomeDialog(QDialog):
         self.setLayout(main_wrap)
 
     def _on_dwarf_isupdate(self):
+        return
         self.update_bar.setVisible(True)
         self.setFixedHeight(self.height() + self.update_bar.height())
         self.onIsNewerVersion.emit()
 
     def _update_dwarf(self):
+        return
         self._update_thread = DwarfUpdateThread(self)
         self._update_thread.on_finished.connect(self._update_finished)
         if not self._update_thread.isRunning():
