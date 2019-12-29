@@ -6,10 +6,10 @@ Built on top of pyqt5, frida and some terrible code.
 
 <p align="center">
   <br>
-  <img src="dwarf/assets/dwarf.png">
+  <img src="dwarf_debugger/assets/dwarf.png">
   <br>
   <br>
-  <br>  
+  <br>
   <a href="http://www.giovanni-rocca.com/dwarf/">What is Dwarf</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/features/">Features</a> |
   <a href="http://www.giovanni-rocca.com/dwarf/setup/">Setup</a> |

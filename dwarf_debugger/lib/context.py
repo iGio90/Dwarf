@@ -1,5 +1,5 @@
 """
-    Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
+Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -12,14 +12,19 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with this program.
-    If not, see <https://www.gnu.org/licenses/>
+    along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
-import sys
-from dwarf_debugger.dwarf import run_dwarf
+from dwarf_debugger.lib.types.register import Register
 
-if __name__ == '__main__':
-    if sys.version_info.major < 3:
-        exit('Python3 required!')
 
-    run_dwarf()
+class Context(object):
+    def __init__(self, context):
+
+        if 'pc' in context:
+            self.is_native_context = True
+
+            for register in context:
+                if len(register) > 0 and register != 'toJSON':
+                    self.__dict__[register] = Register(register, context[register])
+        else:
+            self.is_native_context = False
