@@ -368,12 +368,12 @@ class WelcomeDialog(QDialog):
         self.onIsNewerVersion.emit()
 
     def _update_dwarf(self):
-        path_to_version = os.path.join(self._base_path, os.pardir, os.pardir, 'version')
+        path_to_version = os.path.join(self._base_path, os.pardir, os.pardir, 'VERSION')
         if not os.path.exists(path_to_version):
             if utils.is_connected():
                 try:
                     # file exists in dwarf >2.0.0 wich means update from 1.x to 2.x
-                    request = requests.get('https://raw.githubusercontent.com/iGio90/Dwarf/master/version')
+                    request = requests.get('https://raw.githubusercontent.com/iGio90/Dwarf/master/VERSION')
                     if request.ok:
                         utils.show_message_box('This update will break your Dwarf installation!\nSee GitHub for more infos')
                         from PyQt5.QtCore import QUrl
