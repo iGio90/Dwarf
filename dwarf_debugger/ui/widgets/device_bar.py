@@ -230,7 +230,7 @@ class DeviceBar(QWidget):
         self._adb = Adb()
 
         if not self._adb.min_required:
-            return
+            raise Exception('Adb missing or no Device')
 
         self._git = Git()
         self.setAutoFillBackground(True)
@@ -263,6 +263,9 @@ class DeviceBar(QWidget):
             remote_frida = remote_frida[0]
             self.updated_frida_version = remote_frida['tag_name']
             for asset in remote_frida['assets']:
+                if 'android-' not in asset:
+                    continue
+
                 try:
                     name = asset['name']
                     tag_start = name.index('android-')

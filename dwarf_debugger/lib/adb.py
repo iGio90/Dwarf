@@ -14,6 +14,8 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
+
+import os
 from PyQt5.QtCore import QObject
 from dwarf_debugger.lib import utils
 from dwarf_debugger.lib.android import AndroidPackage
@@ -62,7 +64,6 @@ class Adb(QObject):
             if isinstance(value, str):
                 self._device_serial = value
                 self._check_requirements()
-                print(self.get_states_string())
         except ValueError:
             self._device_serial = None
 
@@ -87,6 +88,30 @@ class Adb(QObject):
                     self._adb_available = True
                 else:
                     self._adb_available = False
+
+            if self._adb_available:
+                self._adb_available = False
+                adb_devices = utils.do_shell_command('adb devices')
+
+                try:
+                    if adb_devices:
+                        adb_devices = adb_devices.split(os.linesep)
+
+                        for i, adb_device in enumerate(adb_devices):
+                            if not adb_device: # skip empty lines at bottom
+                                continue
+                            if i == 0: # skip first line 'List of devices attached'
+                                continue
+                            if adb_device.startswith('*'): # skip these lines '* daemon started successfully *'
+                                continue
+
+                            self._adb_available = True
+
+                    if not self._adb_available:
+                        print('No Devices! Make sure \'Usb-Debugging\' is enabled in DeveloperSettings')
+
+                except Exception as e:
+                    print(e)
 
         # io error is handled here not in do_shell_command
         # if adb isnt there it gives file not found

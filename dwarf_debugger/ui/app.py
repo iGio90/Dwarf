@@ -671,8 +671,12 @@ class AppWindow(QMainWindow):
     def _start_session(self, session_type, session_data=None):
         if self.welcome_window is not None:
             self.welcome_window.close()
-        self.session_manager.create_session(
-            session_type, session_data=session_data)
+        try:
+            self.session_manager.create_session(
+                session_type, session_data=session_data)
+        except Exception as e:
+            if self.welcome_window:
+                utils.show_message_box(str(e))
 
     def _restore_session(self, session_data):
         if 'session' in session_data:
