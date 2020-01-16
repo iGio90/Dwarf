@@ -590,6 +590,10 @@ class Adb(QObject):
             else:
                 ret_val = self._do_adb_command(
                     'shell su -c ' + cmd, timeout=timeout)
+                
+                if ret_val and 'Unknown id:' in ret_val:
+                    self._alternate_su_binary = True
+                    return self.su_cmd(cmd, timeout)
 
                 if ret_val and 'su: invalid option' in ret_val:
                     ret_val = self._do_adb_command(
