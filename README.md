@@ -2,7 +2,7 @@
 
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/dwarf_debugger.svg)](https://pypi.python.org/pypi/dwarf_debugger/)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/dwarf_debugger.svg)](https://pypi.python.org/pypi/dwarf_debugger/)
-[![GitHub license](https://img.shields.io/github/license/iGio90/Dwarf.svg)](https://github.com/iGio90/Dwarf/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/iGio90/Dwarf.svg)](https://github.com/iGio90/Dwarf/blob/master/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/iGio90/Dwarf.svg)](https://GitHub.com/iGio90/Dwarf/issues/)
 
 A debugger for reverse engineers, crackers and security analyst.
