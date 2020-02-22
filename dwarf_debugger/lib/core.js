@@ -2277,17 +2277,30 @@ function () {
     value: function putWatchpoint(address, flags, callback) {
       var intFlags = 0;
 
-      if (flags.indexOf('r') >= 0) {
-        intFlags |= watchpoint_1.MEMORY_ACCESS_READ;
+      if(!utils_1.Utils.isDefined(flags)) {
+          flags = 'rw';
       }
 
-      if (flags.indexOf('w') >= 0) {
-        intFlags |= watchpoint_1.MEMORY_ACCESS_WRITE;
-      }
+      if(utils_1.Utils.isNumber(flags)) {
+          intFlags = flags;
+      } else if(utils_1.Utils.isString(flags)) {
 
-      if (flags.indexOf('x') >= 0) {
-        intFlags |= watchpoint_1.MEMORY_ACCESS_EXECUTE;
-      }
+        if (flags.indexOf('r') >= 0) {
+            intFlags |= watchpoint_1.MEMORY_ACCESS_READ;
+        }
+
+        if (flags.indexOf('w') >= 0) {
+            intFlags |= watchpoint_1.MEMORY_ACCESS_WRITE;
+        }
+
+        if (flags.indexOf('x') >= 0) {
+            intFlags |= watchpoint_1.MEMORY_ACCESS_EXECUTE;
+        }
+    }
+
+    if(!utils_1.Utils.isNumber(intFlags) || (intFlags == 0)) {
+        return;
+    }
 
       return logic_watchpoint_1.LogicWatchpoint.putWatchpoint(address, intFlags, callback);
     }
