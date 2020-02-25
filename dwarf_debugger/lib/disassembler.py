@@ -86,6 +86,11 @@ class Disassembler:
         self._disasm_thread.onFinished.connect(callback)
         self._disasm_thread.start(QThread.HighestPriority)
 
+    def change_mode(self):
+        # workaround for #60
+        self._capstone = Cs(self.capstone_arch, self.capstone_mode)
+        self._capstone.detail = True
+
     def on_arch_changed(self):
         if self.dwarf.arch == 'arm64':
             self.capstone_arch = CS_ARCH_ARM64
