@@ -84,17 +84,18 @@ class QDebugPanel(QMainWindow):
     def raise_disassembly_panel(self):
         self.dock_disassembly_panel.raise_()
 
-    def jump_to_address(self, address, view=DEBUG_VIEW_MEMORY):
+    def jump_to_address(self, address, view=DEBUG_VIEW_MEMORY, force=False):
         address = utils.parse_ptr(address)
 
-        if view == DEBUG_VIEW_MEMORY:
-            if self.memory_panel.number_of_lines() > 0:
-                if self.is_address_in_view(view, address):
-                    return
-        elif view == DEBUG_VIEW_DISASSEMBLY:
-            if self.disassembly_panel.number_of_lines() > 0:
-                if self.is_address_in_view(view, address):
-                    return
+        if not force:
+            if view == DEBUG_VIEW_MEMORY:
+                if self.memory_panel.number_of_lines() > 0:
+                    if self.is_address_in_view(view, address):
+                        return
+            elif view == DEBUG_VIEW_DISASSEMBLY:
+                if self.disassembly_panel.number_of_lines() > 0:
+                    if self.is_address_in_view(view, address):
+                        return
 
         self.app.show_progress('reading data...')
         self.app.dwarf.read_range_async(

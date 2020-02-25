@@ -11,13 +11,20 @@ class DisassembleThread(QThread):
     onFinished = pyqtSignal(list, name='onFinished')
     onError = pyqtSignal(str, name='onError')
 
-    def __init__(self, dwarf, capstone, base, data, offset, num_instructions=0):
+    def __init__(self, dwarf, arch, mode, base, data, offset, num_instructions=0):
         super().__init__()
         self._dwarf = dwarf
         self._base = base
         self._data = data
         self._offset = offset
-        self._capstone = capstone
+        self._capstone = None
+
+        try:
+            self._capstone = Cs(arch, mode)
+            self._capstone.detail = True
+        except CsError:
+            return
+
         self._num_instructions = num_instructions
         self._max_instruction = 1024
 
@@ -27,8 +34,11 @@ class DisassembleThread(QThread):
         self._debug_symbols = []
         self._debug_symbols_indexes = []
 
-        for cap_inst in self._capstone.disasm(
-                self._data[self._offset:], self._base + self._offset):
+    def run(self):
+        if not self._capstone:
+            return
+
+        for cap_inst in self._capstone.disasm(self._data[self._offset:], self._base + self._offset):
             self._counter += 1
 
             if 0 < self._num_instructions < self._counter:
@@ -49,8 +59,7 @@ class DisassembleThread(QThread):
 
             self._instructions.append(dwarf_instruction)
 
-    def run(self):
-        if len(self._debug_symbols) > 0:
+        if self._debug_symbols:
             symbols = self._dwarf.dwarf_api('getDebugSymbols', json.dumps(self._debug_symbols))
             if symbols:
                 for i in range(len(symbols)):
@@ -73,8 +82,8 @@ class Disassembler:
         self._capstone = None
         self._disasm_thread = None
 
-        self.capstone_arch = 0
-        self.capstone_mode = 0
+        self.capstone_arch = CS_ARCH_X86
+        self.capstone_mode = CS_MODE_32
         self.keystone_arch = 0
         self.keystone_mode = 0
 
@@ -82,14 +91,9 @@ class Disassembler:
 
     def disasm(self, base, data, offset, callback, num_instructions=0):
         self._disasm_thread = DisassembleThread(
-            self.dwarf, self._capstone, base, data, offset, num_instructions=num_instructions)
+            self.dwarf, self.capstone_arch, self.capstone_mode, base, data, offset, num_instructions=num_instructions)
         self._disasm_thread.onFinished.connect(callback)
         self._disasm_thread.start(QThread.HighestPriority)
-
-    def change_mode(self):
-        # workaround for #60
-        self._capstone = Cs(self.capstone_arch, self.capstone_mode)
-        self._capstone.detail = True
 
     def on_arch_changed(self):
         if self.dwarf.arch == 'arm64':
@@ -122,7 +126,3 @@ class Disassembler:
             elif self.dwarf.arch == 'x64':
                 self.keystone_arch = ks.KS_ARCH_X86
                 self.keystone_mode = ks.KS_MODE_64
-
-        self._capstone = Cs(self.capstone_arch, self.capstone_mode)
-        self._capstone.detail = True
-        # self._capstone.skipdata = True

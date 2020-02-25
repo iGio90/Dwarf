@@ -739,6 +739,4 @@ class DisassemblyView(QAbstractScrollArea):
             else:
                 self._app_window.dwarf.disassembler.capstone_mode = CS_MODE_ARM
 
-            self._app_window.dwarf.disassembler.change_mode()
-
-            self.debug_panel.jump_to_address(self._current_line)
+            self.debug_panel.jump_to_address(self._current_line, 1, True)
