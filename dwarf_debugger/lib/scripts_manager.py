@@ -35,6 +35,22 @@ class ScriptsManager(QObject):
 
         self.update_scripts()
 
+    def _check_version(self, required_dwarf):
+        from dwarf_debugger.version import DWARF_VERSION
+        required_dwarf = required_dwarf.split('.')
+        dwarf_version = DWARF_VERSION.split('.')
+        print(required_dwarf)
+        if int(dwarf_version[0]) < int(required_dwarf[0]):
+            return False
+        elif (int(dwarf_version[0]) <= int(required_dwarf[0])) and (
+                int(dwarf_version[1]) < int(required_dwarf[1])):
+            return False
+        elif (int(dwarf_version[1]) <= int(required_dwarf[1])) and (
+                int(dwarf_version[2]) < int(required_dwarf[2])):
+            return False
+
+        return True
+
     def update_scripts(self):
         scripts = self._git.get_dwarf_scripts()
 
@@ -62,6 +78,9 @@ class ScriptsManager(QObject):
                 info = self._git.get_script_info(info_url)
                 if info is None:
                     continue
+                if 'dwarf' in info:
+                    if not self._check_version(info['dwarf']):
+                        continue
                 self.scripts[module_name] = {
                     'info': info,
                     'script': script_url

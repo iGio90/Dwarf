@@ -109,6 +109,9 @@ class ScriptsDialog(QDialog):
             script = self._script_manager.get_script(script_name)
             info = script['info']
 
+            if 'dwarf' in info:
+                continue
+
             _name = QStandardItem()
             _name.setText(script_name)
             _name.setToolTip(info['name'])
