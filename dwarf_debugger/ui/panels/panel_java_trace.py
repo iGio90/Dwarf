@@ -346,26 +346,13 @@ class JavaTracePanel(QWidget):
         self.app.dwarf.dwarf_api('stopJavaTracer')
         self.tracing = False
 
-    def search(self):
-        accept, input = InputDialog.input(self.app, hint='Search',
-                                          input_content=self.current_class_search,
-                                          placeholder='Search something...')
-        if accept:
-            self.current_class_search = input.lower()
-            for i in range(0, self.class_list.count()):
-                try:
-                    if self.class_list.item(i).text().lower().index(self.current_class_search.lower()) >= 0:
-                        self.class_list.setRowHidden(i, False)
-                except:
-                    self.class_list.setRowHidden(i, True)
-
     def show_class_list_menu(self, pos):
         menu = QMenu()
         search = menu.addAction('Search')
         action = menu.exec_(self.class_list.mapToGlobal(pos))
         if action:
             if action == search:
-                self.search()
+                self.class_list._on_cm_search()
 
     def start_trace(self):
         self.app.dwarf.dwarf_api('startJavaTracer', [self.trace_classes])
