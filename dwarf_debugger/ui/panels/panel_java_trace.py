@@ -368,15 +368,21 @@ class JavaTracePanel(QWidget):
         self.events_list.setVisible(False)
         self.events_list.clear()
 
-    def trace_list_double_click(self, item):
-        try:
-            index = self.trace_classes.index(item.text())
-        except:
-            return
-        if index < 0:
-            return
-        self.trace_classes.pop(index)
-        self.trace_list.takeItem(self.trace_list.row(item))
+    def trace_list_double_click(self, model_index):
+        row = self.trace_list_model.itemFromIndex(model_index).row()
+        if row != -1:
+            trace_entry = self.trace_list_model.item(row, 0).text()
+
+            if not trace_entry:
+                return
+
+            try:
+                index = self.trace_classes.index(trace_entry)
+                self.trace_classes.pop(index)
+                self.trace_list_model.removeRow(row)
+            except ValueError:
+                pass
+
 
     def keyPressEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:

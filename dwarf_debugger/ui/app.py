@@ -71,7 +71,7 @@ class AppWindow(QMainWindow):
 
         # themes
         self.prefs = Prefs()
-        utils.set_theme(self.prefs.get('dwarf_ui_theme', 'black'), self.prefs)
+        utils.set_theme(self.prefs.get('dwarf_ui_theme', 'dark'), self.prefs)
 
         # load font
         if os.path.exists(utils.resource_path('assets/Anton.ttf')):
