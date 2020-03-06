@@ -13,29 +13,18 @@ Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 """
 import json
 from math import ceil, floor
-from PyQt5.QtCore import Qt, QRectF, QPoint
-from PyQt5.QtGui import QPainter, QColor, QTextOption, QFontMetrics, QFont, QPolygon, QIcon, QStandardItemModel, \
-    QStandardItem
-from PyQt5.QtWidgets import QSplitter, QListWidget, QScrollBar, QMenu, QWidget, QVBoxLayout, QAbstractScrollArea, QToolBar, QLabel, \
-    QSizePolicy
 
-from dwarf_debugger.ui.dialogs.dialog_input import InputDialog
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 from dwarf_debugger.ui.widgets.list_view import DwarfListView
 
 from dwarf_debugger.lib import utils
 
-# a list of classes you generally want to trace
-PREFIXED_CLASS = [
-    'android.util.Base64',
-    'java.security.MessageDigest',
-    'java.util.zip.GZIPOutputStream'
-]
 
-
-class JavaTraceView(QAbstractScrollArea):
+class JavaTraceView(QtWidgets.QAbstractScrollArea):
 
     def __init__(self, parent=None):
-        super(JavaTraceView, self).__init__(parent=parent)
+        super().__init__(parent=parent)
 
         self.data = []
         self.search_result = []
@@ -86,8 +75,9 @@ class JavaTraceView(QAbstractScrollArea):
     #    for x in self.data:
 
     def paintEvent(self, event):
-        painter = QPainter(self.viewport())
-        painter.fillRect(0, 0, self.viewport().width(), self.viewport().height(), QColor('#181818'))
+        painter = QtGui.QPainter(self.viewport())
+        painter.fillRect(0, 0, self.viewport().width(),
+                         self.viewport().height(), QtGui.QColor('#181818'))
 
         self.pos = self.verticalScrollBar().value()
         data_start = 0
@@ -102,10 +92,11 @@ class JavaTraceView(QAbstractScrollArea):
         drawing_pos_y = 10
         trace_depth = 0
 
-        fontMetrics = QFontMetrics(QFont(self.font))
-        text_options = QTextOption()
-        text_options.setAlignment(Qt.AlignLeft)
-        text_options.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+        fontMetrics = QtGui.QFontMetrics(QtGui.QFont(self.font))
+        text_options = QtGui.QTextOption()
+        text_options.setAlignment(QtCore.Qt.AlignLeft)
+        text_options.setWrapMode(
+            QtGui.QTextOption.WrapAtWordBoundaryOrAnywhere)
 
         for i, line in enumerate(self.data):
             if i == self.pos:
@@ -125,39 +116,52 @@ class JavaTraceView(QAbstractScrollArea):
                 line['data'] = json.loads(line['data'])
 
             drawing_pos_x = 10
-            painter.setPen(QColor('#fff'))
+            painter.setPen(QtGui.QColor('#fff'))
 
             if line['event'] == 'leave':
                 if trace_depth:
                     trace_depth -= 1
                 drawing_pos_x += (trace_depth * 20)
-                painter.setPen(QColor('crimson'))
-                painter.setBrush(QColor('#222'))
-                polygon = QPolygon()
-                polygon.append(QPoint(drawing_pos_x - 6, drawing_pos_y + (self._char_height * 0.5)))
-                polygon.append(QPoint(drawing_pos_x + 10, drawing_pos_y - (self._char_height * 0.5)))
-                polygon.append(QPoint(self.viewport().width() - 21, drawing_pos_y - (self._char_height * 0.5)))
-                polygon.append(QPoint(self.viewport().width() - 21, drawing_pos_y + self._char_height + (self._char_height * 0.5)))
-                polygon.append(QPoint(drawing_pos_x + 10, drawing_pos_y + self._char_height + (self._char_height * 0.5)))
-                polygon.append(QPoint(drawing_pos_x - 6, drawing_pos_y + (self._char_height * 0.5)))
+                painter.setPen(QtGui.QColor('crimson'))
+                painter.setBrush(QtGui.QColor('#222'))
+                polygon = QtGui.QPolygon()
+                polygon.append(
+                    QtCore.QPoint(drawing_pos_x - 6, drawing_pos_y + (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(drawing_pos_x + 10,
+                                             drawing_pos_y - (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(self.viewport().width() -
+                                             21, drawing_pos_y - (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(self.viewport().width(
+                ) - 21, drawing_pos_y + self._char_height + (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(drawing_pos_x + 10, drawing_pos_y +
+                                             self._char_height + (self._char_height * 0.5)))
+                polygon.append(
+                    QtCore.QPoint(drawing_pos_x - 6, drawing_pos_y + (self._char_height * 0.5)))
                 painter.drawPolygon(polygon)
             elif line['event'] == 'enter':
                 trace_depth += 1
                 drawing_pos_x += (trace_depth * 20)
-                painter.setPen(QColor('yellowgreen'))
-                painter.setBrush(QColor('#222'))
-                polygon = QPolygon()
-                polygon.append(QPoint(drawing_pos_x + 6, drawing_pos_y - (self._char_height * 0.5)))
-                polygon.append(QPoint(int(floor(self.viewport().width())) - 21, drawing_pos_y - (self._char_height * 0.5)))
-                polygon.append(QPoint(int(floor(self.viewport().width())) - 5, drawing_pos_y + (self._char_height * 0.5)))
-                polygon.append(QPoint(int(floor(self.viewport().width())) - 21, drawing_pos_y + self._char_height + (self._char_height * 0.5)))
-                polygon.append(QPoint(drawing_pos_x + 6, drawing_pos_y + self._char_height + (self._char_height * 0.5)))
-                #polygon.append(QPoint(drawing_pos_x + 21, drawing_pos_y + (self._char_height * 0.5)))
-                polygon.append(QPoint(drawing_pos_x + 6, drawing_pos_y - (self._char_height * 0.5)))
+                painter.setPen(QtGui.QColor('yellowgreen'))
+                painter.setBrush(QtGui.QColor('#222'))
+                polygon = QtGui.QPolygon()
+                polygon.append(
+                    QtCore.QPoint(drawing_pos_x + 6, drawing_pos_y - (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(int(floor(self.viewport().width())) -
+                                             21, drawing_pos_y - (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(int(floor(self.viewport().width())) -
+                                             5, drawing_pos_y + (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(int(floor(self.viewport().width())) - 21,
+                                             drawing_pos_y + self._char_height + (self._char_height * 0.5)))
+                polygon.append(QtCore.QPoint(drawing_pos_x + 6, drawing_pos_y +
+                                             self._char_height + (self._char_height * 0.5)))
+                # polygon.append(QtCore.QPoint(drawing_pos_x + 21, drawing_pos_y + (self._char_height * 0.5)))
+                polygon.append(
+                    QtCore.QPoint(drawing_pos_x + 6, drawing_pos_y - (self._char_height * 0.5)))
                 painter.drawPolygon(polygon)
 
             drawing_pos_x += 20
-            rect = QRectF(drawing_pos_x, drawing_pos_y, self.viewport().width() - 25 - drawing_pos_x, self._char_height + 10)
+            rect = QtCore.QRectF(drawing_pos_x, drawing_pos_y, self.viewport(
+            ).width() - 25 - drawing_pos_x, self._char_height + 10)
 
             if line['event'] == 'enter':
                 arg_str = '('
@@ -167,7 +171,8 @@ class JavaTraceView(QAbstractScrollArea):
                 if len(line['data']):
                     arg_str = arg_str[:-2]
                 arg_str += ')'
-                painter.drawText(rect, line['class'] + arg_str, option=text_options)
+                painter.drawText(
+                    rect, line['class'] + arg_str, option=text_options)
             else:
                 painter.drawText(rect, line['class'], option=text_options)
 
@@ -175,17 +180,20 @@ class JavaTraceView(QAbstractScrollArea):
 
             if isinstance(line['data'], str):
                 if line['data']:
-                    rect = fontMetrics.boundingRect(drawing_pos_x, drawing_pos_y, self.viewport().width() - drawing_pos_x - 25, 0, Qt.AlignLeft | Qt.TextWordWrap | Qt.TextWrapAnywhere, line['data'])
-                    rect = QRectF(drawing_pos_x, drawing_pos_y, rect.width(), rect.height())
-                    painter.setPen(QColor('#888'))
+                    rect = fontMetrics.boundingRect(drawing_pos_x, drawing_pos_y, self.viewport().width(
+                    ) - drawing_pos_x - 25, 0, QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap | QtCore.Qt.TextWrapAnywhere, line['data'])
+                    rect = QtCore.QRectF(drawing_pos_x, drawing_pos_y,
+                                         rect.width(), rect.height())
+                    painter.setPen(QtGui.QColor('#888'))
                     painter.drawText(rect, line['data'], option=text_options)
                     drawing_pos_y += rect.height() + 5
             else:
-                width = int(floor(self.viewport().width() - drawing_pos_x - (5 * self._char_width) - 35))
+                width = int(floor(self.viewport().width() -
+                                  drawing_pos_x - (5 * self._char_width) - 35))
                 max_chars = int(floor(width / self._char_width))
                 hold_x = drawing_pos_x + 5
                 width -= 20
-                painter.setPen(QColor('#888'))
+                painter.setPen(QtGui.QColor('#888'))
                 for data in line['data']:
                     drawing_pos_x = hold_x
                     if isinstance(line['data'][data], int):
@@ -199,95 +207,107 @@ class JavaTraceView(QAbstractScrollArea):
 
                     if line['event'] == 'enter':
                         arg = 'arg_{0}: '.format(data)
-                        painter.drawText(drawing_pos_x, drawing_pos_y + self._base_line, arg)
+                        painter.drawText(
+                            drawing_pos_x, drawing_pos_y + self._base_line, arg)
                         drawing_pos_x += len(arg) * self._char_width
                     elif line['event'] == 'leave':
                         retval = data + ': '
-                        painter.drawText(drawing_pos_x, drawing_pos_y + self._base_line, retval)
+                        painter.drawText(
+                            drawing_pos_x, drawing_pos_y + self._base_line, retval)
                         drawing_pos_x += len(retval) * self._char_width
 
                     if len(text) * self._char_width < width:
-                        painter.drawText(drawing_pos_x, drawing_pos_y + self._base_line, text)
+                        painter.drawText(
+                            drawing_pos_x, drawing_pos_y + self._base_line, text)
                         drawing_pos_y += self._char_height + 5
                     else:
-                        rect = fontMetrics.boundingRect(drawing_pos_x, drawing_pos_y, width, 0, Qt.AlignLeft | Qt.TextWordWrap | Qt.TextWrapAnywhere, text)
-                        rect = QRectF(rect)
+                        rect = fontMetrics.boundingRect(
+                            drawing_pos_x, drawing_pos_y, width, 0, QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap | QtCore.Qt.TextWrapAnywhere, text)
+                        rect = QtCore.QRectF(rect)
                         painter.drawText(rect, text, option=text_options)
                         drawing_pos_y += rect.height() + 5
 
             drawing_pos_y += self._char_height + 5
-            #self._data_height += drawing_pos_y
+            # self._data_height += drawing_pos_y
 
     def clear(self):
         self.data = []
 
 
-class JavaTracePanel(QWidget):
+class JavaTracePanel(QtWidgets.QWidget):
     def __init__(self, app, *__args):
         super().__init__(app)
         self.app = app
 
         self.app.dwarf.onJavaTraceEvent.connect(self.on_event)
-        self.app.dwarf.onEnumerateJavaClassesStart.connect(self.on_enumeration_start)
-        self.app.dwarf.onEnumerateJavaClassesMatch.connect(self.on_enumeration_match)
-        self.app.dwarf.onEnumerateJavaClassesComplete.connect(self.on_enumeration_complete)
+        self.app.dwarf.onEnumerateJavaClassesStart.connect(
+            self.on_enumeration_start)
+        self.app.dwarf.onEnumerateJavaClassesMatch.connect(
+            self.on_enumeration_match)
+        self.app.dwarf.onEnumerateJavaClassesComplete.connect(
+            self.on_enumeration_complete)
 
         self.tracing = False
-        self.trace_classes = []
         self.trace_depth = 0
 
-        layout = QVBoxLayout()
+        # a list of classes you generally want to trace
+        self._prefixed_classes = [
+            'android.util.Base64',
+            'java.security.MessageDigest',
+            'java.util.zip.GZIPOutputStream'
+        ]
+
+        layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        self._record_icon = QIcon(utils.resource_path('assets/icons/record.png'))
-        self._pause_icon = QIcon(utils.resource_path('assets/icons/pause.png'))
-        self._stop_icon = QIcon(utils.resource_path('assets/icons/stop.png'))
+        self._record_icon = QtGui.QIcon(
+            utils.resource_path('assets/icons/record.png'))
+        self._pause_icon = QtGui.QIcon(
+            utils.resource_path('assets/icons/pause.png'))
+        self._stop_icon = QtGui.QIcon(
+            utils.resource_path('assets/icons/stop.png'))
 
-        self._tool_bar = QToolBar()
+        self._tool_bar = QtWidgets.QToolBar()
         self._tool_bar.addAction('Start', self.start_trace)
         self._tool_bar.addAction('Pause', self.pause_trace)
         self._tool_bar.addAction('Stop', self.stop_trace)
         self._tool_bar.addSeparator()
-        self._entries_lbl = QLabel('Entries: 0')
+        self._entries_lbl = QtWidgets.QLabel('Events: 0')
         self._entries_lbl.setStyleSheet('color: #ef5350;')
         self._entries_lbl.setContentsMargins(10, 0, 10, 2)
-        self._entries_lbl.setAttribute(Qt.WA_TranslucentBackground, True) # keep this
-        self._entries_lbl.setAlignment(Qt.AlignRight| Qt.AlignVCenter)
-        self._entries_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self._entries_lbl.setAttribute(
+            QtCore.Qt.WA_TranslucentBackground, True)  # keep this
+        self._entries_lbl.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self._entries_lbl.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
         self._tool_bar.addWidget(self._entries_lbl)
 
         layout.addWidget(self._tool_bar)
 
-        self.setup_splitter = QSplitter()
+        self.setup_splitter = QtWidgets.QSplitter()
         self.events_list = JavaTraceView(self)
         self.events_list.setVisible(False)
 
         self.trace_list = DwarfListView()
-        self.trace_list_model = QStandardItemModel(0, 1)
-        self.trace_list_model.setHeaderData(0, Qt.Horizontal, 'Traced')
+        self.trace_list_model = QtGui.QStandardItemModel(0, 1)
+        self.trace_list_model.setHeaderData(0, QtCore.Qt.Horizontal, 'Traced')
         self.trace_list.setModel(self.trace_list_model)
 
         self.trace_list.doubleClicked.connect(self.trace_list_double_click)
 
         self.class_list = DwarfListView()
-        self.class_list_model = QStandardItemModel(0, 1)
-        self.class_list_model.setHeaderData(0, Qt.Horizontal, 'Classes')
+        self.class_list_model = QtGui.QStandardItemModel(0, 1)
+        self.class_list_model.setHeaderData(0, QtCore.Qt.Horizontal, 'Classes')
         self.class_list.setModel(self.class_list_model)
 
-        self.class_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.class_list.customContextMenuRequested.connect(self.show_class_list_menu)
+        self.class_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.class_list.customContextMenuRequested.connect(
+            self.show_class_list_menu)
         self.class_list.doubleClicked.connect(self.class_list_double_click)
 
         self.current_class_search = ''
-
-        bar = QScrollBar()
-        bar.setFixedWidth(0)
-        bar.setFixedHeight(0)
-        self.trace_list.setHorizontalScrollBar(bar)
-        bar = QScrollBar()
-        bar.setFixedWidth(0)
-        bar.setFixedHeight(0)
-        self.class_list.setHorizontalScrollBar(bar)
 
         self.setup_splitter.addWidget(self.trace_list)
         self.setup_splitter.addWidget(self.class_list)
@@ -297,38 +317,32 @@ class JavaTracePanel(QWidget):
 
         self.setLayout(layout)
 
-    def class_list_double_click(self, item):
-        item = self.class_list_model.itemFromIndex(item)
-        try:
-            if self.trace_classes.index(item.text()) >= 0:
-                return
-        except:
-            pass
-        self.trace_classes.append(item.text())
-        self.trace_list_model.appendRow([QStandardItem(item.text())])
-        self.trace_list_model.sort(0, Qt.AscendingOrder)
+    def class_list_double_click(self, model_index):
+        class_name = self.class_list_model.item(model_index.row(), 0).text()
+        if class_name:
+            for i in range(self.trace_list_model.rowCount()):
+                if self.trace_list_model.item(i, 0).text() == class_name:
+                    return
+
+            self.trace_list_model.appendRow([QtGui.QStandardItem(class_name)])
+            self.trace_list_model.sort(0, QtCore.Qt.AscendingOrder)
 
     def on_enumeration_start(self):
-        self.class_list_model.setRowCount(0)
+        self.class_list.clear()
 
     def on_enumeration_match(self, java_class):
-        try:
-            if PREFIXED_CLASS.index(java_class) >= 0:
-                try:
-                    if self.trace_classes.index(java_class) >= 0:
-                        return
-                except:
-                    pass
-                self.trace_list_model.appendRow(QStandardItem(java_class))
-                self.trace_classes.append(java_class)
-        except:
-            pass
+        self.class_list_model.appendRow([QtGui.QStandardItem(java_class)])
 
-        self.class_list_model.appendRow([QStandardItem(java_class)])
+        if java_class in self._prefixed_classes:
+            for i in range(self.trace_list_model.rowCount()):
+                if self.trace_list_model.item(i, 0).text() == java_class:
+                    return
+
+            self.trace_list_model.appendRow(QtGui.QStandardItem(java_class))
 
     def on_enumeration_complete(self):
-        self.class_list_model.sort(0, Qt.AscendingOrder)
-        self.trace_list_model.sort(0, Qt.AscendingOrder)
+        self.class_list_model.sort(0, QtCore.Qt.AscendingOrder)
+        self.trace_list_model.sort(0, QtCore.Qt.AscendingOrder)
 
     def on_event(self, data):
         trace, event, clazz, data = data
@@ -340,14 +354,15 @@ class JavaTracePanel(QWidget):
                     'data': data.replace(',', ', ')
                 }
             )
-            self._entries_lbl.setText('Events: %d' % len(self.events_list.data))
+            self._entries_lbl.setText('Events: %d' %
+                                      len(self.events_list.data))
 
     def pause_trace(self):
         self.app.dwarf.dwarf_api('stopJavaTracer')
         self.tracing = False
 
     def show_class_list_menu(self, pos):
-        menu = QMenu()
+        menu = QtWidgets.QMenu()
         search = menu.addAction('Search')
         action = menu.exec_(self.class_list.mapToGlobal(pos))
         if action:
@@ -355,7 +370,14 @@ class JavaTracePanel(QWidget):
                 self.class_list._on_cm_search()
 
     def start_trace(self):
-        self.app.dwarf.dwarf_api('startJavaTracer', [self.trace_classes])
+        trace_classes = []
+        for i in range(self.trace_list_model.rowCount()):
+            trace_classes.append(self.trace_list_model.item(i, 0).text())
+
+        if not trace_classes:
+            return
+
+        self.app.dwarf.dwarf_api('startJavaTracer', [trace_classes])
         self.trace_depth = 0
         self.tracing = True
         self.setup_splitter.setVisible(False)
@@ -369,23 +391,10 @@ class JavaTracePanel(QWidget):
         self.events_list.clear()
 
     def trace_list_double_click(self, model_index):
-        row = self.trace_list_model.itemFromIndex(model_index).row()
-        if row != -1:
-            trace_entry = self.trace_list_model.item(row, 0).text()
-
-            if not trace_entry:
-                return
-
-            try:
-                index = self.trace_classes.index(trace_entry)
-                self.trace_classes.pop(index)
-                self.trace_list_model.removeRow(row)
-            except ValueError:
-                pass
-
+        self.trace_list_model.removeRow(model_index.row())
 
     def keyPressEvent(self, event):
-        if event.modifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_F:
+        if event.modifiers() & QtCore.Qt.ControlModifier:
+            if event.key() == QtCore.Qt.Key_F:
                 self.search()
         super(JavaTracePanel, self).keyPressEvent(event)
