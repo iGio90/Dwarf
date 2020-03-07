@@ -352,6 +352,9 @@ class Dwarf(QObject):
             if not os.path.exists(utils.home_path() + 'keywords.json'):
                 self.dump_keywords()
 
+            # resume immediately
+            self.resume_proc()
+
             for plugin in self._app_window.plugin_manager.plugins:
                 plugin_instance = self._app_window.plugin_manager.plugins[plugin]
                 try:
@@ -365,9 +368,6 @@ class Dwarf(QObject):
                         user_script = script_file.read()
 
                     self.dwarf_api('evaluateFunction', user_script)
-
-            # resume immediately
-            self.resume_proc()
 
             self.onScriptLoaded.emit()
 

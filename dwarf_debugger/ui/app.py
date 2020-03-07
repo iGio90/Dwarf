@@ -170,7 +170,6 @@ class AppWindow(QMainWindow):
         self.search_panel = None
         self.smali_panel = None
         self.watchpoints_panel = None
-        self.welcome_window = None
 
         self._ui_elems = []
 
@@ -776,11 +775,9 @@ class AppWindow(QMainWindow):
     def session_closed(self):
         self._initialize_ui_elements()
         self.hide()
-        if self.welcome_window is not None:
+        if self.welcome_window:
             self.welcome_window.exec()
-
-        # close if it was a commandline session
-        if self.welcome_window is None:
+        else:
             if self.dwarf_args.any != '':
                 self.close()
 
