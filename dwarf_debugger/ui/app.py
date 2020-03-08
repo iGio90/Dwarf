@@ -123,6 +123,7 @@ class AppWindow(QMainWindow):
         self.plugin_manager = PluginManager(self)
         self.plugin_manager.reload_plugins()
 
+        self.welcome_window = None
         if dwarf_args.any == '':
             self.welcome_window = WelcomeDialog(self)
             self.welcome_window.setModal(True)
