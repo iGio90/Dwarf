@@ -101,10 +101,10 @@ class JavaTraceView(QtWidgets.QAbstractScrollArea):
         for i, line in enumerate(self.data):
             if i == self.pos:
                 break
-            if line['event'] == 'leave':
+            """if line['event'] == 'leave':
                 trace_depth -= 1
             elif line['event'] == 'enter':
-                trace_depth += 1
+                trace_depth += 1"""
 
         for i, line in enumerate(self.data[data_start:data_end]):
             if i > self.visible_lines():
@@ -119,9 +119,9 @@ class JavaTraceView(QtWidgets.QAbstractScrollArea):
             painter.setPen(QtGui.QColor('#fff'))
 
             if line['event'] == 'leave':
-                if trace_depth:
-                    trace_depth -= 1
-                drawing_pos_x += (trace_depth * 20)
+                """if trace_depth:
+                    trace_depth -= 1"""
+                drawing_pos_x += (1 * 20)
                 painter.setPen(QtGui.QColor('crimson'))
                 painter.setBrush(QtGui.QColor('#222'))
                 polygon = QtGui.QPolygon()
@@ -139,8 +139,8 @@ class JavaTraceView(QtWidgets.QAbstractScrollArea):
                     QtCore.QPoint(drawing_pos_x - 6, drawing_pos_y + (self._char_height * 0.5)))
                 painter.drawPolygon(polygon)
             elif line['event'] == 'enter':
-                trace_depth += 1
-                drawing_pos_x += (trace_depth * 20)
+                #trace_depth += 1
+                drawing_pos_x += (1 * 20)
                 painter.setPen(QtGui.QColor('yellowgreen'))
                 painter.setBrush(QtGui.QColor('#222'))
                 polygon = QtGui.QPolygon()
@@ -168,7 +168,7 @@ class JavaTraceView(QtWidgets.QAbstractScrollArea):
                 for a in range(len(line['data'])):
                     arg_str += 'arg_{0}, '.format(a)
 
-                if len(line['data']):
+                if line['data']:
                     arg_str = arg_str[:-2]
                 arg_str += ')'
                 painter.drawText(
