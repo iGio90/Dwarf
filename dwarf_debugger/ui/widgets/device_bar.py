@@ -263,7 +263,9 @@ class DeviceBar(QWidget):
             remote_frida = remote_frida[0]
             self.updated_frida_version = remote_frida['tag_name']
             for asset in remote_frida['assets']:
-                if 'android-' not in asset:
+                if 'name' not in asset:
+                    continue
+                if 'android-' not in asset['name']:
                     continue
 
                 try:
