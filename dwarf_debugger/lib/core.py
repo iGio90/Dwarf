@@ -729,7 +729,7 @@ class Dwarf(QObject):
             reason = 0
             if len(parts) > 1:
                 reason = int(parts[2])
-            p = 'releasing' if reason is not 3 else 'stepping'
+            p = 'releasing' if reason != 3 else 'stepping'
             str_fmt = (p + ' := {0}'.format(parts[1]))
             self.log_event(str_fmt)
             if parts[1] in self.contexts:
