@@ -260,22 +260,23 @@ class DeviceBar(QWidget):
             self.updated_frida_version = ''
             self.updated_frida_assets_url.clear()
         else:
-            remote_frida = remote_frida[0]
             self.updated_frida_version = remote_frida['tag_name']
             for asset in remote_frida['assets']:
                 if 'name' not in asset:
                     continue
-                if 'android-' not in asset['name']:
+
+                asset_name = asset['name']
+
+                if not asset_name.startswith('frida-server-'):
                     continue
 
-                try:
-                    name = asset['name']
-                    tag_start = name.index('android-')
-                    if name.index('server') >= 0:
-                        tag = name[tag_start + 8:-3]
-                        self.updated_frida_assets_url[tag] = asset['browser_download_url']
-                except ValueError:
-                    pass
+                if not 'android' in asset_name:
+                    continue
+
+                tag_start = asset_name.index('android-')
+                if asset_name.index('server') >= 0:
+                    tag = asset_name[tag_start + 8:-3]
+                    self.updated_frida_assets_url[tag] = asset['browser_download_url']
 
     def setup(self):
         """ Setup ui
