@@ -82,7 +82,7 @@ class Git(object):
 
     def get_frida_version(self):
         return self._open_cache(
-            Git.FRIDA_CACHE, 'https://api.github.com/repos/frida/frida/releases')
+            Git.FRIDA_CACHE, 'https://api.github.com/repos/frida/frida/releases/latest')
 
     def get_script(self, url):
         return self._open_cache(
