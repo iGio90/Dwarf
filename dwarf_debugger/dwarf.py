@@ -195,11 +195,11 @@ def run_dwarf():
         remote_frida = _git.get_frida_version()
         local_frida = frida.__version__
 
-        if remote_frida and local_frida != remote_frida[0]['tag_name']:
-            print('Updating local frida version to ' + remote_frida[0]['tag_name'])
+        if remote_frida and local_frida != remote_frida['tag_name']:
+            print('Updating local frida version to ' + remote_frida['tag_name'])
             try:
                 res = utils.do_shell_command('pip3 install frida --upgrade --user')
-                if 'Successfully installed frida-' + remote_frida[0]['tag_name'] in res:
+                if 'Successfully installed frida-' + remote_frida['tag_name'] in res:
                     _on_restart()
                 elif 'Requirement already up-to-date' in res:
                     if os.path.exists('.git_cache'):
