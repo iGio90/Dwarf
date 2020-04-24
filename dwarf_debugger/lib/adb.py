@@ -424,9 +424,9 @@ class Adb(QObject):
 
         result = self._do_adb_command('shell frida --version')
         if result:
-            if 'frida: not found' in result or 'No such file or directory' in result:
+            if 'not found' in result or 'No such file or directory' in result:
                 result = self._do_adb_command('shell frida-server --version')
-                if result and 'frida-server: not found' in result:
+                if result and 'not found' in result:
                     return None
                 elif result:
                     self._alternate_frida_name = True
