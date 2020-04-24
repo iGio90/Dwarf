@@ -433,8 +433,8 @@ class Adb(QObject):
         else:
             return None
 
-        result = result.replace('\r', '').replace('\n', '')
-        check_ver = result.split('.')
+        result = result.split(os.linesep)
+        check_ver = result[len(result) - 2].replace('\r', '').split('.')
         if len(check_ver) == 3:
             try:
                 v_major = int(check_ver[0])
