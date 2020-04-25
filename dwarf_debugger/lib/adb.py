@@ -194,8 +194,12 @@ class Adb(QObject):
                     pass
 
             res = self._do_adb_command('shell mount | grep system')
+            if '/sbin/.magisk/block/system /' in res:
+                self._syspart_name = '/sbin/.magisk/mirror/system'
             if '/system_root' in res:
                 self._syspart_name = '/system_root'
+                if '/sbin/.magisk/block/system_root /' in res:
+                    self._syspart_name = '/sbin/.magisk/mirror/system_root'
 
             # check status of selinux
             res = self._do_adb_command('shell getenforce')
