@@ -27,7 +27,7 @@ class Adb(QObject):
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, parent=None):
-        super(Adb, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self._adb_available = False
         self._dev_emu = False
         self._is_root = False
@@ -44,6 +44,8 @@ class Adb(QObject):
         self._alternate_frida_name = False
 
         self._syspart_name = '/system'
+        self._no_system_fallback = False
+        self._frida_path = '' # xxx/
 
         self._check_min_required()
 
@@ -73,6 +75,13 @@ class Adb(QObject):
             checked in init
         """
         return self._adb_available
+
+    @property
+    def no_syspart_fallback(self):
+        if self._frida_path and self._no_system_fallback:
+            return self._frida_path
+
+        return None
 
     # ************************************************************************
     # **************************** Functions *********************************
@@ -363,16 +372,16 @@ class Adb(QObject):
 
         if not daemonize:
             if self._alternate_frida_name:
-                result = self.su_cmd('frida-server &')
+                result = self.su_cmd(self._frida_path + 'frida-server &')
             else:
-                result = self.su_cmd('frida &')
+                result = self.su_cmd(self._frida_path + 'frida &')
         else:
             # with nox it starts frida fine but keeps running
             # without return so it needs some timeout here
             if self._alternate_frida_name:
-                result = self.su_cmd('frida-server -D', timeout=5)
+                result = self.su_cmd(self._frida_path + 'frida-server -D', timeout=5)
             else:
-                result = self.su_cmd('frida -D', timeout=5)
+                result = self.su_cmd(self._frida_path + 'frida -D', timeout=5)
 
         if result and 'Unable to start server' in result:
             return False
@@ -426,10 +435,10 @@ class Adb(QObject):
         if not self.available():
             return None
 
-        result = self._do_adb_command('shell frida --version')
+        result = self._do_adb_command('shell {0}frida --version'.format(self._frida_path))
         if result:
             if 'not found' in result or 'No such file or directory' in result:
-                result = self._do_adb_command('shell frida-server --version')
+                result = self._do_adb_command('shell {0}frida-server --version'.format(self._frida_path))
                 if result and 'not found' in result:
                     return None
                 elif result:
@@ -510,6 +519,10 @@ class Adb(QObject):
     def _check_mounted_system(self):
         """ check if we can write to /system
         """
+
+        if self._no_system_fallback and self._frida_path:
+            return True
+
         res = self.su_cmd('touch /system/.dwarf_check')
         if res == '':
             res = self._do_adb_command('shell ls -la /system')
@@ -517,7 +530,7 @@ class Adb(QObject):
                 res = self.su_cmd('rm /system/.dwarf_check')
                 if res == '':
                     return True
-        elif res == 'Read-only file system':
+        elif 'read-only' in res.lower():
             return False
 
         return False
@@ -528,6 +541,9 @@ class Adb(QObject):
         is_mounted = False
         if not self.available():
             return None
+
+        if self._no_system_fallback and self._frida_path:
+            return True
 
         res = self.su_cmd('mount -o rw,remount ' + self._syspart_name)
 
@@ -594,7 +610,7 @@ class Adb(QObject):
             else:
                 ret_val = self._do_adb_command(
                     'shell su -c ' + cmd, timeout=timeout)
-                
+
                 if ret_val and 'Unknown id:' in ret_val:
                     self._alternate_su_binary = True
                     return self.su_cmd(cmd, timeout)
