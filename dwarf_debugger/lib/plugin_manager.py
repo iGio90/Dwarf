@@ -60,7 +60,7 @@ class PluginManager:
                     for _, _class in _classes:
                         if inspect.isclass(_class) and not inspect.isabstract(_class):
 
-                            if _class.__name__ is not 'Plugin':
+                            if _class.__name__ != 'Plugin':
                                 continue
 
                             _has_required_funcs = False

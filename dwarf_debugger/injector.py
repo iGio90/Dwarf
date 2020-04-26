@@ -15,7 +15,6 @@
     along with this program.
     If not, see <https://www.gnu.org/licenses/>
 """
-from dwarf_debugger.lib.plugin_manager import PluginManager
 
 
 def main():
@@ -24,6 +23,7 @@ def main():
     import os
     import sys
     from dwarf_debugger.lib import utils
+    from dwarf_debugger.lib.plugin_manager import PluginManager
 
     plugin_manager = PluginManager(None)
 
