@@ -454,9 +454,11 @@ class Adb(QObject):
                 v_minor = int(check_ver[1])
                 v_patch = int(check_ver[2])
 
-                if v_major >= 12 and v_minor >= 5:
-                    if result:
-                        return result.join(result.split())
+                if v_major >= 12 and v_minor >= 8:
+                    return '.'.join(check_ver)
+                else:
+                    print('frida version is outdated')
+                    return '.'.join(check_ver)
             except ValueError:
                 return None
 
