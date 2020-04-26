@@ -45,7 +45,7 @@ class Adb(QObject):
 
         self._syspart_name = '/system'
         self._no_system_fallback = False
-        self._frida_path = '' # xxx/
+        self._frida_path = '/data/local/tmp/' # xxx/
 
         self._check_min_required()
 
