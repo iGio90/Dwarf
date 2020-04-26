@@ -143,6 +143,7 @@ def main():
 
         load_script(args, _process, spawned=True)
         device.resume(_pid)
+        return _pid
 
     def on_message(message, payload):
         for plugin in plugin_manager.plugins:
@@ -249,6 +250,7 @@ def main():
             print('* Trying to attach to {0}'.format(args.pid))
             try:
                 attach(args, device)
+                print('* Dwarf attached to {0}'.format(args.pid))
             except Exception as e:  # pylint: disable=broad-except
                 print('-failed-')
                 print('Reason: ' + str(e))
@@ -257,7 +259,8 @@ def main():
         else:
             print('* Trying to spawn {0}'.format(args.any))
             try:
-                spawn(args, device)
+                _pid = spawn(args, device)
+                print('* Dwarf attached to {0}'.format(_pid))
             except Exception as e:  # pylint: disable=broad-except
                 print('-failed-')
                 print('Reason: ' + str(e))

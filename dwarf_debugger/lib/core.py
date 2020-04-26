@@ -424,6 +424,7 @@ class Dwarf(QObject):
 
         self.onProcessAttached.emit([self.pid, package])
         self.load_script(script=script, spawned=True, break_at_start=break_at_start)
+        return self.pid
 
     def resume_proc(self):
         if self._spawned and not self._resumed:
