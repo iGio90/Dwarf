@@ -148,10 +148,16 @@ class FridaUpdateThread(QThread):
                 self._adb.kill_frida()
 
                 _device_path = '/system/xbin'
+                _fallback_path = self._adb.no_syspart_fallback
+
+                if _fallback_path:
+                    _device_path = _fallback_path
+
                 res = self._adb.su_cmd('ls ' + _device_path)
                 if 'No such file or directory' in res:
                     # use /system/bin
-                    _device_path = _device_path.replace('x', '')
+                    if not _fallback_path:
+                        _device_path = _device_path.replace('x', '')
 
                 # copy file note: mv give sometimes a invalid id error
                 self._adb.su_cmd('cp /sdcard/frida-server ' + _device_path + '/frida-server')
