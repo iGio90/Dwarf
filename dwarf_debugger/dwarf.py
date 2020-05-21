@@ -82,7 +82,7 @@ def _check_package_version(package_name, min_version):
 def _check_dependencies():
     _check_package_version('frida', '12.6.23')
     _check_package_version('requests', '2.18.4')
-    _check_package_version('pyqt5', '5.11.3')
+    _check_package_version('pyqt5', '5.13.2')
     _check_package_version('pyperclip', '1.7.0')
     _check_package_version('capstone', '4.0.0')  # problem with 4.0.1 as installed 4.0.1 returns 4.0.0
 
