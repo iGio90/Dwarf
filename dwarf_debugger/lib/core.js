@@ -1538,7 +1538,9 @@ var Api = /*#__PURE__*/function () {
 
           try {
             var mainLoader = Java.classFactory.loader;
-            Java.enumerateClassLoadersSync().forEach(function (loaderz) {
+            var ldr = Java.enumerateClassLoadersSync();
+            var n = 0;
+            ldr.forEach(function (loaderz) {
               Java.classFactory.loader = loaderz;
               Java.enumerateLoadedClasses({
                 onMatch: function onMatch(className) {
@@ -1549,7 +1551,11 @@ var Api = /*#__PURE__*/function () {
                   send("enumerate_java_classes_match:::" + className);
                 },
                 onComplete: function onComplete() {
-                  dwarf_1.Dwarf.loggedSend("enumerate_java_classes_complete:::");
+                  n++;
+
+                  if (n === ldr.length) {
+                    dwarf_1.Dwarf.loggedSend("enumerate_java_classes_complete:::");
+                  }
                 }
               });
             });
