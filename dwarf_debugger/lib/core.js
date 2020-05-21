@@ -1,5 +1,5 @@
 /**
-    Dwarf - Copyright (C) 2018-2020 Giovanni Rocca (iGio90)
+    Dwarf - Copyright (C) 2019 Giovanni Rocca (iGio90)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1404,6 +1404,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.Api = void 0;
 
 var dwarf_1 = require("./dwarf");
 
@@ -1427,9 +1428,7 @@ var utils_1 = require("./utils");
 
 var watchpoint_1 = require("./watchpoint");
 
-var Api =
-/*#__PURE__*/
-function () {
+var Api = /*#__PURE__*/function () {
   function Api() {
     (0, _classCallCheck2["default"])(this, Api);
   }
@@ -1538,18 +1537,23 @@ function () {
           dwarf_1.Dwarf.loggedSend("enumerate_java_classes_start:::");
 
           try {
-            Java.enumerateLoadedClasses({
-              onMatch: function onMatch(className) {
-                if (logic_java_1.LogicJava !== null) {
-                  logic_java_1.LogicJava.javaClasses.push(className);
-                }
+            var mainLoader = Java.classFactory.loader;
+            Java.enumerateClassLoadersSync().forEach(function (loaderz) {
+              Java.classFactory.loader = loaderz;
+              Java.enumerateLoadedClasses({
+                onMatch: function onMatch(className) {
+                  if (logic_java_1.LogicJava !== null) {
+                    logic_java_1.LogicJava.javaClasses.push(className);
+                  }
 
-                send("enumerate_java_classes_match:::" + className);
-              },
-              onComplete: function onComplete() {
-                dwarf_1.Dwarf.loggedSend("enumerate_java_classes_complete:::");
-              }
+                  send("enumerate_java_classes_match:::" + className);
+                },
+                onComplete: function onComplete() {
+                  dwarf_1.Dwarf.loggedSend("enumerate_java_classes_complete:::");
+                }
+              });
             });
+            Java.classFactory.loader = mainLoader;
           } catch (e) {
             utils_1.Utils.logErr("enumerateJavaClasses", e);
             dwarf_1.Dwarf.loggedSend("enumerate_java_classes_complete:::");
@@ -1580,7 +1584,7 @@ function () {
     }
   }, {
     key: "enumerateObjCModules",
-    value: function enumerateObjCModules(className) {
+    value: function enumerateObjCModules() {
       var modules = Process.enumerateModules();
       var names = modules.map(function (m) {
         return m.name;
@@ -1718,11 +1722,11 @@ function () {
     }
   }, {
     key: "evaluate",
-    value: function evaluate(w) {
+    value: function evaluate(jsCode) {
       var Thread = thread_wrapper_1.ThreadWrapper;
 
       try {
-        return eval(w);
+        return eval(jsCode);
       } catch (e) {
         Api.log(e.toString());
         return null;
@@ -1730,9 +1734,9 @@ function () {
     }
   }, {
     key: "evaluateFunction",
-    value: function evaluateFunction(w) {
+    value: function evaluateFunction(jsFnc) {
       try {
-        var fn = new Function("Thread", w);
+        var fn = new Function("Thread", jsFnc);
         return fn.apply(this, [thread_wrapper_1.ThreadWrapper]);
       } catch (e) {
         Api.log(e.toString());
@@ -1741,9 +1745,9 @@ function () {
     }
   }, {
     key: "evaluatePtr",
-    value: function evaluatePtr(w) {
+    value: function evaluatePtr(pointer) {
       try {
-        return ptr(eval(w));
+        return ptr(eval(pointer));
       } catch (e) {
         return NULL;
       }
@@ -2386,6 +2390,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.Breakpoint = void 0;
 
 var Breakpoint = function Breakpoint(target) {
   (0, _classCallCheck2["default"])(this, Breakpoint);
@@ -2413,6 +2418,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.Dwarf = void 0;
 
 var api_1 = require("./api");
 
@@ -2428,230 +2434,232 @@ var logic_watchpoint_1 = require("./logic_watchpoint");
 
 var utils_1 = require("./utils");
 
-var Dwarf =
-/*#__PURE__*/
-function () {
-  function Dwarf() {
-    (0, _classCallCheck2["default"])(this, Dwarf);
-  }
-
-  (0, _createClass2["default"])(Dwarf, null, [{
-    key: "init",
-    value: function init(breakStart, debug, spawned) {
-      Dwarf.BREAK_START = breakStart;
-      Dwarf.DEBUG = debug;
-      Dwarf.SPAWNED = spawned;
-
-      if (logic_java_1.LogicJava.available) {
-        logic_java_1.LogicJava.init();
-      }
-
-      logic_initialization_1.LogicInitialization.init();
-      interceptor_1.DwarfInterceptor.init();
-      var exclusions = ['constructor', 'length', 'name', 'prototype'];
-      (0, _getOwnPropertyNames["default"])(api_1.Api).forEach(function (prop) {
-        if (exclusions.indexOf(prop) < 0) {
-          global[prop] = api_1.Api[prop];
-        }
-      });
-
-      if (Process.platform === 'windows') {
-        this.modulesBlacklist.push('ntdll.dll');
-
-        if (Process.arch === 'x64') {
-          this.modulesBlacklist.push('win32u.dll');
-        }
-      } else if (Process.platform === 'linux') {
-        if (utils_1.Utils.isDefined(logic_java_1.LogicJava) && logic_java_1.LogicJava.sdk <= 23) {
-          this.modulesBlacklist.push('app_process');
-        }
-      }
-
-      Process.setExceptionHandler(Dwarf.handleException);
-
-      if (Process.platform === 'windows') {
-        if (Dwarf.SPAWNED && Dwarf.BREAK_START) {
-          var initialHook = Interceptor.attach(api_1.Api.findExport('RtlUserThreadStart'), function () {
-            var address = null;
-
-            if (Process.arch === 'ia32') {
-              var context = this.context;
-              address = context.eax;
-            } else if (Process.arch === 'x64') {
-              var _context = this.context;
-              address = _context.rax;
-            }
-
-            if (utils_1.Utils.isDefined(address)) {
-              var startInterceptor = Interceptor.attach(address, function () {
-                logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context);
-                startInterceptor.detach();
-              });
-              initialHook.detach();
-            }
-          });
-        }
-      }
-
-      Dwarf.dispatchContextInfo(logic_breakpoint_1.LogicBreakpoint.REASON_SET_INITIAL_CONTEXT);
+var Dwarf = function () {
+  var Dwarf = /*#__PURE__*/function () {
+    function Dwarf() {
+      (0, _classCallCheck2["default"])(this, Dwarf);
     }
-  }, {
-    key: "dispatchContextInfo",
-    value: function dispatchContextInfo(reason, address_or_class, context) {
-      var tid = Process.getCurrentThreadId();
-      var data = {
-        "tid": tid,
-        "reason": reason,
-        "ptr": address_or_class
-      };
 
-      if (reason === logic_breakpoint_1.LogicBreakpoint.REASON_SET_INITIAL_CONTEXT) {
-        data['arch'] = Process.arch;
-        data['platform'] = Process.platform;
-        data['java'] = Java.available;
-        data['objc'] = ObjC.available;
-        data['pid'] = Process.id;
-        data['pointerSize'] = Process.pointerSize;
-      }
+    (0, _createClass2["default"])(Dwarf, null, [{
+      key: "init",
+      value: function init(breakStart, debug, spawned) {
+        Dwarf.BREAK_START = breakStart;
+        Dwarf.DEBUG = debug;
+        Dwarf.SPAWNED = spawned;
 
-      if (utils_1.Utils.isDefined(context)) {
-        if (Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing infos for valid context');
+        if (logic_java_1.LogicJava.available) {
+          logic_java_1.LogicJava.init();
         }
 
-        data['context'] = context;
-
-        if (utils_1.Utils.isDefined(context['pc'])) {
-          var symbol = null;
-
-          try {
-            symbol = DebugSymbol.fromAddress(context.pc);
-          } catch (e) {
-            utils_1.Utils.logErr('_sendInfos', e);
+        logic_initialization_1.LogicInitialization.init();
+        interceptor_1.DwarfInterceptor.init();
+        var exclusions = ['constructor', 'length', 'name', 'prototype'];
+        (0, _getOwnPropertyNames["default"])(api_1.Api).forEach(function (prop) {
+          if (exclusions.indexOf(prop) < 0) {
+            global[prop] = api_1.Api[prop];
           }
-
-          if (Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing native backtrace');
-          }
-
-          data['backtrace'] = {
-            'bt': api_1.Api.backtrace(context),
-            'type': 'native'
-          };
-          data['is_java'] = false;
-
-          if (Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing context registers');
-          }
-
-          var newCtx = {};
-
-          for (var reg in context) {
-            var val = context[reg];
-            var isValidPtr = false;
-
-            if (Dwarf.DEBUG) {
-              utils_1.Utils.logDebug('[' + tid + '] getting register information:', reg, val);
-            }
-
-            var ts = api_1.Api.getAddressTs(val);
-            isValidPtr = ts[0] > 0;
-            newCtx[reg] = {
-              'value': val,
-              'isValidPointer': isValidPtr,
-              'telescope': ts
-            };
-
-            if (reg === 'pc') {
-              if (symbol !== null) {
-                newCtx[reg]['symbol'] = symbol;
-              }
-
-              try {
-                var inst = Instruction.parse(val);
-                newCtx[reg]['instruction'] = {
-                  'size': inst.size,
-                  'groups': inst.groups,
-                  'thumb': inst.groups.indexOf('thumb') >= 0 || inst.groups.indexOf('thumb2') >= 0
-                };
-              } catch (e) {
-                utils_1.Utils.logErr('_sendInfos', e);
-              }
-            }
-          }
-
-          data['context'] = newCtx;
-        } else {
-          data['is_java'] = true;
-
-          if (Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing java backtrace');
-          }
-
-          data['backtrace'] = {
-            'bt': api_1.Api.javaBacktrace(),
-            'type': 'java'
-          };
-        }
-      }
-
-      if (Dwarf.DEBUG) {
-        utils_1.Utils.logDebug('[' + tid + '] sendInfos - dispatching infos');
-      }
-
-      Dwarf.loggedSend('set_context:::' + (0, _stringify["default"])(data));
-    }
-  }, {
-    key: "handleException",
-    value: function handleException(exception) {
-      if (Dwarf.DEBUG) {
-        var dontLog = false;
+        });
 
         if (Process.platform === 'windows') {
-          var reg = null;
+          this.modulesBlacklist.push('ntdll.dll');
 
           if (Process.arch === 'x64') {
-            reg = exception['context']['rax'];
-          } else if (Process.arch === 'ia32') {
-            reg = exception['context']['eax'];
+            this.modulesBlacklist.push('win32u.dll');
           }
-
-          if (reg !== null && reg.readInt() === 0x406d1388) {
-            dontLog = true;
+        } else if (Process.platform === 'linux') {
+          if (utils_1.Utils.isDefined(logic_java_1.LogicJava) && logic_java_1.LogicJava.sdk <= 23) {
+            this.modulesBlacklist.push('app_process');
           }
         }
 
-        if (!dontLog) {
-          console.log('[' + Process.getCurrentThreadId() + '] exception handler: ' + (0, _stringify["default"])(exception));
+        Process.setExceptionHandler(Dwarf.handleException);
+
+        if (Process.platform === 'windows') {
+          if (Dwarf.SPAWNED && Dwarf.BREAK_START) {
+            var initialHook = Interceptor.attach(api_1.Api.findExport('RtlUserThreadStart'), function () {
+              var address = null;
+
+              if (Process.arch === 'ia32') {
+                var context = this.context;
+                address = context.eax;
+              } else if (Process.arch === 'x64') {
+                var _context = this.context;
+                address = _context.rax;
+              }
+
+              if (utils_1.Utils.isDefined(address)) {
+                var startInterceptor = Interceptor.attach(address, function () {
+                  logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context);
+                  startInterceptor.detach();
+                });
+                initialHook.detach();
+              }
+            });
+          }
         }
-      }
 
-      if (Process.platform === 'windows') {
-        if (exception['type'] === 'access-violation') {
-          return true;
+        Dwarf.dispatchContextInfo(logic_breakpoint_1.LogicBreakpoint.REASON_SET_INITIAL_CONTEXT);
+      }
+    }, {
+      key: "dispatchContextInfo",
+      value: function dispatchContextInfo(reason, address_or_class, context) {
+        var tid = Process.getCurrentThreadId();
+        var data = {
+          "tid": tid,
+          "reason": reason,
+          "ptr": address_or_class
+        };
+
+        if (reason === logic_breakpoint_1.LogicBreakpoint.REASON_SET_INITIAL_CONTEXT) {
+          data['arch'] = Process.arch;
+          data['platform'] = Process.platform;
+          data['java'] = Java.available;
+          data['objc'] = ObjC.available;
+          data['pid'] = Process.id;
+          data['pointerSize'] = Process.pointerSize;
         }
-      }
 
-      var watchpoint = logic_watchpoint_1.LogicWatchpoint.handleException(exception);
-      return watchpoint !== null;
-    }
-  }, {
-    key: "loggedSend",
-    value: function loggedSend(w, p) {
-      if (Dwarf.DEBUG) {
-        console.log('[' + Process.getCurrentThreadId() + '] send | ' + w);
-      }
+        if (utils_1.Utils.isDefined(context)) {
+          if (Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing infos for valid context');
+          }
 
-      return send(w, p);
-    }
-  }]);
+          data['context'] = context;
+
+          if (utils_1.Utils.isDefined(context['pc'])) {
+            var symbol = null;
+
+            try {
+              symbol = DebugSymbol.fromAddress(context.pc);
+            } catch (e) {
+              utils_1.Utils.logErr('_sendInfos', e);
+            }
+
+            if (Dwarf.DEBUG) {
+              utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing native backtrace');
+            }
+
+            data['backtrace'] = {
+              'bt': api_1.Api.backtrace(context),
+              'type': 'native'
+            };
+            data['is_java'] = false;
+
+            if (Dwarf.DEBUG) {
+              utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing context registers');
+            }
+
+            var newCtx = {};
+
+            for (var reg in context) {
+              var val = context[reg];
+              var isValidPtr = false;
+
+              if (Dwarf.DEBUG) {
+                utils_1.Utils.logDebug('[' + tid + '] getting register information:', reg, val);
+              }
+
+              var ts = api_1.Api.getAddressTs(val);
+              isValidPtr = ts[0] > 0;
+              newCtx[reg] = {
+                'value': val,
+                'isValidPointer': isValidPtr,
+                'telescope': ts
+              };
+
+              if (reg === 'pc') {
+                if (symbol !== null) {
+                  newCtx[reg]['symbol'] = symbol;
+                }
+
+                try {
+                  var inst = Instruction.parse(val);
+                  newCtx[reg]['instruction'] = {
+                    'size': inst.size,
+                    'groups': inst.groups,
+                    'thumb': inst.groups.indexOf('thumb') >= 0 || inst.groups.indexOf('thumb2') >= 0
+                  };
+                } catch (e) {
+                  utils_1.Utils.logErr('_sendInfos', e);
+                }
+              }
+            }
+
+            data['context'] = newCtx;
+          } else {
+            data['is_java'] = true;
+
+            if (Dwarf.DEBUG) {
+              utils_1.Utils.logDebug('[' + tid + '] sendInfos - preparing java backtrace');
+            }
+
+            data['backtrace'] = {
+              'bt': api_1.Api.javaBacktrace(),
+              'type': 'java'
+            };
+          }
+        }
+
+        if (Dwarf.DEBUG) {
+          utils_1.Utils.logDebug('[' + tid + '] sendInfos - dispatching infos');
+        }
+
+        Dwarf.loggedSend('set_context:::' + (0, _stringify["default"])(data));
+      }
+    }, {
+      key: "handleException",
+      value: function handleException(exception) {
+        if (Dwarf.DEBUG) {
+          var dontLog = false;
+
+          if (Process.platform === 'windows') {
+            var reg = null;
+
+            if (Process.arch === 'x64') {
+              reg = exception['context']['rax'];
+            } else if (Process.arch === 'ia32') {
+              reg = exception['context']['eax'];
+            }
+
+            if (reg !== null && reg.readInt() === 0x406d1388) {
+              dontLog = true;
+            }
+          }
+
+          if (!dontLog) {
+            console.log('[' + Process.getCurrentThreadId() + '] exception handler: ' + (0, _stringify["default"])(exception));
+          }
+        }
+
+        if (Process.platform === 'windows') {
+          if (exception['type'] === 'access-violation') {
+            return true;
+          }
+        }
+
+        var watchpoint = logic_watchpoint_1.LogicWatchpoint.handleException(exception);
+        return watchpoint !== null;
+      }
+    }, {
+      key: "loggedSend",
+      value: function loggedSend(w, p) {
+        if (Dwarf.DEBUG) {
+          console.log('[' + Process.getCurrentThreadId() + '] send | ' + w);
+        }
+
+        return send(w, p);
+      }
+    }]);
+    return Dwarf;
+  }();
+
+  Dwarf.PROC_RESUMED = false;
+  Dwarf.threadContexts = {};
+  Dwarf.modulesBlacklist = [];
   return Dwarf;
 }();
 
 exports.Dwarf = Dwarf;
-Dwarf.PROC_RESUMED = false;
-Dwarf.threadContexts = {};
-Dwarf.modulesBlacklist = [];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./api":101,"./interceptor":106,"./logic_breakpoint":107,"./logic_initialization":108,"./logic_java":109,"./logic_watchpoint":112,"./utils":117,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],104:[function(require,module,exports){
@@ -2668,12 +2676,11 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.FileSystem = void 0;
 
 var api_1 = require("./api");
 
-var FileSystem =
-/*#__PURE__*/
-function () {
+var FileSystem = /*#__PURE__*/function () {
   function FileSystem() {
     (0, _classCallCheck2["default"])(this, FileSystem);
   }
@@ -2924,6 +2931,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.DwarfInterceptor = void 0;
 
 var utils_1 = require("./utils");
 
@@ -2931,9 +2939,7 @@ var dwarf_1 = require("./dwarf");
 
 var thread_context_1 = require("./thread_context");
 
-var DwarfInterceptor =
-/*#__PURE__*/
-function () {
+var DwarfInterceptor = /*#__PURE__*/function () {
   function DwarfInterceptor() {
     (0, _classCallCheck2["default"])(this, DwarfInterceptor);
   }
@@ -3039,6 +3045,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicBreakpoint = void 0;
 
 var api_1 = require("./api");
 
@@ -3056,272 +3063,274 @@ var thread_context_1 = require("./thread_context");
 
 var utils_1 = require("./utils");
 
-var LogicBreakpoint =
-/*#__PURE__*/
-function () {
-  function LogicBreakpoint() {
-    (0, _classCallCheck2["default"])(this, LogicBreakpoint);
-  }
-
-  (0, _createClass2["default"])(LogicBreakpoint, null, [{
-    key: "breakpoint",
-    value: function breakpoint(reason, address_or_class, context, java_handle, condition) {
-      var tid = Process.getCurrentThreadId();
-
-      if (!utils_1.Utils.isDefined(reason)) {
-        reason = LogicBreakpoint.REASON_BREAKPOINT;
-      }
-
-      if (dwarf_1.Dwarf.DEBUG) {
-        utils_1.Utils.logDebug('[' + tid + '] breakpoint ' + address_or_class + ' - reason: ' + reason);
-      }
-
-      var threadContext = dwarf_1.Dwarf.threadContexts[tid];
-
-      if (!utils_1.Utils.isDefined(threadContext) && utils_1.Utils.isDefined(context)) {
-        threadContext = new thread_context_1.ThreadContext(tid);
-        threadContext.context = context;
-        dwarf_1.Dwarf.threadContexts[tid] = threadContext;
-      }
-
-      if (utils_1.Utils.isDefined(condition)) {
-        if (typeof condition === "string") {
-          condition = new Function(condition);
-        }
-
-        if (!condition.call(threadContext)) {
-          delete dwarf_1.Dwarf.threadContexts[tid];
-          return;
-        }
-      }
-
-      if (!utils_1.Utils.isDefined(threadContext) || !threadContext.preventSleep) {
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] break ' + address_or_class + ' - dispatching context info');
-        }
-
-        dwarf_1.Dwarf.dispatchContextInfo(reason, address_or_class, context);
-
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] break ' + address_or_class + ' - sleeping context. goodnight!');
-        }
-
-        LogicBreakpoint.loopApi(threadContext);
-
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] ThreadContext has been released');
-        }
-
-        dwarf_1.Dwarf.loggedSend('release:::' + tid + ':::' + reason);
-      }
+var LogicBreakpoint = function () {
+  var LogicBreakpoint = /*#__PURE__*/function () {
+    function LogicBreakpoint() {
+      (0, _classCallCheck2["default"])(this, LogicBreakpoint);
     }
-  }, {
-    key: "loopApi",
-    value: function loopApi(that) {
-      var tid = Process.getCurrentThreadId();
 
-      if (dwarf_1.Dwarf.DEBUG) {
-        utils_1.Utils.logDebug('[' + tid + '] looping api');
-      }
+    (0, _createClass2["default"])(LogicBreakpoint, null, [{
+      key: "breakpoint",
+      value: function breakpoint(reason, address_or_class, context, java_handle, condition) {
+        var tid = Process.getCurrentThreadId();
 
-      var op = recv('' + tid, function () {});
-      op.wait();
-      var threadContext = dwarf_1.Dwarf.threadContexts[tid];
-
-      if (utils_1.Utils.isDefined(threadContext)) {
-        while (threadContext.apiQueue.length === 0) {
-          if (dwarf_1.Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] waiting api queue to be populated');
-          }
-
-          Thread.sleep(0.2);
+        if (!utils_1.Utils.isDefined(reason)) {
+          reason = LogicBreakpoint.REASON_BREAKPOINT;
         }
 
-        var release = false;
+        if (dwarf_1.Dwarf.DEBUG) {
+          utils_1.Utils.logDebug('[' + tid + '] breakpoint ' + address_or_class + ' - reason: ' + reason);
+        }
 
-        while (threadContext.apiQueue.length > 0) {
-          var threadApi = threadContext.apiQueue.shift();
+        var threadContext = dwarf_1.Dwarf.threadContexts[tid];
 
-          if (dwarf_1.Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] executing ' + threadApi.apiFunction);
+        if (!utils_1.Utils.isDefined(threadContext) && utils_1.Utils.isDefined(context)) {
+          threadContext = new thread_context_1.ThreadContext(tid);
+          threadContext.context = context;
+          dwarf_1.Dwarf.threadContexts[tid] = threadContext;
+        }
+
+        if (utils_1.Utils.isDefined(condition)) {
+          if (typeof condition === "string") {
+            condition = new Function(condition);
           }
 
-          try {
-            if (utils_1.Utils.isDefined(api_1.Api[threadApi.apiFunction])) {
-              threadApi.result = api_1.Api[threadApi.apiFunction].apply(that, threadApi.apiArguments);
-            } else {
-              threadApi.result = null;
+          if (!condition.call(threadContext)) {
+            delete dwarf_1.Dwarf.threadContexts[tid];
+            return;
+          }
+        }
+
+        if (!utils_1.Utils.isDefined(threadContext) || !threadContext.preventSleep) {
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + tid + '] break ' + address_or_class + ' - dispatching context info');
+          }
+
+          dwarf_1.Dwarf.dispatchContextInfo(reason, address_or_class, context);
+
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + tid + '] break ' + address_or_class + ' - sleeping context. goodnight!');
+          }
+
+          LogicBreakpoint.loopApi(threadContext);
+
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + tid + '] ThreadContext has been released');
+          }
+
+          dwarf_1.Dwarf.loggedSend('release:::' + tid + ':::' + reason);
+        }
+      }
+    }, {
+      key: "loopApi",
+      value: function loopApi(that) {
+        var tid = Process.getCurrentThreadId();
+
+        if (dwarf_1.Dwarf.DEBUG) {
+          utils_1.Utils.logDebug('[' + tid + '] looping api');
+        }
+
+        var op = recv('' + tid, function () {});
+        op.wait();
+        var threadContext = dwarf_1.Dwarf.threadContexts[tid];
+
+        if (utils_1.Utils.isDefined(threadContext)) {
+          while (threadContext.apiQueue.length === 0) {
+            if (dwarf_1.Dwarf.DEBUG) {
+              utils_1.Utils.logDebug('[' + tid + '] waiting api queue to be populated');
             }
-          } catch (e) {
-            threadApi.result = null;
+
+            Thread.sleep(0.2);
+          }
+
+          var release = false;
+
+          while (threadContext.apiQueue.length > 0) {
+            var threadApi = threadContext.apiQueue.shift();
 
             if (dwarf_1.Dwarf.DEBUG) {
-              utils_1.Utils.logDebug('[' + tid + '] error executing ' + threadApi.apiFunction + ':\n' + e);
+              utils_1.Utils.logDebug('[' + tid + '] executing ' + threadApi.apiFunction);
+            }
+
+            try {
+              if (utils_1.Utils.isDefined(api_1.Api[threadApi.apiFunction])) {
+                threadApi.result = api_1.Api[threadApi.apiFunction].apply(that, threadApi.apiArguments);
+              } else {
+                threadApi.result = null;
+              }
+            } catch (e) {
+              threadApi.result = null;
+
+              if (dwarf_1.Dwarf.DEBUG) {
+                utils_1.Utils.logDebug('[' + tid + '] error executing ' + threadApi.apiFunction + ':\n' + e);
+              }
+            }
+
+            threadApi.consumed = true;
+            var stalkerInfo = logic_stalker_1.LogicStalker.stalkerInfoMap[tid];
+
+            if (threadApi.apiFunction === '_step') {
+              if (!utils_1.Utils.isDefined(stalkerInfo)) {
+                logic_stalker_1.LogicStalker.stalk(tid);
+              }
+
+              release = true;
+              break;
+            } else if (threadApi.apiFunction === 'release') {
+              if (utils_1.Utils.isDefined(stalkerInfo)) {
+                stalkerInfo.terminated = true;
+              }
+
+              release = true;
+              break;
             }
           }
 
-          threadApi.consumed = true;
-          var stalkerInfo = logic_stalker_1.LogicStalker.stalkerInfoMap[tid];
-
-          if (threadApi.apiFunction === '_step') {
-            if (!utils_1.Utils.isDefined(stalkerInfo)) {
-              logic_stalker_1.LogicStalker.stalk(tid);
-            }
-
-            release = true;
-            break;
-          } else if (threadApi.apiFunction === 'release') {
-            if (utils_1.Utils.isDefined(stalkerInfo)) {
-              stalkerInfo.terminated = true;
-            }
-
-            release = true;
-            break;
+          if (!release) {
+            LogicBreakpoint.loopApi(that);
           }
-        }
-
-        if (!release) {
-          LogicBreakpoint.loopApi(that);
         }
       }
-    }
-  }, {
-    key: "putBreakpoint",
-    value: function putBreakpoint(target, condition) {
-      if (typeof target === 'string') {
-        if (target.startsWith('0x')) {
+    }, {
+      key: "putBreakpoint",
+      value: function putBreakpoint(target, condition) {
+        if (typeof target === 'string') {
+          if (target.startsWith('0x')) {
+            target = ptr(target);
+          } else if (target.indexOf('.') >= 0 && logic_java_1.LogicJava.available) {
+            var added = logic_java_1.LogicJava.putBreakpoint(target, condition);
+
+            if (added) {
+              dwarf_1.Dwarf.loggedSend('breakpoint_java_callback:::' + target + ':::' + (utils_1.Utils.isDefined(condition) ? condition.toString() : ''));
+            }
+
+            return added;
+          } else if (target.indexOf('.') >= 0 && logic_objc_1.LogicObjC.available) {
+            var _added = logic_objc_1.LogicObjC.putBreakpoint(target, condition);
+
+            if (_added) {
+              dwarf_1.Dwarf.loggedSend('breakpoint_objc_callback:::' + target + ':::' + (utils_1.Utils.isDefined(condition) ? condition.toString() : ''));
+            }
+
+            return _added;
+          }
+        } else if (typeof target === 'number') {
           target = ptr(target);
-        } else if (target.indexOf('.') >= 0 && logic_java_1.LogicJava.available) {
-          var added = logic_java_1.LogicJava.putBreakpoint(target, condition);
-
-          if (added) {
-            dwarf_1.Dwarf.loggedSend('breakpoint_java_callback:::' + target + ':::' + (utils_1.Utils.isDefined(condition) ? condition.toString() : ''));
-          }
-
-          return added;
-        } else if (target.indexOf('.') >= 0 && logic_objc_1.LogicObjC.available) {
-          var _added = logic_objc_1.LogicObjC.putBreakpoint(target, condition);
-
-          if (_added) {
-            dwarf_1.Dwarf.loggedSend('breakpoint_objc_callback:::' + target + ':::' + (utils_1.Utils.isDefined(condition) ? condition.toString() : ''));
-          }
-
-          return _added;
         }
-      } else if (typeof target === 'number') {
-        target = ptr(target);
-      }
 
-      if (utils_1.Utils.isDefined(LogicBreakpoint.breakpoints[target.toString()])) {
-        console.log(target + ' already has a breakpoint');
+        if (utils_1.Utils.isDefined(LogicBreakpoint.breakpoints[target.toString()])) {
+          console.log(target + ' already has a breakpoint');
+          return false;
+        }
+
+        if (target.constructor.name === 'NativePointer') {
+          target = target;
+          var breakpoint = new breakpoint_1.Breakpoint(target);
+
+          if (!utils_1.Utils.isDefined(condition)) {
+            condition = null;
+          }
+
+          breakpoint.condition = condition;
+          LogicBreakpoint.breakpoints[target.toString()] = breakpoint;
+          LogicBreakpoint.putNativeBreakpoint(breakpoint);
+          dwarf_1.Dwarf.loggedSend('breakpoint_native_callback:::' + breakpoint.target.toString() + ':::' + (utils_1.Utils.isDefined(breakpoint.condition) ? breakpoint.condition.toString() : ''));
+          return true;
+        }
+
         return false;
       }
+    }, {
+      key: "putNativeBreakpoint",
+      value: function putNativeBreakpoint(breakpoint) {
+        breakpoint.interceptor = Interceptor.attach(breakpoint.target, function () {
+          breakpoint.interceptor.detach();
+          Interceptor['flush']();
+          LogicBreakpoint.breakpoint(LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context, null, breakpoint.condition);
 
-      if (target.constructor.name === 'NativePointer') {
-        target = target;
-        var breakpoint = new breakpoint_1.Breakpoint(target);
+          if (typeof LogicBreakpoint.breakpoints[breakpoint.target.toString()] !== 'undefined') {
+            LogicBreakpoint.putNativeBreakpoint(breakpoint);
+          }
+        });
+        return true;
+      }
+    }, {
+      key: "removeBreakpoint",
+      value: function removeBreakpoint(target) {
+        if (typeof target === 'string') {
+          if (target.startsWith('0x')) {
+            target = ptr(target);
+          } else if (target.indexOf('.') >= 0 && logic_java_1.LogicJava.available) {
+            var removed = logic_java_1.LogicJava.removeBreakpoint(target);
 
-        if (!utils_1.Utils.isDefined(condition)) {
-          condition = null;
+            if (removed) {
+              dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::java:::' + target);
+            }
+
+            return removed;
+          } else if (target.indexOf('.') >= 0 && logic_objc_1.LogicObjC.available) {
+            var _removed = logic_objc_1.LogicObjC.removeBreakpoint(target);
+
+            if (_removed) {
+              dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::objc:::' + target);
+            }
+
+            return _removed;
+          }
+        } else if (typeof target === 'number') {
+          target = ptr(target);
+        }
+
+        var breakpoint = LogicBreakpoint.breakpoints[target.toString()];
+        console.log(breakpoint.interceptor);
+
+        if (utils_1.Utils.isDefined(breakpoint)) {
+          if (utils_1.Utils.isDefined(breakpoint.interceptor)) {
+            breakpoint.interceptor.detach();
+          }
+
+          delete LogicBreakpoint.breakpoints[target.toString()];
+          dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::native:::' + target.toString());
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "setBreakpointCondition",
+      value: function setBreakpointCondition(target, condition) {
+        if (typeof target === 'string') {
+          if (target.startsWith('0x')) {
+            target = ptr(target);
+          }
+        } else if (typeof target === 'number') {
+          target = ptr(target);
+        }
+
+        var breakpoint = LogicBreakpoint.breakpoints[target.toString()];
+
+        if (!utils_1.Utils.isDefined(breakpoint)) {
+          console.log(target + ' is not in breakpoint list');
+          return false;
         }
 
         breakpoint.condition = condition;
-        LogicBreakpoint.breakpoints[target.toString()] = breakpoint;
-        LogicBreakpoint.putNativeBreakpoint(breakpoint);
-        dwarf_1.Dwarf.loggedSend('breakpoint_native_callback:::' + breakpoint.target.toString() + ':::' + (utils_1.Utils.isDefined(breakpoint.condition) ? breakpoint.condition.toString() : ''));
         return true;
       }
+    }]);
+    return LogicBreakpoint;
+  }();
 
-      return false;
-    }
-  }, {
-    key: "putNativeBreakpoint",
-    value: function putNativeBreakpoint(breakpoint) {
-      breakpoint.interceptor = Interceptor.attach(breakpoint.target, function () {
-        breakpoint.interceptor.detach();
-        Interceptor['flush']();
-        LogicBreakpoint.breakpoint(LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context, null, breakpoint.condition);
-
-        if (typeof LogicBreakpoint.breakpoints[breakpoint.target.toString()] !== 'undefined') {
-          LogicBreakpoint.putNativeBreakpoint(breakpoint);
-        }
-      });
-      return true;
-    }
-  }, {
-    key: "removeBreakpoint",
-    value: function removeBreakpoint(target) {
-      if (typeof target === 'string') {
-        if (target.startsWith('0x')) {
-          target = ptr(target);
-        } else if (target.indexOf('.') >= 0 && logic_java_1.LogicJava.available) {
-          var removed = logic_java_1.LogicJava.removeBreakpoint(target);
-
-          if (removed) {
-            dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::java:::' + target);
-          }
-
-          return removed;
-        } else if (target.indexOf('.') >= 0 && logic_objc_1.LogicObjC.available) {
-          var _removed = logic_objc_1.LogicObjC.removeBreakpoint(target);
-
-          if (_removed) {
-            dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::objc:::' + target);
-          }
-
-          return _removed;
-        }
-      } else if (typeof target === 'number') {
-        target = ptr(target);
-      }
-
-      var breakpoint = LogicBreakpoint.breakpoints[target.toString()];
-      console.log(breakpoint.interceptor);
-
-      if (utils_1.Utils.isDefined(breakpoint)) {
-        if (utils_1.Utils.isDefined(breakpoint.interceptor)) {
-          breakpoint.interceptor.detach();
-        }
-
-        delete LogicBreakpoint.breakpoints[target.toString()];
-        dwarf_1.Dwarf.loggedSend('breakpoint_deleted:::native:::' + target.toString());
-        return true;
-      }
-
-      return false;
-    }
-  }, {
-    key: "setBreakpointCondition",
-    value: function setBreakpointCondition(target, condition) {
-      if (typeof target === 'string') {
-        if (target.startsWith('0x')) {
-          target = ptr(target);
-        }
-      } else if (typeof target === 'number') {
-        target = ptr(target);
-      }
-
-      var breakpoint = LogicBreakpoint.breakpoints[target.toString()];
-
-      if (!utils_1.Utils.isDefined(breakpoint)) {
-        console.log(target + ' is not in breakpoint list');
-        return false;
-      }
-
-      breakpoint.condition = condition;
-      return true;
-    }
-  }]);
+  LogicBreakpoint.REASON_SET_INITIAL_CONTEXT = -1;
+  LogicBreakpoint.REASON_BREAKPOINT = 0;
+  LogicBreakpoint.REASON_WATCHPOINT = 1;
+  LogicBreakpoint.REASON_BREAKPOINT_INITIALIZATION = 2;
+  LogicBreakpoint.REASON_STEP = 3;
+  LogicBreakpoint.breakpoints = {};
   return LogicBreakpoint;
 }();
 
 exports.LogicBreakpoint = LogicBreakpoint;
-LogicBreakpoint.REASON_SET_INITIAL_CONTEXT = -1;
-LogicBreakpoint.REASON_BREAKPOINT = 0;
-LogicBreakpoint.REASON_WATCHPOINT = 1;
-LogicBreakpoint.REASON_BREAKPOINT_INITIALIZATION = 2;
-LogicBreakpoint.REASON_STEP = 3;
-LogicBreakpoint.breakpoints = {};
 
 },{"./api":101,"./breakpoint":102,"./dwarf":103,"./logic_java":109,"./logic_objc":110,"./logic_stalker":111,"./thread_context":115,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],108:[function(require,module,exports){
 "use strict";
@@ -3343,6 +3352,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicInitialization = void 0;
 
 var api_1 = require("./api");
 
@@ -3354,231 +3364,233 @@ var logic_java_1 = require("./logic_java");
 
 var utils_1 = require("./utils");
 
-var LogicInitialization =
-/*#__PURE__*/
-function () {
-  function LogicInitialization() {
-    (0, _classCallCheck2["default"])(this, LogicInitialization);
-  }
-
-  (0, _createClass2["default"])(LogicInitialization, null, [{
-    key: "hitModuleLoading",
-    value: function hitModuleLoading(moduleName) {
-      if (!utils_1.Utils.isString(moduleName)) {
-        return;
-      }
-
-      if (dwarf_1.Dwarf.modulesBlacklist.indexOf(moduleName) >= 0) {
-        return;
-      }
-
-      var module = Process.findModuleByName(moduleName);
-
-      if (module === null) {
-        return;
-      }
-
-      var moduleInfo = api_1.Api.enumerateModuleInfo(module);
-      var tid = Process.getCurrentThreadId();
-      dwarf_1.Dwarf.loggedSend('module_initialized:::' + tid + ':::' + (0, _stringify["default"])(moduleInfo));
-      var modIndex = (0, _keys["default"])(LogicInitialization.nativeModuleInitializationCallbacks).find(function (ownModuleName) {
-        if (ownModuleName === moduleName) {
-          return moduleName;
-        }
-      });
-
-      if (utils_1.Utils.isDefined(modIndex)) {
-        var userCallback = LogicInitialization.nativeModuleInitializationCallbacks[modIndex];
-
-        if (utils_1.Utils.isDefined(userCallback)) {
-          userCallback.call(this);
-        } else {
-          dwarf_1.Dwarf.loggedSend("breakpoint_module_initialization_callback:::" + tid + ':::' + (0, _stringify["default"])({
-            'module': moduleInfo['name'],
-            'moduleBase': moduleInfo['base'],
-            'moduleEntry': moduleInfo['entry']
-          }));
-          logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT_INITIALIZATION, this['context'].pc, this['context']);
-        }
-      }
+var LogicInitialization = function () {
+  var LogicInitialization = /*#__PURE__*/function () {
+    function LogicInitialization() {
+      (0, _classCallCheck2["default"])(this, LogicInitialization);
     }
-  }, {
-    key: "init",
-    value: function init() {
-      if (Process.platform === 'windows') {
-        var module = Process.findModuleByName('kernel32.dll');
 
-        if (module !== null) {
-          var symbols = module.enumerateExports();
-          var loadliba_ptr = NULL;
-          var loadlibexa_ptr = NULL;
-          var loadlibw_ptr = NULL;
-          var loadlibexw_ptr = NULL;
-          symbols.forEach(function (symbol) {
-            if (symbol.name.indexOf('LoadLibraryA') >= 0) {
-              loadliba_ptr = symbol.address;
-            } else if (symbol.name.indexOf('LoadLibraryW') >= 0) {
-              loadlibw_ptr = symbol.address;
-            } else if (symbol.name.indexOf('LoadLibraryExA') >= 0) {
-              loadlibexa_ptr = symbol.address;
-            } else if (symbol.name.indexOf('LoadLibraryExW') >= 0) {
-              loadlibexw_ptr = symbol.address;
-            }
+    (0, _createClass2["default"])(LogicInitialization, null, [{
+      key: "hitModuleLoading",
+      value: function hitModuleLoading(moduleName) {
+        if (!utils_1.Utils.isString(moduleName)) {
+          return;
+        }
 
-            if (loadliba_ptr != NULL && loadlibw_ptr != NULL && loadlibexa_ptr != NULL && loadlibexw_ptr != NULL) {
-              return;
-            }
-          });
+        if (dwarf_1.Dwarf.modulesBlacklist.indexOf(moduleName) >= 0) {
+          return;
+        }
 
-          if (loadliba_ptr != NULL && loadlibw_ptr != NULL && loadlibexa_ptr != NULL && loadlibexw_ptr != NULL) {
-            Interceptor.attach(loadliba_ptr, function (args) {
-              try {
-                var w = args[0].readAnsiString();
-                LogicInitialization.hitModuleLoading.apply(this, [w]);
-              } catch (e) {
-                utils_1.Utils.logErr('Dwarf.start', e);
-              }
-            });
-            Interceptor.attach(loadlibexa_ptr, function (args) {
-              try {
-                var w = args[0].readAnsiString();
-                LogicInitialization.hitModuleLoading.apply(this, [w]);
-              } catch (e) {
-                utils_1.Utils.logErr('Dwarf.start', e);
-              }
-            });
-            Interceptor.attach(loadlibw_ptr, function (args) {
-              try {
-                var w = args[0].readUtf16String();
-                LogicInitialization.hitModuleLoading.apply(this, [w]);
-              } catch (e) {
-                utils_1.Utils.logErr('Dwarf.start', e);
-              }
-            });
-            Interceptor.attach(loadlibexw_ptr, function (args) {
-              try {
-                var w = args[0].readUtf16String();
-                LogicInitialization.hitModuleLoading.apply(this, [w]);
-              } catch (e) {
-                utils_1.Utils.logErr('Dwarf.start', e);
-              }
-            });
+        var module = Process.findModuleByName(moduleName);
+
+        if (module === null) {
+          return;
+        }
+
+        var moduleInfo = api_1.Api.enumerateModuleInfo(module);
+        var tid = Process.getCurrentThreadId();
+        dwarf_1.Dwarf.loggedSend('module_initialized:::' + tid + ':::' + (0, _stringify["default"])(moduleInfo));
+        var modIndex = (0, _keys["default"])(LogicInitialization.nativeModuleInitializationCallbacks).find(function (ownModuleName) {
+          if (ownModuleName === moduleName) {
+            return moduleName;
+          }
+        });
+
+        if (utils_1.Utils.isDefined(modIndex)) {
+          var userCallback = LogicInitialization.nativeModuleInitializationCallbacks[modIndex];
+
+          if (utils_1.Utils.isDefined(userCallback)) {
+            userCallback.call(this);
+          } else {
+            dwarf_1.Dwarf.loggedSend("breakpoint_module_initialization_callback:::" + tid + ':::' + (0, _stringify["default"])({
+              'module': moduleInfo['name'],
+              'moduleBase': moduleInfo['base'],
+              'moduleEntry': moduleInfo['entry']
+            }));
+            logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT_INITIALIZATION, this['context'].pc, this['context']);
           }
         }
-      } else if (logic_java_1.LogicJava.available) {
-        var artModule = Process.findModuleByName("libart.so");
+      }
+    }, {
+      key: "init",
+      value: function init() {
+        if (Process.platform === 'windows') {
+          var module = Process.findModuleByName('kernel32.dll');
 
-        if (artModule) {
-          var _iteratorNormalCompletion = true;
-          var _didIteratorError = false;
-          var _iteratorError = undefined;
+          if (module !== null) {
+            var symbols = module.enumerateExports();
+            var loadliba_ptr = NULL;
+            var loadlibexa_ptr = NULL;
+            var loadlibw_ptr = NULL;
+            var loadlibexw_ptr = NULL;
+            symbols.forEach(function (symbol) {
+              if (symbol.name.indexOf('LoadLibraryA') >= 0) {
+                loadliba_ptr = symbol.address;
+              } else if (symbol.name.indexOf('LoadLibraryW') >= 0) {
+                loadlibw_ptr = symbol.address;
+              } else if (symbol.name.indexOf('LoadLibraryExA') >= 0) {
+                loadlibexa_ptr = symbol.address;
+              } else if (symbol.name.indexOf('LoadLibraryExW') >= 0) {
+                loadlibexw_ptr = symbol.address;
+              }
 
-          try {
-            for (var _iterator = (0, _getIterator2["default"])(artModule.enumerateExports()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-              var moduleExportDetail = _step.value;
+              if (loadliba_ptr != NULL && loadlibw_ptr != NULL && loadlibexa_ptr != NULL && loadlibexw_ptr != NULL) {
+                return;
+              }
+            });
 
-              if (moduleExportDetail.name.indexOf("LoadNativeLibrary") != -1) {
-                (function () {
-                  var argNum = logic_java_1.LogicJava.sdk <= 22 ? 1 : 2;
-                  Interceptor.attach(moduleExportDetail.address, {
+            if (loadliba_ptr != NULL && loadlibw_ptr != NULL && loadlibexa_ptr != NULL && loadlibexw_ptr != NULL) {
+              Interceptor.attach(loadliba_ptr, function (args) {
+                try {
+                  var w = args[0].readAnsiString();
+                  LogicInitialization.hitModuleLoading.apply(this, [w]);
+                } catch (e) {
+                  utils_1.Utils.logErr('Dwarf.start', e);
+                }
+              });
+              Interceptor.attach(loadlibexa_ptr, function (args) {
+                try {
+                  var w = args[0].readAnsiString();
+                  LogicInitialization.hitModuleLoading.apply(this, [w]);
+                } catch (e) {
+                  utils_1.Utils.logErr('Dwarf.start', e);
+                }
+              });
+              Interceptor.attach(loadlibw_ptr, function (args) {
+                try {
+                  var w = args[0].readUtf16String();
+                  LogicInitialization.hitModuleLoading.apply(this, [w]);
+                } catch (e) {
+                  utils_1.Utils.logErr('Dwarf.start', e);
+                }
+              });
+              Interceptor.attach(loadlibexw_ptr, function (args) {
+                try {
+                  var w = args[0].readUtf16String();
+                  LogicInitialization.hitModuleLoading.apply(this, [w]);
+                } catch (e) {
+                  utils_1.Utils.logErr('Dwarf.start', e);
+                }
+              });
+            }
+          }
+        } else if (logic_java_1.LogicJava.available) {
+          var artModule = Process.findModuleByName("libart.so");
+
+          if (artModule) {
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+              for (var _iterator = (0, _getIterator2["default"])(artModule.enumerateExports()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var moduleExportDetail = _step.value;
+
+                if (moduleExportDetail.name.indexOf("LoadNativeLibrary") != -1) {
+                  (function () {
+                    var argNum = logic_java_1.LogicJava.sdk <= 22 ? 1 : 2;
+                    Interceptor.attach(moduleExportDetail.address, {
+                      onEnter: function onEnter(args) {
+                        var moduleName = utils_1.Utils.readStdString(args[argNum]);
+                        LogicInitialization.hitModuleLoading.apply(this, [moduleName]);
+                      }
+                    });
+                  })();
+                }
+              }
+            } catch (err) {
+              _didIteratorError = true;
+              _iteratorError = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+                  _iterator["return"]();
+                }
+              } finally {
+                if (_didIteratorError) {
+                  throw _iteratorError;
+                }
+              }
+            }
+          }
+
+          var dvmModule = Process.findModuleByName("libdvm.so");
+
+          if (dvmModule) {
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+              for (var _iterator2 = (0, _getIterator2["default"])(dvmModule.enumerateExports()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var _moduleExportDetail = _step2.value;
+
+                if (_moduleExportDetail.name.indexOf("dvmLoadNativeCode") != -1) {
+                  Interceptor.attach(_moduleExportDetail.address, {
                     onEnter: function onEnter(args) {
-                      var moduleName = utils_1.Utils.readStdString(args[argNum]);
+                      var moduleName = args[0].readUtf8String();
                       LogicInitialization.hitModuleLoading.apply(this, [moduleName]);
                     }
                   });
-                })();
+                }
               }
-            }
-          } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-                _iterator["return"]();
-              }
+            } catch (err) {
+              _didIteratorError2 = true;
+              _iteratorError2 = err;
             } finally {
-              if (_didIteratorError) {
-                throw _iteratorError;
-              }
-            }
-          }
-        }
-
-        var dvmModule = Process.findModuleByName("libdvm.so");
-
-        if (dvmModule) {
-          var _iteratorNormalCompletion2 = true;
-          var _didIteratorError2 = false;
-          var _iteratorError2 = undefined;
-
-          try {
-            for (var _iterator2 = (0, _getIterator2["default"])(dvmModule.enumerateExports()), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-              var _moduleExportDetail = _step2.value;
-
-              if (_moduleExportDetail.name.indexOf("dvmLoadNativeCode") != -1) {
-                Interceptor.attach(_moduleExportDetail.address, {
-                  onEnter: function onEnter(args) {
-                    var moduleName = args[0].readUtf8String();
-                    LogicInitialization.hitModuleLoading.apply(this, [moduleName]);
-                  }
-                });
-              }
-            }
-          } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-                _iterator2["return"]();
-              }
-            } finally {
-              if (_didIteratorError2) {
-                throw _iteratorError2;
+              try {
+                if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+                  _iterator2["return"]();
+                }
+              } finally {
+                if (_didIteratorError2) {
+                  throw _iteratorError2;
+                }
               }
             }
           }
         }
       }
-    }
-  }, {
-    key: "hookModuleInitialization",
-    value: function hookModuleInitialization(moduleName, callback) {
-      if (!utils_1.Utils.isString(moduleName) || utils_1.Utils.isDefined(LogicInitialization.nativeModuleInitializationCallbacks[moduleName])) {
-        return false;
-      }
+    }, {
+      key: "hookModuleInitialization",
+      value: function hookModuleInitialization(moduleName, callback) {
+        if (!utils_1.Utils.isString(moduleName) || utils_1.Utils.isDefined(LogicInitialization.nativeModuleInitializationCallbacks[moduleName])) {
+          return false;
+        }
 
-      LogicInitialization.nativeModuleInitializationCallbacks[moduleName] = callback;
-      return true;
-    }
-  }, {
-    key: "putModuleInitializationBreakpoint",
-    value: function putModuleInitializationBreakpoint(moduleName) {
-      var applied = LogicInitialization.hookModuleInitialization(moduleName, null);
-
-      if (applied) {
-        dwarf_1.Dwarf.loggedSend('module_initialization_callback:::' + moduleName);
-      }
-
-      return applied;
-    }
-  }, {
-    key: "removeModuleInitializationBreakpoint",
-    value: function removeModuleInitializationBreakpoint(moduleName) {
-      if (typeof LogicInitialization.nativeModuleInitializationCallbacks[moduleName] !== 'undefined') {
-        delete LogicInitialization.nativeModuleInitializationCallbacks[moduleName];
+        LogicInitialization.nativeModuleInitializationCallbacks[moduleName] = callback;
         return true;
       }
+    }, {
+      key: "putModuleInitializationBreakpoint",
+      value: function putModuleInitializationBreakpoint(moduleName) {
+        var applied = LogicInitialization.hookModuleInitialization(moduleName, null);
 
-      return false;
-    }
-  }]);
+        if (applied) {
+          dwarf_1.Dwarf.loggedSend('module_initialization_callback:::' + moduleName);
+        }
+
+        return applied;
+      }
+    }, {
+      key: "removeModuleInitializationBreakpoint",
+      value: function removeModuleInitializationBreakpoint(moduleName) {
+        if (typeof LogicInitialization.nativeModuleInitializationCallbacks[moduleName] !== 'undefined') {
+          delete LogicInitialization.nativeModuleInitializationCallbacks[moduleName];
+          return true;
+        }
+
+        return false;
+      }
+    }]);
+    return LogicInitialization;
+  }();
+
+  LogicInitialization.nativeModuleInitializationCallbacks = {};
   return LogicInitialization;
 }();
 
 exports.LogicInitialization = LogicInitialization;
-LogicInitialization.nativeModuleInitializationCallbacks = {};
 
 },{"./api":101,"./dwarf":103,"./logic_breakpoint":107,"./logic_java":109,"./utils":117,"@babel/runtime-corejs2/core-js/get-iterator":2,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],109:[function(require,module,exports){
 "use strict";
@@ -3600,6 +3612,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicJava = void 0;
 
 var breakpoint_1 = require("./breakpoint");
 
@@ -3611,609 +3624,611 @@ var utils_1 = require("./utils");
 
 var isDefined = utils_1.Utils.isDefined;
 
-var LogicJava =
-/*#__PURE__*/
-function () {
-  function LogicJava() {
-    (0, _classCallCheck2["default"])(this, LogicJava);
-  }
+var LogicJava = function () {
+  var LogicJava = /*#__PURE__*/function () {
+    function LogicJava() {
+      (0, _classCallCheck2["default"])(this, LogicJava);
+    }
 
-  (0, _createClass2["default"])(LogicJava, null, [{
-    key: "applyTracerImplementation",
-    value: function applyTracerImplementation(attach, callback) {
-      Java.performNow(function () {
-        LogicJava.tracedClasses.forEach(function (className) {
-          try {
-            var clazz = Java.use(className);
-            var overloadCount = clazz["$init"].overloads.length;
-
-            if (overloadCount > 0) {
-              for (var i = 0; i < overloadCount; i++) {
-                if (attach) {
-                  clazz["$init"].overloads[i].implementation = LogicJava.traceImplementation(callback, className, '$init');
-                } else {
-                  clazz["$init"].overloads[i].implementation = null;
-                }
-              }
-            }
-
-            var methods = clazz["class"].getDeclaredMethods();
-            var parsedMethods = [];
-            methods.forEach(function (method) {
-              parsedMethods.push(method.toString().replace(className + ".", "TOKEN").match(/\sTOKEN(.*)\(/)[1]);
-            });
-            methods = utils_1.Utils.uniqueBy(parsedMethods);
-            methods.forEach(function (method) {
-              var overloadCount = clazz[method].overloads.length;
+    (0, _createClass2["default"])(LogicJava, null, [{
+      key: "applyTracerImplementation",
+      value: function applyTracerImplementation(attach, callback) {
+        Java.performNow(function () {
+          LogicJava.tracedClasses.forEach(function (className) {
+            try {
+              var clazz = Java.use(className);
+              var overloadCount = clazz["$init"].overloads.length;
 
               if (overloadCount > 0) {
-                for (var _i = 0; _i < overloadCount; _i++) {
+                for (var i = 0; i < overloadCount; i++) {
                   if (attach) {
-                    clazz[method].overloads[_i].implementation = LogicJava.traceImplementation(callback, className, method);
+                    clazz["$init"].overloads[i].implementation = LogicJava.traceImplementation(callback, className, '$init');
                   } else {
-                    clazz[method].overloads[_i].implementation = null;
+                    clazz["$init"].overloads[i].implementation = null;
                   }
                 }
               }
-            });
-            clazz.$dispose();
-          } catch (e) {
-            utils_1.Utils.logErr('LogicJava.startTrace', e);
-          }
-        });
-      });
-    }
-  }, {
-    key: "backtrace",
-    value: function backtrace() {
-      return Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new());
-    }
-  }, {
-    key: "getApplicationContext",
-    value: function getApplicationContext() {
-      if (!LogicJava.available) {
-        return;
-      }
 
-      var ActivityThread = Java.use('android.app.ActivityThread');
-      var Context = Java.use('android.content.Context');
-      var context = Java.cast(ActivityThread.currentApplication().getApplicationContext(), Context);
-      ActivityThread.$dispose();
-      Context.$dispose();
-      return context;
-    }
-  }, {
-    key: "hook",
-    value: function hook(className, method, implementation) {
-      if (!LogicJava.available) {
-        return false;
-      }
+              var methods = clazz["class"].getDeclaredMethods();
+              var parsedMethods = [];
+              methods.forEach(function (method) {
+                parsedMethods.push(method.toString().replace(className + ".", "TOKEN").match(/\sTOKEN(.*)\(/)[1]);
+              });
+              methods = utils_1.Utils.uniqueBy(parsedMethods);
+              methods.forEach(function (method) {
+                var overloadCount = clazz[method].overloads.length;
 
-      var result = false;
-      Java.performNow(function () {
-        result = LogicJava.hookInJVM(className, method, implementation);
-      });
-      return result;
-    }
-  }, {
-    key: "hookAllJavaMethods",
-    value: function hookAllJavaMethods(className, implementation) {
-      if (!Java.available) {
-        return false;
-      }
-
-      if (!utils_1.Utils.isDefined(className)) {
-        return false;
-      }
-
-      var that = this;
-      Java.performNow(function () {
-        var clazz = Java.use(className);
-        var methods = clazz["class"].getDeclaredMethods();
-        var parsedMethods = [];
-        methods.forEach(function (method) {
-          parsedMethods.push(method.toString().replace(className + ".", "TOKEN").match(/\sTOKEN(.*)\(/)[1]);
-        });
-        var result = utils_1.Utils.uniqueBy(parsedMethods);
-        result.forEach(function (method) {
-          LogicJava.hookInJVM(className, method, implementation);
-        });
-        clazz.$dispose();
-      });
-      return true;
-    }
-  }, {
-    key: "hookClassLoaderClassInitialization",
-    value: function hookClassLoaderClassInitialization(clazz, callback) {
-      if (!utils_1.Utils.isString(clazz) || utils_1.Utils.isDefined(LogicJava.javaClassLoaderCallbacks[clazz])) {
-        return false;
-      }
-
-      LogicJava.javaClassLoaderCallbacks[clazz] = callback;
-      return true;
-    }
-  }, {
-    key: "hookInJVM",
-    value: function hookInJVM(className, method, implementation) {
-      var handler = null;
-
-      try {
-        handler = Java.use(className);
-      } catch (err) {
-        try {
-          className = className + '.' + method;
-          method = '$init';
-          handler = Java.use(className);
-        } catch (err) {
-          return false;
-        }
-
-        utils_1.Utils.logErr('LogicJava.hook', err);
-
-        if (handler === null) {
-          return false;
-        }
-      }
-
-      try {
-        if (handler == null || typeof handler[method] === 'undefined') {
-          return false;
-        }
-      } catch (e) {
-        utils_1.Utils.logErr('LogicJava.hook', e);
-        return false;
-      }
-
-      var overloadCount = handler[method].overloads.length;
-
-      if (overloadCount > 0) {
-        var _loop = function _loop(i) {
-          var overload = handler[method].overloads[i];
-
-          if (utils_1.Utils.isDefined(implementation)) {
-            overload.implementation = function () {
-              LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
-              this.className = className;
-              this.method = method;
-              this.overload = overload;
-              var ret = implementation.apply(this, arguments);
-
-              if (typeof ret !== 'undefined') {
-                return ret;
-              }
-
-              delete LogicJava.javaContexts[Process.getCurrentThreadId()];
-              return this.overload.apply(this, arguments);
-            };
-          } else {
-            overload.implementation = implementation;
-          }
-        };
-
-        for (var i = 0; i < overloadCount; i++) {
-          _loop(i);
-        }
-      }
-
-      handler.$dispose();
-    }
-  }, {
-    key: "hookJavaMethod",
-    value: function hookJavaMethod(targetClassMethod, implementation) {
-      if (utils_1.Utils.isDefined(targetClassMethod)) {
-        var delim = targetClassMethod.lastIndexOf(".");
-
-        if (delim === -1) {
-          return false;
-        }
-
-        var targetClass = targetClassMethod.slice(0, delim);
-        var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
-        return LogicJava.hook(targetClass, targetMethod, implementation);
-      }
-
-      return false;
-    }
-  }, {
-    key: "init",
-    value: function init() {
-      Java.performNow(function () {
-        LogicJava.sdk = Java.use('android.os.Build$VERSION')['SDK_INT']['value'];
-
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + Process.getCurrentThreadId() + '] ' + 'initializing logicJava with sdk: ' + LogicJava.sdk);
-        }
-
-        if (dwarf_1.Dwarf.SPAWNED && dwarf_1.Dwarf.BREAK_START) {
-          if (LogicJava.sdk >= 23) {
-            LogicJava.hookInJVM('com.android.internal.os.RuntimeInit', 'commonInit', function () {
-              LogicJava.jvmBreakpoint.call(this, 'com.android.internal.os.RuntimeInit', 'commonInit', arguments, this.overload.argumentTypes);
-            });
-          } else {
-            LogicJava.hookInJVM('android.app.Application', 'onCreate', function () {
-              LogicJava.jvmBreakpoint.call(this, 'android.app.Application', 'onCreate', arguments, this.overload.argumentTypes);
-            });
-          }
-        }
-
-        var handler = Java.use('java.lang.ClassLoader');
-        var overload = handler.loadClass.overload('java.lang.String', 'boolean');
-
-        overload.implementation = function (clazz, resolve) {
-          if (LogicJava.javaClasses.indexOf(clazz) === -1) {
-            LogicJava.javaClasses.push(clazz);
-            dwarf_1.Dwarf.loggedSend('class_loader_loading_class:::' + Process.getCurrentThreadId() + ':::' + clazz);
-            var userCallback = LogicJava.javaClassLoaderCallbacks[clazz];
-
-            if (typeof userCallback !== 'undefined') {
-              if (userCallback !== null) {
-                userCallback.call(this);
-              } else {
-                dwarf_1.Dwarf.loggedSend("java_class_initialization_callback:::" + clazz + ':::' + Process.getCurrentThreadId());
-                logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, clazz, {}, this);
-              }
-            }
-          }
-
-          return overload.call(this, clazz, resolve);
-        };
-      });
-    }
-  }, {
-    key: "jvmBreakpoint",
-    value: function jvmBreakpoint(className, method, args, types, condition) {
-      var classMethod = className + '.' + method;
-      var newArgs = {};
-
-      for (var i = 0; i < args.length; i++) {
-        var value = '';
-
-        if (args[i] === null || typeof args[i] === 'undefined') {
-          value = 'null';
-        } else {
-          if ((0, _typeof2["default"])(args[i]) === 'object') {
-            value = (0, _stringify["default"])(args[i]);
-
-            if (types[i]['className'] === '[B') {
-              value += ' (' + Java.use('java.lang.String').$new(args[i]) + ")";
-            }
-          } else {
-            value = args[i].toString();
-          }
-        }
-
-        newArgs[i] = {
-          arg: value,
-          name: types[i]['name'],
-          handle: args[i],
-          className: types[i]['className']
-        };
-      }
-
-      logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, classMethod, newArgs, this, condition);
-    }
-  }, {
-    key: "jvmExplorer",
-    value: function jvmExplorer(what) {
-      var handle;
-
-      if (typeof what === 'undefined') {
-        LogicJava.javaHandles = {};
-        handle = LogicJava.javaContexts[Process.getCurrentThreadId()];
-
-        if (!isDefined(handle)) {
-          console.log('jvm explorer outside context scope');
-          return null;
-        }
-      } else if ((0, _typeof2["default"])(what) === 'object') {
-        if (typeof what['handle_class'] !== 'undefined') {
-          var cl = Java.use(what['handle_class']);
-          handle = what['handle'];
-
-          if (typeof handle === 'string') {
-            handle = LogicJava.javaHandles[handle];
-
-            if (typeof handle === 'undefined') {
-              return null;
-            }
-          } else if ((0, _typeof2["default"])(handle) === 'object') {
-            try {
-              handle = Java.cast(ptr(handle['$handle']), cl);
-            } catch (e) {
-              utils_1.Utils.logErr('jvmExplorer', e + ' | ' + handle['$handle']);
-              return null;
-            }
-          } else {
-            try {
-              handle = Java.cast(ptr(handle), cl);
-            } catch (e) {
-              utils_1.Utils.logErr('jvmExplorer', e + ' | ' + handle);
-              return null;
-            }
-          }
-
-          cl.$dispose();
-        } else {
-          handle = what;
-        }
-      } else {
-        console.log('Explorer handle not found');
-        return {};
-      }
-
-      if (handle === null || typeof handle === 'undefined') {
-        console.log('Explorer handle null');
-        return {};
-      }
-
-      var ol;
-
-      try {
-        ol = (0, _getOwnPropertyNames["default"])(handle.__proto__);
-      } catch (e) {
-        utils_1.Utils.logErr('jvmExplorer-1', e);
-        return null;
-      }
-
-      var clazz = '';
-
-      if (typeof handle['$className'] !== 'undefined') {
-        clazz = handle['$className'];
-      }
-
-      var ret = {
-        'class': clazz,
-        'data': {}
-      };
-
-      for (var o in ol) {
-        var name = ol[o];
-
-        try {
-          var overloads = [];
-          var t = (0, _typeof2["default"])(handle[name]);
-          var value = '';
-          var sub_handle = null;
-          var sub_handle_class = '';
-
-          if (t === 'function') {
-            if (typeof handle[name].overloads !== 'undefined') {
-              var overloadCount = handle[name].overloads.length;
-
-              if (overloadCount > 0) {
-                for (var i in handle[name].overloads) {
-                  overloads.push({
-                    'args': handle[name].overloads[i].argumentTypes,
-                    'return': handle[name].overloads[i].returnType
-                  });
-                }
-              }
-            }
-          } else if (t === 'object') {
-            if (handle[name] !== null) {
-              sub_handle_class = handle[name]['$className'];
-            }
-
-            if (typeof handle[name]['$handle'] !== 'undefined' && handle[name]['$handle'] !== null) {
-              value = handle[name]['$handle'];
-              sub_handle = handle[name]['$handle'];
-            } else {
-              if (handle[name] !== null && handle[name]['value'] !== null) {
-                sub_handle_class = handle[name]['value']['$className'];
-              }
-
-              if (handle[name] !== null && handle[name]['value'] !== null && (0, _typeof2["default"])(handle[name]['value']) === 'object') {
-                if (typeof handle[name]['fieldReturnType'] !== 'undefined') {
-                  sub_handle = handle[name]['value'];
-
-                  if (typeof sub_handle['$handle'] !== 'undefined') {
-                    var pt = sub_handle['$handle'];
-                    LogicJava.javaHandles[pt] = sub_handle;
-                    sub_handle = pt;
-                    value = handle[name]['fieldReturnType']['className'];
-                    sub_handle_class = value;
-                  } else {
-                    t = handle[name]['fieldReturnType']['type'];
-                    sub_handle_class = handle[name]['fieldReturnType']['className'];
-
-                    if (handle[name]['fieldReturnType']['type'] !== 'pointer') {
-                      value = sub_handle_class;
+                if (overloadCount > 0) {
+                  for (var _i = 0; _i < overloadCount; _i++) {
+                    if (attach) {
+                      clazz[method].overloads[_i].implementation = LogicJava.traceImplementation(callback, className, method);
                     } else {
-                      if (handle[name]['value'] !== null) {
-                        value = handle[name]['value'].toString();
-                        t = (0, _typeof2["default"])(value);
-                      }
+                      clazz[method].overloads[_i].implementation = null;
                     }
                   }
-                } else if (handle[name]['value'] !== null) {
-                  value = handle[name]['value'].toString();
-                  t = (0, _typeof2["default"])(value);
                 }
-              } else if (handle[name]['value'] !== null) {
-                t = (0, _typeof2["default"])(handle[name]['value']);
-                value = handle[name]['value'].toString();
+              });
+              clazz.$dispose();
+            } catch (e) {
+              utils_1.Utils.logErr('LogicJava.startTrace', e);
+            }
+          });
+        });
+      }
+    }, {
+      key: "backtrace",
+      value: function backtrace() {
+        return Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new());
+      }
+    }, {
+      key: "getApplicationContext",
+      value: function getApplicationContext() {
+        if (!LogicJava.available) {
+          return;
+        }
+
+        var ActivityThread = Java.use('android.app.ActivityThread');
+        var Context = Java.use('android.content.Context');
+        var context = Java.cast(ActivityThread.currentApplication().getApplicationContext(), Context);
+        ActivityThread.$dispose();
+        Context.$dispose();
+        return context;
+      }
+    }, {
+      key: "hook",
+      value: function hook(className, method, implementation) {
+        if (!LogicJava.available) {
+          return false;
+        }
+
+        var result = false;
+        Java.performNow(function () {
+          result = LogicJava.hookInJVM(className, method, implementation);
+        });
+        return result;
+      }
+    }, {
+      key: "hookAllJavaMethods",
+      value: function hookAllJavaMethods(className, implementation) {
+        if (!Java.available) {
+          return false;
+        }
+
+        if (!utils_1.Utils.isDefined(className)) {
+          return false;
+        }
+
+        var that = this;
+        Java.performNow(function () {
+          var clazz = Java.use(className);
+          var methods = clazz["class"].getDeclaredMethods();
+          var parsedMethods = [];
+          methods.forEach(function (method) {
+            parsedMethods.push(method.toString().replace(className + ".", "TOKEN").match(/\sTOKEN(.*)\(/)[1]);
+          });
+          var result = utils_1.Utils.uniqueBy(parsedMethods);
+          result.forEach(function (method) {
+            LogicJava.hookInJVM(className, method, implementation);
+          });
+          clazz.$dispose();
+        });
+        return true;
+      }
+    }, {
+      key: "hookClassLoaderClassInitialization",
+      value: function hookClassLoaderClassInitialization(clazz, callback) {
+        if (!utils_1.Utils.isString(clazz) || utils_1.Utils.isDefined(LogicJava.javaClassLoaderCallbacks[clazz])) {
+          return false;
+        }
+
+        LogicJava.javaClassLoaderCallbacks[clazz] = callback;
+        return true;
+      }
+    }, {
+      key: "hookInJVM",
+      value: function hookInJVM(className, method, implementation) {
+        var handler = null;
+
+        try {
+          handler = Java.use(className);
+        } catch (err) {
+          try {
+            className = className + '.' + method;
+            method = '$init';
+            handler = Java.use(className);
+          } catch (err) {
+            return false;
+          }
+
+          utils_1.Utils.logErr('LogicJava.hook', err);
+
+          if (handler === null) {
+            return false;
+          }
+        }
+
+        try {
+          if (handler == null || typeof handler[method] === 'undefined') {
+            return false;
+          }
+        } catch (e) {
+          utils_1.Utils.logErr('LogicJava.hook', e);
+          return false;
+        }
+
+        var overloadCount = handler[method].overloads.length;
+
+        if (overloadCount > 0) {
+          var _loop = function _loop(i) {
+            var overload = handler[method].overloads[i];
+
+            if (utils_1.Utils.isDefined(implementation)) {
+              overload.implementation = function () {
+                LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
+                this.className = className;
+                this.method = method;
+                this.overload = overload;
+                var ret = implementation.apply(this, arguments);
+
+                if (typeof ret !== 'undefined') {
+                  return ret;
+                }
+
+                delete LogicJava.javaContexts[Process.getCurrentThreadId()];
+                return this.overload.apply(this, arguments);
+              };
+            } else {
+              overload.implementation = implementation;
+            }
+          };
+
+          for (var i = 0; i < overloadCount; i++) {
+            _loop(i);
+          }
+        }
+
+        handler.$dispose();
+      }
+    }, {
+      key: "hookJavaMethod",
+      value: function hookJavaMethod(targetClassMethod, implementation) {
+        if (utils_1.Utils.isDefined(targetClassMethod)) {
+          var delim = targetClassMethod.lastIndexOf(".");
+
+          if (delim === -1) {
+            return false;
+          }
+
+          var targetClass = targetClassMethod.slice(0, delim);
+          var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
+          return LogicJava.hook(targetClass, targetMethod, implementation);
+        }
+
+        return false;
+      }
+    }, {
+      key: "init",
+      value: function init() {
+        Java.performNow(function () {
+          LogicJava.sdk = Java.use('android.os.Build$VERSION')['SDK_INT']['value'];
+
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + Process.getCurrentThreadId() + '] ' + 'initializing logicJava with sdk: ' + LogicJava.sdk);
+          }
+
+          if (dwarf_1.Dwarf.SPAWNED && dwarf_1.Dwarf.BREAK_START) {
+            if (LogicJava.sdk >= 23) {
+              LogicJava.hookInJVM('com.android.internal.os.RuntimeInit', 'commonInit', function () {
+                LogicJava.jvmBreakpoint.call(this, 'com.android.internal.os.RuntimeInit', 'commonInit', arguments, this.overload.argumentTypes);
+              });
+            } else {
+              LogicJava.hookInJVM('android.app.Application', 'onCreate', function () {
+                LogicJava.jvmBreakpoint.call(this, 'android.app.Application', 'onCreate', arguments, this.overload.argumentTypes);
+              });
+            }
+          }
+
+          var handler = Java.use('java.lang.ClassLoader');
+          var overload = handler.loadClass.overload('java.lang.String', 'boolean');
+
+          overload.implementation = function (clazz, resolve) {
+            if (LogicJava.javaClasses.indexOf(clazz) === -1) {
+              LogicJava.javaClasses.push(clazz);
+              dwarf_1.Dwarf.loggedSend('class_loader_loading_class:::' + Process.getCurrentThreadId() + ':::' + clazz);
+              var userCallback = LogicJava.javaClassLoaderCallbacks[clazz];
+
+              if (typeof userCallback !== 'undefined') {
+                if (userCallback !== null) {
+                  userCallback.call(this);
+                } else {
+                  dwarf_1.Dwarf.loggedSend("java_class_initialization_callback:::" + clazz + ':::' + Process.getCurrentThreadId());
+                  logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, clazz, {}, this);
+                }
               }
             }
-          } else {
-            value = handle[name];
-          }
 
-          ret['data'][name] = {
-            'value': value,
-            'handle': sub_handle,
-            'handle_class': sub_handle_class,
-            'type': t,
-            'overloads': overloads
+            return overload.call(this, clazz, resolve);
           };
-        } catch (e) {
-          utils_1.Utils.logErr('jvmExplorer-2', e);
-        }
-      }
-
-      return ret;
-    }
-  }, {
-    key: "putBreakpoint",
-    value: function putBreakpoint(target, condition) {
-      if (!utils_1.Utils.isString(target) || utils_1.Utils.isDefined(LogicJava.breakpoints[target])) {
-        return false;
-      }
-
-      var breakpoint = new breakpoint_1.Breakpoint(target);
-
-      if (!utils_1.Utils.isDefined(condition)) {
-        condition = null;
-      }
-
-      breakpoint.condition = condition;
-      LogicJava.breakpoints[target] = breakpoint;
-      var result = false;
-
-      if (target.endsWith('.$init')) {
-        result = LogicJava.hook(target, '$init', function () {
-          LogicJava.jvmBreakpoint(this.className, this.method, arguments, this.overload.argumentTypes, condition);
-        });
-      } else {
-        result = LogicJava.hookJavaMethod(target, function () {
-          LogicJava.jvmBreakpoint(this.className, this.method, arguments, this.overload.argumentTypes, condition);
         });
       }
-
-      return result;
-    }
-  }, {
-    key: "putJavaClassInitializationBreakpoint",
-    value: function putJavaClassInitializationBreakpoint(className) {
-      var applied = LogicJava.hookClassLoaderClassInitialization(className, null);
-
-      if (applied) {
-        dwarf_1.Dwarf.loggedSend('java_class_initialization_callback:::' + className);
-      }
-
-      return applied;
-    }
-  }, {
-    key: "removeBreakpoint",
-    value: function removeBreakpoint(target) {
-      if (!utils_1.Utils.isString(target)) {
-        return false;
-      }
-
-      var breakpoint = LogicJava.breakpoints[target];
-
-      if (utils_1.Utils.isDefined(breakpoint)) {
-        delete logic_breakpoint_1.LogicBreakpoint.breakpoints[target.toString()];
-        LogicJava.hookJavaMethod(breakpoint.target, null);
-        return true;
-      }
-
-      return false;
-    }
-  }, {
-    key: "removeModuleInitializationBreakpoint",
-    value: function removeModuleInitializationBreakpoint(clazz) {
-      if (typeof LogicJava.javaClassLoaderCallbacks[clazz] !== 'undefined') {
-        delete LogicJava.javaClassLoaderCallbacks[clazz];
-        return true;
-      }
-
-      return false;
-    }
-  }, {
-    key: "restartApplication",
-    value: function restartApplication() {
-      if (!LogicJava.available) {
-        return false;
-      }
-
-      Java.performNow(function () {
-        var Intent = Java.use('android.content.Intent');
-        var ctx = LogicJava.getApplicationContext();
-        var intent = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP['value']);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK['value']);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK['value']);
-        ctx.startActivity(intent);
-      });
-      return true;
-    }
-  }, {
-    key: "startTrace",
-    value: function startTrace(classes, callback) {
-      if (!LogicJava.available || LogicJava.tracing) {
-        return false;
-      }
-
-      LogicJava.tracing = true;
-      LogicJava.tracedClasses = classes;
-      LogicJava.applyTracerImplementation(true, callback);
-      return true;
-    }
-  }, {
-    key: "stopTrace",
-    value: function stopTrace() {
-      if (!LogicJava.available || !LogicJava.tracing) {
-        return false;
-      }
-
-      LogicJava.tracing = false;
-      LogicJava.applyTracerImplementation(true);
-      return true;
-    }
-  }, {
-    key: "traceImplementation",
-    value: function traceImplementation(callback, className, method) {
-      return function () {
-        var uiCallback = !utils_1.Utils.isDefined(callback);
+    }, {
+      key: "jvmBreakpoint",
+      value: function jvmBreakpoint(className, method, args, types, condition) {
         var classMethod = className + '.' + method;
+        var newArgs = {};
 
-        if (uiCallback) {
-          dwarf_1.Dwarf.loggedSend('java_trace:::enter:::' + classMethod + ':::' + (0, _stringify["default"])(arguments));
-        } else {
-          if (utils_1.Utils.isDefined(callback['onEnter'])) {
-            callback['onEnter'](arguments);
+        for (var i = 0; i < args.length; i++) {
+          var value = '';
+
+          if (args[i] === null || typeof args[i] === 'undefined') {
+            value = 'null';
+          } else {
+            if ((0, _typeof2["default"])(args[i]) === 'object') {
+              value = (0, _stringify["default"])(args[i]);
+
+              if (types[i]['className'] === '[B') {
+                value += ' (' + Java.use('java.lang.String').$new(args[i]) + ")";
+              }
+            } else {
+              value = args[i].toString();
+            }
           }
+
+          newArgs[i] = {
+            arg: value,
+            name: types[i]['name'],
+            handle: args[i],
+            className: types[i]['className']
+          };
         }
 
-        var ret = this[method].apply(this, arguments);
+        logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, classMethod, newArgs, this, condition);
+      }
+    }, {
+      key: "jvmExplorer",
+      value: function jvmExplorer(what) {
+        var handle;
 
-        if (uiCallback) {
-          var traceRet = ret;
+        if (typeof what === 'undefined') {
+          LogicJava.javaHandles = {};
+          handle = LogicJava.javaContexts[Process.getCurrentThreadId()];
 
-          if ((0, _typeof2["default"])(traceRet) === 'object') {
-            traceRet = (0, _stringify["default"])(ret);
-          } else if (typeof traceRet === 'undefined') {
-            traceRet = "";
+          if (!isDefined(handle)) {
+            console.log('jvm explorer outside context scope');
+            return null;
           }
+        } else if ((0, _typeof2["default"])(what) === 'object') {
+          if (typeof what['handle_class'] !== 'undefined') {
+            var cl = Java.use(what['handle_class']);
+            handle = what['handle'];
 
-          dwarf_1.Dwarf.loggedSend('java_trace:::leave:::' + classMethod + ':::' + traceRet);
-        } else {
-          if (utils_1.Utils.isDefined(callback['onLeave'])) {
-            var tempRet = callback['onLeave'](ret);
+            if (typeof handle === 'string') {
+              handle = LogicJava.javaHandles[handle];
 
-            if (typeof tempRet !== 'undefined') {
-              ret = tempRet;
+              if (typeof handle === 'undefined') {
+                return null;
+              }
+            } else if ((0, _typeof2["default"])(handle) === 'object') {
+              try {
+                handle = Java.cast(ptr(handle['$handle']), cl);
+              } catch (e) {
+                utils_1.Utils.logErr('jvmExplorer', e + ' | ' + handle['$handle']);
+                return null;
+              }
+            } else {
+              try {
+                handle = Java.cast(ptr(handle), cl);
+              } catch (e) {
+                utils_1.Utils.logErr('jvmExplorer', e + ' | ' + handle);
+                return null;
+              }
             }
+
+            cl.$dispose();
+          } else {
+            handle = what;
+          }
+        } else {
+          console.log('Explorer handle not found');
+          return {};
+        }
+
+        if (handle === null || typeof handle === 'undefined') {
+          console.log('Explorer handle null');
+          return {};
+        }
+
+        var ol;
+
+        try {
+          ol = (0, _getOwnPropertyNames["default"])(handle.__proto__);
+        } catch (e) {
+          utils_1.Utils.logErr('jvmExplorer-1', e);
+          return null;
+        }
+
+        var clazz = '';
+
+        if (typeof handle['$className'] !== 'undefined') {
+          clazz = handle['$className'];
+        }
+
+        var ret = {
+          'class': clazz,
+          'data': {}
+        };
+
+        for (var o in ol) {
+          var name = ol[o];
+
+          try {
+            var overloads = [];
+            var t = (0, _typeof2["default"])(handle[name]);
+            var value = '';
+            var sub_handle = null;
+            var sub_handle_class = '';
+
+            if (t === 'function') {
+              if (typeof handle[name].overloads !== 'undefined') {
+                var overloadCount = handle[name].overloads.length;
+
+                if (overloadCount > 0) {
+                  for (var i in handle[name].overloads) {
+                    overloads.push({
+                      'args': handle[name].overloads[i].argumentTypes,
+                      'return': handle[name].overloads[i].returnType
+                    });
+                  }
+                }
+              }
+            } else if (t === 'object') {
+              if (handle[name] !== null) {
+                sub_handle_class = handle[name]['$className'];
+              }
+
+              if (typeof handle[name]['$handle'] !== 'undefined' && handle[name]['$handle'] !== null) {
+                value = handle[name]['$handle'];
+                sub_handle = handle[name]['$handle'];
+              } else {
+                if (handle[name] !== null && handle[name]['value'] !== null) {
+                  sub_handle_class = handle[name]['value']['$className'];
+                }
+
+                if (handle[name] !== null && handle[name]['value'] !== null && (0, _typeof2["default"])(handle[name]['value']) === 'object') {
+                  if (typeof handle[name]['fieldReturnType'] !== 'undefined') {
+                    sub_handle = handle[name]['value'];
+
+                    if (typeof sub_handle['$handle'] !== 'undefined') {
+                      var pt = sub_handle['$handle'];
+                      LogicJava.javaHandles[pt] = sub_handle;
+                      sub_handle = pt;
+                      value = handle[name]['fieldReturnType']['className'];
+                      sub_handle_class = value;
+                    } else {
+                      t = handle[name]['fieldReturnType']['type'];
+                      sub_handle_class = handle[name]['fieldReturnType']['className'];
+
+                      if (handle[name]['fieldReturnType']['type'] !== 'pointer') {
+                        value = sub_handle_class;
+                      } else {
+                        if (handle[name]['value'] !== null) {
+                          value = handle[name]['value'].toString();
+                          t = (0, _typeof2["default"])(value);
+                        }
+                      }
+                    }
+                  } else if (handle[name]['value'] !== null) {
+                    value = handle[name]['value'].toString();
+                    t = (0, _typeof2["default"])(value);
+                  }
+                } else if (handle[name]['value'] !== null) {
+                  t = (0, _typeof2["default"])(handle[name]['value']);
+                  value = handle[name]['value'].toString();
+                }
+              }
+            } else {
+              value = handle[name];
+            }
+
+            ret['data'][name] = {
+              'value': value,
+              'handle': sub_handle,
+              'handle_class': sub_handle_class,
+              'type': t,
+              'overloads': overloads
+            };
+          } catch (e) {
+            utils_1.Utils.logErr('jvmExplorer-2', e);
           }
         }
 
         return ret;
-      };
-    }
-  }]);
+      }
+    }, {
+      key: "putBreakpoint",
+      value: function putBreakpoint(target, condition) {
+        if (!utils_1.Utils.isString(target) || utils_1.Utils.isDefined(LogicJava.breakpoints[target])) {
+          return false;
+        }
+
+        var breakpoint = new breakpoint_1.Breakpoint(target);
+
+        if (!utils_1.Utils.isDefined(condition)) {
+          condition = null;
+        }
+
+        breakpoint.condition = condition;
+        LogicJava.breakpoints[target] = breakpoint;
+        var result = false;
+
+        if (target.endsWith('.$init')) {
+          result = LogicJava.hook(target, '$init', function () {
+            LogicJava.jvmBreakpoint(this.className, this.method, arguments, this.overload.argumentTypes, condition);
+          });
+        } else {
+          result = LogicJava.hookJavaMethod(target, function () {
+            LogicJava.jvmBreakpoint(this.className, this.method, arguments, this.overload.argumentTypes, condition);
+          });
+        }
+
+        return result;
+      }
+    }, {
+      key: "putJavaClassInitializationBreakpoint",
+      value: function putJavaClassInitializationBreakpoint(className) {
+        var applied = LogicJava.hookClassLoaderClassInitialization(className, null);
+
+        if (applied) {
+          dwarf_1.Dwarf.loggedSend('java_class_initialization_callback:::' + className);
+        }
+
+        return applied;
+      }
+    }, {
+      key: "removeBreakpoint",
+      value: function removeBreakpoint(target) {
+        if (!utils_1.Utils.isString(target)) {
+          return false;
+        }
+
+        var breakpoint = LogicJava.breakpoints[target];
+
+        if (utils_1.Utils.isDefined(breakpoint)) {
+          delete logic_breakpoint_1.LogicBreakpoint.breakpoints[target.toString()];
+          LogicJava.hookJavaMethod(breakpoint.target, null);
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "removeModuleInitializationBreakpoint",
+      value: function removeModuleInitializationBreakpoint(clazz) {
+        if (typeof LogicJava.javaClassLoaderCallbacks[clazz] !== 'undefined') {
+          delete LogicJava.javaClassLoaderCallbacks[clazz];
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "restartApplication",
+      value: function restartApplication() {
+        if (!LogicJava.available) {
+          return false;
+        }
+
+        Java.performNow(function () {
+          var Intent = Java.use('android.content.Intent');
+          var ctx = LogicJava.getApplicationContext();
+          var intent = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+          intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP['value']);
+          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK['value']);
+          intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK['value']);
+          ctx.startActivity(intent);
+        });
+        return true;
+      }
+    }, {
+      key: "startTrace",
+      value: function startTrace(classes, callback) {
+        if (!LogicJava.available || LogicJava.tracing) {
+          return false;
+        }
+
+        LogicJava.tracing = true;
+        LogicJava.tracedClasses = classes;
+        LogicJava.applyTracerImplementation(true, callback);
+        return true;
+      }
+    }, {
+      key: "stopTrace",
+      value: function stopTrace() {
+        if (!LogicJava.available || !LogicJava.tracing) {
+          return false;
+        }
+
+        LogicJava.tracing = false;
+        LogicJava.applyTracerImplementation(true);
+        return true;
+      }
+    }, {
+      key: "traceImplementation",
+      value: function traceImplementation(callback, className, method) {
+        return function () {
+          var uiCallback = !utils_1.Utils.isDefined(callback);
+          var classMethod = className + '.' + method;
+
+          if (uiCallback) {
+            dwarf_1.Dwarf.loggedSend('java_trace:::enter:::' + classMethod + ':::' + (0, _stringify["default"])(arguments));
+          } else {
+            if (utils_1.Utils.isDefined(callback['onEnter'])) {
+              callback['onEnter'](arguments);
+            }
+          }
+
+          var ret = this[method].apply(this, arguments);
+
+          if (uiCallback) {
+            var traceRet = ret;
+
+            if ((0, _typeof2["default"])(traceRet) === 'object') {
+              traceRet = (0, _stringify["default"])(ret);
+            } else if (typeof traceRet === 'undefined') {
+              traceRet = "";
+            }
+
+            dwarf_1.Dwarf.loggedSend('java_trace:::leave:::' + classMethod + ':::' + traceRet);
+          } else {
+            if (utils_1.Utils.isDefined(callback['onLeave'])) {
+              var tempRet = callback['onLeave'](ret);
+
+              if (typeof tempRet !== 'undefined') {
+                ret = tempRet;
+              }
+            }
+          }
+
+          return ret;
+        };
+      }
+    }]);
+    return LogicJava;
+  }();
+
+  LogicJava.available = Java.available;
+  LogicJava.breakpoints = {};
+  LogicJava.javaClasses = [];
+  LogicJava.javaClassLoaderCallbacks = {};
+  LogicJava.javaContexts = {};
+  LogicJava.javaHandles = {};
+  LogicJava.tracedClasses = [];
+  LogicJava.tracing = false;
+  LogicJava.sdk = 0;
   return LogicJava;
 }();
 
 exports.LogicJava = LogicJava;
-LogicJava.available = Java.available;
-LogicJava.breakpoints = {};
-LogicJava.javaClasses = [];
-LogicJava.javaClassLoaderCallbacks = {};
-LogicJava.javaContexts = {};
-LogicJava.javaHandles = {};
-LogicJava.tracedClasses = [];
-LogicJava.tracing = false;
-LogicJava.sdk = 0;
 
 },{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],110:[function(require,module,exports){
 "use strict";
@@ -4229,6 +4244,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicObjC = void 0;
 
 var breakpoint_1 = require("./breakpoint");
 
@@ -4238,232 +4254,234 @@ var logic_breakpoint_1 = require("./logic_breakpoint");
 
 var utils_1 = require("./utils");
 
-var LogicObjC =
-/*#__PURE__*/
-function () {
-  function LogicObjC() {
-    (0, _classCallCheck2["default"])(this, LogicObjC);
-  }
+var LogicObjC = function () {
+  var LogicObjC = /*#__PURE__*/function () {
+    function LogicObjC() {
+      (0, _classCallCheck2["default"])(this, LogicObjC);
+    }
 
-  (0, _createClass2["default"])(LogicObjC, null, [{
-    key: "applyTracerImplementation",
-    value: function applyTracerImplementation(attach, callback) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "backtrace",
-    value: function backtrace() {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "getApplicationContext",
-    value: function getApplicationContext() {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "hookAllObjCMethods",
-    value: function hookAllObjCMethods(className, implementation) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "hookClassLoaderClassInitialization",
-    value: function hookClassLoaderClassInitialization(clazz, callback) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "hook",
-    value: function hook(className, method, implementation) {
-      if (!LogicObjC.available) {
+    (0, _createClass2["default"])(LogicObjC, null, [{
+      key: "applyTracerImplementation",
+      value: function applyTracerImplementation(attach, callback) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "backtrace",
+      value: function backtrace() {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "getApplicationContext",
+      value: function getApplicationContext() {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "hookAllObjCMethods",
+      value: function hookAllObjCMethods(className, implementation) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
         return false;
       }
-
-      var handler = ObjC.classes[className];
-
-      try {
-        handler = ObjC.classes[className];
-      } catch (err) {
-        utils_1.Utils.logErr('LogicObjC.hook', err);
-
-        if (handler === null) {
-          return;
-        }
+    }, {
+      key: "hookClassLoaderClassInitialization",
+      value: function hookClassLoaderClassInitialization(clazz, callback) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+        return false;
       }
-
-      try {
-        if (handler == null || typeof handler[method] === 'undefined') {
-          return;
-        }
-      } catch (e) {
-        utils_1.Utils.logErr('LogicObjC.hook', e);
-        return;
-      }
-
-      var overloadCount = handler[method].overloads.length;
-
-      if (overloadCount > 0) {
-        var _loop = function _loop(i) {
-          var overload = handler[method].overloads[i];
-
-          if (utils_1.Utils.isDefined(implementation)) {
-            overload.implementation = function () {
-              LogicObjC.objcContexts[Process.getCurrentThreadId()] = this;
-              this.className = className;
-              this.method = method;
-              this.overload = overload;
-              var ret = implementation.apply(this, arguments);
-
-              if (typeof ret !== 'undefined') {
-                return ret;
-              }
-
-              delete LogicObjC.objcContexts[Process.getCurrentThreadId()];
-              return this.overload.apply(this, arguments);
-            };
-          } else {
-            overload.implementation = implementation;
-          }
-        };
-
-        for (var i = 0; i < overloadCount; i++) {
-          _loop(i);
-        }
-      }
-
-      return true;
-    }
-  }, {
-    key: "hookObjCMethod",
-    value: function hookObjCMethod(targetClassMethod, implementation) {
-      if (utils_1.Utils.isDefined(targetClassMethod)) {
-        var delim = targetClassMethod.indexOf(".");
-
-        if (delim === -1) {
+    }, {
+      key: "hook",
+      value: function hook(className, method, implementation) {
+        if (!LogicObjC.available) {
           return false;
         }
 
-        var targetClass = targetClassMethod.slice(0, delim);
-        var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
-        LogicObjC.hook(targetClass, targetMethod, implementation);
-        return true;
-      }
+        var handler = ObjC.classes[className];
 
-      return false;
-    }
-  }, {
-    key: "init",
-    value: function init() {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "jvmBreakpoint",
-    value: function jvmBreakpoint(className, method, args, types, condition) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "jvmExplorer",
-    value: function jvmExplorer(what) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "putBreakpoint",
-    value: function putBreakpoint(target, condition) {
-      if (!utils_1.Utils.isString(target) || utils_1.Utils.isDefined(LogicObjC.breakpoints[target])) {
-        return false;
-      }
+        try {
+          handler = ObjC.classes[className];
+        } catch (err) {
+          utils_1.Utils.logErr('LogicObjC.hook', err);
 
-      var parts = target.split('.');
-      var targetAddress = ptr(ObjC.classes[parts[0]][parts[1]].implementation.toString());
-      var breakpoint = new breakpoint_1.Breakpoint(targetAddress);
-
-      if (!utils_1.Utils.isDefined(condition)) {
-        condition = null;
-      }
-
-      breakpoint.condition = condition;
-      LogicObjC.breakpoints[target] = breakpoint;
-      return LogicObjC.putObjCBreakpoint(breakpoint, target);
-    }
-  }, {
-    key: "putObjCBreakpoint",
-    value: function putObjCBreakpoint(breakpoint, target) {
-      breakpoint.interceptor = Interceptor.attach(breakpoint.target, function () {
-        breakpoint.interceptor.detach();
-        Interceptor['flush']();
-        logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context, null, breakpoint.condition);
-
-        if (typeof LogicObjC.breakpoints[target] !== 'undefined') {
-          LogicObjC.putObjCBreakpoint(breakpoint, target);
+          if (handler === null) {
+            return;
+          }
         }
-      });
-      return true;
-    }
-  }, {
-    key: "putObjCClassInitializationBreakpoint",
-    value: function putObjCClassInitializationBreakpoint(className) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "removeBreakpoint",
-    value: function removeBreakpoint(target) {
-      if (!utils_1.Utils.isString(target)) {
-        return false;
-      }
 
-      var breakpoint = LogicObjC.breakpoints[target];
+        try {
+          if (handler == null || typeof handler[method] === 'undefined') {
+            return;
+          }
+        } catch (e) {
+          utils_1.Utils.logErr('LogicObjC.hook', e);
+          return;
+        }
 
-      if (utils_1.Utils.isDefined(breakpoint)) {
-        breakpoint.interceptor.detach();
-        delete LogicObjC.breakpoints[target.toString()];
+        var overloadCount = handler[method].overloads.length;
+
+        if (overloadCount > 0) {
+          var _loop = function _loop(i) {
+            var overload = handler[method].overloads[i];
+
+            if (utils_1.Utils.isDefined(implementation)) {
+              overload.implementation = function () {
+                LogicObjC.objcContexts[Process.getCurrentThreadId()] = this;
+                this.className = className;
+                this.method = method;
+                this.overload = overload;
+                var ret = implementation.apply(this, arguments);
+
+                if (typeof ret !== 'undefined') {
+                  return ret;
+                }
+
+                delete LogicObjC.objcContexts[Process.getCurrentThreadId()];
+                return this.overload.apply(this, arguments);
+              };
+            } else {
+              overload.implementation = implementation;
+            }
+          };
+
+          for (var i = 0; i < overloadCount; i++) {
+            _loop(i);
+          }
+        }
+
         return true;
       }
+    }, {
+      key: "hookObjCMethod",
+      value: function hookObjCMethod(targetClassMethod, implementation) {
+        if (utils_1.Utils.isDefined(targetClassMethod)) {
+          var delim = targetClassMethod.indexOf(".");
 
-      return false;
-    }
-  }, {
-    key: "removeModuleInitializationBreakpoint",
-    value: function removeModuleInitializationBreakpoint(clazz) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }, {
-    key: "restartApplication",
-    value: function restartApplication() {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "startTrace",
-    value: function startTrace(classes, callback) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "stopTrace",
-    value: function stopTrace() {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-      return false;
-    }
-  }, {
-    key: "traceImplementation",
-    value: function traceImplementation(callback, className, method) {
-      dwarf_1.Dwarf.loggedSend('Not implemented');
-    }
-  }]);
+          if (delim === -1) {
+            return false;
+          }
+
+          var targetClass = targetClassMethod.slice(0, delim);
+          var targetMethod = targetClassMethod.slice(delim + 1, targetClassMethod.length);
+          LogicObjC.hook(targetClass, targetMethod, implementation);
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "init",
+      value: function init() {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "jvmBreakpoint",
+      value: function jvmBreakpoint(className, method, args, types, condition) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "jvmExplorer",
+      value: function jvmExplorer(what) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "putBreakpoint",
+      value: function putBreakpoint(target, condition) {
+        if (!utils_1.Utils.isString(target) || utils_1.Utils.isDefined(LogicObjC.breakpoints[target])) {
+          return false;
+        }
+
+        var parts = target.split('.');
+        var targetAddress = ptr(ObjC.classes[parts[0]][parts[1]].implementation.toString());
+        var breakpoint = new breakpoint_1.Breakpoint(targetAddress);
+
+        if (!utils_1.Utils.isDefined(condition)) {
+          condition = null;
+        }
+
+        breakpoint.condition = condition;
+        LogicObjC.breakpoints[target] = breakpoint;
+        return LogicObjC.putObjCBreakpoint(breakpoint, target);
+      }
+    }, {
+      key: "putObjCBreakpoint",
+      value: function putObjCBreakpoint(breakpoint, target) {
+        breakpoint.interceptor = Interceptor.attach(breakpoint.target, function () {
+          breakpoint.interceptor.detach();
+          Interceptor['flush']();
+          logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_BREAKPOINT, this.context.pc, this.context, null, breakpoint.condition);
+
+          if (typeof LogicObjC.breakpoints[target] !== 'undefined') {
+            LogicObjC.putObjCBreakpoint(breakpoint, target);
+          }
+        });
+        return true;
+      }
+    }, {
+      key: "putObjCClassInitializationBreakpoint",
+      value: function putObjCClassInitializationBreakpoint(className) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+        return false;
+      }
+    }, {
+      key: "removeBreakpoint",
+      value: function removeBreakpoint(target) {
+        if (!utils_1.Utils.isString(target)) {
+          return false;
+        }
+
+        var breakpoint = LogicObjC.breakpoints[target];
+
+        if (utils_1.Utils.isDefined(breakpoint)) {
+          breakpoint.interceptor.detach();
+          delete LogicObjC.breakpoints[target.toString()];
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "removeModuleInitializationBreakpoint",
+      value: function removeModuleInitializationBreakpoint(clazz) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }, {
+      key: "restartApplication",
+      value: function restartApplication() {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+        return false;
+      }
+    }, {
+      key: "startTrace",
+      value: function startTrace(classes, callback) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+        return false;
+      }
+    }, {
+      key: "stopTrace",
+      value: function stopTrace() {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+        return false;
+      }
+    }, {
+      key: "traceImplementation",
+      value: function traceImplementation(callback, className, method) {
+        dwarf_1.Dwarf.loggedSend('Not implemented');
+      }
+    }]);
+    return LogicObjC;
+  }();
+
+  LogicObjC.available = ObjC.available;
+  LogicObjC.breakpoints = {};
+  LogicObjC.objcClasses = [];
+  LogicObjC.objcClassLoaderCallbacks = {};
+  LogicObjC.objcContexts = {};
+  LogicObjC.objcHandles = {};
+  LogicObjC.tracedClasses = [];
+  LogicObjC.tracing = false;
+  LogicObjC.sdk = 0;
   return LogicObjC;
 }();
 
 exports.LogicObjC = LogicObjC;
-LogicObjC.available = ObjC.available;
-LogicObjC.breakpoints = {};
-LogicObjC.objcClasses = [];
-LogicObjC.objcClassLoaderCallbacks = {};
-LogicObjC.objcContexts = {};
-LogicObjC.objcHandles = {};
-LogicObjC.tracedClasses = [];
-LogicObjC.tracing = false;
-LogicObjC.sdk = 0;
 
 },{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],111:[function(require,module,exports){
 "use strict";
@@ -4481,6 +4499,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicStalker = void 0;
 
 var dwarf_1 = require("./dwarf");
 
@@ -4490,299 +4509,301 @@ var stalker_info_1 = require("./stalker_info");
 
 var utils_1 = require("./utils");
 
-var LogicStalker =
-/*#__PURE__*/
-function () {
-  function LogicStalker() {
-    (0, _classCallCheck2["default"])(this, LogicStalker);
-  }
-
-  (0, _createClass2["default"])(LogicStalker, null, [{
-    key: "hitPreventRelease",
-    value: function hitPreventRelease() {
-      var tid = Process.getCurrentThreadId();
-      var threadContext = dwarf_1.Dwarf.threadContexts[tid];
-
-      if (utils_1.Utils.isDefined(threadContext)) {
-        threadContext.preventSleep = true;
-      }
+var LogicStalker = function () {
+  var LogicStalker = /*#__PURE__*/function () {
+    function LogicStalker() {
+      (0, _classCallCheck2["default"])(this, LogicStalker);
     }
-  }, {
-    key: "stalk",
-    value: function stalk(threadId) {
-      LogicStalker.hitPreventRelease();
-      var arch = Process.arch;
-      var isArm64 = arch === 'arm64';
 
-      if (!isArm64 && arch !== 'x64') {
-        console.log('stalker is not supported on current arch: ' + arch);
-        return null;
+    (0, _createClass2["default"])(LogicStalker, null, [{
+      key: "hitPreventRelease",
+      value: function hitPreventRelease() {
+        var tid = Process.getCurrentThreadId();
+        var threadContext = dwarf_1.Dwarf.threadContexts[tid];
+
+        if (utils_1.Utils.isDefined(threadContext)) {
+          threadContext.preventSleep = true;
+        }
       }
+    }, {
+      key: "stalk",
+      value: function stalk(threadId) {
+        LogicStalker.hitPreventRelease();
+        var arch = Process.arch;
+        var isArm64 = arch === 'arm64';
 
-      var tid;
-
-      if (utils_1.Utils.isDefined(threadId)) {
-        tid = threadId;
-      } else {
-        tid = Process.getCurrentThreadId();
-      }
-
-      var stalkerInfo = LogicStalker.stalkerInfoMap[tid];
-
-      if (!utils_1.Utils.isDefined(stalkerInfo)) {
-        var context = dwarf_1.Dwarf.threadContexts[tid];
-
-        if (!utils_1.Utils.isDefined(context)) {
-          console.log('cant start stalker outside a valid native context');
+        if (!isArm64 && arch !== 'x64') {
+          console.log('stalker is not supported on current arch: ' + arch);
           return null;
         }
 
-        stalkerInfo = new stalker_info_1.StalkerInfo(tid);
-        LogicStalker.stalkerInfoMap[tid] = stalkerInfo;
-        var initialContextAddress = ptr((0, _parseInt2["default"])(context.context.pc));
-        var retCount = 0;
-        var arm64BlockCount = 0;
-        var firstInstructionExec = false;
-        var firstBlockCallout = false;
-        var calloutHandled = false;
+        var tid;
 
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'attaching stalker');
+        if (utils_1.Utils.isDefined(threadId)) {
+          tid = threadId;
+        } else {
+          tid = Process.getCurrentThreadId();
         }
 
-        Stalker.follow(tid, {
-          transform: function transform(iterator) {
-            var instruction;
+        var stalkerInfo = LogicStalker.stalkerInfoMap[tid];
 
-            if (dwarf_1.Dwarf.DEBUG) {
-              utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'transform begin');
-            }
+        if (!utils_1.Utils.isDefined(stalkerInfo)) {
+          var context = dwarf_1.Dwarf.threadContexts[tid];
 
-            while ((instruction = iterator.next()) !== null) {
-              iterator.keep();
-
-              if (instruction.groups.indexOf('jump') < 0 && instruction.groups.indexOf('call') < 0) {
-                stalkerInfo.lastBlockInstruction = {
-                  groups: instruction.groups,
-                  address: instruction.address
-                };
-              } else {
-                stalkerInfo.lastCallJumpInstruction = {
-                  groups: instruction.groups,
-                  address: instruction.address
-                };
-              }
-
-              if (!calloutHandled) {
-                if (retCount > 4) {
-                  if (isArm64 && arm64BlockCount < 2) {
-                    continue;
-                  }
-
-                  if (!firstInstructionExec) {
-                    if (dwarf_1.Dwarf.DEBUG) {
-                      utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'executing first instruction', instruction.address.toString(), instruction.toString());
-                    }
-
-                    stalkerInfo.initialContextAddress = initialContextAddress.add(instruction.size);
-                    firstInstructionExec = true;
-                    continue;
-                  }
-
-                  if (dwarf_1.Dwarf.DEBUG) {
-                    utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'executing first basic block instructions', instruction.address.toString(), instruction.toString());
-                  }
-
-                  calloutHandled = true;
-                  firstBlockCallout = true;
-                  LogicStalker.putCalloutIfNeeded(iterator, stalkerInfo, instruction);
-                }
-
-                if (instruction.mnemonic === 'ret') {
-                  retCount++;
-                }
-              } else {
-                LogicStalker.putCalloutIfNeeded(iterator, stalkerInfo, instruction);
-              }
-            }
-
-            if (dwarf_1.Dwarf.DEBUG) {
-              utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'transform done');
-            }
-
-            if (stalkerInfo.terminated) {
-              if (dwarf_1.Dwarf.DEBUG) {
-                utils_1.Utils.logDebug('[' + tid + '] stopStep: ' + 'unfollowing tid');
-              }
-
-              Stalker.flush();
-              Stalker.unfollow(tid);
-              Stalker.garbageCollect();
-              delete LogicStalker.stalkerInfoMap[stalkerInfo.tid];
-            }
-
-            if (retCount > 4 && isArm64) {
-              arm64BlockCount += 1;
-            }
-
-            if (firstBlockCallout) {
-              firstBlockCallout = false;
-            }
+          if (!utils_1.Utils.isDefined(context)) {
+            console.log('cant start stalker outside a valid native context');
+            return null;
           }
-        });
-      }
 
-      return stalkerInfo;
-    }
-  }, {
-    key: "putCalloutIfNeeded",
-    value: function putCalloutIfNeeded(iterator, stalkerInfo, instruction) {
-      var putCallout = true;
+          stalkerInfo = new stalker_info_1.StalkerInfo(tid);
+          LogicStalker.stalkerInfoMap[tid] = stalkerInfo;
+          var initialContextAddress = ptr((0, _parseInt2["default"])(context.context.pc));
+          var retCount = 0;
+          var arm64BlockCount = 0;
+          var firstInstructionExec = false;
+          var firstBlockCallout = false;
+          var calloutHandled = false;
 
-      if (putCallout) {
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + Process.getCurrentThreadId() + '] stalk: ' + 'executing instruction', instruction.address.toString(), instruction.toString());
-        }
-
-        iterator.putCallout(LogicStalker.stalkerCallout);
-      }
-    }
-  }, {
-    key: "stalkerCallout",
-    value: function stalkerCallout(context) {
-      var tid = Process.getCurrentThreadId();
-      var stalkerInfo = LogicStalker.stalkerInfoMap[tid];
-
-      if (!utils_1.Utils.isDefined(stalkerInfo) || stalkerInfo.terminated) {
-        return;
-      }
-
-      var pc = context.pc;
-      var insn = Instruction.parse(pc);
-
-      if (dwarf_1.Dwarf.DEBUG) {
-        utils_1.Utils.logDebug('[' + tid + '] stalkerCallout: ' + 'running callout', insn.address, insn.toString());
-      }
-
-      if (!stalkerInfo.didFistJumpOut) {
-        pc = stalkerInfo.initialContextAddress;
-        var lastInt = (0, _parseInt2["default"])(stalkerInfo.lastContextAddress);
-
-        if (lastInt > 0) {
-          var pcInt = (0, _parseInt2["default"])(context.pc);
-
-          if (pcInt < lastInt || pcInt > lastInt + insn.size) {
-            pc = context.pc;
-            stalkerInfo.didFistJumpOut = true;
-          }
-        }
-      }
-
-      var shouldBreak = false;
-
-      if (stalkerInfo.currentMode !== null) {
-        if (typeof stalkerInfo.currentMode === 'function') {
-          shouldBreak = false;
-          var that = {
-            context: context,
-            instruction: insn,
-            stop: function stop() {
-              stalkerInfo.terminated = true;
-            }
-          };
-          stalkerInfo.currentMode.apply(that);
-        } else if (stalkerInfo.lastContextAddress !== null && stalkerInfo.lastCallJumpInstruction !== null) {
           if (dwarf_1.Dwarf.DEBUG) {
-            utils_1.Utils.logDebug('[' + tid + '] stalkerCallout: ' + 'using mode ->', stalkerInfo.currentMode);
+            utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'attaching stalker');
           }
 
-          var isAddressBeforeJumpOrCall = (0, _parseInt2["default"])(context.pc) === (0, _parseInt2["default"])(stalkerInfo.lastBlockInstruction.address);
-
-          if (isAddressBeforeJumpOrCall) {
-            if (stalkerInfo.currentMode === 'call') {
-              if (stalkerInfo.lastCallJumpInstruction.groups.indexOf('call') >= 0) {
-                shouldBreak = true;
-              }
-            } else if (stalkerInfo.currentMode === 'block') {
-              if (stalkerInfo.lastCallJumpInstruction.groups.indexOf('jump') >= 0) {
-                shouldBreak = true;
-              }
-            }
-          }
-        }
-      } else {
-        shouldBreak = true;
-      }
-
-      if (shouldBreak) {
-        stalkerInfo.context = context;
-        stalkerInfo.lastContextAddress = context.pc;
-        logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_STEP, pc, stalkerInfo.context, null);
-
-        if (dwarf_1.Dwarf.DEBUG) {
-          utils_1.Utils.logDebug('[' + tid + '] callOut: ' + 'post onHook');
-        }
-      }
-
-      if (!stalkerInfo.didFistJumpOut) {
-        stalkerInfo.initialContextAddress = stalkerInfo.initialContextAddress.add(insn.size);
-      }
-    }
-  }, {
-    key: "strace",
-    value: function strace(callback) {
-      if (LogicStalker.straceCallback !== null) {
-        return false;
-      }
-
-      LogicStalker.straceCallback = callback;
-
-      if (typeof callback === 'function') {
-        Process.enumerateThreads().forEach(function (thread) {
-          Stalker.follow(thread.id, {
+          Stalker.follow(tid, {
             transform: function transform(iterator) {
               var instruction;
+
+              if (dwarf_1.Dwarf.DEBUG) {
+                utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'transform begin');
+              }
 
               while ((instruction = iterator.next()) !== null) {
                 iterator.keep();
 
-                if (instruction.mnemonic === 'svc' || instruction.mnemonic === 'int') {
-                  iterator.putCallout(LogicStalker.straceCallout);
+                if (instruction.groups.indexOf('jump') < 0 && instruction.groups.indexOf('call') < 0) {
+                  stalkerInfo.lastBlockInstruction = {
+                    groups: instruction.groups,
+                    address: instruction.address
+                  };
+                } else {
+                  stalkerInfo.lastCallJumpInstruction = {
+                    groups: instruction.groups,
+                    address: instruction.address
+                  };
+                }
+
+                if (!calloutHandled) {
+                  if (retCount > 4) {
+                    if (isArm64 && arm64BlockCount < 2) {
+                      continue;
+                    }
+
+                    if (!firstInstructionExec) {
+                      if (dwarf_1.Dwarf.DEBUG) {
+                        utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'executing first instruction', instruction.address.toString(), instruction.toString());
+                      }
+
+                      stalkerInfo.initialContextAddress = initialContextAddress.add(instruction.size);
+                      firstInstructionExec = true;
+                      continue;
+                    }
+
+                    if (dwarf_1.Dwarf.DEBUG) {
+                      utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'executing first basic block instructions', instruction.address.toString(), instruction.toString());
+                    }
+
+                    calloutHandled = true;
+                    firstBlockCallout = true;
+                    LogicStalker.putCalloutIfNeeded(iterator, stalkerInfo, instruction);
+                  }
+
+                  if (instruction.mnemonic === 'ret') {
+                    retCount++;
+                  }
+                } else {
+                  LogicStalker.putCalloutIfNeeded(iterator, stalkerInfo, instruction);
                 }
               }
 
-              if (LogicStalker.straceCallback === null) {
+              if (dwarf_1.Dwarf.DEBUG) {
+                utils_1.Utils.logDebug('[' + tid + '] stalk: ' + 'transform done');
+              }
+
+              if (stalkerInfo.terminated) {
+                if (dwarf_1.Dwarf.DEBUG) {
+                  utils_1.Utils.logDebug('[' + tid + '] stopStep: ' + 'unfollowing tid');
+                }
+
                 Stalker.flush();
-                Stalker.unfollow(thread.id);
+                Stalker.unfollow(tid);
                 Stalker.garbageCollect();
+                delete LogicStalker.stalkerInfoMap[stalkerInfo.tid];
+              }
+
+              if (retCount > 4 && isArm64) {
+                arm64BlockCount += 1;
+              }
+
+              if (firstBlockCallout) {
+                firstBlockCallout = false;
               }
             }
           });
-        });
-        return true;
-      }
-
-      return false;
-    }
-  }, {
-    key: "straceCallout",
-    value: function straceCallout(context) {
-      var that = {
-        context: context,
-        instruction: Instruction.parse(context.pc),
-        stop: function stop() {
-          LogicStalker.straceCallback = null;
         }
-      };
-      LogicStalker.straceCallback.apply(that);
-    }
-  }]);
+
+        return stalkerInfo;
+      }
+    }, {
+      key: "putCalloutIfNeeded",
+      value: function putCalloutIfNeeded(iterator, stalkerInfo, instruction) {
+        var putCallout = true;
+
+        if (putCallout) {
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + Process.getCurrentThreadId() + '] stalk: ' + 'executing instruction', instruction.address.toString(), instruction.toString());
+          }
+
+          iterator.putCallout(LogicStalker.stalkerCallout);
+        }
+      }
+    }, {
+      key: "stalkerCallout",
+      value: function stalkerCallout(context) {
+        var tid = Process.getCurrentThreadId();
+        var stalkerInfo = LogicStalker.stalkerInfoMap[tid];
+
+        if (!utils_1.Utils.isDefined(stalkerInfo) || stalkerInfo.terminated) {
+          return;
+        }
+
+        var pc = context.pc;
+        var insn = Instruction.parse(pc);
+
+        if (dwarf_1.Dwarf.DEBUG) {
+          utils_1.Utils.logDebug('[' + tid + '] stalkerCallout: ' + 'running callout', insn.address, insn.toString());
+        }
+
+        if (!stalkerInfo.didFistJumpOut) {
+          pc = stalkerInfo.initialContextAddress;
+          var lastInt = (0, _parseInt2["default"])(stalkerInfo.lastContextAddress);
+
+          if (lastInt > 0) {
+            var pcInt = (0, _parseInt2["default"])(context.pc);
+
+            if (pcInt < lastInt || pcInt > lastInt + insn.size) {
+              pc = context.pc;
+              stalkerInfo.didFistJumpOut = true;
+            }
+          }
+        }
+
+        var shouldBreak = false;
+
+        if (stalkerInfo.currentMode !== null) {
+          if (typeof stalkerInfo.currentMode === 'function') {
+            shouldBreak = false;
+            var that = {
+              context: context,
+              instruction: insn,
+              stop: function stop() {
+                stalkerInfo.terminated = true;
+              }
+            };
+            stalkerInfo.currentMode.apply(that);
+          } else if (stalkerInfo.lastContextAddress !== null && stalkerInfo.lastCallJumpInstruction !== null) {
+            if (dwarf_1.Dwarf.DEBUG) {
+              utils_1.Utils.logDebug('[' + tid + '] stalkerCallout: ' + 'using mode ->', stalkerInfo.currentMode);
+            }
+
+            var isAddressBeforeJumpOrCall = (0, _parseInt2["default"])(context.pc) === (0, _parseInt2["default"])(stalkerInfo.lastBlockInstruction.address);
+
+            if (isAddressBeforeJumpOrCall) {
+              if (stalkerInfo.currentMode === 'call') {
+                if (stalkerInfo.lastCallJumpInstruction.groups.indexOf('call') >= 0) {
+                  shouldBreak = true;
+                }
+              } else if (stalkerInfo.currentMode === 'block') {
+                if (stalkerInfo.lastCallJumpInstruction.groups.indexOf('jump') >= 0) {
+                  shouldBreak = true;
+                }
+              }
+            }
+          }
+        } else {
+          shouldBreak = true;
+        }
+
+        if (shouldBreak) {
+          stalkerInfo.context = context;
+          stalkerInfo.lastContextAddress = context.pc;
+          logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_STEP, pc, stalkerInfo.context, null);
+
+          if (dwarf_1.Dwarf.DEBUG) {
+            utils_1.Utils.logDebug('[' + tid + '] callOut: ' + 'post onHook');
+          }
+        }
+
+        if (!stalkerInfo.didFistJumpOut) {
+          stalkerInfo.initialContextAddress = stalkerInfo.initialContextAddress.add(insn.size);
+        }
+      }
+    }, {
+      key: "strace",
+      value: function strace(callback) {
+        if (LogicStalker.straceCallback !== null) {
+          return false;
+        }
+
+        LogicStalker.straceCallback = callback;
+
+        if (typeof callback === 'function') {
+          Process.enumerateThreads().forEach(function (thread) {
+            Stalker.follow(thread.id, {
+              transform: function transform(iterator) {
+                var instruction;
+
+                while ((instruction = iterator.next()) !== null) {
+                  iterator.keep();
+
+                  if (instruction.mnemonic === 'svc' || instruction.mnemonic === 'int') {
+                    iterator.putCallout(LogicStalker.straceCallout);
+                  }
+                }
+
+                if (LogicStalker.straceCallback === null) {
+                  Stalker.flush();
+                  Stalker.unfollow(thread.id);
+                  Stalker.garbageCollect();
+                }
+              }
+            });
+          });
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "straceCallout",
+      value: function straceCallout(context) {
+        var that = {
+          context: context,
+          instruction: Instruction.parse(context.pc),
+          stop: function stop() {
+            LogicStalker.straceCallback = null;
+          }
+        };
+        LogicStalker.straceCallback.apply(that);
+      }
+    }]);
+    return LogicStalker;
+  }();
+
+  LogicStalker.stalkerInfoMap = {};
+  LogicStalker.straceCallback = null;
   return LogicStalker;
 }();
 
 exports.LogicStalker = LogicStalker;
-LogicStalker.stalkerInfoMap = {};
-LogicStalker.straceCallback = null;
 
 },{"./dwarf":103,"./logic_breakpoint":107,"./stalker_info":113,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],112:[function(require,module,exports){
 "use strict";
@@ -4802,6 +4823,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.LogicWatchpoint = void 0;
 
 var dwarf_1 = require("./dwarf");
 
@@ -4813,228 +4835,230 @@ var logic_breakpoint_1 = require("./logic_breakpoint");
 
 var isDefined = utils_1.Utils.isDefined;
 
-var LogicWatchpoint =
-/*#__PURE__*/
-function () {
-  function LogicWatchpoint() {
-    (0, _classCallCheck2["default"])(this, LogicWatchpoint);
-  }
-
-  (0, _createClass2["default"])(LogicWatchpoint, null, [{
-    key: "attachMemoryAccessMonitor",
-    value: function attachMemoryAccessMonitor() {
-      var monitorAddresses = new Array();
-      (0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).forEach(function (pt) {
-        monitorAddresses.push({
-          'base': ptr(pt),
-          'size': 1
-        });
-      });
-      MemoryAccessMonitor.enable(monitorAddresses, {
-        onAccess: LogicWatchpoint.onMemoryAccess
-      });
+var LogicWatchpoint = function () {
+  var LogicWatchpoint = /*#__PURE__*/function () {
+    function LogicWatchpoint() {
+      (0, _classCallCheck2["default"])(this, LogicWatchpoint);
     }
-  }, {
-    key: "handleException",
-    value: function handleException(exception) {
-      var tid = Process.getCurrentThreadId();
-      var watchpoint = null;
 
-      if ((0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).length > 0) {
-        if (exception.type === 'access-violation') {
-          watchpoint = LogicWatchpoint.memoryWatchpoints[exception.memory.address.toString()];
+    (0, _createClass2["default"])(LogicWatchpoint, null, [{
+      key: "attachMemoryAccessMonitor",
+      value: function attachMemoryAccessMonitor() {
+        var monitorAddresses = new Array();
+        (0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).forEach(function (pt) {
+          monitorAddresses.push({
+            'base': ptr(pt),
+            'size': 1
+          });
+        });
+        MemoryAccessMonitor.enable(monitorAddresses, {
+          onAccess: LogicWatchpoint.onMemoryAccess
+        });
+      }
+    }, {
+      key: "handleException",
+      value: function handleException(exception) {
+        var tid = Process.getCurrentThreadId();
+        var watchpoint = null;
 
-          if (utils_1.Utils.isDefined(watchpoint)) {
-            var operation = exception.memory.operation;
+        if ((0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).length > 0) {
+          if (exception.type === 'access-violation') {
+            watchpoint = LogicWatchpoint.memoryWatchpoints[exception.memory.address.toString()];
 
-            if (utils_1.Utils.isDefined(operation)) {
-              if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_READ && operation === 'read') {
-                watchpoint.restore();
-                dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
-              } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_WRITE && operation === 'write') {
-                watchpoint.restore();
-                dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
-              } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_EXECUTE && operation === 'execute') {
-                watchpoint.restore();
-                dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
+            if (utils_1.Utils.isDefined(watchpoint)) {
+              var operation = exception.memory.operation;
+
+              if (utils_1.Utils.isDefined(operation)) {
+                if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_READ && operation === 'read') {
+                  watchpoint.restore();
+                  dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
+                } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_WRITE && operation === 'write') {
+                  watchpoint.restore();
+                  dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
+                } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_EXECUTE && operation === 'execute') {
+                  watchpoint.restore();
+                  dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
+                } else {
+                  watchpoint = null;
+                }
               } else {
-                watchpoint = null;
+                watchpoint.restore();
+                dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
               }
             } else {
-              watchpoint.restore();
-              dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(exception) + ':::' + tid);
+              watchpoint = null;
             }
-          } else {
-            watchpoint = null;
           }
         }
-      }
 
-      if (watchpoint !== null) {
-        var invocationListener = Interceptor.attach(exception.address, function (args) {
-          invocationListener.detach();
-          Interceptor.flush();
+        if (watchpoint !== null) {
+          var invocationListener = Interceptor.attach(exception.address, function (args) {
+            invocationListener.detach();
+            Interceptor.flush();
 
-          if (watchpoint.callback !== null) {
-            watchpoint.callback.call(this, args);
-          } else {
-            logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_WATCHPOINT, this.context.pc, this.context);
-          }
-
-          if (isDefined(LogicWatchpoint.memoryWatchpoints[exception.memory.address.toString()]) && !(watchpoint.flags & watchpoint_1.MEMORY_WATCH_SINGLE_SHOT)) {
-            watchpoint.watch();
-          }
-        });
-      }
-
-      return watchpoint;
-    }
-  }, {
-    key: "onMemoryAccess",
-    value: function onMemoryAccess(details) {
-      var tid = Process.getCurrentThreadId();
-      var operation = details.operation;
-      var fromPtr = details.from;
-      var address = details.address;
-      var watchpoint = null;
-
-      if ((0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).length > 0) {
-        watchpoint = LogicWatchpoint.memoryWatchpoints[address.toString()];
-
-        if (typeof watchpoint !== 'undefined') {
-          var returnval = {
-            'memory': {
-              'operation': operation,
-              'address': address
+            if (watchpoint.callback !== null) {
+              watchpoint.callback.call(this, args);
+            } else {
+              logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_WATCHPOINT, this.context.pc, this.context);
             }
-          };
 
-          if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_READ && operation === 'read') {
-            MemoryAccessMonitor.disable();
-            dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
-          } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_WRITE && operation === 'write') {
-            MemoryAccessMonitor.disable();
-            dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
-          } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_EXECUTE && operation === 'execute') {
-            MemoryAccessMonitor.disable();
-            dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
-          } else {
-            watchpoint = null;
-          }
-        } else {
-          watchpoint = null;
-        }
-      }
-
-      if (watchpoint !== null) {
-        var invocationListener = Interceptor.attach(fromPtr, function (args) {
-          invocationListener.detach();
-          Interceptor.flush();
-
-          if (watchpoint.callback !== null) {
-            watchpoint.callback.call(this, args);
-          } else {
-            logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_WATCHPOINT, this.context.pc, this.context);
-          }
-
-          if (isDefined(LogicWatchpoint.memoryWatchpoints[address.toString()]) && !(watchpoint.flags & watchpoint_1.MEMORY_WATCH_SINGLE_SHOT)) {
-            LogicWatchpoint.attachMemoryAccessMonitor();
-          }
-        });
-      }
-
-      return watchpoint !== null;
-    }
-  }, {
-    key: "putWatchpoint",
-    value: function putWatchpoint(address) {
-      var flags = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : watchpoint_1.MEMORY_ACCESS_READ | watchpoint_1.MEMORY_ACCESS_WRITE;
-      var callback = arguments.length > 2 ? arguments[2] : undefined;
-      var memPtr;
-
-      if (typeof address === 'string') {
-        memPtr = ptr(address);
-      } else {
-        memPtr = address;
-      }
-
-      if (memPtr.isNull()) {
-        throw new Error('putWatchpoint: Invalid PointerValue!');
-      }
-
-      var watchpoint = null;
-
-      if (typeof callback === 'undefined') {
-        callback = null;
-      }
-
-      if (!LogicWatchpoint.memoryWatchpoints.hasOwnProperty(memPtr.toString())) {
-        var rangeDetails = Process.findRangeByAddress(memPtr);
-
-        if (rangeDetails === null) {
-          console.log('failed to find memory range for ' + memPtr.toString());
-          return null;
-        }
-
-        watchpoint = new watchpoint_1.Watchpoint(memPtr, flags, rangeDetails.protection, callback);
-        LogicWatchpoint.memoryWatchpoints[memPtr.toString()] = watchpoint;
-        dwarf_1.Dwarf.loggedSend('watchpoint_added:::' + memPtr.toString() + ':::' + flags + ':::' + (0, _stringify["default"])(watchpoint.debugSymbol));
-
-        if (Process.platform === 'windows') {
-          LogicWatchpoint.attachMemoryAccessMonitor();
-        } else {
-          if (watchpoint) {
-            watchpoint.watch();
-          }
+            if (isDefined(LogicWatchpoint.memoryWatchpoints[exception.memory.address.toString()]) && !(watchpoint.flags & watchpoint_1.MEMORY_WATCH_SINGLE_SHOT)) {
+              watchpoint.watch();
+            }
+          });
         }
 
         return watchpoint;
-      } else {
-        console.log(memPtr.toString() + ' is already watched');
-        return null;
       }
-    }
-  }, {
-    key: "removeWatchpoint",
-    value: function removeWatchpoint(address) {
-      var memPtr;
+    }, {
+      key: "onMemoryAccess",
+      value: function onMemoryAccess(details) {
+        var tid = Process.getCurrentThreadId();
+        var operation = details.operation;
+        var fromPtr = details.from;
+        var address = details.address;
+        var watchpoint = null;
 
-      if (typeof address === 'string') {
-        memPtr = ptr(address);
-      } else {
-        memPtr = address;
+        if ((0, _keys["default"])(LogicWatchpoint.memoryWatchpoints).length > 0) {
+          watchpoint = LogicWatchpoint.memoryWatchpoints[address.toString()];
+
+          if (typeof watchpoint !== 'undefined') {
+            var returnval = {
+              'memory': {
+                'operation': operation,
+                'address': address
+              }
+            };
+
+            if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_READ && operation === 'read') {
+              MemoryAccessMonitor.disable();
+              dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
+            } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_WRITE && operation === 'write') {
+              MemoryAccessMonitor.disable();
+              dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
+            } else if (watchpoint.flags & watchpoint_1.MEMORY_ACCESS_EXECUTE && operation === 'execute') {
+              MemoryAccessMonitor.disable();
+              dwarf_1.Dwarf.loggedSend('watchpoint:::' + (0, _stringify["default"])(returnval) + ':::' + tid);
+            } else {
+              watchpoint = null;
+            }
+          } else {
+            watchpoint = null;
+          }
+        }
+
+        if (watchpoint !== null) {
+          var invocationListener = Interceptor.attach(fromPtr, function (args) {
+            invocationListener.detach();
+            Interceptor.flush();
+
+            if (watchpoint.callback !== null) {
+              watchpoint.callback.call(this, args);
+            } else {
+              logic_breakpoint_1.LogicBreakpoint.breakpoint(logic_breakpoint_1.LogicBreakpoint.REASON_WATCHPOINT, this.context.pc, this.context);
+            }
+
+            if (isDefined(LogicWatchpoint.memoryWatchpoints[address.toString()]) && !(watchpoint.flags & watchpoint_1.MEMORY_WATCH_SINGLE_SHOT)) {
+              LogicWatchpoint.attachMemoryAccessMonitor();
+            }
+          });
+        }
+
+        return watchpoint !== null;
       }
+    }, {
+      key: "putWatchpoint",
+      value: function putWatchpoint(address) {
+        var flags = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : watchpoint_1.MEMORY_ACCESS_READ | watchpoint_1.MEMORY_ACCESS_WRITE;
+        var callback = arguments.length > 2 ? arguments[2] : undefined;
+        var memPtr;
 
-      if (memPtr.isNull()) {
-        throw new Error('removeWatchpoint: Invalid PointerValue!');
+        if (typeof address === 'string') {
+          memPtr = ptr(address);
+        } else {
+          memPtr = address;
+        }
+
+        if (memPtr.isNull()) {
+          throw new Error('putWatchpoint: Invalid PointerValue!');
+        }
+
+        var watchpoint = null;
+
+        if (typeof callback === 'undefined') {
+          callback = null;
+        }
+
+        if (!LogicWatchpoint.memoryWatchpoints.hasOwnProperty(memPtr.toString())) {
+          var rangeDetails = Process.findRangeByAddress(memPtr);
+
+          if (rangeDetails === null) {
+            console.log('failed to find memory range for ' + memPtr.toString());
+            return null;
+          }
+
+          watchpoint = new watchpoint_1.Watchpoint(memPtr, flags, rangeDetails.protection, callback);
+          LogicWatchpoint.memoryWatchpoints[memPtr.toString()] = watchpoint;
+          dwarf_1.Dwarf.loggedSend('watchpoint_added:::' + memPtr.toString() + ':::' + flags + ':::' + (0, _stringify["default"])(watchpoint.debugSymbol));
+
+          if (Process.platform === 'windows') {
+            LogicWatchpoint.attachMemoryAccessMonitor();
+          } else {
+            if (watchpoint) {
+              watchpoint.watch();
+            }
+          }
+
+          return watchpoint;
+        } else {
+          console.log(memPtr.toString() + ' is already watched');
+          return null;
+        }
       }
+    }, {
+      key: "removeWatchpoint",
+      value: function removeWatchpoint(address) {
+        var memPtr;
 
-      if (!LogicWatchpoint.memoryWatchpoints.hasOwnProperty(memPtr.toString())) {
-        throw new Error('removeWatchpoint: No Watchpoint for given address!');
+        if (typeof address === 'string') {
+          memPtr = ptr(address);
+        } else {
+          memPtr = address;
+        }
+
+        if (memPtr.isNull()) {
+          throw new Error('removeWatchpoint: Invalid PointerValue!');
+        }
+
+        if (!LogicWatchpoint.memoryWatchpoints.hasOwnProperty(memPtr.toString())) {
+          throw new Error('removeWatchpoint: No Watchpoint for given address!');
+        }
+
+        var watchpoint = LogicWatchpoint.memoryWatchpoints[memPtr.toString()];
+
+        if (Process.platform === 'windows') {
+          MemoryAccessMonitor.disable();
+        }
+
+        watchpoint.restore();
+        delete LogicWatchpoint.memoryWatchpoints[memPtr.toString()];
+
+        if (Process.platform === 'windows') {
+          LogicWatchpoint.attachMemoryAccessMonitor();
+        }
+
+        dwarf_1.Dwarf.loggedSend('watchpoint_removed:::' + memPtr.toString());
+        return true;
       }
+    }]);
+    return LogicWatchpoint;
+  }();
 
-      var watchpoint = LogicWatchpoint.memoryWatchpoints[memPtr.toString()];
-
-      if (Process.platform === 'windows') {
-        MemoryAccessMonitor.disable();
-      }
-
-      watchpoint.restore();
-      delete LogicWatchpoint.memoryWatchpoints[memPtr.toString()];
-
-      if (Process.platform === 'windows') {
-        LogicWatchpoint.attachMemoryAccessMonitor();
-      }
-
-      dwarf_1.Dwarf.loggedSend('watchpoint_removed:::' + memPtr.toString());
-      return true;
-    }
-  }]);
+  LogicWatchpoint.memoryWatchpoints = {};
   return LogicWatchpoint;
 }();
 
 exports.LogicWatchpoint = LogicWatchpoint;
-LogicWatchpoint.memoryWatchpoints = {};
 
 },{"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"./watchpoint":118,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],113:[function(require,module,exports){
 "use strict";
@@ -5048,6 +5072,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.StalkerInfo = void 0;
 
 var StalkerInfo = function StalkerInfo(tid) {
   (0, _classCallCheck2["default"])(this, StalkerInfo);
@@ -5076,6 +5101,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.ThreadApi = void 0;
 
 var ThreadApi = function ThreadApi(apiFunction, apiArguments) {
   (0, _classCallCheck2["default"])(this, ThreadApi);
@@ -5099,6 +5125,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.ThreadContext = void 0;
 
 var ThreadContext = function ThreadContext(tid) {
   (0, _classCallCheck2["default"])(this, ThreadContext);
@@ -5125,88 +5152,91 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.ThreadWrapper = void 0;
 
 var dwarf_1 = require("./dwarf");
 
-var ThreadWrapper =
-/*#__PURE__*/
-function () {
-  function ThreadWrapper() {
-    (0, _classCallCheck2["default"])(this, ThreadWrapper);
-  }
+var ThreadWrapper = function () {
+  var ThreadWrapper = /*#__PURE__*/function () {
+    function ThreadWrapper() {
+      (0, _classCallCheck2["default"])(this, ThreadWrapper);
+    }
 
-  (0, _createClass2["default"])(ThreadWrapper, null, [{
-    key: "init",
-    value: function init() {
-      ThreadWrapper.pthreadCreateAddress = Module.findExportByName(null, 'pthread_create');
+    (0, _createClass2["default"])(ThreadWrapper, null, [{
+      key: "init",
+      value: function init() {
+        ThreadWrapper.pthreadCreateAddress = Module.findExportByName(null, 'pthread_create');
 
-      if (ThreadWrapper.pthreadCreateAddress != null && !ThreadWrapper.pthreadCreateAddress.isNull()) {
-        ThreadWrapper.pthreadCreateImplementation = new NativeFunction(ThreadWrapper.pthreadCreateAddress, 'int', ['pointer', 'pointer', 'pointer', 'pointer']);
-        ThreadWrapper.handler = Memory.alloc(Process.pointerSize);
-        Memory.protect(ThreadWrapper.handler, Process.pointerSize, 'rwx');
+        if (ThreadWrapper.pthreadCreateAddress != null && !ThreadWrapper.pthreadCreateAddress.isNull()) {
+          ThreadWrapper.pthreadCreateImplementation = new NativeFunction(ThreadWrapper.pthreadCreateAddress, 'int', ['pointer', 'pointer', 'pointer', 'pointer']);
+          ThreadWrapper.handler = Memory.alloc(Process.pointerSize);
+          Memory.protect(ThreadWrapper.handler, Process.pointerSize, 'rwx');
 
-        if (Process.arch === 'arm64') {
-          ThreadWrapper.handler.writeByteArray([0xE1, 0x03, 0x01, 0xAA, 0xC0, 0x03, 0x5F, 0xD6]);
+          if (Process.arch === 'arm64') {
+            ThreadWrapper.handler.writeByteArray([0xE1, 0x03, 0x01, 0xAA, 0xC0, 0x03, 0x5F, 0xD6]);
+          }
+
+          Interceptor.replace(ThreadWrapper.handler, new NativeCallback(function () {
+            if (ThreadWrapper.handlerFunction !== null) {
+              var ret = ThreadWrapper.handlerFunction.apply(this);
+              ThreadWrapper.handlerFunction = null;
+              return ret;
+            }
+
+            return 0;
+          }, 'int', []));
+          Interceptor.attach(ThreadWrapper.pthreadCreateAddress, function (args) {
+            dwarf_1.Dwarf.loggedSend('new_thread:::' + Process.getCurrentThreadId() + ':::' + args[2]);
+
+            if (ThreadWrapper.onCreateCallback !== null && typeof ThreadWrapper.onCreateCallback === 'function') {
+              ThreadWrapper.onCreateCallback(args[2]);
+            }
+          });
+        }
+      }
+    }, {
+      key: "backtrace",
+      value: function backtrace(context, backtracer) {
+        return Thread.backtrace(context, backtracer);
+      }
+    }, {
+      key: "new",
+      value: function _new(fn) {
+        if (ThreadWrapper.pthreadCreateAddress !== null) {
+          return 1;
         }
 
-        Interceptor.replace(ThreadWrapper.handler, new NativeCallback(function () {
-          if (ThreadWrapper.handlerFunction !== null) {
-            var ret = ThreadWrapper.handlerFunction.apply(this);
-            ThreadWrapper.handlerFunction = null;
-            return ret;
-          }
+        if (typeof fn !== 'function') {
+          return 2;
+        }
 
-          return 0;
-        }, 'int', []));
-        Interceptor.attach(ThreadWrapper.pthreadCreateAddress, function (args) {
-          dwarf_1.Dwarf.loggedSend('new_thread:::' + Process.getCurrentThreadId() + ':::' + args[2]);
-
-          if (ThreadWrapper.onCreateCallback !== null && typeof ThreadWrapper.onCreateCallback === 'function') {
-            ThreadWrapper.onCreateCallback(args[2]);
-          }
-        });
+        var pthread_t = Memory.alloc(Process.pointerSize);
+        Memory.protect(pthread_t, Process.pointerSize, 'rwx');
+        ThreadWrapper.handlerFunction = fn;
+        return ThreadWrapper.pthreadCreateImplementation(pthread_t, ptr(0), ThreadWrapper.handler, ptr(0));
       }
-    }
-  }, {
-    key: "backtrace",
-    value: function backtrace(context, backtracer) {
-      return Thread.backtrace(context, backtracer);
-    }
-  }, {
-    key: "new",
-    value: function _new(fn) {
-      if (ThreadWrapper.pthreadCreateAddress !== null) {
-        return 1;
+    }, {
+      key: "sleep",
+      value: function sleep(delay) {
+        Thread.sleep(delay);
       }
-
-      if (typeof fn !== 'function') {
-        return 2;
+    }, {
+      key: "onCreate",
+      value: function onCreate(callback) {
+        ThreadWrapper.onCreateCallback = callback;
       }
+    }]);
+    return ThreadWrapper;
+  }();
 
-      var pthread_t = Memory.alloc(Process.pointerSize);
-      Memory.protect(pthread_t, Process.pointerSize, 'rwx');
-      ThreadWrapper.handlerFunction = fn;
-      return ThreadWrapper.pthreadCreateImplementation(pthread_t, ptr(0), ThreadWrapper.handler, ptr(0));
-    }
-  }, {
-    key: "sleep",
-    value: function sleep(delay) {
-      Thread.sleep(delay);
-    }
-  }, {
-    key: "onCreate",
-    value: function onCreate(callback) {
-      ThreadWrapper.onCreateCallback = callback;
-    }
-  }]);
+  ThreadWrapper.onCreateCallback = null;
+  ThreadWrapper.pthreadCreateAddress = null;
+  ThreadWrapper.handler = NULL;
+  ThreadWrapper.handlerFunction = null;
   return ThreadWrapper;
 }();
 
 exports.ThreadWrapper = ThreadWrapper;
-ThreadWrapper.onCreateCallback = null;
-ThreadWrapper.pthreadCreateAddress = null;
-ThreadWrapper.handler = NULL;
-ThreadWrapper.handlerFunction = null;
 
 },{"./dwarf":103,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],117:[function(require,module,exports){
 "use strict";
@@ -5224,6 +5254,7 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.Utils = void 0;
 var Utils;
 
 (function (Utils) {
@@ -5371,14 +5402,13 @@ var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/cor
 (0, _defineProperty["default"])(exports, "__esModule", {
   value: true
 });
+exports.Watchpoint = exports.MEMORY_WATCH_SINGLE_SHOT = exports.MEMORY_ACCESS_EXECUTE = exports.MEMORY_ACCESS_WRITE = exports.MEMORY_ACCESS_READ = void 0;
 exports.MEMORY_ACCESS_READ = 1;
 exports.MEMORY_ACCESS_WRITE = 2;
 exports.MEMORY_ACCESS_EXECUTE = 4;
 exports.MEMORY_WATCH_SINGLE_SHOT = 8;
 
-var Watchpoint =
-/*#__PURE__*/
-function () {
+var Watchpoint = /*#__PURE__*/function () {
   function Watchpoint(address, flags, perm, callback) {
     (0, _classCallCheck2["default"])(this, Watchpoint);
     this.address = address;
