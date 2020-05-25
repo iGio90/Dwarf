@@ -25,18 +25,83 @@ Development
 pip3 install https://github.com/iGio90/Dwarf/archive/master.zip
 ```
 
+## Usage
+
+#### Debugging UI (attach wizard)
+
+```
+dwarf
+```
+
+#### Debugging UI (straightforward)
+```
+dwarf -t android com.facebook.katana
+dwarf -t android 2145
+dwarf -t ios 2145
+dwarf -t local /usr/bin/cat /etc/shadow
+```
+
+#### Debugging UI (own agent)
+```
+dwarf -t android -s /path/to/agent.js com.facebook.katana
+dwarf -t local -s /path/to/agent.js /usr/bin/cat /etc/shadow
+```
+
+#### Dwarf typings + injector
+```
+$ dwarf-creator
+project path (/home/igio90/test):
+
+project name (test):
+
+Session type (local)
+[*] L (local)
+[*] A (android)
+[*] I (iOS)
+[*] R (remote)
+
+append i to use dwarf-injector (ai | android inject)
+ai
+target package (com.whatsapp)
+com.whatsapp
+
+$ (./intelliJ || ./vsCode).open(/home/igio90/test)
+    .echo('enjoy scripting with frida and dwarf api autocompletition and in-line doc')
+
+$ ./dwarf if myOs == 'unix' else 'dwarf.bat'
+```
+
+#### Dwarf trace
+```
+dwarf-trace -t android --java java.io.File.$init com.facebook.katana
+
+* Trying to spawn com.facebook.katana
+* Dwarf attached to 19337
+java.io.File $init
+    /data  - java.io.File
+    misc
+
+java.io.File $init
+    /data/misc  - java.io.File
+    user
+
+...
+```
+
+```
+dwarf-trace -t android --native --native-registers x0,x1,sp open+0x32
+dwarf-trace -t android --native --native-registers x0,x1,sp targetModule@0x1234
+dwarf-trace -t android --native --native-registers x0,x1,sp 0xdc00d0d0
+dwarf-trace -t android --native --native-registers x0,x1,sp popen
+```
+
 <p align="center">
   <br>
   <img src="dwarf_debugger/assets/dwarf.png">
   <br>
   <br>
   <br>
-  <a href="http://www.giovanni-rocca.com/dwarf/">What is Dwarf</a> |
-  <a href="http://www.giovanni-rocca.com/dwarf/features/">Features</a> |
-  <a href="http://www.giovanni-rocca.com/dwarf/setup/">Setup</a> |
   <a href="https://igio90.github.io/Dwarf/">Javascript</a> |
-  <a href="http://www.giovanni-rocca.com/dwarf/tutorials/">Tutorials</a> |
-  <a href="http://www.giovanni-rocca.com/dwarf/screenshots/">Screenshots</a> |
   <a href="https://github.com/iGio90/Dwarf/blob/master/LICENSE">License</a> |
   <a href="https://join.slack.com/t/resecret/shared_invite/enQtMzc1NTg4MzE3NjA1LWZjY2YwMDA3OWZlZDg5Y2Y4NzRkYjE0ZjYzZGEwNDE2YmU0YTI0ZGJlZmNhODgzNDM1YzZmNWNlNGMwNDNhYTI">Slack</a>
   <br>
