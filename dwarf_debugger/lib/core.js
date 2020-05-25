@@ -3481,48 +3481,49 @@ var LogicInitialization = function () {
             }
           }
         } else if (logic_java_1.LogicJava.available) {
-          var artModule = Process.findModuleByName("libart.so");
-
-          if (artModule) {
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-              for (var _iterator = (0, _getIterator2["default"])(artModule.enumerateExports()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var moduleExportDetail = _step.value;
-
-                if (moduleExportDetail.name.indexOf("LoadNativeLibrary") != -1) {
-                  (function () {
-                    var argNum = logic_java_1.LogicJava.sdk <= 22 ? 1 : 2;
-                    Interceptor.attach(moduleExportDetail.address, {
-                      onEnter: function onEnter(args) {
-                        var moduleName = utils_1.Utils.readStdString(args[argNum]);
-                        LogicInitialization.hitModuleLoading.apply(this, [moduleName]);
-                      }
-                    });
-                  })();
-                }
-              }
-            } catch (err) {
-              _didIteratorError = true;
-              _iteratorError = err;
-            } finally {
-              try {
-                if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-                  _iterator["return"]();
-                }
-              } finally {
-                if (_didIteratorError) {
-                  throw _iteratorError;
-                }
-              }
-            }
-          }
-
           var dvmModule = Process.findModuleByName("libdvm.so");
 
           if (dvmModule) {
+            var artModule = Process.findModuleByName("libart.so");
+
+            if (artModule) {
+              var _iteratorNormalCompletion = true;
+              var _didIteratorError = false;
+              var _iteratorError = undefined;
+
+              try {
+                for (var _iterator = (0, _getIterator2["default"])(artModule.enumerateExports()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                  var moduleExportDetail = _step.value;
+
+                  if (moduleExportDetail.name.indexOf("LoadNativeLibrary") != -1) {
+                    (function () {
+                      console.log('hook loadnative');
+                      var argNum = logic_java_1.LogicJava.sdk <= 22 ? 1 : 2;
+                      Interceptor.attach(moduleExportDetail.address, {
+                        onEnter: function onEnter(args) {
+                          var moduleName = utils_1.Utils.readStdString(args[argNum]);
+                          LogicInitialization.hitModuleLoading.apply(this, [moduleName]);
+                        }
+                      });
+                    })();
+                  }
+                }
+              } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+              } finally {
+                try {
+                  if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+                    _iterator["return"]();
+                  }
+                } finally {
+                  if (_didIteratorError) {
+                    throw _iteratorError;
+                  }
+                }
+              }
+            }
+
             var _iteratorNormalCompletion2 = true;
             var _didIteratorError2 = false;
             var _iteratorError2 = undefined;
@@ -3532,6 +3533,7 @@ var LogicInitialization = function () {
                 var _moduleExportDetail = _step2.value;
 
                 if (_moduleExportDetail.name.indexOf("dvmLoadNativeCode") != -1) {
+                  console.log('hook dvmLoadNativeCode');
                   Interceptor.attach(_moduleExportDetail.address, {
                     onEnter: function onEnter(args) {
                       var moduleName = args[0].readUtf8String();
@@ -3551,6 +3553,53 @@ var LogicInitialization = function () {
               } finally {
                 if (_didIteratorError2) {
                   throw _iteratorError2;
+                }
+              }
+            }
+          } else {
+            if (logic_java_1.LogicJava.sdk >= 23) {
+              var _module = Process.findModuleByName(Process.arch.indexOf('64') >= 0 ? 'linker64' : "linker");
+
+              if (_module !== null) {
+                var _symbols = _module.enumerateSymbols();
+
+                var call_constructors = _symbols.find(function (symbol) {
+                  return symbol.name.indexOf('call_constructors') >= 0;
+                });
+
+                if (utils_1.Utils.isDefined(call_constructors)) {
+                  Interceptor.attach(call_constructors.address, function (args) {
+                    try {
+                      LogicInitialization.hitModuleLoading.apply(this, [args[4].readUtf8String()]);
+                    } catch (e) {}
+                  });
+                }
+              }
+            } else {
+              if (Process.arch === 'ia32') {
+                var linkerRanges = Process.findModuleByName('linker').enumerateRanges('r-x');
+
+                for (var i = 0; i < linkerRanges.length; i++) {
+                  var range = linkerRanges[i];
+                  var res = Memory.scanSync(range.base, range.size, '89 FD C7 44 24 30 00 00 00 00');
+
+                  if (res.length > 0) {
+                    Interceptor.attach(res[0].address, function () {
+                      var context = this.context;
+
+                      if (context.ecx.toInt32() !== 0x8) {
+                        return;
+                      }
+
+                      try {
+                        var w = context.esi.readCString();
+                        LogicInitialization.hitModuleLoading.apply(this, [w]);
+                      } catch (e) {
+                        utils_1.Utils.logErr('Dwarf.onLoad setup', e);
+                      }
+                    });
+                    break;
+                  }
                 }
               }
             }
@@ -4900,7 +4949,7 @@ var LogicWatchpoint = function () {
         if (watchpoint !== null) {
           var invocationListener = Interceptor.attach(exception.address, function (args) {
             invocationListener.detach();
-            Interceptor.flush();
+            Interceptor['flush']();
 
             if (watchpoint.callback !== null) {
               watchpoint.callback.call(this, args);
@@ -4956,7 +5005,7 @@ var LogicWatchpoint = function () {
         if (watchpoint !== null) {
           var invocationListener = Interceptor.attach(fromPtr, function (args) {
             invocationListener.detach();
-            Interceptor.flush();
+            Interceptor['flush']();
 
             if (watchpoint.callback !== null) {
               watchpoint.callback.call(this, args);
