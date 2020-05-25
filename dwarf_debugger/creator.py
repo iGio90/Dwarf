@@ -132,10 +132,12 @@ def main():
     binary = 'dwarf'
     if inject:
         binary += '-injector'
-    dwarf_launcher = 'npm run build\n%s -sp -s agent.js -t %s %s' % (binary, session_type, target)
+    dwarf_launcher = 'npm run build'
     injector_exe = 'dwarf'
     if os.name == 'nt':
+        dwarf_launcher += ' && ^'
         injector_exe += '.bat'
+    dwarf_launcher += '\n%s -sp -s agent.js -t %s %s' % (binary, session_type, target)
     injector = os.path.join(path, injector_exe)
     with open(injector, 'w') as f:
         f.write(dwarf_launcher)
