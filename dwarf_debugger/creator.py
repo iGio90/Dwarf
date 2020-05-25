@@ -136,7 +136,7 @@ def main():
     injector_exe = 'dwarf'
     if os.name == 'nt':
         dwarf_launcher += ' && ^'
-        injector_exe += '.bat'
+        injector_exe = 'launch_dwarf.bat'
     dwarf_launcher += '\n%s -sp -s agent.js -t %s %s' % (binary, session_type, target)
     injector = os.path.join(path, injector_exe)
     with open(injector, 'w') as f:
