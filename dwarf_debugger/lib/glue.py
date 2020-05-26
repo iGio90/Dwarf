@@ -17,7 +17,8 @@ class ArgParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-def put_default_arguments(parser):
+def initialize_arg_parser():
+    parser = ArgParser()
     parser.add_argument(
         "-t",
         "--target",
@@ -28,6 +29,7 @@ def put_default_arguments(parser):
 
     parser.add_argument('any', nargs='?', default='', help='path/pid/package')
     parser.add_argument('args', nargs='*', default=[''], help='arguments')
+    return parser
 
 
 def attach(args, device, user_script):
@@ -181,7 +183,7 @@ def load_script(args, proc, user_script, spawned=False):
     return 1
 
 
-def init(args, user_script=None):
+def attach_spawn_target(args, user_script=None):
     if not args.target and not args.device:
         print('missing session type. use -t local|android|ios|remote to define the session type'
               ' or specify a device id with --device')

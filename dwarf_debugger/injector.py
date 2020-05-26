@@ -15,20 +15,11 @@
     along with this program.
     If not, see <https://www.gnu.org/licenses/>
 """
+from dwarf_debugger.lib.tool import Tool
 
 
-def main():
-    import argparse
-
-    from dwarf_debugger.lib import glue
-
-    def process_args():
-        """ process commandline params
-        """
-        parser = glue.ArgParser()
-
-        glue.put_default_arguments(parser)
-
+class Injector(Tool):
+    def parse_arguments(self, parser):
         parser.add_argument(
             "-s",
             "--script",
@@ -45,27 +36,12 @@ def main():
             action='store_true',
             help="debug outputs from frida script")
 
-        args = parser.parse_args()
-        return args
+    def get_script(self):
+        if self.arguments.script is not None:
+            import os
+            if os.path.exists(self.arguments.script):
+                return open(self.arguments.script, 'r').read()
 
-    ########
-    # INIT #
-    ########
-    args = process_args()
 
-    if not args.target and not args.device:
-        print('missing session type. use -t local|android|ios|remote to define the session type'
-              ' or specify a device id with --device')
-        exit(0)
-
-    if args.any == '':
-        print('missing file or package name to attach')
-        exit(0)
-
-    user_script = None
-    if args.script is not None:
-        import os
-        if os.path.exists(args.script):
-            user_script = open(args.script, 'r').read()
-
-    glue.init(args, user_script)
+def main():
+    Injector()
