@@ -51,9 +51,9 @@ dwarf -t local -s /path/to/agent.js /usr/bin/cat /etc/shadow
 ```
 $ dwarf-creator
 project path (/home/igio90/test):
-
+> 
 project name (test):
-
+> 
 Session type (local)
 [*] L (local)
 [*] A (android)
@@ -61,9 +61,9 @@ Session type (local)
 [*] R (remote)
 
 append i to use dwarf-injector (ai | android inject)
-ai
+> ai
 target package (com.whatsapp)
-com.whatsapp
+> com.whatsapp
 
 $ (./intelliJ || ./vsCode).open(/home/igio90/test)
     .echo('enjoy scripting with frida and dwarf api autocompletition and in-line doc')
