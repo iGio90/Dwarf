@@ -347,7 +347,7 @@ class Dwarf(QObject):
 
             is_debug = self._app_window.dwarf_args.debug_script
             # this break_at_start have same behavior from args or from the checkbox i added
-            self._script.exports.init(break_at_start, is_debug, spawned)
+            self._script.exports.init(break_at_start, is_debug, spawned, True)
 
             if not os.path.exists(utils.home_path() + 'keywords.json'):
                 self.dump_keywords()

@@ -1477,7 +1477,7 @@ var Api = /*#__PURE__*/function () {
         }
       }
 
-      return Thread.backtrace(context, Backtracer.FUZZY).map(DebugSymbol.fromAddress);
+      return Thread.backtrace(context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress);
     }
   }, {
     key: "enumerateExports",
@@ -2024,9 +2024,23 @@ var Api = /*#__PURE__*/function () {
     }
   }, {
     key: "log",
-    value: function log(what) {
-      if (utils_1.Utils.isDefined(what)) {
-        dwarf_1.Dwarf.loggedSend("log:::" + what);
+    value: function log(message) {
+      if (utils_1.Utils.isDefined(message)) {
+        for (var _len = arguments.length, optionalParams = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          optionalParams[_key - 1] = arguments[_key];
+        }
+
+        if (dwarf_1.Dwarf.UI) {
+          if (optionalParams.length > 0) {
+            optionalParams.forEach(function (param) {
+              message += ' ' + param;
+            });
+          }
+
+          dwarf_1.Dwarf.loggedSend("log:::" + message);
+        } else {
+          console.log(message, optionalParams);
+        }
       }
     }
   }, {
@@ -2448,10 +2462,11 @@ var Dwarf = function () {
 
     (0, _createClass2["default"])(Dwarf, null, [{
       key: "init",
-      value: function init(breakStart, debug, spawned) {
+      value: function init(breakStart, debug, spawned, isUi) {
         Dwarf.BREAK_START = breakStart;
         Dwarf.DEBUG = debug;
         Dwarf.SPAWNED = spawned;
+        Dwarf.UI = isUi;
 
         if (logic_java_1.LogicJava.available) {
           logic_java_1.LogicJava.init();
@@ -2899,8 +2914,12 @@ rpc.exports = {
 
     return api_1.Api[apiFunction].apply(this, apiArguments);
   },
-  init: function init(breakStart, debug, spawned) {
-    dwarf_1.Dwarf.init(breakStart, debug, spawned);
+  init: function init(breakStart, debug, spawned, isUi) {
+    if (!utils_1.Utils.isDefined(isUi)) {
+      isUi = false;
+    }
+
+    dwarf_1.Dwarf.init(breakStart, debug, spawned, isUi);
   },
   keywords: function keywords() {
     var map = [];
