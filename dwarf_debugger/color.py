@@ -1,3 +1,6 @@
+import os
+
+
 class Color:
     """
     Colorify class.
@@ -23,6 +26,9 @@ class Color:
 
     @staticmethod
     def colorify(text, attrs):
+        if os.name == 'nt':
+            return text
+
         """Color a text following the given attributes."""
         colors = Color.colors
         msg = [colors[attr] for attr in attrs.split() if attr in colors]
