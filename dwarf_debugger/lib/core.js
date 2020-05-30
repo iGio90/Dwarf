@@ -3863,33 +3863,31 @@ var LogicJava = function () {
 
         var overloadCount = handler[method].overloads.length;
 
-        if (overloadCount > 0) {
-          var _loop = function _loop(i) {
-            var overload = handler[method].overloads[i];
+        var _loop = function _loop(i) {
+          var overload = handler[method].overloads[i];
 
-            if (utils_1.Utils.isDefined(implementation)) {
-              overload.implementation = function () {
-                LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
-                this.className = className;
-                this.method = method;
-                this.overload = overload;
-                var ret = implementation.apply(this, arguments);
+          if (utils_1.Utils.isDefined(implementation)) {
+            overload.implementation = function () {
+              LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
+              this.className = className;
+              this.method = method;
+              this.overload = overload;
+              var ret = implementation.apply(this, arguments);
 
-                if (typeof ret !== 'undefined') {
-                  return ret;
-                }
+              if (typeof ret !== 'undefined') {
+                return ret;
+              }
 
-                delete LogicJava.javaContexts[Process.getCurrentThreadId()];
-                return this.overload.apply(this, arguments);
-              };
-            } else {
-              overload.implementation = implementation;
-            }
-          };
-
-          for (var i = 0; i < overloadCount; i++) {
-            _loop(i);
+              delete LogicJava.javaContexts[Process.getCurrentThreadId()];
+              return this.overload.apply(this, arguments);
+            };
+          } else {
+            overload.implementation = implementation;
           }
+        };
+
+        for (var i = 0; i < overloadCount; i++) {
+          _loop(i);
         }
 
         handler.$dispose();
@@ -4088,7 +4086,7 @@ var LogicJava = function () {
               }
             } else if (t === 'object') {
               if (handle[name] !== null) {
-                if (typeof handle[name] !== 'undefined') {
+                if (utils_1.Utils.isDefined(handle[name])) {
                   sub_handle_class = handle[name]['$className'];
                 }
               }
@@ -4097,7 +4095,7 @@ var LogicJava = function () {
                 value = handle[name]['$handle'];
                 sub_handle = handle[name]['$handle'];
               } else {
-                if (handle[name] !== null && handle[name]['value'] !== null) {
+                if (utils_1.Utils.isDefined(handle[name]) && utils_1.Utils.isDefined(handle[name]['value'])) {
                   sub_handle_class = handle[name]['value']['$className'];
                 }
 
@@ -4118,17 +4116,17 @@ var LogicJava = function () {
                       if (handle[name]['fieldReturnType']['type'] !== 'pointer') {
                         value = sub_handle_class;
                       } else {
-                        if (handle[name]['value'] !== null) {
+                        if (utils_1.Utils.isDefined(handle[name]['value'])) {
                           value = handle[name]['value'].toString();
                           t = (0, _typeof2["default"])(value);
                         }
                       }
                     }
-                  } else if (handle[name]['value'] !== null) {
+                  } else if (utils_1.Utils.isDefined(handle[name]['value'])) {
                     value = handle[name]['value'].toString();
                     t = (0, _typeof2["default"])(value);
                   }
-                } else if (handle[name]['value'] !== null) {
+                } else if (utils_1.Utils.isDefined(handle[name]['value'])) {
                   t = (0, _typeof2["default"])(handle[name]['value']);
                   value = handle[name]['value'].toString();
                 }
