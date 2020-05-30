@@ -101,8 +101,9 @@ dwarf-trace -t android --native --native-registers x0,x1,sp popen
   <br>
   <br>
   <br>
-  <a href="https://igio90.github.io/Dwarf/">Javascript</a> |
+  <a href="http://161.35.65.238/dwarf">Javascript</a> |
   <a href="https://github.com/iGio90/Dwarf/blob/master/LICENSE">License</a> |
+  <a href="https://www.patreon.com/securereturn">Become a patron</a> |
   <a href="https://join.slack.com/t/resecret/shared_invite/enQtMzc1NTg4MzE3NjA1LWZjY2YwMDA3OWZlZDg5Y2Y4NzRkYjE0ZjYzZGEwNDE2YmU0YTI0ZGJlZmNhODgzNDM1YzZmNWNlNGMwNDNhYTI">Slack</a>
   <br>
   <br>
