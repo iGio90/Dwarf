@@ -3383,7 +3383,7 @@ var FileSystem = /*#__PURE__*/function () {
     key: "fseek",
     value: function fseek(filePointer, offset, origin) {
       if (FileSystem._fseek === null || FileSystem._fseek.isNull()) {
-        throw new Error("DwarfFS::fread not available!");
+        throw new Error("DwarfFS::fseek not available!");
       }
 
       if (utils_1.Utils.isDefined(filePointer) && !filePointer.isNull()) {
@@ -3394,7 +3394,7 @@ var FileSystem = /*#__PURE__*/function () {
     key: "ftell",
     value: function ftell(filePointer) {
       if (FileSystem._ftell === null || FileSystem._ftell.isNull()) {
-        throw new Error("DwarfFS::fread not available!");
+        throw new Error("DwarfFS::ftell not available!");
       }
 
       if (utils_1.Utils.isDefined(filePointer) && !filePointer.isNull()) {
@@ -5175,6 +5175,8 @@ exports.LogicObjC = LogicObjC;
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
 
+var _typeof2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/typeof"));
+
 var _parseInt2 = _interopRequireDefault(require("@babel/runtime-corejs2/core-js/parse-int"));
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
@@ -5342,7 +5344,33 @@ var LogicStalker = function () {
     }, {
       key: "putCalloutIfNeeded",
       value: function putCalloutIfNeeded(iterator, stalkerInfo, instruction) {
-        var putCallout = true;
+        var putCallout = false;
+
+        if ((0, _typeof2["default"])(stalkerInfo.currentMode) === 'object') {
+          var callbacks = stalkerInfo.currentMode;
+
+          if (utils_1.Utils.isDefined(callbacks.onInstruction)) {
+            putCallout = true;
+          } else if (utils_1.Utils.isDefined(callbacks.onCall)) {
+            if (instruction.groups.indexOf('call') >= 0 || instruction.groups.indexOf('branch_relative') >= 0) {
+              putCallout = true;
+            }
+          } else if (utils_1.Utils.isDefined(callbacks.onJump)) {
+            if (instruction.groups.indexOf('jump') >= 0) {
+              putCallout = true;
+            }
+          } else if (utils_1.Utils.isDefined(callbacks.onReturn)) {
+            if (instruction.groups.indexOf('return') >= 0) {
+              putCallout = true;
+            }
+          } else if (utils_1.Utils.isDefined(callbacks.onPrivilege)) {
+            if (instruction.groups.indexOf('privilege') >= 0) {
+              putCallout = true;
+            }
+          }
+        } else {
+          putCallout = true;
+        }
 
         if (putCallout) {
           if (dwarf_1.Dwarf.DEBUG) {
@@ -5371,7 +5399,7 @@ var LogicStalker = function () {
 
         if (!stalkerInfo.didFistJumpOut) {
           pc = stalkerInfo.initialContextAddress;
-          var lastInt = (0, _parseInt2["default"])(stalkerInfo.lastContextAddress);
+          var lastInt = stalkerInfo.lastContextAddress.toInt32();
 
           if (lastInt > 0) {
             var pcInt = (0, _parseInt2["default"])(context.pc);
@@ -5386,16 +5414,40 @@ var LogicStalker = function () {
         var shouldBreak = false;
 
         if (stalkerInfo.currentMode !== null) {
+          var that = {
+            context: context,
+            instruction: insn,
+            stop: function stop() {
+              stalkerInfo.terminated = true;
+            }
+          };
+
           if (typeof stalkerInfo.currentMode === 'function') {
             shouldBreak = false;
-            var that = {
-              context: context,
-              instruction: insn,
-              stop: function stop() {
-                stalkerInfo.terminated = true;
-              }
-            };
             stalkerInfo.currentMode.apply(that);
+          } else if ((0, _typeof2["default"])(stalkerInfo.currentMode) === 'object') {
+            shouldBreak = false;
+            var callbacks = stalkerInfo.currentMode;
+
+            if (utils_1.Utils.isDefined(callbacks.onInstruction)) {
+              callbacks.onInstruction.apply(that);
+            } else if (utils_1.Utils.isDefined(callbacks.onCall)) {
+              if (insn.groups.indexOf('call') >= 0 || insn.groups.indexOf('branch_relative') >= 0) {
+                callbacks.onCall.apply(that);
+              }
+            } else if (utils_1.Utils.isDefined(callbacks.onJump)) {
+              if (insn.groups.indexOf('jump') >= 0) {
+                callbacks.onJump.apply(that);
+              }
+            } else if (utils_1.Utils.isDefined(callbacks.onReturn)) {
+              if (insn.groups.indexOf('return') >= 0) {
+                callbacks.onReturn.apply(that);
+              }
+            } else if (utils_1.Utils.isDefined(callbacks.onPrivilege)) {
+              if (insn.groups.indexOf('privilege') >= 0) {
+                callbacks.onPrivilege.apply(that);
+              }
+            }
           } else if (stalkerInfo.lastContextAddress !== null && stalkerInfo.lastCallJumpInstruction !== null) {
             if (dwarf_1.Dwarf.DEBUG) {
               utils_1.Utils.logDebug('[' + tid + '] stalkerCallout: ' + 'using mode ->', stalkerInfo.currentMode);
@@ -5492,7 +5544,7 @@ var LogicStalker = function () {
 
 exports.LogicStalker = LogicStalker;
 
-},{"./dwarf":103,"./logic_breakpoint":108,"./stalker_info":114,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],113:[function(require,module,exports){
+},{"./dwarf":103,"./logic_breakpoint":108,"./stalker_info":114,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],113:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
