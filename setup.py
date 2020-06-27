@@ -49,7 +49,8 @@ setup(
             'dwarf = dwarf_debugger.dwarf:main',
             'dwarf-creator = dwarf_debugger.creator:main',
             'dwarf-injector = dwarf_debugger.injector:main',
-            'dwarf-trace = dwarf_debugger.trace:main'
+            'dwarf-trace = dwarf_debugger.trace:main',
+            'dwarf-strace = dwarf_debugger.strace:main',
         ]},
     classifiers=[
         "Development Status :: 4 - Beta",

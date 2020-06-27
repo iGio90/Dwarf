@@ -1428,6 +1428,8 @@ var utils_1 = require("./utils");
 
 var watchpoint_1 = require("./watchpoint");
 
+var elf_file_1 = require("./elf_file");
+
 var Api = /*#__PURE__*/function () {
   function Api() {
     (0, _classCallCheck2["default"])(this, Api);
@@ -1908,6 +1910,43 @@ var Api = /*#__PURE__*/function () {
         utils_1.Utils.logErr("getSymbolByAddress", e);
         return null;
       }
+    }
+  }, {
+    key: "getELFHeader",
+    value: function getELFHeader(moduleName, isUICall) {
+      if (!utils_1.Utils.isDefined(isUICall)) {
+        isUICall = false;
+      }
+
+      if (!utils_1.Utils.isString(moduleName)) {
+        throw new Error("Api::getELFHeader() => No moduleName given!");
+      }
+
+      var fridaModule = Process.findModuleByName(moduleName);
+
+      if (utils_1.Utils.isDefined(fridaModule) && utils_1.Utils.isString(fridaModule.path)) {
+        try {
+          var elfFile = new elf_file_1.ELF_File(fridaModule.path);
+
+          if (utils_1.Utils.isDefined(elfFile)) {
+            if (isUICall) {
+              send({
+                elf_info: elfFile
+              });
+            }
+
+            return elfFile;
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        if (isUICall) {
+          throw new Error("Api::getELFHeader() => Module not found!");
+        }
+      }
+
+      return null;
     }
   }, {
     key: "hookAllJavaMethods",
@@ -2398,7 +2437,7 @@ var Api = /*#__PURE__*/function () {
 
 exports.Api = Api;
 
-},{"./dwarf":103,"./fs":104,"./logic_breakpoint":107,"./logic_initialization":108,"./logic_java":109,"./logic_objc":110,"./logic_stalker":111,"./logic_watchpoint":112,"./thread_wrapper":116,"./utils":117,"./watchpoint":118,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],102:[function(require,module,exports){
+},{"./dwarf":103,"./elf_file":104,"./fs":105,"./logic_breakpoint":108,"./logic_initialization":109,"./logic_java":110,"./logic_objc":111,"./logic_stalker":112,"./logic_watchpoint":113,"./thread_wrapper":117,"./utils":118,"./watchpoint":119,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],102:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -2454,6 +2493,8 @@ var logic_watchpoint_1 = require("./logic_watchpoint");
 
 var utils_1 = require("./utils");
 
+var fs_1 = require("./fs");
+
 var Dwarf = function () {
   var Dwarf = /*#__PURE__*/function () {
     function Dwarf() {
@@ -2474,6 +2515,7 @@ var Dwarf = function () {
 
         logic_initialization_1.LogicInitialization.init();
         interceptor_1.DwarfInterceptor.init();
+        fs_1.FileSystem.init();
         var exclusions = ['constructor', 'length', 'name', 'prototype'];
         (0, _getOwnPropertyNames["default"])(api_1.Api).forEach(function (prop) {
           if (exclusions.indexOf(prop) < 0) {
@@ -2683,7 +2725,505 @@ var Dwarf = function () {
 exports.Dwarf = Dwarf;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./api":101,"./interceptor":106,"./logic_breakpoint":107,"./logic_initialization":108,"./logic_java":109,"./logic_watchpoint":112,"./utils":117,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],104:[function(require,module,exports){
+},{"./api":101,"./fs":105,"./interceptor":107,"./logic_breakpoint":108,"./logic_initialization":109,"./logic_java":110,"./logic_watchpoint":113,"./utils":118,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],104:[function(require,module,exports){
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime-corejs2/helpers/classCallCheck"));
+
+var _defineProperty = _interopRequireDefault(require("@babel/runtime-corejs2/core-js/object/define-property"));
+
+(0, _defineProperty["default"])(exports, "__esModule", {
+  value: true
+});
+exports.ELF_File = void 0;
+
+var api_1 = require("./api");
+
+var fs_1 = require("./fs");
+
+var utils_1 = require("./utils");
+
+var ELF_File = function ELF_File(filePath) {
+  (0, _classCallCheck2["default"])(this, ELF_File);
+  this.is64Bit = false;
+  this.endian = "little";
+  this.fileHeader = null;
+  this.programHeaders = [];
+  this.sectionHeaders = [];
+
+  if (!utils_1.Utils.isString(filePath)) {
+    throw new Error("InvalidArgs: No Path given!");
+  }
+
+  var dwarfApi = api_1.Api;
+  var dwarfFS = fs_1.FileSystem;
+
+  if (!utils_1.Utils.isDefined(dwarfApi)) {
+    throw new Error("DwarfApi missing!");
+  }
+
+  if (!utils_1.Utils.isDefined(dwarfFS)) {
+    throw new Error("DwarfFs missing!");
+  }
+
+  var _file = dwarfFS.fopen(filePath, "r");
+
+  if (!utils_1.Utils.isDefined(_file) || _file.isNull()) {
+    throw new Error("Failed to open File: " + filePath);
+  }
+
+  var headerBuffer = dwarfFS.allocateRw(0x40);
+
+  if (!utils_1.Utils.isDefined(headerBuffer) || headerBuffer.isNull()) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to allocate Memory!");
+  }
+
+  if (dwarfFS.fread(headerBuffer, 1, 0x40, _file) != 0x40) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  this.fileHeader = new ELF_File.ELF_Header(headerBuffer);
+
+  if (this.fileHeader.e_ident[0] !== 0x7f || this.fileHeader.e_ident[1] !== 0x45 || this.fileHeader.e_ident[2] !== 0x4c || this.fileHeader.e_ident[3] !== 0x46) {
+    dwarfFS.fclose(_file);
+    throw new Error("No valid ELF File!");
+  }
+
+  if (this.fileHeader.e_ident[6] !== 1) {
+    dwarfFS.fclose(_file);
+    throw new Error("No valid ELF File!");
+  }
+
+  if (this.fileHeader.e_version !== 1) {
+    dwarfFS.fclose(_file);
+    throw new Error("No valid ELF File!");
+  }
+
+  if (this.fileHeader.e_ident[4] === 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("No valid ELF File!");
+  } else if (this.fileHeader.e_ident[4] === 1) {
+    this.is64Bit = false;
+  } else if (this.fileHeader.e_ident[4] === 2) {
+    this.is64Bit = true;
+  }
+
+  if (this.fileHeader.e_ident[5] === 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("No valid ELF File!");
+  } else if (this.fileHeader.e_ident[5] === 1) {
+    this.endian = "little";
+  } else if (this.fileHeader.e_ident[5] === 2) {
+    this.endian = "big";
+  }
+
+  var progHeadersBuffer = dwarfFS.allocateRw(this.fileHeader.e_phnum * this.fileHeader.e_phentsize);
+
+  if (!utils_1.Utils.isDefined(progHeadersBuffer) || progHeadersBuffer.isNull()) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to allocate Memory!");
+  }
+
+  if (dwarfFS.fseek(_file, this.fileHeader.e_phoff, 0) !== 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  if (dwarfFS.fread(progHeadersBuffer, 1, this.fileHeader.e_phentsize * this.fileHeader.e_phnum, _file) != this.fileHeader.e_phentsize * this.fileHeader.e_phnum) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  for (var i = 0; i < this.fileHeader.e_phnum; i++) {
+    this.programHeaders.push(new ELF_File.ELF_ProgamHeader(progHeadersBuffer.add(this.fileHeader.e_phentsize * i), this.is64Bit));
+  }
+
+  var strTableBuffer = dwarfFS.allocateRw(this.fileHeader.e_shentsize);
+
+  if (!utils_1.Utils.isDefined(strTableBuffer) || strTableBuffer.isNull()) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to allocate Memory!");
+  }
+
+  if (dwarfFS.fseek(_file, this.fileHeader.e_shoff + this.fileHeader.e_shentsize * this.fileHeader.e_shstrndx, 0) !== 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  if (dwarfFS.fread(strTableBuffer, 1, this.fileHeader.e_shentsize, _file) !== this.fileHeader.e_shentsize) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  var section = new ELF_File.ELF_SectionHeader(strTableBuffer, this.is64Bit);
+
+  if (dwarfFS.fseek(_file, section.sh_offset, 0) !== 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  var strSectionBuffer = dwarfFS.allocateRw(section.sh_size);
+
+  if (!utils_1.Utils.isDefined(strSectionBuffer) || strSectionBuffer.isNull()) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to allocate Memory!");
+  }
+
+  if (dwarfFS.fread(strSectionBuffer, 1, section.sh_size, _file) !== section.sh_size) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  var string_table = [];
+  var pos = 0;
+
+  while (pos < section.sh_size) {
+    var str = strSectionBuffer.add(pos).readCString() || "NULL";
+
+    if (utils_1.Utils.isDefined(str) && str !== null && str.length > 0) {
+      string_table[pos] = str;
+      pos += str.length + 1;
+    } else {
+      string_table[pos] = "";
+      pos += 1;
+    }
+  }
+
+  var sectionsBuffer = dwarfFS.allocateRw(this.fileHeader.e_shentsize * this.fileHeader.e_shnum);
+
+  if (!utils_1.Utils.isDefined(sectionsBuffer) || sectionsBuffer.isNull()) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to allocate Memory!");
+  }
+
+  if (dwarfFS.fseek(_file, this.fileHeader.e_shoff, 0) !== 0) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  if (dwarfFS.fread(sectionsBuffer, 1, this.fileHeader.e_shentsize * this.fileHeader.e_shnum, _file) !== this.fileHeader.e_shentsize * this.fileHeader.e_shnum) {
+    dwarfFS.fclose(_file);
+    throw new Error("Failed to read from File!");
+  }
+
+  for (var _i = 0; _i < this.fileHeader.e_shnum; _i++) {
+    section = new ELF_File.ELF_SectionHeader(sectionsBuffer.add(this.fileHeader.e_shentsize * _i), this.is64Bit);
+    section.name = strSectionBuffer.add(section.sh_name).readCString() || "NULL";
+
+    if (section.name === ".init_array") {
+      var initArrayBuffer = dwarfFS.allocateRw(section.sh_size);
+
+      if (!utils_1.Utils.isDefined(initArrayBuffer) || initArrayBuffer.isNull()) {
+        dwarfFS.fclose(_file);
+        throw new Error("Failed to allocate Memory!");
+      }
+
+      if (dwarfFS.fseek(_file, section.sh_offset, 0) !== 0) {
+        dwarfFS.fclose(_file);
+        throw new Error("Failed to read from File!");
+      }
+
+      if (dwarfFS.fread(initArrayBuffer, 1, section.sh_size, _file) !== section.sh_size) {
+        dwarfFS.fclose(_file);
+        throw new Error("Failed to read from File!");
+      }
+
+      section.data = [];
+      var size = 4;
+
+      if (this.is64Bit) {
+        size += 4;
+      }
+
+      for (var a = 0; a < section.sh_size; a += Process.pointerSize) {
+        section.data.push(initArrayBuffer.add(a).readPointer());
+      }
+    }
+
+    this.sectionHeaders.push(section);
+  }
+
+  dwarfFS.fclose(_file);
+};
+
+exports.ELF_File = ELF_File;
+
+(function (ELF_File) {
+  var ELF_Header = function ELF_Header(dataPtr) {
+    var _this = this;
+
+    (0, _classCallCheck2["default"])(this, ELF_Header);
+    this.e_ident = [];
+    this.e_type = 0;
+    this.e_machine = 0;
+    this.e_version = 0;
+    this.e_entry = 0;
+    this.e_phoff = 0;
+    this.e_shoff = 0;
+    this.e_flags = 0;
+    this.e_ehsize = 0;
+    this.e_phentsize = 0;
+    this.e_phnum = 0;
+    this.e_shentsize = 0;
+    this.e_shnum = 0;
+    this.e_shstrndx = 0;
+
+    this.toString = function () {
+      var str = [];
+      str.push("e_ident: " + _this.e_ident.toString());
+      str.push("e_type: 0x" + _this.e_type.toString(16));
+      str.push("e_machine: 0x" + _this.e_machine.toString(16));
+      str.push("e_version: 0x" + _this.e_version.toString(16));
+      str.push("e_entry: 0x" + _this.e_entry.toString(16));
+      str.push("e_phoff: 0x" + _this.e_phoff.toString(16));
+      str.push("e_shoff: 0x" + _this.e_shoff.toString(16));
+      str.push("e_flags: 0x" + _this.e_flags.toString(16));
+      str.push("e_ehsize: 0x" + _this.e_ehsize.toString(16));
+      str.push("e_phentsize: 0x" + _this.e_phentsize.toString(16));
+      str.push("e_phnum: 0x" + _this.e_phnum.toString(16));
+      str.push("e_shentsize: 0x" + _this.e_shentsize.toString(16));
+      str.push("e_shnum: 0x" + _this.e_shnum.toString(16));
+      str.push("e_shstrndx: 0x" + _this.e_shstrndx.toString(16));
+      return str.join("\n");
+    };
+
+    if (utils_1.Utils.isDefined(dataPtr) && !dataPtr.isNull()) {
+      this.e_ident = [];
+
+      for (var i = 0; i < ELF_Header.EI_NIDENT; i++) {
+        this.e_ident.push(dataPtr.add(i).readU8());
+      }
+
+      this.e_type = dataPtr.add(0x10).readU16();
+      this.e_machine = dataPtr.add(0x12).readU16();
+      this.e_version = dataPtr.add(0x14).readU32();
+      var _pos = 0;
+
+      if (this.e_ident[4] === 1) {
+        this.e_entry = dataPtr.add(0x18).readU32();
+        this.e_phoff = dataPtr.add(0x1c).readU32();
+        this.e_shoff = dataPtr.add(0x20).readU32();
+        _pos = 0x24;
+      } else if (this.e_ident[4] === 2) {
+        this.e_entry = dataPtr.add(0x18).readU64().toNumber();
+        this.e_phoff = dataPtr.add(0x20).readU64().toNumber();
+        this.e_shoff = dataPtr.add(0x28).readU64().toNumber();
+        _pos = 0x30;
+      } else {
+        return {
+          e_ident: [],
+          e_type: 0,
+          e_machine: 0,
+          e_version: 0,
+          e_entry: 0,
+          e_phoff: 0,
+          e_shoff: 0,
+          e_flags: 0,
+          e_ehsize: 0,
+          e_phentsize: 0,
+          e_phnum: 0,
+          e_shentsize: 0,
+          e_shnum: 0,
+          e_shstrndx: 0
+        };
+      }
+
+      this.e_flags = dataPtr.add(_pos).readU32();
+      this.e_ehsize = dataPtr.add(_pos + 0x4).readU16();
+      this.e_phentsize = dataPtr.add(_pos + 0x6).readU16();
+      this.e_phnum = dataPtr.add(_pos + 0x8).readU16();
+      this.e_shentsize = dataPtr.add(_pos + 0xa).readU16();
+      this.e_shnum = dataPtr.add(_pos + 0xc).readU16();
+      this.e_shstrndx = dataPtr.add(_pos + 0xe).readU16();
+    }
+  };
+
+  ELF_File.ELF_Header = ELF_Header;
+
+  (function (ELF_Header) {
+    ELF_Header.EI_NIDENT = 16;
+  })(ELF_Header = ELF_File.ELF_Header || (ELF_File.ELF_Header = {}));
+
+  var ELF_ProgamHeader = function ELF_ProgamHeader(dataPtr) {
+    var _this2 = this;
+
+    var is64Bit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    (0, _classCallCheck2["default"])(this, ELF_ProgamHeader);
+    this.p_type = 0;
+    this.p_vaddr = 0;
+    this.p_paddr = 0;
+    this.p_filesz = 0;
+    this.p_memsz = 0;
+    this.p_offset = 0;
+    this.p_flags = 0;
+    this.p_align = 0;
+
+    this.toString = function () {
+      var str = [];
+      str.push("p_type: 0x" + _this2.p_type.toString(16) + " - " + ELF_ProgamHeader.PT_TYPE_NAME[_this2.p_type]);
+      str.push("p_offset: 0x" + _this2.p_offset.toString(16));
+      str.push("p_vaddr: 0x" + _this2.p_vaddr.toString(16));
+      str.push("p_paddr: 0x" + _this2.p_paddr.toString(16));
+      str.push("p_filesz: 0x" + _this2.p_filesz.toString(16));
+      str.push("p_memsz: 0x" + _this2.p_memsz.toString(16));
+      str.push("p_flags: 0x" + _this2.p_flags.toString(16));
+      str.push("p_align: 0x" + _this2.p_align.toString(16));
+      return str.join("\n");
+    };
+
+    if (utils_1.Utils.isDefined(dataPtr) && !dataPtr.isNull()) {
+      this.p_type = dataPtr.readU32();
+
+      if (!is64Bit) {
+        this.p_offset = dataPtr.add(0x4).readU32();
+        this.p_vaddr = dataPtr.add(0x8).readU32();
+        this.p_paddr = dataPtr.add(0xc).readU32();
+        this.p_filesz = dataPtr.add(0x10).readU32();
+        this.p_memsz = dataPtr.add(0x14).readU32();
+        this.p_flags = dataPtr.add(0x18).readU32();
+        this.p_align = dataPtr.add(0x1c).readU32();
+      } else {
+        this.p_flags = dataPtr.add(0x4).readU32();
+        this.p_offset = dataPtr.add(0x8).readU64().toNumber();
+        this.p_vaddr = dataPtr.add(0x10).readU64().toNumber();
+        this.p_paddr = dataPtr.add(0x18).readU64().toNumber();
+        this.p_filesz = dataPtr.add(0x20).readU64().toNumber();
+        this.p_memsz = dataPtr.add(0x28).readU64().toNumber();
+        this.p_align = dataPtr.add(0x30).readU64().toNumber();
+      }
+    }
+  };
+
+  ELF_File.ELF_ProgamHeader = ELF_ProgamHeader;
+
+  (function (ELF_ProgamHeader) {
+    ELF_ProgamHeader.PT_TYPE_NAME = {
+      0: "NULL",
+      1: "LOAD",
+      2: "DYNAMIC",
+      3: "INTERP",
+      4: "NOTE",
+      5: "SHLIB",
+      6: "PHDR",
+      0x60000000: "LOOS",
+      0x6474e550: "PT_GNU_EH_FRAME",
+      0x6474e551: "PT_GNU_STACK",
+      0x6474e552: "PT_GNU_RELO",
+      0x6fffffff: "HIOS",
+      0x70000000: "LOPROC",
+      0x7fffffff: "HIPROC"
+    };
+  })(ELF_ProgamHeader = ELF_File.ELF_ProgamHeader || (ELF_File.ELF_ProgamHeader = {}));
+
+  var ELF_SectionHeader = function ELF_SectionHeader(dataPtr) {
+    var _this3 = this;
+
+    var is64Bit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    (0, _classCallCheck2["default"])(this, ELF_SectionHeader);
+    this.name = "";
+    this.data = [];
+    this.sh_name = 0;
+    this.sh_type = 0;
+    this.sh_flags = 0;
+    this.sh_addr = 0;
+    this.sh_offset = 0;
+    this.sh_size = 0;
+    this.sh_link = 0;
+    this.sh_info = 0;
+    this.sh_addralign = 0;
+    this.sh_entsize = 0;
+
+    this.toString = function () {
+      var str = [];
+      str.push("sh_name: 0x" + _this3.sh_name.toString(16) + " - " + _this3.name);
+      str.push("sh_type: 0x" + _this3.sh_type.toString(16) + " - " + ELF_SectionHeader.SH_TYPE_NAME[_this3.sh_type]);
+      str.push("sh_flags: 0x" + _this3.sh_flags.toString(16));
+      str.push("sh_addr: 0x" + _this3.sh_addr.toString(16));
+      str.push("sh_offset: 0x" + _this3.sh_offset.toString(16));
+      str.push("sh_size: 0x" + _this3.sh_size.toString(16));
+      str.push("sh_link: 0x" + _this3.sh_link.toString(16));
+      str.push("sh_info: 0x" + _this3.sh_info.toString(16));
+      str.push("sh_addralign: 0x" + _this3.sh_addralign.toString(16));
+      str.push("sh_entsize: 0x" + _this3.sh_entsize.toString(16));
+      return str.join("\n");
+    };
+
+    if (utils_1.Utils.isDefined(dataPtr) && !dataPtr.isNull()) {
+      this.name = "";
+      this.sh_name = dataPtr.add(0x0).readU32();
+      this.sh_type = dataPtr.add(0x4).readU32();
+
+      if (!is64Bit) {
+        this.sh_flags = dataPtr.add(0x8).readU32();
+        this.sh_addr = dataPtr.add(0xc).readU32();
+        this.sh_offset = dataPtr.add(0x10).readU32();
+        this.sh_size = dataPtr.add(0x14).readU32();
+        this.sh_link = dataPtr.add(0x18).readU32();
+        this.sh_info = dataPtr.add(0x1c).readU32();
+        this.sh_addralign = dataPtr.add(0x20).readU32();
+        this.sh_entsize = dataPtr.add(0x24).readU32();
+      } else {
+        this.sh_flags = dataPtr.add(0x8).readU64().toNumber();
+        this.sh_addr = dataPtr.add(0x10).readU64().toNumber();
+        this.sh_offset = dataPtr.add(0x18).readU64().toNumber();
+        this.sh_size = dataPtr.add(0x20).readU64().toNumber();
+        this.sh_link = dataPtr.add(0x28).readU32();
+        this.sh_info = dataPtr.add(0x2c).readU32();
+        this.sh_addralign = dataPtr.add(0x30).readU64().toNumber();
+        this.sh_entsize = dataPtr.add(0x38).readU64().toNumber();
+      }
+    }
+  };
+
+  ELF_File.ELF_SectionHeader = ELF_SectionHeader;
+
+  (function (ELF_SectionHeader) {
+    ELF_SectionHeader.SH_TYPE_NAME = {
+      0: "NULL",
+      1: "PROGBITS",
+      2: "SYMTAB",
+      3: "STRTAB",
+      4: "RELA",
+      5: "HASH",
+      6: "DYNAMIC",
+      7: "NOTE",
+      8: "NOBITS",
+      9: "REL",
+      10: "SHLIB",
+      11: "DYNSYM",
+      14: "INIT_ARRAY",
+      15: "FINI_ARRAY",
+      16: "PREINIT_ARRAY",
+      17: "GROUP",
+      18: "SYMTAB_SHNDX",
+      19: "RELR",
+      0x60000000: "LOOS",
+      0x60000001: "ANDROID_REL",
+      0x60000002: "ANDROID_RELA",
+      0x6fff4c00: "LLVM_ORDTAB",
+      0x6fff4c01: "LLVM_LINKER_OPTIONS",
+      0x6fff4c02: "LLVM_CALL_GRAPH_PROFILE",
+      0x6fff4c03: "LLVM_ADDRSIG",
+      0x6fff4c04: "LLVM_DEPENDENT_LIBRARIES",
+      0x6fffff00: "ANDROID_RELR",
+      0x6ffffff5: "GNU_ATTRIBUTES",
+      0x6fffffff: "GNU_VERSYM",
+      0x6ffffff6: "GNU_HASH",
+      0x6ffffffd: "GNU_VERDEF",
+      0x6ffffffe: "GNU_VERNEED",
+      0x70000000: "LOPROC",
+      0x7fffffff: "HIPROC",
+      0x80000000: "LOUSER",
+      0xffffffff: "HIUSER"
+    };
+  })(ELF_SectionHeader = ELF_File.ELF_SectionHeader || (ELF_File.ELF_SectionHeader = {}));
+})(ELF_File = exports.ELF_File || (exports.ELF_File = {}));
+
+},{"./api":101,"./fs":105,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],105:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -2701,6 +3241,8 @@ exports.FileSystem = void 0;
 
 var api_1 = require("./api");
 
+var utils_1 = require("./utils");
+
 var FileSystem = /*#__PURE__*/function () {
   function FileSystem() {
     (0, _classCallCheck2["default"])(this, FileSystem);
@@ -2709,17 +3251,18 @@ var FileSystem = /*#__PURE__*/function () {
   (0, _createClass2["default"])(FileSystem, null, [{
     key: "init",
     value: function init() {
-      FileSystem._fclose = FileSystem.exportToFunction('fclose', 'int', ['pointer']);
-      FileSystem._fcntl = FileSystem.exportToFunction('fcntl', 'int', ['int', 'int', 'int']);
-      FileSystem._fgets = FileSystem.exportToFunction('fgets', 'int', ['pointer', 'int', 'pointer']);
-      FileSystem._fileno = FileSystem.exportToFunction('fileno', 'int', ['pointer']);
-      FileSystem._fopen = FileSystem.exportToFunction('fopen', 'pointer', ['pointer', 'pointer']);
-      FileSystem._fputs = FileSystem.exportToFunction('fputs', 'int', ['pointer', 'pointer']);
-      FileSystem._fread = FileSystem.exportToFunction('fread', 'uint32', ['pointer', 'uint32', 'uint32', 'pointer']);
-      FileSystem._fseek = FileSystem.exportToFunction('fseek', 'int', ['pointer', 'int', 'int']);
-      FileSystem._getline = FileSystem.exportToFunction('getline', 'int', ['pointer', 'pointer', 'pointer']);
-      FileSystem._pclose = FileSystem.exportToFunction('pclose', 'int', ['pointer']);
-      FileSystem._popen = FileSystem.exportToFunction('popen', 'pointer', ['pointer', 'pointer']);
+      FileSystem._fclose = FileSystem.exportToFunction("fclose", "int", ["pointer"]);
+      FileSystem._fcntl = FileSystem.exportToFunction("fcntl", "int", ["int", "int", "int"]);
+      FileSystem._fgets = FileSystem.exportToFunction("fgets", "int", ["pointer", "int", "pointer"]);
+      FileSystem._fileno = FileSystem.exportToFunction("fileno", "int", ["pointer"]);
+      FileSystem._fopen = FileSystem.exportToFunction("fopen", "pointer", ["pointer", "pointer"]);
+      FileSystem._fputs = FileSystem.exportToFunction("fputs", "int", ["pointer", "pointer"]);
+      FileSystem._fread = FileSystem.exportToFunction("fread", "uint32", ["pointer", "uint32", "uint32", "pointer"]);
+      FileSystem._fseek = FileSystem.exportToFunction("fseek", "int", ["pointer", "int", "int"]);
+      FileSystem._getline = FileSystem.exportToFunction("getline", "int", ["pointer", "pointer", "pointer"]);
+      FileSystem._pclose = FileSystem.exportToFunction("pclose", "int", ["pointer"]);
+      FileSystem._popen = FileSystem.exportToFunction("popen", "pointer", ["pointer", "pointer"]);
+      FileSystem._ftell = FileSystem.exportToFunction("ftell", "long", ["pointer"]);
     }
   }, {
     key: "exportToFunction",
@@ -2736,7 +3279,7 @@ var FileSystem = /*#__PURE__*/function () {
     key: "allocateRw",
     value: function allocateRw(size) {
       var pt = Memory.alloc(size);
-      Memory.protect(pt, size, 'rw-');
+      Memory.protect(pt, size, "rw-");
       return pt;
     }
   }, {
@@ -2769,7 +3312,7 @@ var FileSystem = /*#__PURE__*/function () {
   }, {
     key: "readStringFromFile",
     value: function readStringFromFile(filePath) {
-      var fp = FileSystem.fopen(filePath, 'r');
+      var fp = FileSystem.fopen(filePath, "r");
 
       if (fp === NULL) {
         return "";
@@ -2807,14 +3350,56 @@ var FileSystem = /*#__PURE__*/function () {
   }, {
     key: "writeStringToFile",
     value: function writeStringToFile(filePath, content, append) {
-      if (typeof append === 'undefined') {
+      if (typeof append === "undefined") {
         append = false;
       }
 
-      var f = new File(filePath, append ? 'wa' : 'w');
+      var f = new File(filePath, append ? "wa" : "w");
       f.write(content);
       f.flush();
       f.close();
+    }
+  }, {
+    key: "fclose",
+    value: function fclose(filePointer) {
+      if (FileSystem._fclose != null) {
+        FileSystem._fclose(filePointer);
+      }
+    }
+  }, {
+    key: "fread",
+    value: function fread(ptr, size, count, filePointer) {
+      if (FileSystem._fread === null || FileSystem._fread.isNull()) {
+        throw new Error("DwarfFS::fread not available!");
+      }
+
+      if (utils_1.Utils.isDefined(ptr) && !ptr.isNull()) {
+        if (utils_1.Utils.isDefined(filePointer) && !filePointer.isNull()) {
+          return FileSystem._fread(ptr, size, count, filePointer);
+        }
+      }
+    }
+  }, {
+    key: "fseek",
+    value: function fseek(filePointer, offset, origin) {
+      if (FileSystem._fseek === null || FileSystem._fseek.isNull()) {
+        throw new Error("DwarfFS::fread not available!");
+      }
+
+      if (utils_1.Utils.isDefined(filePointer) && !filePointer.isNull()) {
+        return FileSystem._fseek(filePointer, offset, origin);
+      }
+    }
+  }, {
+    key: "ftell",
+    value: function ftell(filePointer) {
+      if (FileSystem._ftell === null || FileSystem._ftell.isNull()) {
+        throw new Error("DwarfFS::fread not available!");
+      }
+
+      if (utils_1.Utils.isDefined(filePointer) && !filePointer.isNull()) {
+        return FileSystem._ftell(filePointer);
+      }
     }
   }]);
   return FileSystem;
@@ -2822,7 +3407,7 @@ var FileSystem = /*#__PURE__*/function () {
 
 exports.FileSystem = FileSystem;
 
-},{"./api":101,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],105:[function(require,module,exports){
+},{"./api":101,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],106:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -2850,6 +3435,8 @@ var utils_1 = require("./utils");
 
 var isDefined = utils_1.Utils.isDefined;
 
+var elf_file_1 = require("./elf_file");
+
 Date.prototype['getTwoDigitHour'] = function () {
   return this.getHours() < 10 ? '0' + this.getHours() : this.getHours();
 };
@@ -2867,6 +3454,7 @@ Date.prototype['getHourMinuteSecond'] = function () {
 };
 
 var dwarf;
+global["ELF_File"] = elf_file_1.ELF_File;
 rpc.exports = {
   api: function api(tid, apiFunction, apiArguments) {
     if (dwarf_1.Dwarf.DEBUG) {
@@ -2937,7 +3525,7 @@ rpc.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./api":101,"./dwarf":103,"./thread_api":114,"./utils":117,"@babel/runtime-corejs2/core-js/date/now":1,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],106:[function(require,module,exports){
+},{"./api":101,"./dwarf":103,"./elf_file":104,"./thread_api":115,"./utils":118,"@babel/runtime-corejs2/core-js/date/now":1,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],107:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -3056,7 +3644,7 @@ var DwarfInterceptor = /*#__PURE__*/function () {
 exports.DwarfInterceptor = DwarfInterceptor;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./dwarf":103,"./thread_context":115,"./utils":117,"@babel/runtime-corejs2/core-js/object/assign":4,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],107:[function(require,module,exports){
+},{"./dwarf":103,"./thread_context":116,"./utils":118,"@babel/runtime-corejs2/core-js/object/assign":4,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],108:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -3357,7 +3945,7 @@ var LogicBreakpoint = function () {
 
 exports.LogicBreakpoint = LogicBreakpoint;
 
-},{"./api":101,"./breakpoint":102,"./dwarf":103,"./logic_java":109,"./logic_objc":110,"./logic_stalker":111,"./thread_context":115,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],108:[function(require,module,exports){
+},{"./api":101,"./breakpoint":102,"./dwarf":103,"./logic_java":110,"./logic_objc":111,"./logic_stalker":112,"./thread_context":116,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],109:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -3666,7 +4254,7 @@ var LogicInitialization = function () {
 
 exports.LogicInitialization = LogicInitialization;
 
-},{"./api":101,"./dwarf":103,"./logic_breakpoint":107,"./logic_java":109,"./utils":117,"@babel/runtime-corejs2/core-js/get-iterator":2,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],109:[function(require,module,exports){
+},{"./api":101,"./dwarf":103,"./logic_breakpoint":108,"./logic_java":110,"./utils":118,"@babel/runtime-corejs2/core-js/get-iterator":2,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],110:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -3863,31 +4451,33 @@ var LogicJava = function () {
 
         var overloadCount = handler[method].overloads.length;
 
-        var _loop = function _loop(i) {
-          var overload = handler[method].overloads[i];
+        if (overloadCount > 0) {
+          var _loop = function _loop(i) {
+            var overload = handler[method].overloads[i];
 
-          if (utils_1.Utils.isDefined(implementation)) {
-            overload.implementation = function () {
-              LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
-              this.className = className;
-              this.method = method;
-              this.overload = overload;
-              var ret = implementation.apply(this, arguments);
+            if (utils_1.Utils.isDefined(implementation)) {
+              overload.implementation = function () {
+                LogicJava.javaContexts[Process.getCurrentThreadId()] = this;
+                this.className = className;
+                this.method = method;
+                this.overload = overload;
+                var ret = implementation.apply(this, arguments);
 
-              if (typeof ret !== 'undefined') {
-                return ret;
-              }
+                if (typeof ret !== 'undefined') {
+                  return ret;
+                }
 
-              delete LogicJava.javaContexts[Process.getCurrentThreadId()];
-              return this.overload.apply(this, arguments);
-            };
-          } else {
-            overload.implementation = implementation;
+                delete LogicJava.javaContexts[Process.getCurrentThreadId()];
+                return this.overload.apply(this, arguments);
+              };
+            } else {
+              overload.implementation = implementation;
+            }
+          };
+
+          for (var i = 0; i < overloadCount; i++) {
+            _loop(i);
           }
-        };
-
-        for (var i = 0; i < overloadCount; i++) {
-          _loop(i);
         }
 
         handler.$dispose();
@@ -4327,7 +4917,7 @@ var LogicJava = function () {
 
 exports.LogicJava = LogicJava;
 
-},{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],110:[function(require,module,exports){
+},{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":108,"./utils":118,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/get-own-property-names":6,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13,"@babel/runtime-corejs2/helpers/typeof":14}],111:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -4580,7 +5170,7 @@ var LogicObjC = function () {
 
 exports.LogicObjC = LogicObjC;
 
-},{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],111:[function(require,module,exports){
+},{"./breakpoint":102,"./dwarf":103,"./logic_breakpoint":108,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],112:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -4902,7 +5492,7 @@ var LogicStalker = function () {
 
 exports.LogicStalker = LogicStalker;
 
-},{"./dwarf":103,"./logic_breakpoint":107,"./stalker_info":113,"./utils":117,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],112:[function(require,module,exports){
+},{"./dwarf":103,"./logic_breakpoint":108,"./stalker_info":114,"./utils":118,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],113:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5157,7 +5747,7 @@ var LogicWatchpoint = function () {
 
 exports.LogicWatchpoint = LogicWatchpoint;
 
-},{"./dwarf":103,"./logic_breakpoint":107,"./utils":117,"./watchpoint":118,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],113:[function(require,module,exports){
+},{"./dwarf":103,"./logic_breakpoint":108,"./utils":118,"./watchpoint":119,"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],114:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5186,7 +5776,7 @@ var StalkerInfo = function StalkerInfo(tid) {
 
 exports.StalkerInfo = StalkerInfo;
 
-},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],114:[function(require,module,exports){
+},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],115:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5210,7 +5800,7 @@ var ThreadApi = function ThreadApi(apiFunction, apiArguments) {
 
 exports.ThreadApi = ThreadApi;
 
-},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],115:[function(require,module,exports){
+},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],116:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5235,7 +5825,7 @@ var ThreadContext = function ThreadContext(tid) {
 
 exports.ThreadContext = ThreadContext;
 
-},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],116:[function(require,module,exports){
+},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],117:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5335,7 +5925,7 @@ var ThreadWrapper = function () {
 
 exports.ThreadWrapper = ThreadWrapper;
 
-},{"./dwarf":103,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],117:[function(require,module,exports){
+},{"./dwarf":103,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],118:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5485,7 +6075,7 @@ var Utils;
   Utils.readStdString = readStdString;
 })(Utils = exports.Utils || (exports.Utils = {}));
 
-},{"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],118:[function(require,module,exports){
+},{"@babel/runtime-corejs2/core-js/json/stringify":3,"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/core-js/object/keys":7,"@babel/runtime-corejs2/core-js/parse-int":8,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}],119:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime-corejs2/helpers/interopRequireDefault");
@@ -5555,4 +6145,4 @@ var Watchpoint = /*#__PURE__*/function () {
 
 exports.Watchpoint = Watchpoint;
 
-},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}]},{},[105]);
+},{"@babel/runtime-corejs2/core-js/object/define-property":5,"@babel/runtime-corejs2/helpers/classCallCheck":11,"@babel/runtime-corejs2/helpers/createClass":12,"@babel/runtime-corejs2/helpers/interopRequireDefault":13}]},{},[106]);
