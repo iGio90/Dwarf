@@ -1,5 +1,5 @@
 capstone>=4.0.1
 requests>=2.22.0
 frida>=12.8.0
-PyQt5>=5.13.2
+PyQt5>=5.13,<5.14
 pyperclip>=1.7.0
