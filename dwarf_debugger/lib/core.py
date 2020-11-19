@@ -336,7 +336,7 @@ class Dwarf(QObject):
             with open(utils.resource_path('lib/core.js'), 'r') as core_script:
                 script_content = core_script.read()
 
-            self._script = self._process.create_script(script_content, runtime='v8')
+            self._script = self._process.create_script(script_content)
             self._script.on('message', self._on_message)
             self._script.on('destroyed', self._on_script_destroyed)
             self._script.load()
