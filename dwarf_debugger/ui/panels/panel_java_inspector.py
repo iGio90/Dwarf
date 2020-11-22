@@ -147,7 +147,7 @@ class JavaInspector(QWidget):
 
     def _breakpoint_class_functions(self, class_name):
         if class_name:
-            self._app_window.dwarf.dwarf_api('breakpointAllJavaMethods', class_name)
+            self._app_window.dwarf.dwarf_api('hookAllJavaMethods', class_name)
 
     def _on_class_contextmenu(self, pos):
         """ Modules ContextMenu
