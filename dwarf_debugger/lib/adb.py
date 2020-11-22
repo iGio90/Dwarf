@@ -448,7 +448,7 @@ class Adb(QObject):
                 if v_major >= 12 and v_minor >= 8:
                     return '.'.join(check_ver)
                 else:
-                    print('frida version is outdated')
+                    #print('frida version is outdated')
                     return '.'.join(check_ver)
             except ValueError:
                 return None

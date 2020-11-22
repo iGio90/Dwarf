@@ -39,6 +39,7 @@ class AppWindow(QMainWindow):
     onRestart = pyqtSignal(name='onRestart')
     onSystemUIElementCreated = pyqtSignal(str, QWidget, name='onSystemUIElementCreated')
     onSystemUIElementRemoved = pyqtSignal(str, name='onSystemUIElementRemoved')
+    switchTabRequest = pyqtSignal(str)
 
     def __init__(self, dwarf_args, flags=None):
         super(AppWindow, self).__init__(flags)
@@ -60,7 +61,36 @@ class AppWindow(QMainWindow):
         self.menu = self.menuBar()
         self.view_menu = None
 
-        self._initialize_ui_elements()
+        # dockwidgets
+        self.watchpoints_dwidget = None
+        self.breakpoint_dwiget = None
+        self.bookmarks_dwiget = None
+        self.registers_dock = None
+        self.console_dock = None
+        self.backtrace_dock = None
+        self.threads_dock = None
+        # panels
+        self.asm_panel = None
+        self.backtrace_panel = None
+        self.bookmarks_panel = None
+        self.console_panel = None
+        self.context_panel = None
+        self.debug_panel = None
+        self.contexts_list_panel = None
+        self.data_panel = None
+        self.ftrace_panel = None
+        self.breakpoints_panel = None
+        self.objc_inspector_panel = None
+        self.java_inspector_panel = None
+        self.java_explorer_panel = None
+        self.java_trace_panel = None
+        self.modules_panel = None
+        self.ranges_panel = None
+        self.search_panel = None
+        self.smali_panel = None
+        self.watchpoints_panel = None
+
+        self._ui_elems = []
 
         self.setWindowTitle(
             'Dwarf - A debugger for reverse engineers, crackers and security analyst'
