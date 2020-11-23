@@ -4481,6 +4481,7 @@ var LogicJava = function () {
         }
 
         handler.$dispose();
+          return true;
       }
     }, {
       key: "hookJavaMethod",
