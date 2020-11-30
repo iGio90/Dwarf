@@ -5713,11 +5713,11 @@ var LogicWatchpoint = function () {
         var callback = arguments.length > 2 ? arguments[2] : undefined;
         var memPtr;
 
-        if (typeof address === 'string') {
+        //if (typeof address === 'string') {
           memPtr = ptr(address);
-        } else {
+        /*} else {
           memPtr = address;
-        }
+        }*/
 
         if (memPtr.isNull()) {
           throw new Error('putWatchpoint: Invalid PointerValue!');
