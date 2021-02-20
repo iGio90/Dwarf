@@ -688,13 +688,12 @@ class DisassemblyView(QAbstractScrollArea):
                 context_menu.addAction(entry_str, self._on_switch_mode)
 
         if not self._lines:
-            add_default_actions()
-
             # allow jumpto in empty panel
             glbl_pt = self.mapToGlobal(event.pos())
             context_menu.exec_(glbl_pt)
             return
-
+        
+        add_default_actions()
         index = self.pixel_to_line(loc_x, loc_y)
         address = -1
         if 0 <= index < self.visible_lines():
