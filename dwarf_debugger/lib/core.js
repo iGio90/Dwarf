@@ -3708,7 +3708,7 @@ var LogicBreakpoint = function () {
             condition = new Function(condition);
           }
 
-          if (!condition.call(threadContext)) {
+          if ((typeof condition === "function") && !condition.call(threadContext)) {
             delete dwarf_1.Dwarf.threadContexts[tid];
             return;
           }
