@@ -5719,7 +5719,7 @@ var LogicWatchpoint = function () {
           memPtr = address;
         }*/
 
-        if (memPtr.isNull()) {
+        if (memPtr === ptr(0)) {
           throw new Error('putWatchpoint: Invalid PointerValue!');
         }
 
@@ -5766,7 +5766,7 @@ var LogicWatchpoint = function () {
           memPtr = address;
         }*/
 
-        if (memPtr.isNull()) {
+        if (memPtr === ptr(0)) {
           throw new Error('removeWatchpoint: Invalid PointerValue!');
         }
 
