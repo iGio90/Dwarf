@@ -5713,13 +5713,13 @@ var LogicWatchpoint = function () {
         var callback = arguments.length > 2 ? arguments[2] : undefined;
         var memPtr;
 
-        //if (typeof address === 'string') {
+        if (address.constructor.name !== 'NativePointer') {
           memPtr = ptr(address);
-        /*} else {
+        } else {
           memPtr = address;
-        }*/
+        }
 
-        if (memPtr === ptr(0)) {
+        if ((address.constructor.name !== 'NativePointer') || memPtr.isNull()) {
           throw new Error('putWatchpoint: Invalid PointerValue!');
         }
 
@@ -5760,14 +5760,14 @@ var LogicWatchpoint = function () {
       value: function removeWatchpoint(address) {
         var memPtr;
 
-        //if (typeof address === 'string') {
+        if (address.constructor.name !== 'NativePointer') {
           memPtr = ptr(address);
-        /*} else {
+        } else {
           memPtr = address;
-        }*/
+        }
 
-        if (memPtr === ptr(0)) {
-          throw new Error('removeWatchpoint: Invalid PointerValue!');
+        if ((address.constructor.name !== 'NativePointer') || memPtr.isNull()) {
+          throw new Error('putWatchpoint: Invalid PointerValue!');
         }
 
         if (!LogicWatchpoint.memoryWatchpoints.hasOwnProperty(memPtr.toString())) {
