@@ -38,9 +38,9 @@ def main():
         },
         "devDependencies": {
             "@types/dwarf-typings": "git://github.com/iGio90/DwarfTypings.git",
-            "@types/frida-gum": "^13.0.0",
-            "@types/node": "^12.0.4",
-            "frida-compile": "^9.0.2"
+            "@types/frida-gum": "^17.1.0",
+            "@types/node": "^16.4.8",
+            "frida-compile": "^10.0.0"
         }
     }
 
