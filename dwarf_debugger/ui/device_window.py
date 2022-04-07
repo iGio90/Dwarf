@@ -85,8 +85,8 @@ class DeviceWindow(DwarfDialog):
         main_wrap.setContentsMargins(0, 0, 0, 0)
 
         self.desktop_geom = qApp.desktop().availableGeometry()
-        self.setFixedSize(self.desktop_geom.width() * .6,
-                          self.desktop_geom.height() * .5)
+        self.setFixedSize(int(self.desktop_geom.width() * .6),
+                          int(self.desktop_geom.height() * .5))
 
         if self.device is None:
             self._dev_bar = DeviceBar(self, self.device_type)

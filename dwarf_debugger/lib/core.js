@@ -5347,7 +5347,7 @@ var LogicStalker = function () {
       value: function putCalloutIfNeeded(iterator, stalkerInfo, instruction) {
         var putCallout = false;
 
-        if ((0, _typeof2["default"])(stalkerInfo.currentMode) === 'object') {
+        if (stalkerInfo.currentMode !== null && (0, _typeof2["default"])(stalkerInfo.currentMode) === 'object') {
           var callbacks = stalkerInfo.currentMode;
 
           if (utils_1.Utils.isDefined(callbacks.onInstruction)) {

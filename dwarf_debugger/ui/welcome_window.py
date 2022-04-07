@@ -209,8 +209,8 @@ class WelcomeDialog(QDialog):
 
         # setup size and remove/disable titlebuttons
         self.desktop_geom = qApp.desktop().availableGeometry()
-        self.setFixedSize(self.desktop_geom.width() * .45,
-                          self.desktop_geom.height() * .4)
+        self.setFixedSize(int(self.desktop_geom.width() * .45),
+                          int(self.desktop_geom.height() * .4))
         self.setGeometry(
             QStyle.alignedRect(Qt.LeftToRight, Qt.AlignCenter, self.size(),
                                qApp.desktop().availableGeometry()))
