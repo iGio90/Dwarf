@@ -15,4 +15,4 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 
-DWARF_VERSION = '1.1.2'
+DWARF_VERSION = '1.1.3'
