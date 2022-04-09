@@ -21,7 +21,7 @@ import json
 
 import requests
 
-from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
+from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal, QThread
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QStandardItemModel, QStandardItem, QFontMetrics
 from PyQt5.QtWidgets import (QWidget, QDialog, QLabel, QVBoxLayout,
                              QHBoxLayout, QPushButton, QSpacerItem,
@@ -163,11 +163,11 @@ class UpdateBar(QWidget):
 
         self.update_button = QPushButton('Update now!', update_label)
         self.update_button.setStyleSheet('padding: 0; border-color: white;')
-        self.update_button.setGeometry(
-            self.parent().width() - 10 - update_label.width() * .2, 5,
-            update_label.width() * .2, 25)
+        geom = QRect(int(self.parent().width() - 10 - update_label.width()
+                         * .2), 5, int(update_label.width() * .2), 25)
+        self.update_button.setGeometry(geom)
         self.update_button.clicked.connect(self.update_now_clicked)
-        #self.setMaximumHeight(35)
+        # self.setMaximumHeight(35)
         h_box.addWidget(update_label)
         self.setLayout(h_box)
 
@@ -235,8 +235,10 @@ class WelcomeDialog(QDialog):
 
         random.seed(a=None, version=2)
 
-        self._base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-        path_to_gitignore = os.path.join(self._base_path, os.pardir, os.pardir, '.gitignore')
+        self._base_path = getattr(
+            sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        path_to_gitignore = os.path.join(
+            self._base_path, os.pardir, os.pardir, '.gitignore')
         is_git_version = os.path.exists(path_to_gitignore)
 
         if is_git_version and os.path.isfile(path_to_gitignore):
@@ -358,7 +360,6 @@ class WelcomeDialog(QDialog):
         main_wrap.addLayout(h_box)
         self.setLayout(main_wrap)
 
-
     def _on_dwarf_isupdate(self):
         if not utils.is_connected():
             return
@@ -368,17 +369,21 @@ class WelcomeDialog(QDialog):
         self.onIsNewerVersion.emit()
 
     def _update_dwarf(self):
-        path_to_version = os.path.join(self._base_path, os.pardir, os.pardir, 'VERSION')
+        path_to_version = os.path.join(
+            self._base_path, os.pardir, os.pardir, 'VERSION')
         if not os.path.exists(path_to_version):
             if utils.is_connected():
                 try:
                     # file exists in dwarf >2.0.0 wich means update from 1.x to 2.x
-                    request = requests.get('https://raw.githubusercontent.com/iGio90/Dwarf/master/VERSION')
+                    request = requests.get(
+                        'https://raw.githubusercontent.com/iGio90/Dwarf/master/VERSION')
                     if request.ok:
-                        utils.show_message_box('This update will break your Dwarf installation!\nSee GitHub for more infos')
+                        utils.show_message_box(
+                            'This update will break your Dwarf installation!\nSee GitHub for more infos')
                         from PyQt5.QtCore import QUrl
                         from PyQt5.QtGui import QDesktopServices
-                        QDesktopServices.openUrl(QUrl('https://github.com/iGio90/Dwarf'))
+                        QDesktopServices.openUrl(
+                            QUrl('https://github.com/iGio90/Dwarf'))
                         return
                 except:
                     pass

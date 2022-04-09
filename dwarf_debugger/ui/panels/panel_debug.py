@@ -61,7 +61,7 @@ class QDebugPanel(QMainWindow):
 
     def showEvent(self, event):
         main_width = self.size().width()
-        new_widths = [main_width * .4, main_width * .5]
+        new_widths = [int(main_width * .4), int(main_width * .5)]
         self.resizeDocks([self.dock_memory_panel, self.dock_disassembly_panel], new_widths, Qt.Horizontal)
         return super().showEvent(event)
 

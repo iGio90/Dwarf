@@ -190,7 +190,7 @@ class WatchpointsWidget(QWidget):
         self._new_pixmap = QPixmap(_section_width, 20)
         self._new_pixmap.fill(Qt.transparent)
         painter = QPainter(self._new_pixmap)
-        rect = QRect((_section_width * 0.5), 0, 20, 20)
+        rect = QRect(int(_section_width * 0.5), 0, 20, 20)
         painter.setBrush(QColor('#666'))
         painter.setPen(QColor('#666'))
         painter.drawEllipse(rect)
