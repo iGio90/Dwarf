@@ -42,7 +42,6 @@ from dwarf_debugger.ui.widgets.utils.selection import Selection
 # pylint: disable=C0103
 
 
-
 # pylint: disable=C0103
 
 
@@ -187,12 +186,15 @@ class HexEditor(QAbstractScrollArea):
 
         self._bytes_per_line = self._pref_bpl
 
-        self._char_width = QFontMetricsF(self.font).width('#')  # self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width(
+            '#')  # self.fontMetrics().width("#")
         if (self._char_width % 1) < .5:
-            self.font.setLetterSpacing(QFont.AbsoluteSpacing, -(self._char_width % 1.0))
+            self.font.setLetterSpacing(
+                QFont.AbsoluteSpacing, -(self._char_width % 1.0))
             self._char_width -= self._char_width % 1.0
         else:
-            self.font.setLetterSpacing(QFont.AbsoluteSpacing, 1.0 - (self._char_width % 1.0))
+            self.font.setLetterSpacing(
+                QFont.AbsoluteSpacing, 1.0 - (self._char_width % 1.0))
             self._char_width += 1.0 - (self._char_width % 1.0)
 
         self._char_height = self.fontMetrics().height()
@@ -215,7 +217,7 @@ class HexEditor(QAbstractScrollArea):
 
         self._hex_start = self._offset_start + self._offset_width + self._col_div
         self._hex_width = self.bytes_per_line * (
-                3 * self._char_width) - self._char_width
+            3 * self._char_width) - self._char_width
 
         self._ascii_start = self._hex_start + self._hex_width + self._col_div
         self._ascii_width = self.bytes_per_line * self._char_width
@@ -371,7 +373,7 @@ class HexEditor(QAbstractScrollArea):
         if isinstance(value, int):
             self._bytes_per_line = value
             self._hex_width = self.bytes_per_line * (
-                    3 * self._char_width) - self._char_width
+                3 * self._char_width) - self._char_width
             self._ascii_start = self._hex_start + self._hex_width + self._col_div
             self._ascii_width = self.bytes_per_line * self._char_width
             self.viewport().update()
@@ -412,10 +414,10 @@ class HexEditor(QAbstractScrollArea):
         """ returns number of chars in row
             not used atm - no hor scroll
         """
-        ret = (self.bytes_per_line * 3) + self.bytes_per_line + (
-                (self._offset_width - self._offset_start) / self._char_width) * 4
+        ret = (self.bytes_per_line * 3) + self.bytes_per_line + \
+            ((self._offset_width - self._offset_start) / self._char_width) * 4
         # ret = self._bytes_per_line * 4
-        return ret
+        return int(ret)
 
     @staticmethod
     def to_ascii(bytes_):
@@ -456,7 +458,8 @@ class HexEditor(QAbstractScrollArea):
         """ helper
         """
         coord_x, coord_y = self.index_to_coords(index)
-        loc_x, loc_y = self.data_to_pixel(coord_x, coord_y)  # pylint: disable=unused-variable
+        loc_x, loc_y = self.data_to_pixel(
+            coord_x, coord_y)  # pylint: disable=unused-variable
         loc_y -= self._header_height + self._char_height + self._ver_spacing
         loc_y = loc_y / (self._char_height + self._ver_spacing)
         return int(loc_y)
@@ -464,7 +467,8 @@ class HexEditor(QAbstractScrollArea):
     def pixel_to_line(self, screen_x, screen_y):
         """ helper
         """
-        coord_x, coord_y = self.pixel_to_data(screen_x, screen_y)  # pylint: disable=unused-variable
+        coord_x, coord_y = self.pixel_to_data(
+            screen_x, screen_y)  # pylint: disable=unused-variable
         return coord_y
 
     def pixel_to_caret(self, pos_x, pos_y):
@@ -613,11 +617,11 @@ class HexEditor(QAbstractScrollArea):
         """
         self.horizontalScrollBar().setRange(
             0,
-            self.number_of_chars() - self.visible_columns() + 1)
+            int(self.number_of_chars() - self.visible_columns()) + 1)
         self.horizontalScrollBar().setPageStep(self.visible_columns())
         self.verticalScrollBar().setRange(
             0,
-            self.number_of_lines() - self.visible_lines() + 2)
+            int(self.number_of_lines() - self.visible_lines()) + 2)
         self.verticalScrollBar().setPageStep(self.visible_lines())
 
     def read_pointer(self):
@@ -651,7 +655,7 @@ class HexEditor(QAbstractScrollArea):
                 self.caret.nibble = 0
             else:
                 _byte = (current_byte & 0x0f) | (
-                        self._hex_chars.index(text) << 4)
+                    self._hex_chars.index(text) << 4)
                 self.caret.nibble = 1
         # caret is asciitype try byteconv
         elif self.caret.mode == 'ascii':
@@ -893,7 +897,8 @@ class HexEditor(QAbstractScrollArea):
         """ onresize
         """
         width = self.width()
-        columns = max(8, int((((width - (2 * self._hor_spacing)) / self._char_width) - self._max_bple) / 32) * 8)
+        columns = max(8, int((((width - (2 * self._hor_spacing)) /
+                               self._char_width) - self._max_bple) / 32) * 8)
         if columns < 8:
             columns = 8
 
@@ -1144,10 +1149,12 @@ class HexEditor(QAbstractScrollArea):
                 context_menu.addSeparator()
 
                 context_menu.addAction("&Disassemble", self.on_cm_show_asm)
-                context_menu.addAction("&Dump to file", self.on_cm_dump_to_file)
+                context_menu.addAction(
+                    "&Dump to file", self.on_cm_dump_to_file)
                 context_menu.addSeparator()
 
-                context_menu.addAction("Follow &pointer", self.on_cm_follow_pointer)
+                context_menu.addAction(
+                    "Follow &pointer", self.on_cm_follow_pointer)
                 context_menu.addSeparator()
 
                 if self.app.watchpoints_panel:
@@ -1162,7 +1169,8 @@ class HexEditor(QAbstractScrollArea):
                         context_menu.addAction(
                             'Remove breakpoint', lambda: self.app.dwarf.dwarf_api('deleteBreakpoint', addr_str))
                     else:
-                        context_menu.addAction('Breakpoint address', lambda: self.app.dwarf.breakpoint_native(addr_str))
+                        context_menu.addAction(
+                            'Breakpoint address', lambda: self.app.dwarf.breakpoint_native(addr_str))
 
                 context_menu.addSeparator()
 
@@ -1184,9 +1192,11 @@ class HexEditor(QAbstractScrollArea):
             context_menu.addSeparator()
 
         if show:
-            context_menu.addAction('&Copy address', lambda: utils.copy_hex_to_clipboard(hex(self.base + index)))
+            context_menu.addAction(
+                '&Copy address', lambda: utils.copy_hex_to_clipboard(hex(self.base + index)))
 
-        context_menu.addAction("&Jump to address", self.debug_panel.on_cm_jump_to_address)
+        context_menu.addAction(
+            "&Jump to address", self.debug_panel.on_cm_jump_to_address)
 
         if not context_menu.isEmpty():
             context_menu.exec_(QCursor.pos())
@@ -1224,7 +1234,8 @@ class HexEditor(QAbstractScrollArea):
     def on_cm_dump_to_file(self):
         """ ContextMenu DumpToFile
         """
-        accept, _input = InputDialog.input(hint='length of bytes to dump', placeholder='1024')
+        accept, _input = InputDialog.input(
+            hint='length of bytes to dump', placeholder='1024')
 
         if not accept:
             return
