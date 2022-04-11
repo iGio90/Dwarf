@@ -186,8 +186,7 @@ class HexEditor(QAbstractScrollArea):
 
         self._bytes_per_line = self._pref_bpl
 
-        self._char_width = QFontMetricsF(self.font).width(
-            '#')  # self.fontMetrics().width("#")
+        self._char_width = QFontMetricsF(self.font).width('#')
         if (self._char_width % 1) < .5:
             self.font.setLetterSpacing(
                 QFont.AbsoluteSpacing, -(self._char_width % 1.0))
@@ -197,8 +196,9 @@ class HexEditor(QAbstractScrollArea):
                 QFont.AbsoluteSpacing, 1.0 - (self._char_width % 1.0))
             self._char_width += 1.0 - (self._char_width % 1.0)
 
-        self._char_height = self.fontMetrics().height()
-        self._base_line = self.fontMetrics().ascent()
+        self._char_width = int(ceil(self._char_width))
+        self._char_height = int(self.fontMetrics().height())
+        self._base_line = int(self.fontMetrics().ascent())
 
         # drawing positions
         self._addr_chr = 8
@@ -549,7 +549,8 @@ class HexEditor(QAbstractScrollArea):
         screen_x = int(
             floor((coord_x * (self._char_width * 3)) + self._hex_start))
         screen_y = self._header_height + self._char_height + self._ver_spacing
-        screen_y += coord_y * (self._char_height + self._ver_spacing)
+        screen_y += int(floor(coord_y *
+                              (self._char_height + self._ver_spacing)))
         return (screen_x, screen_y)
 
     def index_to_asciicol(self, index):
@@ -558,7 +559,8 @@ class HexEditor(QAbstractScrollArea):
         coord_x, coord_y = self.index_to_coords(index - self.pos)
         screen_x = int(floor(coord_x * self._char_width) + self._ascii_start)
         screen_y = self._header_height + self._char_height + self._ver_spacing
-        screen_y += coord_y * (self._char_height + self._ver_spacing)
+        screen_y += int(floor(coord_y *
+                              (self._char_height + self._ver_spacing)))
         return (screen_x, screen_y)
 
     def caret_to_hexcol(self, caret):
@@ -567,7 +569,7 @@ class HexEditor(QAbstractScrollArea):
         hex_cx, hex_cy = self.index_to_hexcol(caret.position)
         hex_cx += (caret.nibble * self._char_width) + 1
         hex_cy -= self._base_line
-        hex_rect = QRect(hex_cx - 1, hex_cy, 1, self._char_height)
+        hex_rect = QRect(int(hex_cx - 1), int(hex_cy), 1, int(self._char_height))
         return hex_rect
 
     def caret_to_asciicol(self, caret):
@@ -575,7 +577,7 @@ class HexEditor(QAbstractScrollArea):
         """
         ascii_cx, ascii_cy = self.index_to_asciicol(caret.position)
         ascii_cy -= self._base_line
-        ascii_rect = QRect(ascii_cx - 1, ascii_cy, 1, self._char_height)
+        ascii_rect = QRect(int(ascii_cx - 1), int(ascii_cy), 1, int(self._char_height))
         return ascii_rect
 
     def data_at_caret(self, caret):
@@ -609,8 +611,8 @@ class HexEditor(QAbstractScrollArea):
             self._offset_width = max(
                 len('OFFSET (X)') * self._char_width, 8 * self._char_width)
 
-        self._hex_start = self._offset_start + self._offset_width + self._col_div
-        self._ascii_start = self._hex_start + self._hex_width + self._col_div
+        self._hex_start = int(self._offset_start + self._offset_width + self._col_div)
+        self._ascii_start = int(self._hex_start + self._hex_width + self._col_div)
 
     def adjust(self):
         """ scroll adjusting
