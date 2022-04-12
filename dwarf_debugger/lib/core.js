@@ -5711,15 +5711,9 @@ var LogicWatchpoint = function () {
       value: function putWatchpoint(address) {
         var flags = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : watchpoint_1.MEMORY_ACCESS_READ | watchpoint_1.MEMORY_ACCESS_WRITE;
         var callback = arguments.length > 2 ? arguments[2] : undefined;
-        var memPtr;
+        var memPtr = ptr(address);
 
-        if (address.constructor.name !== 'NativePointer') {
-          memPtr = ptr(address);
-        } else {
-          memPtr = address;
-        }
-
-        if ((address.constructor.name !== 'NativePointer') || memPtr.isNull()) {
+        if ((memPtr.constructor.name !== 'NativePointer') || memPtr.isNull()) {
           throw new Error('putWatchpoint: Invalid PointerValue!');
         }
 
@@ -5758,15 +5752,9 @@ var LogicWatchpoint = function () {
     }, {
       key: "removeWatchpoint",
       value: function removeWatchpoint(address) {
-        var memPtr;
+        var memPtr = ptr(address);
 
-        if (address.constructor.name !== 'NativePointer') {
-          memPtr = ptr(address);
-        } else {
-          memPtr = address;
-        }
-
-        if ((address.constructor.name !== 'NativePointer') || memPtr.isNull()) {
+        if ((memPtr.constructor.name !== 'NativePointer') || memPtr.isNull()) {
           throw new Error('putWatchpoint: Invalid PointerValue!');
         }
 
