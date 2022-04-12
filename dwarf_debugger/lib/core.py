@@ -598,10 +598,12 @@ class Dwarf(QObject):
     # **************************** Handlers **********************************
     # ************************************************************************
     def _on_detached(self, process, reason, crash_log):
+        self.reinitialize()
         self.onProcessDetached.emit([process, reason, crash_log])
 
     def _on_script_destroyed(self):
-        self._script = None
+        self.reinitialize()
+        self.onScriptDestroyed.emit()
 
     def _on_message(self, message, data):
         QApplication.processEvents()
