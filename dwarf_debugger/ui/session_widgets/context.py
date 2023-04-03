@@ -36,25 +36,32 @@ class ContextWidget(QTabWidget):
         self._app_window = parent
         self.setAutoFillBackground(True)
 
-        self._app_window.dwarf.onContextChanged.connect(self._on_context_changed)
+        self._app_window.dwarf.onContextChanged.connect(
+            self._on_context_changed)
 
         self._nativectx_model = QStandardItemModel(0, 4)
         self._nativectx_model.setHeaderData(0, Qt.Horizontal, 'Reg')
-        self._nativectx_model.setHeaderData(0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._nativectx_model.setHeaderData(
+            0, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._nativectx_model.setHeaderData(1, Qt.Horizontal, 'Value')
-        self._nativectx_model.setHeaderData(1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
+        self._nativectx_model.setHeaderData(
+            1, Qt.Horizontal, Qt.AlignCenter, Qt.TextAlignmentRole)
         self._nativectx_model.setHeaderData(2, Qt.Horizontal, 'Decimal')
         self._nativectx_model.setHeaderData(3, Qt.Horizontal, 'Telescope')
 
         self._nativectx_list = DwarfListView()
         self._nativectx_list.setModel(self._nativectx_model)
 
-        self._nativectx_list.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self._nativectx_list.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self._nativectx_list.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self._nativectx_list.header().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self._nativectx_list.header().setSectionResizeMode(
+            1, QHeaderView.ResizeToContents)
+        self._nativectx_list.header().setSectionResizeMode(
+            2, QHeaderView.ResizeToContents)
 
         self._nativectx_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._nativectx_list.customContextMenuRequested.connect(self._on_native_contextmenu)
+        self._nativectx_list.customContextMenuRequested.connect(
+            self._on_native_contextmenu)
 
         self._javactx_model = QStandardItemModel(0, 3)
         self._javactx_model.setHeaderData(0, Qt.Horizontal, 'Argument')
@@ -76,6 +83,11 @@ class ContextWidget(QTabWidget):
         self._javactx_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self._javactx_list.customContextMenuRequested.connect(
             self._on_java_contextmenu)
+
+        self._javactx_list.clicked.connect(
+            self._on_java_context_selection_changed)
+        self._javactx_list.selectionModel().selectionChanged.connect(
+            self._on_java_context_selection_changed)
 
         self.addTab(self._nativectx_list, 'Native')
         self.show_context_tab('Native')
@@ -155,7 +167,8 @@ class ContextWidget(QTabWidget):
                             'telescope'] is not None:
                         telescope = QStandardItem()
 
-                        telescope_value = str(context[register]['telescope'][1]).replace('\n', ' ')
+                        telescope_value = str(
+                            context[register]['telescope'][1]).replace('\n', ' ')
                         if len(telescope_value) > 50:
                             telescope_value = telescope_value[:50] + '...'
 
@@ -190,6 +203,7 @@ class ContextWidget(QTabWidget):
             _class = QStandardItem()
             _class.setText(context[arg]['className'])
             if isinstance(context[arg]['handle'], str):
+                _class.setData(context[arg]['handle'], Qt.UserRole + 101)
                 _class.setForeground(Qt.lightGray)
 
             _value = QStandardItem()
@@ -262,15 +276,19 @@ class ContextWidget(QTabWidget):
             telescope = self._nativectx_model.item(index, 3)
             # show contextmenu
             if self._nativectx_model.item(index, 0).data(Qt.UserRole + 1):
-                context_menu.addAction('Jump to {0}'.format(item.text()), lambda: self._app_window.jump_to_address(item.text()))
+                context_menu.addAction('Jump to {0}'.format(
+                    item.text()), lambda: self._app_window.jump_to_address(item.text()))
                 context_menu.addSeparator()
             # copy menu
             context_sub_menu = QMenu('Copy', context_menu)
-            context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(item.text()))
+            context_sub_menu.addAction(
+                'Value', lambda: utils.copy_str_to_clipboard(item.text()))
             if dec.text():
-                context_sub_menu.addAction('Decimal', lambda: utils.copy_str_to_clipboard(dec.text()))
+                context_sub_menu.addAction(
+                    'Decimal', lambda: utils.copy_str_to_clipboard(dec.text()))
             if telescope.text():
-                context_sub_menu.addAction('Telescope', lambda: utils.copy_str_to_clipboard(telescope.text()))
+                context_sub_menu.addAction(
+                    'Telescope', lambda: utils.copy_str_to_clipboard(telescope.text()))
             context_menu.addMenu(context_sub_menu)
 
             context_menu.exec_(glbl_pt)
@@ -285,12 +303,15 @@ class ContextWidget(QTabWidget):
             _class = self._javactx_model.item(index, 2)
             value = self._javactx_model.item(index, 3)
             context_sub_menu = QMenu('Copy', context_menu)
-            context_sub_menu.addAction('Argument', lambda: utils.copy_str_to_clipboard(argument.text()))
+            context_sub_menu.addAction(
+                'Argument', lambda: utils.copy_str_to_clipboard(argument.text()))
             if _class.text():
-                context_sub_menu.addAction('Class', lambda: utils.copy_str_to_clipboard(_class.text()))
+                context_sub_menu.addAction(
+                    'Class', lambda: utils.copy_str_to_clipboard(_class.text()))
             if value:
                 if value.text():
-                    context_sub_menu.addAction('Value', lambda: utils.copy_str_to_clipboard(value.text()))
+                    context_sub_menu.addAction(
+                        'Value', lambda: utils.copy_str_to_clipboard(value.text()))
             context_menu.addMenu(context_sub_menu)
             context_menu.exec_(glbl_pt)
 
@@ -302,23 +323,27 @@ class ContextWidget(QTabWidget):
                     x_in += 1
                     continue
 
-                self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+                self._app_window.dwarf.onLogToConsole.emit(
+                    'error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
                 return
 
         if isinstance(reg_val, str) and reg_val.startswith('0x'):
             try:
                 reg_val = int(reg_val, 16)
             except ValueError:
-                self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+                self._app_window.dwarf.onLogToConsole.emit(
+                    'error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
                 return
         try:
             reg_val = int(reg_val)
         except ValueError:
-            self._app_window.dwarf.onLogToConsole.emit('error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
+            self._app_window.dwarf.onLogToConsole.emit(
+                'error: invalid reg_value: ' + reg_val + ' - expected dec/hex')
             return
 
         reg_val = hex(reg_val)
-        was_found, find_result = self._nativectx_list.contains_text(reg_name, True, True, True)
+        was_found, find_result = self._nativectx_list.contains_text(
+            reg_name, True, True, True)
         if was_found:
             if len(find_result) == 1:
                 find_result = find_result[0]
@@ -330,6 +355,18 @@ class ContextWidget(QTabWidget):
                     value_x = str_fmt.format(int(reg_val, 16))
 
                     value_dec = '{0:d}'.format(int(reg_val, 16))
-                    self._nativectx_model.item(find_result[0], 1).setText(value_x)
-                    self._nativectx_model.item(find_result[0], 2).setText(value_dec)
+                    self._nativectx_model.item(
+                        find_result[0], 1).setText(value_x)
+                    self._nativectx_model.item(
+                        find_result[0], 2).setText(value_dec)
                     self._nativectx_model.item(find_result[0], 3).setText("")
+
+    def _on_java_context_selection_changed(self):
+        if not self._javactx_list.hasFocus():
+            return
+
+        index = self._javactx_list.selectionModel().currentIndex().row()
+        handle = self._javactx_list.item(index, 1).data(Qt.UserRole + 101)
+
+        if handle:
+            self._app_window.java_explorer._set_handle(handle)
