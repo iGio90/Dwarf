@@ -366,7 +366,7 @@ class ContextWidget(QTabWidget):
             return
 
         index = self._javactx_list.selectionModel().currentIndex().row()
-        handle = self._javactx_list.item(index, 1).data(Qt.UserRole + 101)
+        handle = self._javactx_model.item(index, 1).data(Qt.UserRole + 101)
 
         if handle:
             self._app_window.java_explorer._set_handle(handle)
