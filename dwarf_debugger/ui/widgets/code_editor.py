@@ -437,7 +437,7 @@ class JsCodeEditor(QPlainTextEdit):
 
         # min_width + width * digits
         _width = 10 + _char_width * digits
-        return _width + 10
+        return int(_width + 10)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
