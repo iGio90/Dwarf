@@ -296,8 +296,8 @@ class DisassemblyView(QAbstractScrollArea):
                     painter.setPen(self._solid_pen)
                 else:
                     painter.setPen(self._dash_pen)
-                drawing_pos_y = (index + 1) * (self._char_height + self._ver_spacing)
-                drawing_pos_y -= self._base_line - (self._char_height * 0.5)
+                drawing_pos_y = int((index + 1) * (self._char_height + self._ver_spacing))
+                drawing_pos_y -= int(self._base_line - (self._char_height * 0.5))
 
                 skip = False
 
@@ -414,7 +414,7 @@ class DisassemblyView(QAbstractScrollArea):
                 if is_breakpointed:
                     y_pos -= (self._char_height * 0.5)
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height,
+                painter.fillRect(self._jumps_width, int(y_pos - height), self._breakpoint_linewidth, height,
                                  QColor('greenyellow'))
             if is_breakpointed:
                 height = self._char_height
@@ -423,7 +423,7 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos += (self._char_height * 0.5)
                 if is_watched:
                     height *= 0.5
-                painter.fillRect(self._jumps_width, y_pos - height, self._breakpoint_linewidth, height,
+                painter.fillRect(self._jumps_width, int(y_pos - height), self._breakpoint_linewidth, height,
                                  QColor('crimson'))
 
         drawing_pos_x = self._jumps_width + self._breakpoint_linewidth + int(self._char_width) + 1 + int(
@@ -564,6 +564,7 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos = self._header_height + (i * (self._char_height + self._ver_spacing))
                 y_pos += (self._char_height * 0.5)
                 y_pos -= self._ver_spacing
+                y_pos = int(y_pos)
                 painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(),
                                  self._char_height + 2, self._ctrl_colors['line'])
 
@@ -571,6 +572,7 @@ class DisassemblyView(QAbstractScrollArea):
                 y_pos = self._header_height + (i * (self._char_height + self._ver_spacing))
                 y_pos += (self._char_height * 0.5)
                 y_pos -= self._ver_spacing
+                y_pos = int(y_pos)
                 painter.fillRect(self._jumps_width + self._breakpoint_linewidth, y_pos - 1, self.viewport().width(),
                                  self._char_height + 2, self._ctrl_colors['selection_bg'])
 
